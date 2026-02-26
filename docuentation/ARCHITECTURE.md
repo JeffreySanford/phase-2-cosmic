@@ -6,24 +6,24 @@ High-level architecture
 
 ```mermaid
 flowchart LR
-  subgraph OP [Operational Streaming Plane (Go)]
-    A[Telescopes & Sensors] -->|Telemetry| B[Message Broker (Kafka/Pulsar/RabbitMQ)]
+  subgraph OP [Operational Streaming Plane - Go]
+    A[Telescopes and Sensors] -->|Telemetry| B[Message Broker: Kafka, Pulsar, RabbitMQ]
     B --> C[Go Gateway: Triage & Aggregation]
     C --> D[Operational Dashboards & Alerts]
-    C --> E[Curated Events -> Governance API]
+    C --> E[Curated Events to Governance API]
     C -->|Backpressure| BP[Backpressure Controller]
   end
 
-  subgraph GOV [Governance & Orchestration Control Plane (Java)]
+  subgraph GOV [Governance & Orchestration Control Plane - Java]
     E2[Governance API] --> F[Archive Catalog]
-    F --> G[Lineage / Provenance Graph]
+    F --> G[Lineage and Provenance Graph]
     G --> H[Job Orchestration / Workflows]
-    H --> I[Audit Manifests & Policy Engine]
+    H --> I[Audit Manifests and Policy Engine]
   end
 
   D -->|Operational Context| G
   BP -.->|Degrade Signals| I
-  A -.->|Raw science data (kept in HPC archive)| HPC[HPC Archive]
+  A -.->|Raw science data, kept in HPC archive| HPC[HPC Archive]
 
   style OP fill:#e8f5ff,stroke:#2b7bb9
   style GOV fill:#fff5e6,stroke:#b97b2b
