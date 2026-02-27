@@ -1,0 +1,23 @@
+.app-sidebar {
+  width: 240px;
+  background: #071028;
+  color: #cbd5e1;
+  height: calc(100vh - 96px);
+  padding: 1rem;
+  box-sizing: border-box;
+  position: fixed;
+  top: 56px;
+  left: 0;
+  overflow: auto;
+  transition: width 200ms ease;
+  min-width:0;
+}
+.app-sidebar.collapsed { width: 64px; }
+.app-sidebar nav ul { list-style:none; padding:0; margin:0; }
+.app-sidebar nav li { margin-bottom:0.5rem; }
+.app-sidebar button { width:100%; text-align:left; background:transparent; border:0; color:inherit; padding:0.5rem; cursor:pointer; display:flex; align-items:center; }
+
+/* icon/label styling */
+.app-sidebar .icon { margin-right:0.5rem; font-size:1.25rem; flex:0 0 auto; }
+.app-sidebar .label { flex:1 1 auto; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.app-sidebar.collapsed .label { display:none; }

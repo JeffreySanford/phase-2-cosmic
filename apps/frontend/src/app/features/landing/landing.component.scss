@@ -1,0 +1,21 @@
+.landing {
+  padding: 0.25em;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* align at top so text shifts as container moves */
+  align-items: flex-start;
+  box-sizing: border-box;
+  transition: transform 200ms ease;
+}
+.landing.collapsed {
+  transform: translateX(-176px); /* shift left when sidebar shrinks (240 - 64) */
+}
+.landing h2 {
+  margin: 0 0 1rem 0;
+  font-size: 2rem;
+}
+.landing p {
+  font-size: 1.2rem;
+}

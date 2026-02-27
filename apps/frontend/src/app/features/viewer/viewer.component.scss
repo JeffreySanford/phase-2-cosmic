@@ -1,0 +1,45 @@
+.viewer-root {
+  position: relative;
+  width: 100%;
+  /* leave a small gap around the actual aladin element */
+  padding: 0.25em;
+  box-sizing: border-box;
+  /* Allow the viewer to grow to fill available space in flex layouts */
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0; /* allow parent flex to control size */
+}
+
+/* Ensure the component host element itself stretches when placed inside route hosts
+   or other flex containers. This prevents the host from collapsing to zero height. */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* absolutely position the Aladin container so it always fills the root; avoids
+   relying on cascaded flex sizing which can be fragile when parent sizes are
+   uncertain. viewer-root is positioned relative above. */
+#aladin-lite, .aladin-container {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  margin: 0.25em; /* gap from root edges */
+}
+
+/* loader is now placed inside the aladin container so it tracks the actual
+   viewer element. the container itself is positioned absolutely within
+   viewer-root. */
+#aladin-lite .loading {
+  position: absolute;
+  left: 0.25em;
+  top: 0.25em;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 6px 10px;
+  border-radius: 4px;
+  color: #333;
+  font-size: 13px;
+  z-index: 9999;
+}

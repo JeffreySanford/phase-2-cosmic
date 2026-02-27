@@ -1,0 +1,12 @@
+<aside class="app-sidebar" [class.collapsed]="collapsed">
+  <nav>
+    <ul>
+      <li *ngFor="let r of routes">
+        <button (click)="onNavigate(r.path)">
+          <span class="icon">{{ r.icon }}</span>
+          <span class="label">{{ r.label }}</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+</aside>

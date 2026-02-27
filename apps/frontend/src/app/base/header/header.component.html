@@ -1,0 +1,19 @@
+<header class="app-header">
+  <div class="left">
+    <button class="menu-btn" (click)="onToggleSidebar()" aria-label="Toggle sidebar">☰</button>
+    <div class="brand">Phase-2 Cosmic</div>
+  </div>
+  <div class="right">
+    <div class="user">
+      <button class="user-btn" (click)="toggleUserMenu()" aria-label="User menu">👤</button>
+      <div class="user-menu" *ngIf="showUserMenu">
+        <button class="menu-item">Profile</button>
+        <button class="menu-item">Settings</button>
+        <button class="menu-item">Theme</button>
+        <button class="menu-item">Visualizations</button>
+        <hr />
+        <button class="menu-item">Sign out</button>
+      </div>
+    </div>
+  </div>
+</header>

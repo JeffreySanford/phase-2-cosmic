@@ -1,0 +1,59 @@
+.app-header {
+  height: 56px;
+  box-sizing: border-box;
+  padding: 0 0.25em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0f172a;
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  border-radius: 6px;
+  /* ensure children cannot push past the container */
+  min-width: 0;
+  overflow: hidden;
+}
+/* allow left section to shrink so right icon isn’t pushed off-screen */
+.app-header .left {
+  display:flex;
+  align-items:center;
+  gap:0.75rem;
+  flex:1 1 auto;
+  min-width:0;
+}
+
+/* right section should stay its intrinsic size */
+.app-header .right {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.menu-btn { background:transparent; border:0; color:inherit; font-size:1.25rem; cursor:pointer; }
+.brand { font-weight:600; /* prevent long names from overflowing */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user { position:relative; flex:0 0 auto; }
+.user-btn { background:transparent; border:0; color:inherit; font-size:1.25rem; cursor:pointer; }
+.user-menu {
+  position:absolute;
+  right:0;
+  top:calc(100% + 6px);
+  background:#fff;
+  color:#111;
+  border-radius:6px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.12);
+  padding:0.5rem;
+  min-width:160px;
+  z-index: 20000 !important; /* must outrank global overlays (10000) */
+  border: 2px solid blue; /* visual debugging border */
+}
+.user-menu .menu-item { display:block; width:100%; padding:0.5rem; border:0; background:transparent; text-align:left; cursor:pointer; }
+.user-menu hr { margin:0.5rem 0; border:none; border-top:1px solid #eee; }

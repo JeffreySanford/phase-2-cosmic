@@ -1,0 +1,4 @@
+<app-header (toggleSidebar)="sidebarToggle()"></app-header>
+<app-sidebar [collapsed]="sidebarCollapsed" (navigate)="onNavigate($event)"></app-sidebar>
+<app-mainstage [class.collapsed]="sidebarCollapsed"></app-mainstage>
+<app-footer></app-footer>
