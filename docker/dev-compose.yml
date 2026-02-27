@@ -1,0 +1,108 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  data-generator:
+    image: golang:1.21
+    working_dir: /go/src/app
+    volumes:
+      - ../tools/data-generator:/go/src/app
+    ports:
+      - "9100:9100"
+    # Run the pre-built linux binary from the mounted source folder (faster, no go runtime required in container)
+    # run without writing raw payloads to stdout so logs remain readable
+    command: ["bash", "-lc", "/go/src/app/data-generator-linux --metrics-addr=:9100 --no-stdout --sink=file:/go/src/app/logs/payloads.bin"]
+    depends_on:
+      - kafka
+      - prometheus
+    restart: unless-stopped
+
+  test-runner:
+    image: node:20-bullseye
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace:cached
+      - pnpm-store:/pnpm-store
+    depends_on:
+      - prometheus
+    entrypoint: ["/bin/bash", "-lc"]
+    command: "./scripts/docker-test-runner.sh"
+    restart: 'no'
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  pnpm-store:
+    driver: local
