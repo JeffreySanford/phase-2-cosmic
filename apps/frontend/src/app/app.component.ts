@@ -21,7 +21,7 @@ export class AppComponent {
 
   
 
-  onNavigate(path: any) {
+  onNavigate(path: string) {
     this.router.navigate([path]);
   }
 }

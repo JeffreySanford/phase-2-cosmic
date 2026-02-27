@@ -24,7 +24,7 @@ export class SnackService {
       const h = footer ? `${Math.ceil(footer.getBoundingClientRect().height)}px` : '0px';
       document.documentElement.style.setProperty('--app-footer-height', h);
     } catch (e) {
-      // ignore
+      console.error(e); // ignore
     }
   }
 
