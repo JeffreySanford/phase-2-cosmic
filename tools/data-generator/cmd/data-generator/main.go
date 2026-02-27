@@ -42,6 +42,7 @@ func main() {
 		metricsAddr = flag.String("metrics-addr", ":9100", "metrics listen address")
 		noStdout    = flag.Bool("no-stdout", false, "if set, do not write raw payloads to stdout")
 		sinkFlag    = flag.String("sink", "", "sink target; supported: file:<path>")
+		auditEvery  = flag.Int("audit-every", 1, "write an audit log line every N records (1 = every record)")
 	)
 	flag.Parse()
 
@@ -123,8 +124,10 @@ func main() {
 					// write an English audit line for each record (human-readable)
 					if auditWriter != nil {
 						recordCounter++
-						ts := time.Now().UTC().Format(time.RFC3339)
-						fmt.Fprintf(auditWriter, "%s wrote %d bytes to %s (record %d)\n", ts, len(payload), filepath.Base(strings.TrimPrefix(*sinkFlag, "file:")), recordCounter)
+						if *auditEvery <= 1 || (recordCounter%int64(*auditEvery) == 0) {
+							ts := time.Now().UTC().Format(time.RFC3339)
+							fmt.Fprintf(auditWriter, "%s wrote %d bytes to %s (record %d)\n", ts, len(payload), filepath.Base(strings.TrimPrefix(*sinkFlag, "file:")), recordCounter)
+						}
 					}
 				} else if !*noStdout {
 					_, _ = os.Stdout.Write(payload)
