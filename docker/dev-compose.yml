@@ -79,9 +79,13 @@ services:
       - ../tools/data-generator:/go/src/app
     ports:
       - "9100:9100"
+    environment:
+      - DIAG_RUN=false
+      # optional: set DIAG_IPERF_TARGET to run iperf3 client when DIAG_RUN=true
+      - DIAG_IPERF_TARGET=
     # Run the pre-built linux binary from the mounted source folder (faster, no go runtime required in container)
     # run without writing raw payloads to stdout so logs remain readable
-    command: ["bash", "-lc", "/go/src/app/data-generator-linux --metrics-addr=:9100 --no-stdout --sink=file:/go/src/app/logs/payloads.bin"]
+    command: ["bash", "-lc", "chmod +x /go/src/app/collect-system-specs.sh || true; /go/src/app/collect-system-specs.sh || true; /go/src/app/data-generator-linux --metrics-addr=:9100 --no-stdout --sink=file:/go/src/app/logs/payloads.bin"]
     depends_on:
       - kafka
       - prometheus
