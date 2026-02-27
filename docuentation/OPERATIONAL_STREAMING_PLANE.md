@@ -7,9 +7,13 @@ The Operational Streaming Plane is responsible for delivering low-latency operat
 Responsibilities
 
 - Telemetry ingestion from instruments, agents, and HPC job schedulers
+
 - Light validation, deduplication, and schema enforcement
+
 - Windowed aggregation and feature extraction for dashboards and automated runbooks
+
 - Bounded fan-out and backpressure enforcement
+
 - Forwarding curated events to the Governance Plane when durable records are required
 
 Sequence: telemetry to governance (simplified)
@@ -40,11 +44,27 @@ sequenceDiagram
 Design considerations
 
 - Use topic partitioning and keyed events to preserve ordering when required.
+
 - Implement idempotent event submission to the Governance API to tolerate retries.
+
 - Provide operator-facing modes: normal, degraded, and emergency (with strict sampling policies).
 
 Operational controls
 
 - Rate limiting and admission control at the broker and gateway
+
 - Circuit breakers and graceful sampling when downstream latency increases
+
 - Metrics and SLOs exposed via Prometheus and synthetic checks for contract compliance
+
+See also: messaging integration and role assignments in `documentation/phase-2-realworld-spec/MESSAGING_INTEGRATION.md`.
+
+## Legend
+
+- `Telescope`: physical instrument or edge producer (blue)
+
+- `Broker`: broker or streaming system (green)
+
+- `Gateway`: processing/gateway (orange)
+
+- `UI/API`: dashboards and governance endpoints (purple)

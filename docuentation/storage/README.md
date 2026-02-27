@@ -5,9 +5,13 @@ This folder contains storage-specific Phase 2 documentation: an executive summar
 Files:
 
 - STORAGE_EXECUTIVE_SUMMARY.md — verbose executive summary and analysis
+
 - STORAGE_ARCHITECTURE.md — architecture diagrams and system overview
+
 - STORAGE_TIERS.md — detailed tier descriptions and lifecycle
+
 - STORAGE_GOVERNANCE.md — governance, metadata, and catalog integration
+
 - STORAGE_DEPLOYMENT.md — deployment, compute-near-data and operational guidance
 
 Use these documents as the canonical starting point for storage design reviews, procurement, and integration planning.
