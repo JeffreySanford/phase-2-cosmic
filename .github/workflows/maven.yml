@@ -1,0 +1,62 @@
+name: Java Maven Build
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  verify:
+    name: Verify Java tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Run tests for `apps/java-governance`
+        working-directory: ./apps/java-governance
+        run: mvn -B test
+
+      - name: Run tests for `tools/java-ingest`
+        working-directory: ./tools/java-ingest
+        run: mvn -B test || true
+
+      - name: Upload Surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: |
+            apps/java-governance/target/surefire-reports
+            tools/java-ingest/target/surefire-reports
+
+  maven-build:
+    name: Build Java modules with Maven
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Build `apps/java-governance`
+        working-directory: ./apps/java-governance
+        run: mvn -B package
+
+      - name: Build `tools/java-ingest`
+        working-directory: ./tools/java-ingest
+        run: mvn -B package
