@@ -7,6 +7,28 @@ Testing architecture references:
 - [docuentation/TESTING_FRAMEWORK_ARCHITECTURE.md](docuentation/TESTING_FRAMEWORK_ARCHITECTURE.md)
 - [docuentation/TESTING_REQUIREMENTS.md](docuentation/TESTING_REQUIREMENTS.md)
 
+Mission alignment references:
+
+- [docuentation/NGVLA_MISSION_ALIGNMENT.md](docuentation/NGVLA_MISSION_ALIGNMENT.md)
+- [docuentation/MISSION_TO_CAPABILITY_TRACE.md](docuentation/MISSION_TO_CAPABILITY_TRACE.md)
+- [docuentation/MISSION_GATES.md](docuentation/MISSION_GATES.md)
+
+## Roadmap item policy (required)
+
+Each new phase deliverable and exit criterion must carry explicit mission linkage:
+
+- `Mission outcome:` one canonical outcome from the mission alignment doc.
+- `Operator/science impact:` expected observable improvement.
+- `Validation evidence:` gate or artifact proving delivery.
+
+Canonical mission outcomes:
+
+1. Observatory continuity
+2. Reproducible science
+3. Compute-to-archive efficiency
+4. Institutional trust and audit
+5. Human decision speed
+
 ## Current baseline (as of 2026-02-28)
 
 - Frontend: Angular telemetry/topology/diagnostics plus baseline `Jobs` and `Datasets` routes with SSR Nest shim.
@@ -25,6 +47,20 @@ Testing architecture references:
 - Favor contract-first integration (OpenAPI + fixtures + compatibility checks).
 - Treat reliability and observability as first-class, not post-MVP add-ons.
 - Preserve migration safety by running transitional components in parallel when needed.
+
+## Mission communication model
+
+The roadmap is consumed by mixed audiences. Each phase must answer:
+1. What mission outcome improves?
+2. What operators/scientists can do better afterward?
+3. What evidence proves it?
+
+```mermaid
+flowchart LR
+  P0[Phase 0-1: Foundations + Governance] --> M1[Continuity + Trust]
+  P2[Phase 2-3: Integration + Console Fidelity] --> M2[Decision Speed + Reproducibility]
+  P4[Phase 4-5: Reliability + HPC Alignment] --> M3[Scale + Compute-to-Archive Efficiency]
+```
 
 ## Phase 0: Foundation hardening (Week 1-2)
 
@@ -53,6 +89,11 @@ Exit criteria:
 - Developer environment reproducibility: `sh ./scripts/start-all.sh` reliably boots compose stack and local SSR (dev proxy points at SSR).
 - Java modules are test-verified in CI before packaging and no required workflow uses silent skip flags.
 
+Mission linkage:
+- Mission outcome: Institutional trust and audit
+- Operator/science impact: Teams can trust CI and contracts as a reliable baseline for all later science workflows.
+- Validation evidence: Required quality gates pass and fail deterministically on drift.
+
 ## Phase 1: Governance API maturity (Week 3-6)
 
 Goals:
@@ -72,6 +113,11 @@ Exit criteria:
 - Jobs survive service restarts.
 - Job lifecycle and errors are queryable and auditable.
 
+Mission linkage:
+- Mission outcome: Reproducible science
+- Operator/science impact: Workflow state and outcomes are durable, inspectable, and restart-safe.
+- Validation evidence: Lifecycle contract tests, restart durability checks, and API error taxonomy coverage.
+
 ## Phase 1B: Frontend orchestration baseline (Week 4-7, parallel)
 
 Goals:
@@ -90,6 +136,11 @@ Exit criteria:
 - Operator can complete a full job submit-and-monitor loop in UI.
 - UI clearly differentiates live vs stale vs unavailable data.
 
+Mission linkage:
+- Mission outcome: Human decision speed
+- Operator/science impact: Operators can submit and monitor jobs without leaving the console.
+- Validation evidence: e2e journeys for submit/status/error/recovery paths.
+
 ## Phase 2: Streaming-to-governance integration (Week 6-10)
 
 Goals:
@@ -107,6 +158,11 @@ Exit criteria:
 
 - End-to-end ingest flow validated in integration tests with broker downtime scenarios.
 
+Mission linkage:
+- Mission outcome: Observatory continuity
+- Operator/science impact: Ingest disruptions are visible, bounded, and recoverable with replay-safe behavior.
+- Validation evidence: Integration tests with broker interruption and replay drills.
+
 ## Phase 3: Frontend control-plane fidelity (Week 8-12)
 
 Goals:
@@ -123,6 +179,11 @@ Deliverables:
 Exit criteria:
 
 - Operator can submit a job, watch status transitions, and inspect failure reasons from UI.
+
+Mission linkage:
+- Mission outcome: Human decision speed
+- Operator/science impact: Faster diagnosis and action during operational incidents.
+- Validation evidence: operator-critical e2e tests and route-level state handling checks.
 
 ## Phase 4: Reliability and security hardening (Week 10-14)
 
@@ -142,6 +203,11 @@ Exit criteria:
 - Controlled degradation under synthetic stress.
 - Security review checklist completed for API and SSR shim.
 
+Mission linkage:
+- Mission outcome: Institutional trust and audit
+- Operator/science impact: Secure and predictable behavior under load and failure.
+- Validation evidence: security checks, load/fault tests, and audit event verification.
+
 ## Phase 5: HPC alignment and external adapter path (Week 12-18)
 
 Goals:
@@ -158,6 +224,11 @@ Deliverables:
 Exit criteria:
 
 - Demonstrable "reference architecture prototype" for hybrid control + compute orchestration.
+
+Mission linkage:
+- Mission outcome: Compute-to-archive efficiency
+- Operator/science impact: Processing orchestration aligns with HPC archive realities for large-scale science pipelines.
+- Validation evidence: adapter contract tests, mock-to-real integration lab checkpoints, and provenance-linked outputs.
 
 ## Ongoing quality tracks
 

@@ -8,7 +8,40 @@ Testing architecture references:
 - [docuentation/TESTING_FRAMEWORK_ARCHITECTURE.md](docuentation/TESTING_FRAMEWORK_ARCHITECTURE.md)
 - [docuentation/TESTING_REQUIREMENTS.md](docuentation/TESTING_REQUIREMENTS.md)
 
+Mission alignment references:
+
+- [docuentation/NGVLA_MISSION_ALIGNMENT.md](docuentation/NGVLA_MISSION_ALIGNMENT.md)
+- [docuentation/MISSION_TO_CAPABILITY_TRACE.md](docuentation/MISSION_TO_CAPABILITY_TRACE.md)
+- [docuentation/MISSION_GATES.md](docuentation/MISSION_GATES.md)
+
+## Backlog item policy (required)
+
+Every new `[NOW]`, `[NEXT]`, or `[LATER]` item must include a mission linkage block directly under the item:
+
+- `Mission outcome:` one of
+  - `Observatory continuity`
+  - `Reproducible science`
+  - `Compute-to-archive efficiency`
+  - `Institutional trust and audit`
+  - `Human decision speed`
+- `Operator/science impact:` one sentence with measurable intent.
+- `Validation evidence:` contract/test/runtime signal that proves outcome progress.
+
+Template:
+
+```md
+- [NEXT] <task title>
+  - Mission outcome: <choose one from canonical list>
+  - Operator/science impact: <what improves and how it will be observed>
+  - Validation evidence: <tests, contract checks, dashboards, drill, etc.>
+```
+
 ## [NOW] 0. Stabilize what exists
+
+Mission linkage:
+- Mission outcome: Institutional trust and audit
+- Operator/science impact: Establishes reliable quality gates so teams can trust baseline behavior before scaling science workflows.
+- Validation evidence: `pnpm run quality:ci`, CI required checks, contract validation artifacts.
 
 - [DONE] Add baseline Java governance API endpoints:
   - `GET /api/v1/health`
@@ -39,7 +72,31 @@ Testing architecture references:
 - [DONE] Make `scripts/start-all.sh` export `FRONTEND_PORT` and set default to 4000 for cross-platform dev runs.
 - [DONE] Update `apps/frontend/proxy.conf.json` to target `http://localhost:4000` (aligns dev proxy with SSR shim).
 
+## [NOW] 0B. Documentation clarity and mission communication
+
+- [DONE] Add mission alignment documents and mission gate model under `docuentation/`.
+  - Mission outcome: Human decision speed
+  - Operator/science impact: Reduces ambiguity on why work exists and who each capability serves.
+  - Validation evidence: Mission docs present in docs index and linked by alignment matrix.
+- [DONE] Add audience-oriented documentation guide for scientists, operators, leadership, and HR.
+  - Mission outcome: Human decision speed
+  - Operator/science impact: Stakeholders can find correct docs quickly without deep technical context switching.
+  - Validation evidence: `docuentation/AUDIENCE_GUIDE.md` with role-based read paths and diagrams.
+- [NEXT] Backfill mission linkage fields for top-priority legacy TODO items that predate policy.
+  - Mission outcome: Institutional trust and audit
+  - Operator/science impact: Makes planning rationale explicit and reviewable across disciplines.
+  - Validation evidence: Top `[NOW]` and `[NEXT]` items include `Mission outcome`, `Operator/science impact`, `Validation evidence`.
+- [NEXT] Add a lightweight docs lint/check in CI for required anchors and mission-link fields in root planning docs.
+  - Mission outcome: Institutional trust and audit
+  - Operator/science impact: Prevents silent drift between mission docs, backlog, and roadmap.
+  - Validation evidence: CI step fails when required doc policy fields are missing.
+
 ## [NOW] 1. Remove architecture drift
+
+Mission linkage:
+- Mission outcome: Human decision speed
+- Operator/science impact: Reduces confusion and handoff delays by keeping docs consistent with what is actually implemented.
+- Validation evidence: Alignment review in `docuentation/ALIGNMENT.md` and corrected cross-document links/status tags.
 
 - [DONE] Fix broken doc links in `docuentation/README.md`.
 - [DONE] Fix malformed Mermaid code fences in messaging docs.
@@ -49,6 +106,11 @@ Testing architecture references:
 - [DONE] Align developer SSR port to avoid conflicts with Grafana (set `FRONTEND_PORT=4000` default).
 
 ## [NEXT] 2. Governance durability and correctness
+
+Mission linkage:
+- Mission outcome: Reproducible science
+- Operator/science impact: Durable, traceable lifecycle semantics let engineers and scientists trust workflow state and outcomes.
+- Validation evidence: lifecycle contract tests, restart durability checks, API response consistency.
 
 - [DONE] Replace in-memory job store with durable storage (Redis dev baseline).
 - Implement full job lifecycle transitions:
@@ -68,6 +130,11 @@ Testing architecture references:
 
 ## [NEXT] 3. Frontend operations-console delivery
 
+Mission linkage:
+- Mission outcome: Human decision speed
+- Operator/science impact: Operators can submit, monitor, and recover workflows from one console with clear system-state feedback.
+- Validation evidence: operator e2e journeys, route-state tests, UI/API contract conformance.
+
 - [DONE] Implement `Jobs` route and baseline submit/status/transition flow.
 - [DONE] Implement `Datasets` route and baseline CRUD scaffold.
 - [NEXT] Normalize frontend models and UX labels to canonical contract (`jobId/workflow/status`) and remove legacy field naming.
@@ -76,6 +143,11 @@ Testing architecture references:
 - Add global status/freshness band in app shell.
 
 ## [NEXT] 4. Security hardening
+
+Mission linkage:
+- Mission outcome: Institutional trust and audit
+- Operator/science impact: Protects sensitive operational surfaces and makes governance actions auditable under production-like constraints.
+- Validation evidence: authN/authZ checks, protected route behavior, audit event verification.
 
 - Add authN/authZ middleware to Java governance API.
 - Add environment-based route hardening in frontend Nest shim:
@@ -86,12 +158,22 @@ Testing architecture references:
 
 ## [NEXT] 5. Integration and contract reliability
 
+Mission linkage:
+- Mission outcome: Observatory continuity
+- Operator/science impact: Streaming-to-governance failures become detectable, recoverable, and less disruptive during operations.
+- Validation evidence: integration tests with dependency failures, compatibility checks, replay/stress run outputs.
+
 - Add integration tests with Kafka/Testcontainers for ingest flow.
 - Add explicit integration/e2e stress tests and a verbose test harness for large-scale smoke/stress validation (see ROADMAP testing additions).
 - Add fixture compatibility tests for request/response examples across API versions.
 - Add backward-compatibility checks when `openapi/governance.yaml` changes.
 
 ## [NEXT] 5B. Test Matrix By Service/Container
+
+Mission linkage:
+- Mission outcome: Institutional trust and audit
+- Operator/science impact: Service-level coverage prevents blind spots and improves confidence in changes across the full platform.
+- Validation evidence: per-service test reports, coverage publication, compose smoke and failure-injection results.
 
 - `apps/frontend`:
   - increase unit coverage for jobs/datasets/error-state rendering

@@ -1,0 +1,5 @@
+[2m> [22mnode ./scripts/mvn-wrapper-runner.js -f apps/java-governance/pom.xml -T 1C test
+
+'java' is not recognized as an internal or external command,
+operable program or batch file.
+Warning: command "node ./scripts/mvn-wrapper-runner.js -f apps/java-governance/pom.xml -T 1C test" exited with non-zero status code

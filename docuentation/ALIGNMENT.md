@@ -1,68 +1,71 @@
-# Documentation Alignment Matrix (2026-02-28, Rev 2)
+# Documentation Alignment Matrix (2026-03-01, Rev 3)
 
-This file records how all documentation in `docuentation/` aligns with:
-- Frontend product specification: [FRONTEND_UI.md](FRONTEND_UI.md)
+Alignment anchors
+- Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](../TODO.md)
 - Delivery roadmap: [../ROADMAP.md](../ROADMAP.md)
 
 Purpose:
-- prevent architecture/docs drift
-- make planned vs implemented status explicit
-- keep frontend behavior aligned with control-plane goals
+- prevent docs/runtime/roadmap drift
+- keep implemented vs in-progress vs planned explicit
+- keep communication clear for mixed audiences (scientists to HR)
 
 ## Status legend
 
-- `aligned`: content is consistent with current frontend/UI direction and implementation baseline
-- `needs-update`: content is directionally valid but contains stale paths, commands, or scope assumptions
-- `planned`: intentionally future-state; not yet implemented in runtime
+- `aligned`: consistent with current codebase and mission direction
+- `needs-update`: directionally valid but missing current implementation or policy context
+- `planned`: intentionally future-state, not yet runtime-complete
 
-## Root docs
+## How sources connect
 
-| Document | Status | Alignment notes |
+```mermaid
+flowchart LR
+  M[NGVLA Mission Docs]
+  A[Architecture + Plane Specs]
+  F[Frontend + API Contracts]
+  T[Testing + Quality Docs]
+  B[Root TODO Backlog]
+  R[Root Roadmap]
+  C[Codebase Runtime]
+
+  M --> B
+  M --> R
+  A --> B
+  A --> R
+  F --> C
+  T --> C
+  B --> C
+  R --> C
+```
+
+## Root documentation status
+
+| Document group | Status | Alignment notes |
 |---|---|---|
-| `README.md` | aligned | Index corrected to current folder structure and linked to active docs. |
-| `EXECUTIVE_SUMMARY.md` | aligned | High-level architecture remains consistent with roadmap direction. |
-| `ARCHITECTURE.md` | aligned | Rewritten with current-vs-target states and implementation status model. |
-| `OPERATIONAL_STREAMING_PLANE.md` | aligned | Now linked to current structure and direction anchors. |
-| `GOVERNANCE_CONTROL_PLANE.md` | aligned | Matches Java governance control-plane direction. |
-| `JAVA_GOVERNANCE_SPEC.md` | aligned | Updated to baseline-implemented API endpoints and next hardening steps. |
-| `FRONTEND_UI.md` | aligned | Source of truth for frontend IA, workflows, page contracts, and acceptance criteria. |
-| `VIEWER_MODEB.md` | aligned | Path conventions normalized for current repository structure. |
-| `INFRA_TOPOLOGY.md` | aligned | Updated for transition state (`java-ingest` + `java-governance`) and planned components. |
-| `MESSAGING_INTEGRATION.md` | aligned | Mermaid render issues fixed; strategy remains forward-looking. |
-| `DEPLOYMENT.md` | aligned | Still roadmap-oriented and consistent with target architecture. |
-| `GETTING_STARTED.md` | aligned | Prereqs and commands normalized to current scripts and env setup. |
-| `TESTING_REQUIREMENTS.md` | aligned | Now points to active script names and quality-gate flow. |
-| `ENVIRONMENT.md` | aligned | Consistent with frontend/server env exposure model. |
-| `PROVENANCE.md` | aligned | Supports trust-model needed by UI provenance surfaces. |
-| `DATA_TRUST_PLATFORM.md` | aligned | Coherent with control-plane + frontend trust goals. |
-| `GO_GENERATOR_SPEC.md` | aligned | Supports telemetry/diagnostics UX direction. |
-| `TODO.md` (under `docuentation/`) | aligned | Simulation-harness scope retained with explicit note that root `TODO.md` is canonical backlog. |
-| `PROGRAM_DIRECTION.md` | aligned | New authority doc connecting strategy, backlog, roadmap, and frontend priorities. |
-| `API_CONTRACT_STATUS.md` | aligned | Tracks implemented vs target contracts to prevent frontend/backend drift. |
-| `CODING-STANDARDS.md` | aligned | No contradiction with frontend or roadmap direction. |
+| `README.md` + grouped READMEs | aligned | Navigation is coherent and current; mission docs are linked. |
+| Mission docs (`NGVLA_MISSION_ALIGNMENT`, `MISSION_TO_CAPABILITY_TRACE`, `MISSION_GATES`, `DECISIONS`) | aligned | Canonical mission framing and gate model now exist. |
+| Core architecture docs (`ARCHITECTURE`, `OPERATIONAL_STREAMING_PLANE`, `GOVERNANCE_CONTROL_PLANE`) | aligned | Implemented/in-progress/planned framing matches repository status. |
+| Product and UX docs (`FRONTEND_UI`, `PROFESSIONAL_CONSOLE_SPEC`, `frontend/features/*`) | aligned | Jobs/Datasets baseline reflected; professionalization still in progress. |
+| Contracts and API docs (`JAVA_GOVERNANCE_SPEC`, `API_CONTRACT_STATUS`) | aligned | Baseline endpoints and drift controls are documented and consistent. |
+| Trust and lineage docs (`DATA_TRUST_PLATFORM`, `PROVENANCE`, `storage/*`) | planned | Strategic direction is clear; several controls remain future-state. |
+| Environment/deployment/testing docs (`GETTING_STARTED`, `ENVIRONMENT`, `DEPLOYMENT`, testing docs) | aligned | Current commands and quality gates are represented. |
+| `docuentation/TODO.md` (simulation harness) | aligned | Explicitly secondary to root `TODO.md`; remains useful as scoped runbook/backlog. |
 
-## Grouped-folder docs
+## Drift risks observed
 
-| Folder | Status | Alignment notes |
-|---|---|---|
-| `frontend/` | aligned | Feature docs now include dedicated `Jobs` and `Datasets` specs plus index. |
-| `infra/` | aligned | Grouping docs remain coherent with compose/runtime posture. |
-| `messaging/` | aligned | Grouped index aligns to messaging strategy and active spec. |
-| `governance/` | aligned | Grouped index aligns to governance direction and API baseline. |
-| `generators/` | aligned | Supports telemetry and diagnostic workflows. |
-| `provenance/` | aligned | Supports trust/provenance UI requirements. |
-| `storage/` | planned | Architecture-first documents; still intentionally future-state for runtime integration. |
+1. Mission intent can still be overshadowed by implementation detail if new tasks skip mission linkage fields.
+2. Storage and provenance docs are strategy-heavy; runtime checkpoints need periodic status tags.
+3. Contract shape decisions (for example job control semantics) remain partially open and should be finalized in ADR flow.
 
-## Frontend alignment decisions applied
+## Alignment decisions (effective immediately)
 
-1. Frontend UI spec is now the product contract for page behavior and data-state UX.
-2. Root `TODO.md` is the canonical implementation backlog.
-3. Root `ROADMAP.md` is the canonical phased delivery plan.
-4. All docs now include direct alignment anchors to these three sources.
+1. Root [TODO.md](../TODO.md) is the only canonical execution backlog.
+2. Root [ROADMAP.md](../ROADMAP.md) is the only canonical phase plan.
+3. Mission docs are required references for new backlog and roadmap items.
+4. For major feature PRs, update mission trace and decision log when scope or semantics change.
 
-## Required follow-up for full closure
+## Documentation follow-up now required
 
-1. Implement frontend `Jobs` page per new feature spec and wire to governance APIs.
-2. Implement datasets API contracts and connect `Datasets` page.
-3. Add section-level status tags to storage and deployment docs as they move from planned to implemented.
+1. Add mission linkage fields to existing high-priority backlog/roadmap items over time (not only new items).
+2. Add explicit status tags (`implemented`, `in-progress`, `planned`) to long-form storage sections as runtime integration lands.
+3. Keep audience navigation current in [AUDIENCE_GUIDE.md](AUDIENCE_GUIDE.md).

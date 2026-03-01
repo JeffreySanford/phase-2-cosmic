@@ -3,7 +3,7 @@
 import { NestFactory } from '@nestjs/core';
 import '@angular/compiler';
 // explicit any usage in this bootstrap file is intentional (vite dev middleware, SSR bootstrap)
-import { Module, Controller, Get, Req, Res, Injectable } from '@nestjs/common';
+import { Module, Controller, Get, Req, Res, Injectable, All } from '@nestjs/common';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { CommonEngine } from '@angular/ssr';
@@ -303,8 +303,55 @@ class AppController {
     }
   }
 
+  @All('/api/v1/*')
+  async proxyGovernance(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const governanceBase = process.env['GOVERNANCE_API_URL'] || 'http://localhost:8082';
+    const targetUrl = `${governanceBase}${req.originalUrl}`;
+    try {
+      const headers = new Headers();
+      Object.entries(req.headers || {}).forEach(([k, v]) => {
+        if (!v) return;
+        const key = k.toLowerCase();
+        if (key === 'host' || key === 'content-length' || key === 'connection') return;
+        if (Array.isArray(v)) {
+          v.forEach((x) => headers.append(k, String(x)));
+        } else {
+          headers.set(k, String(v));
+        }
+      });
+
+      const method = (req.method || 'GET').toUpperCase();
+      let body: BodyInit | undefined;
+      if (method !== 'GET' && method !== 'HEAD') {
+        const hasBody = (req as any).body !== undefined && (req as any).body !== null;
+        if (hasBody) {
+          if (typeof (req as any).body === 'string') {
+            body = (req as any).body;
+          } else {
+            body = JSON.stringify((req as any).body);
+            if (!headers.has('content-type')) headers.set('content-type', 'application/json');
+          }
+        }
+      }
+
+      const upstream = await fetch(targetUrl, { method, headers, body });
+      const text = await upstream.text();
+      const ct = upstream.headers.get('content-type');
+      if (ct) res.setHeader('content-type', ct);
+      res.status(upstream.status).send(text);
+    } catch (e: any) {
+      console.error('Error proxying to governance API:', e);
+      res.status(502).json({ error: 'governance_proxy_error', message: String(e) });
+    }
+  }
+
   @Get('*')
   async handleAll(@Req() req: Request, @Res() res: Response) {
+    // Guard against SSR swallowing unhandled API routes.
+    if (req.path && req.path.startsWith('/api/')) {
+      res.status(404).json({ error: 'api_route_not_found', path: req.path });
+      return;
+    }
     // let SsrService handle SSR or static fallback
     await this.ssr.render(req, res);
   }

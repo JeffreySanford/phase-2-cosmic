@@ -37,6 +37,7 @@ Priority 4:
 2. No UI claims for workflows that do not have backend support.
 3. No architecture narrative that omits implemented-vs-planned status.
 4. Keep scope focused on core orchestration and observability before expanding tool surface.
+5. Every new backlog/roadmap item must declare a canonical mission outcome, measurable operator/science impact, and validation evidence.
 
 ## 4. Workstream ownership model
 
@@ -65,6 +66,7 @@ Every major document must include:
 - alignment anchors
 - implementation status
 - explicit dependencies on API/infra contracts
+- clear target audience (or link to [AUDIENCE_GUIDE.md](AUDIENCE_GUIDE.md) read path)
 
 Related enforcement:
 - see [ALIGNMENT.md](ALIGNMENT.md)

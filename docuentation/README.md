@@ -11,6 +11,7 @@ This folder contains the Phase 2 documentation for moving Cosmic Horizon past pr
 Files:
 
 - [EXECUTIVE_SUMMARY.md](EXECUTIVE_SUMMARY.md) — verbose executive summary for stakeholders
+- [AUDIENCE_GUIDE.md](AUDIENCE_GUIDE.md) — role-based read paths for scientists, operators, leadership, and HR
 - [ALIGNMENT.md](ALIGNMENT.md) — documentation alignment matrix and status
 - [PROGRAM_DIRECTION.md](PROGRAM_DIRECTION.md) — authoritative direction and prioritization guardrails
 - [NGVLA_MISSION_ALIGNMENT.md](NGVLA_MISSION_ALIGNMENT.md) — explicit ngVLA mission outcomes and planning rules
