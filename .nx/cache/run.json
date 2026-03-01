@@ -1,20 +1,20 @@
 {
   "run": {
-    "command": "nx run frontend-e2e:e2e",
-    "startTime": "2026-03-01T21:58:34.941Z",
-    "endTime": "2026-03-01T21:58:53.883Z",
+    "command": "nx run ui-theme:test --configuration=ci",
+    "startTime": "2026-03-01T22:21:16.096Z",
+    "endTime": "2026-03-01T22:21:16.138Z",
     "inner": false
   },
   "tasks": [
     {
-      "taskId": "frontend-e2e:e2e",
-      "target": "e2e",
-      "projectName": "frontend-e2e",
-      "hash": "8323277625524489685",
-      "startTime": "2026-03-01T21:58:34.955Z",
-      "endTime": "2026-03-01T21:58:53.862Z",
+      "taskId": "ui-theme:test:ci",
+      "target": "test",
+      "projectName": "ui-theme",
+      "hash": "639739138994394831",
+      "startTime": "2026-03-01T22:21:16.110Z",
+      "endTime": "2026-03-01T22:21:16.129Z",
       "params": "",
-      "cacheStatus": "cache-miss",
+      "cacheStatus": "local-cache-hit",
       "status": 0
     }
   ]
