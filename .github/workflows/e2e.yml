@@ -23,6 +23,7 @@ jobs:
           corepack prepare pnpm@latest --activate
 
       - name: Log in to Docker registry
+        if: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PAT != '' }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
