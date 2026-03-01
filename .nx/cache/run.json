@@ -1,21 +1,54 @@
 {
   "run": {
-    "command": "nx run ui-theme:test --configuration=ci",
-    "startTime": "2026-03-01T22:23:43.967Z",
-    "endTime": "2026-03-01T22:23:43.998Z",
+    "command": "nx run-many --target=test --all --configuration=ci --parallel=false",
+    "startTime": "2026-03-01T23:21:22.637Z",
+    "endTime": "2026-03-01T23:21:28.216Z",
     "inner": false
   },
   "tasks": [
     {
-      "taskId": "ui-theme:test:ci",
+      "taskId": "ui-visualization:test:ci",
       "target": "test",
-      "projectName": "ui-theme",
-      "hash": "639739138994394831",
-      "startTime": "2026-03-01T22:23:43.980Z",
-      "endTime": "2026-03-01T22:23:43.988Z",
+      "projectName": "ui-visualization",
+      "hash": "173830696233250629",
+      "startTime": "2026-03-01T23:21:22.681Z",
+      "endTime": "2026-03-01T23:21:22.700Z",
       "params": "",
       "cacheStatus": "local-cache-hit",
       "status": 0
+    },
+    {
+      "taskId": "ui-theme:test:ci",
+      "target": "test",
+      "projectName": "ui-theme",
+      "hash": "8257291566263641819",
+      "startTime": "2026-03-01T23:21:22.706Z",
+      "endTime": "2026-03-01T23:21:22.712Z",
+      "params": "",
+      "cacheStatus": "local-cache-hit",
+      "status": 0
+    },
+    {
+      "taskId": "frontend:test:ci",
+      "target": "test",
+      "projectName": "frontend",
+      "hash": "8354335084509426480",
+      "startTime": "2026-03-01T23:21:22.718Z",
+      "endTime": "2026-03-01T23:21:28.133Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 0
+    },
+    {
+      "taskId": "java-governance:test",
+      "target": "test",
+      "projectName": "java-governance",
+      "hash": "11782373796054069670",
+      "startTime": "2026-03-01T23:21:28.147Z",
+      "endTime": "2026-03-01T23:21:28.214Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 1
     }
   ]
 }
