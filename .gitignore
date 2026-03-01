@@ -1,0 +1,20 @@
+.env
+.env.prod
+.env.local
+.env.*.local
+node_modules/
+dist/
+**/dist/
+.angular/
+.pnpm-store/
+pnpm-store/
+*.log
+.DS_Store
+.vscode/
+
+# Ignore any logs directories anywhere in the tree
+**/logs/
+**/logs/**
+
+# Specific known log folder for data generator
+tools/data-generator/logs/
