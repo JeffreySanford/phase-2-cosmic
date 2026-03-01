@@ -1,9 +1,0 @@
-[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m ui-visualization [39m[27m[0m [2mlibs/ui-visualization/src/lib/ui-visualization/[22m[1mui-visualization.component.spec.ts[22m
-  UiVisualizationComponent
-    [32m√[39m [2mshould create (41 ms)[22m
-
-[1mTest Suites: [22m[1m[32m1 passed[39m[22m, 1 total
-[1mTests:       [22m[1m[32m1 passed[39m[22m, 1 total
-[1mSnapshots:   [22m0 total
-[1mTime:[22m        1.875 s, estimated 4 s
-[2mRan all test suites[22m[2m.[22m

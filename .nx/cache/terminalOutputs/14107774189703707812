@@ -1,9 +1,0 @@
-
-Linting "frontend"...
-
-[7m[1m[31m NX [39m[22m[27m  [31mCannot read properties of undefined (reading 'at')[39m
-
-Occurred while linting C:\repos\phase-2-cosmic\apps\frontend\src\app\base\environment\environment.component.ts\1_inline-template-environment.component.ts-1.component.html:2
-Rule: "@typescript-eslint/ban-ts-comment"
-Pass --verbose to see the stacktrace.
-
