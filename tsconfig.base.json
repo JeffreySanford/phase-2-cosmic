@@ -3,12 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "ui-theme": [
-        "libs/ui-theme/src/index.ts"
-      ],
-      "ui-visualization": [
-        "libs/ui-visualization/src/index.ts"
-      ]
+      "ui-theme": ["libs/ui-theme/src/index.ts"],
+      "ui-visualization": ["libs/ui-visualization/src/index.ts"]
     },
     "rootDir": "./",
     "sourceMap": true,
@@ -18,9 +14,6 @@
     "emitDecoratorMetadata": true,
     "target": "ES2019",
     "module": "commonjs",
-    "lib": [
-      "ES2019",
-      "DOM"
-    ]
+    "lib": ["ES2019", "DOM"]
   }
 }
