@@ -38,6 +38,8 @@ dist/cypress/
 .env.prod
 .env.local
 .env.*.local
+#. Local plain .env for secrets (do NOT commit)
+.env
 node_modules/
 dist/
 **/dist/
