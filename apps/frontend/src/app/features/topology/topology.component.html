@@ -1,4 +1,16 @@
 <div class="view-container">
-  <h1>Topology</h1>
-  <p>Topology/Traffic Graph will appear here.</p>
+  <div class="toolbar">
+    <h1>Topology</h1>
+    <div class="actions">
+      <button (click)="refresh()">Refresh</button>
+    </div>
+  </div>
+
+  <div class="meta">
+    <p class="hint">Interactive topology graph. Click nodes for details (console).</p>
+    <div *ngIf="loading" class="loading">Loading topology…</div>
+    <div *ngIf="lastError" class="error">{{ lastError }}</div>
+  </div>
+
+  <div #graph class="topology-graph" aria-label="Topology graph"></div>
 </div>

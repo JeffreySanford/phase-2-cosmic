@@ -1,5 +1,11 @@
 # Storage Governance & Catalog Integration
 
+Alignment anchors
+- Frontend UX source of truth: [../FRONTEND_UI.md](../FRONTEND_UI.md)
+- Execution backlog: [../../TODO.md](../../TODO.md)
+- Delivery plan: [../../ROADMAP.md](../../ROADMAP.md)
+
+
 The governance layer provides the logical control plane for the storage system: dataset identity, provenance, lifecycle orchestration, access control, and audit manifests.
 
 Metadata categories

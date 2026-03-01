@@ -1,70 +1,73 @@
-# Operational Streaming Plane (Go)
+# Operational Streaming Plane
 
-Purpose
+Alignment anchors
+- Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
+- Execution backlog: [../TODO.md](../TODO.md)
+- Delivery plan: [../ROADMAP.md](../ROADMAP.md)
 
-The Operational Streaming Plane is responsible for delivering low-latency operational visibility and protecting downstream systems from surge. It is intentionally lightweight and stateless where possible, optimized for throughput and graceful degradation.
+The Operational Streaming Plane is responsible for low-latency telemetry handling and protective flow control.
 
-Responsibilities
+## 1. Scope
 
-- Telemetry ingestion from instruments, agents, and HPC job schedulers
+Core responsibilities:
+- ingest telemetry/events from generators and edge sources
+- apply lightweight validation and shaping
+- expose operational metrics for dashboards and alerting
+- hand off curated records to governance workflows when durable semantics are required
 
-- Light validation, deduplication, and schema enforcement
+## 2. Status
 
-- Windowed aggregation and feature extraction for dashboards and automated runbooks
+### Implemented
+- local data-generator flow
+- Kafka-based ingest path in local environment
+- Prometheus/Grafana observability baseline
 
-- Bounded fan-out and backpressure enforcement
+### In progress
+- durable curated-event handoff guarantees to governance plane
+- topic/schema governance and replay controls
 
-- Forwarding curated events to the Governance Plane when durable records are required
+### Planned
+- full go-processor service layer with hardened backpressure/degradation modes
 
-Sequence: telemetry to governance (simplified)
+## 3. Flow model
 
 ```mermaid
 sequenceDiagram
-  participant T as Telescope
-  participant B as Broker (Kafka)
-  participant G as Go Gateway
-  participant UI as Dashboards
-  participant API as Governance API
+  participant SRC as Source (Generator/Edge)
+  participant BRK as Broker
+  participant OPS as Streaming Processor
+  participant OBS as Metrics Stack
+  participant GOV as Governance API
 
-  T->>B: emit telemetry event
-  B->>G: deliver event
-  G->>G: validate & triage
-  alt low-latency
-    G->>UI: aggregated metrics
-  end
-  alt requires-durable-record
-    G->>API: create provenance-ready event
-    API-->>G: ack
-  else if high-load
-    G->>BP: invoke degradation
-  end
-
+  SRC->>BRK: publish event
+  BRK->>OPS: deliver event
+  OPS->>OPS: validate / shape / route
+  OPS->>OBS: emit operational metrics
+  OPS->>GOV: forward curated governance event
 ```
 
-Design considerations
+## 4. Frontend dependencies
 
-- Use topic partitioning and keyed events to preserve ordering when required.
+Frontend pages depending on streaming-plane outputs:
+- `Overview`
+- `Telemetry`
+- `Topology`
+- portions of `Diagnostics`
 
-- Implement idempotent event submission to the Governance API to tolerate retries.
+Required UX properties:
+- data freshness signaling
+- graceful stale-state behavior
+- clear distinction between missing data and healthy zero values
 
-- Provide operator-facing modes: normal, degraded, and emergency (with strict sampling policies).
+## 5. Reliability priorities
 
-Operational controls
+Near-term priorities:
+1. idempotent handoff semantics toward governance APIs
+2. trace-id propagation across broker and API boundaries
+3. DLQ and replay runbook for failed processing flows
 
-- Rate limiting and admission control at the broker and gateway
+## 6. Related docs
 
-- Circuit breakers and graceful sampling when downstream latency increases
-
-- Metrics and SLOs exposed via Prometheus and synthetic checks for contract compliance
-
-See also: messaging integration and role assignments in `documentation/phase-2-realworld-spec/MESSAGING_INTEGRATION.md`.
-
-## Legend
-
-- `Telescope`: physical instrument or edge producer (blue)
-
-- `Broker`: broker or streaming system (green)
-
-- `Gateway`: processing/gateway (orange)
-
-- `UI/API`: dashboards and governance endpoints (purple)
+- [MESSAGING_INTEGRATION.md](MESSAGING_INTEGRATION.md)
+- [INFRA_TOPOLOGY.md](INFRA_TOPOLOGY.md)
+- [GOVERNANCE_CONTROL_PLANE.md](GOVERNANCE_CONTROL_PLANE.md)

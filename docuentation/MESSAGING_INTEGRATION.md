@@ -1,5 +1,11 @@
 # Messaging Integration: Pulsar, Kafka, RabbitMQ (Phase 2)
 
+Alignment anchors
+
+- Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
+- Execution backlog: [../TODO.md](../TODO.md)
+- Delivery plan: [../ROADMAP.md](../ROADMAP.md)
+
 ## Overview
 
 This document prescribes roles, integration patterns, connectors, and operational guidance for combining Apache Pulsar, Apache Kafka (Confluent-compatible), and RabbitMQ in Phase 2.
@@ -133,62 +139,17 @@ flowchart LR
 
 ### Control & orchestration flow
 
-```
-
-mermaid
+```mermaid
 flowchart LR
   UI[Operator_UI] --> Rabbit[Control_Queue_RabbitMQ]
   Rabbit --> Governance[Java_Governance_API]
   Governance --> KafkaAudit[Kafka_Audit_Topic]
   KafkaAudit --> Archiver[Kafka_Connect_S3]
-  %% Legend
-    %% Compact Legend (bottom-right)
-  subgraph Legend[ ]
-    direction TB
-    L_control[Control]
-    L_gov[Gov]
-    L_audit[Audit]
-    L_control[Control]
-    L_gov[Gov]
-    L_audit[Audit]
-  end
-    style L_control fill:#e31a1c,stroke:#74110b,color:#ffffff,font-size:10px
-    style L_gov fill:#6a3d9a,stroke:#3b1f4d,color:#ffffff,font-size:10px
-    style L_audit fill:#ffcc00,stroke:#b88600,color:#000000,font-size:10px
-    style L_control fill:#e31a1c,stroke:#74110b,color:#ffffff,font-size:10px
-    style L_gov fill:#6a3d9a,stroke:#3b1f4d,color:#ffffff,font-size:10px
-    style L_audit fill:#ffcc00,stroke:#b88600,color:#000000,font-size:10px
-  classDef legendClass font-size:10px;
-  class L_control,L_gov,L_audit,L_control,L_gov,L_audit legendClass
-    L_control[Control]
-    L_gov[Governance]
-    L_audit[Audit]
-  end
-
-  style L_control fill:#e31a1c,stroke:#74110b
-  style L_gov fill:#6a3d9a,stroke:#3b1f4d
-  style L_audit fill:#ffcc00,stroke:#b88600
-
-  %% Compact Legend (bottom-right)
-  subgraph Legend[ ]
-    direction TB
-    L_control[Control]
-    L_gov[Gov]
-    L_audit[Audit]
-  end
-    style L_control fill:#e31a1c,stroke:#74110b,color:#ffffff,font-size:10px
-    style L_gov fill:#6a3d9a,stroke:#3b1f4d,color:#ffffff,font-size:10px
-    style L_audit fill:#ffcc00,stroke:#b88600,color:#000000,font-size:10px
-  classDef legendClass font-size:10px;
-  class L_control,L_gov,L_audit legendClass
-
 ```
 
 ### Dev / local topology (simplified)
 
-```
-
-mermaid
+```mermaid
 flowchart LR
   subgraph Dev
     DG[Data_Generator] --> PulsarEdge
@@ -200,47 +161,6 @@ flowchart LR
     Kafka --> ETL
     ETL --> DataLake
   end
-  %% Legend
-    %% Compact Legend (bottom-right)
-  subgraph Legend[ ]
-    direction TB
-    L_dev[Dev]
-    L_connector[Connector]
-    L_storage[Storage]
-    L_dev[Dev]
-    L_connector[Connector]
-    L_storage[Storage]
-  end
-    style L_dev fill:#1f78b4,stroke:#0b3a66,color:#ffffff,font-size:10px
-    style L_connector fill:#33a02c,stroke:#1b5e20,color:#ffffff,font-size:10px
-    style L_storage fill:#ff7f00,stroke:#b35400,color:#ffffff,font-size:10px
-    style L_dev fill:#1f78b4,stroke:#0b3a66,color:#ffffff,font-size:10px
-    style L_connector fill:#33a02c,stroke:#1b5e20,color:#ffffff,font-size:10px
-    style L_storage fill:#ff7f00,stroke:#b35400,color:#ffffff,font-size:10px
-  classDef legendClass font-size:10px;
-  class L_dev,L_connector,L_storage,L_dev,L_connector,L_storage legendClass
-    L_dev[Dev Services]
-    L_connector[Connector]
-    L_storage[Storage]
-  end
-
-  style L_dev fill:#1f78b4,stroke:#0b3a66
-  style L_connector fill:#33a02c,stroke:#1b5e20
-  style L_storage fill:#ff7f00,stroke:#b35400
-
-  %% Compact Legend (bottom-right)
-  subgraph Legend[ ]
-    direction TB
-    L_dev[Dev]
-    L_connector[Connector]
-    L_storage[Storage]
-  end
-    style L_dev fill:#1f78b4,stroke:#0b3a66,color:#ffffff,font-size:10px
-    style L_connector fill:#33a02c,stroke:#1b5e20,color:#ffffff,font-size:10px
-    style L_storage fill:#ff7f00,stroke:#b35400,color:#ffffff,font-size:10px
-  classDef legendClass font-size:10px;
-  class L_dev,L_connector,L_storage legendClass
-
 ```
 
 ## Example recommendations for `docker/dev-compose.yml`

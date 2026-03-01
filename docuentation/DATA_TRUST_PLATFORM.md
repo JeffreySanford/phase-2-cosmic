@@ -1,5 +1,11 @@
 # Data Trust Platform
 
+Alignment anchors
+- Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
+- Execution backlog: [../TODO.md](../TODO.md)
+- Delivery plan: [../ROADMAP.md](../ROADMAP.md)
+
+
 Cosmic Horizon unites the two planes into a Data Trust Platform — a system designed to deliver both operational velocity and institutional trust.
 
 Principles

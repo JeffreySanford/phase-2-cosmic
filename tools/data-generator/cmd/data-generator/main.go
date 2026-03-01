@@ -1,10 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
-	"bufio"
 	"io"
 	"math/rand"
 	"net/http"
@@ -36,13 +36,14 @@ func init() {
 
 func main() {
 	var (
-		rate        = flag.Int("rate", 125000, "bytes/sec to emit (approx)")
-		payloadSize = flag.Int("payload-size", 512, "bytes per record")
-		duration    = flag.Duration("duration", 0, "total duration (0 = run forever)")
-		metricsAddr = flag.String("metrics-addr", ":9100", "metrics listen address")
-		noStdout    = flag.Bool("no-stdout", false, "if set, do not write raw payloads to stdout")
-		sinkFlag    = flag.String("sink", "", "sink target; supported: file:<path>")
-		auditEvery  = flag.Int("audit-every", 1, "write an audit log line every N records (1 = every record)")
+		rate         = flag.Int("rate", 125000, "bytes/sec to emit (approx)")
+		payloadSize  = flag.Int("payload-size", 512, "bytes per record")
+		duration     = flag.Duration("duration", 0, "total duration (0 = run forever)")
+		metricsAddr  = flag.String("metrics-addr", ":9100", "metrics listen address")
+		noStdout     = flag.Bool("no-stdout", false, "if set, do not write raw payloads to stdout")
+		sinkFlag     = flag.String("sink", "", "sink target; supported: file:<path>")
+		auditEvery   = flag.Int("audit-every", 1, "write an audit log line every N records (1 = every record)")
+		rotateSizeMB = flag.Int("rotate-size-mb", 50, "rotate logs when they exceed this size in MB (0 to disable)")
 	)
 	flag.Parse()
 
@@ -61,11 +62,18 @@ func main() {
 	// Prepare optional sink writer
 	var sinkWriter io.Writer
 	var sinkFile *os.File
+	var sinkPath string
 	var auditWriter *bufio.Writer
 	var auditFile *os.File
+	var auditPath string
 	var recordCounter int64
+	var rotateThreshold int64
 	if strings.HasPrefix(*sinkFlag, "file:") {
 		path := strings.TrimPrefix(*sinkFlag, "file:")
+		sinkPath = path
+		if *rotateSizeMB > 0 {
+			rotateThreshold = int64(*rotateSizeMB) * 1024 * 1024
+		}
 		// ensure directory exists
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to create sink directory: %v\n", err)
@@ -79,7 +87,7 @@ func main() {
 		sinkFile = f
 		sinkWriter = f
 		// open an English audit log in same dir
-		auditPath := filepath.Join(filepath.Dir(path), "payloads.log")
+		auditPath = filepath.Join(filepath.Dir(path), "payloads.log")
 		af, err := os.OpenFile(auditPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to open audit log file: %v\n", err)
@@ -95,6 +103,47 @@ func main() {
 			_ = sinkFile.Sync()
 			_ = sinkFile.Close()
 		}()
+	}
+
+	// helper to rotate sink and audit files when threshold is exceeded
+	rotateIfNeeded := func() {
+		if sinkFile == nil || rotateThreshold <= 0 || sinkPath == "" {
+			return
+		}
+		fi, err := sinkFile.Stat()
+		if err != nil {
+			return
+		}
+		if fi.Size() < rotateThreshold {
+			return
+		}
+		// flush and close current files
+		if auditWriter != nil {
+			_ = auditWriter.Flush()
+		}
+		_ = sinkFile.Sync()
+		_ = sinkFile.Close()
+		if auditFile != nil {
+			_ = auditFile.Sync()
+			_ = auditFile.Close()
+		}
+		// rotate by renaming with timestamp
+		ts := time.Now().UTC().Format("20060102T150405Z")
+		rotatedSink := sinkPath + "." + ts
+		rotatedAudit := auditPath + "." + ts
+		_ = os.Rename(sinkPath, rotatedSink)
+		_ = os.Rename(auditPath, rotatedAudit)
+		// reopen new files
+		f, err := os.OpenFile(sinkPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		if err == nil {
+			sinkFile = f
+			sinkWriter = f
+		}
+		af, err := os.OpenFile(auditPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		if err == nil {
+			auditFile = af
+			auditWriter = bufio.NewWriter(af)
+		}
 	}
 
 	ticker := time.NewTicker(time.Second)
@@ -135,6 +184,8 @@ func main() {
 				bytesProduced.Add(float64(len(payload)))
 				recordsProduced.Inc()
 			}
+			// check for rotation after writing this second's payloads
+			rotateIfNeeded()
 		}
 		if *duration > 0 && time.Since(start) > *duration {
 			shutdown(srv)

@@ -1,4 +1,12 @@
 <div class="view-container">
   <h1>Dashboard</h1>
   <p>This is the dashboard view where ingestion rates, backlog, and health indicators will be shown.</p>
+  <section class="promql-section">
+    <h2>Quick Signals</h2>
+    <div class="promql-cards">
+      <app-promql-card title="Ingest rate (1m)" query='rate(generator_bytes_produced_total[1m])'></app-promql-card>
+      <app-promql-card title="Total bytes" query='generator_bytes_produced_total'></app-promql-card>
+      <app-promql-card title="Generator up" query='up{job="data-generator"}'></app-promql-card>
+    </div>
+  </section>
 </div>

@@ -1,5 +1,11 @@
 # Provenance Model & Lineage
 
+Alignment anchors
+- Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
+- Execution backlog: [../TODO.md](../TODO.md)
+- Delivery plan: [../ROADMAP.md](../ROADMAP.md)
+
+
 This document defines provenance concepts and provides examples for constructing verifiable lineage graphs for SRDPs.
 
 Provenance primitives
@@ -126,9 +132,7 @@ Provenance must record actions at each lifecycle stage:
 
 ## Mermaid: provenance & lifecycle overview
 
-```
-
-mermaid
+```mermaid
 flowchart LR
   ingest[Ingest Gateway]
   ingest --> hot[Hot Store (NVMe/SSD)]
@@ -141,47 +145,6 @@ flowchart LR
   provenance --> catalog[Metadata Catalog]
   catalog --> audit[Signed Audit Manifest]
   audit --> anchor[External Anchor / Merkle]
-
-  %% Legend
-    %% Compact Legend (bottom-right)
-  subgraph Legend[ ]
-    direction TB
-    provenance[Provenance]
-    audit[Audit]
-    L_ingest[Ingest]
-    L_processing[Processing]
-    L_storage[Storage]
-    L_gov[Gov]
-    L_metrics[Metrics]
-    L_ui[Ui]
-  end
-    style provenance fill:#33a02c,stroke:#1b5e20,color:#ffffff,font-size:10px
-    style audit fill:#ffcc00,stroke:#b88600,color:#000000,font-size:10px
-    style L_ingest fill:#1f78b4,stroke:#0b3a66,color:#ffffff,font-size:10px
-    style L_processing fill:#33a02c,stroke:#1b5e20,color:#ffffff,font-size:10px
-    style L_storage fill:#ff7f00,stroke:#b35400,color:#ffffff,font-size:10px
-    style L_gov fill:#6a3d9a,stroke:#3b1f4d,color:#ffffff,font-size:10px
-    style L_metrics fill:#ffcc00,stroke:#b88600,color:#000000,font-size:10px
-    style L_ui fill:#e31a1c,stroke:#74110b,color:#ffffff,font-size:10px
-  classDef legendClass font-size:10px;
-  class provenance,audit,L_ingest,L_processing,L_storage,L_gov,L_metrics,L_ui legendClass
-    L_ingest[Ingest]
-    L_processing[Processing]
-    L_storage[Storage]
-    L_gov[Governance]
-    L_metrics[Metrics]
-    L_ui[UI]
-  end
-
-  style provenance fill:#33a02c,stroke:#1b5e20
-  style audit fill:#ffcc00,stroke:#b88600
-  style L_ingest fill:#1f78b4,stroke:#0b3a66
-  style L_processing fill:#33a02c,stroke:#1b5e20
-  style L_storage fill:#ff7f00,stroke:#b35400
-  style L_gov fill:#6a3d9a,stroke:#3b1f4d
-  style L_metrics fill:#ffcc00,stroke:#b88600
-  style L_ui fill:#e31a1c,stroke:#74110b
-
 ```
 
 ## Recommendations

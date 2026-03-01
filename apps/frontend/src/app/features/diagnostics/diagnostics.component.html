@@ -1,4 +1,36 @@
 <div class="view-container">
   <h1>Diagnostics & Benchmarks</h1>
-  <p>Placeholder for smoke tests, metrics, and logs.</p>
+
+  <p class="lead">Passive and optional active diagnostics produced by the `data-generator` container.</p>
+
+  <div class="controls">
+    <button mat-raised-button color="primary" (click)="fetchIndex()">Refresh index</button>
+    <button mat-stroked-button (click)="viewSystemSpecs()" [disabled]="loading">View system-specs.txt</button>
+    <a *ngIf="index?.files?.includes('system-specs.txt')" class="download" href="/api/diagnostics/system-specs" download>Download system-specs.txt</a>
+  </div>
+
+  <div *ngIf="loading" class="status">Loading…</div>
+  <div *ngIf="error" class="error">Error: {{ error }}</div>
+
+  <section *ngIf="index">
+    <h2>Files</h2>
+    <ul>
+      <li *ngFor="let f of index.files">{{ f }}</li>
+    </ul>
+    <p class="muted">Stored path: {{ index.path }}</p>
+  </section>
+
+  <section class="promql-section">
+    <h2>Live signals</h2>
+    <div class="promql-cards">
+      <app-promql-card title="Ingest rate (1m)" query='rate(generator_bytes_produced_total[1m])'></app-promql-card>
+      <app-promql-card title="Total bytes" query='generator_bytes_produced_total'></app-promql-card>
+      <app-promql-card title="Generator up" query='up{job="data-generator"}'></app-promql-card>
+    </div>
+  </section>
+
+  <section *ngIf="systemSpecs">
+    <h2>system-specs.txt</h2>
+    <pre class="specs">{{ systemSpecs }}</pre>
+  </section>
 </div>

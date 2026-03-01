@@ -1,39 +1,49 @@
 # Go Data Generator Specification
 
+Alignment anchors
+
+- Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
+- Execution backlog: [../TODO.md](../TODO.md)
+- Delivery plan: [../ROADMAP.md](../ROADMAP.md)
+
 Status: Prototype (Phase 2)
 
 ## Overview
 
 This document specifies the `tools/data-generator` prototype implemented in Go (recommended). The generator simulates raw ingest traffic for the Operational Streaming Plane and provides modes to approximate production rates (7.5–8 GB/s) and low-rate functional tests (1 Mb/s).
 
-Recent flags added (implementation notes)
---------------------------------------------------
+### Recent flags added (implementation notes)
+
 - `--sink=file:<path>`: write raw payloads to the given file path instead of stdout. Useful for local capture and testing without spewing binary to logs.
 - `--audit-every=<N>`: write a human-readable audit line every N records to `payloads.log` when using `--sink=file:`. Set high (e.g. 1000) or 0 to reduce verbosity.
 - `--rotate-size-mb=<N>`: rotate `payloads.bin` and `payloads.log` when the sink file exceeds N MiB (default 50). Rotated files are renamed with UTC timestamp suffix.
 
-Scaling & deployment notes
---------------------------------------------------
+### Scaling & deployment notes
+
 Local scaling:
+
 - The generator is single-process by default and accepts `--rate` and `--payload-size`. For higher throughput on a single host, run multiple instances and partition the target rate across them. Use `--sink=file:logs/payloads.<id>.bin` per instance to avoid contention.
 - Recommended local worker count: number of logical cores minus one to leave a core free for OS tasks. Use `--audit-every` to reduce logging overhead when running many workers.
 
 Production scaling:
+
 - For production-level throughput (7.5–8 GB/s ≈ 60–64 Gbit/s) use either:
   - Dedicated high-performance hosts with 100GbE and NVMe (single-host approach), or
   - A distributed cluster: many smaller hosts each running multiple generator instances (recommended for cost and reliability).
 - Container orchestration: run the generator in Kubernetes. Expose Prometheus metrics (`generator_bytes_produced_total`) and use a Horizontal Pod Autoscaler (HPA) driven by a Prometheus metric adapter to scale replicas to meet a target aggregate throughput.
 - When targeting Kafka or other messaging backends, run multiple producers and partition keys to achieve parallelism.
 
-Examples
---------------------------------------------------
+### Examples
+
 Low-rate smoke test:
-```
+
+```bash
 ./data-generator --payload-size=512 --rate=125000 --duration=300s
 ```
 
 High-rate (per-worker) example for distributed tests:
-```
+
+```bash
 ./data-generator --payload-size=4096 --rate=937500000 --duration=30s --metrics-addr=:9090
 ```
 
@@ -130,10 +140,6 @@ Refer to `tools/data-generator/README.md` for local launcher scripts and Kuberne
 ## Mermaid: High-level flow
 
 ```mermaid
-
-```
-
-mermaid
 flowchart LR
   A[Generator (Go)] --> B[Kafka Topic]
   B --> C[Go Streaming Processors]
@@ -167,20 +173,14 @@ flowchart LR
 
 Example steady run (8 producers):
 
-```
-
-bash
+```bash
 ./data-generator --target kafka://localhost:9092/topic-ingest --parallel 8 --payload-size 4096 --rate 937500000 --duration 30s --metrics-addr :9090
-
 ```
 
 Low-rate smoke (1 Mb/s):
 
-```
-
-bash
+```bash
 ./data-generator --target kafka://localhost:9092/topic-ingest --payload-size 512 --rate 125000 --duration 300s
-
 ```
 
 ## CI / Tests

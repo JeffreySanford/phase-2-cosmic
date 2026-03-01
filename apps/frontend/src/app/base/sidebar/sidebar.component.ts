@@ -19,6 +19,8 @@ export class SidebarComponent {
     { path: '/landing', label: 'Home', icon: '🏠' },
     { path: '/view', label: 'Viewer', icon: '👀' },
     { path: '/dashboard', label: 'Dashboard', icon: '📈' },
+    { path: '/telemetry', label: 'Telemetry', icon: '📡' },
+    { path: '/jobs', label: 'Jobs', icon: '🗂️' },
     { path: '/visualizations', label: 'Visualizations', icon: '📊' },
     { path: '/topology', label: 'Topology', icon: '🗺️' },
     { path: '/diagnostics', label: 'Diagnostics', icon: '🛠️' },

@@ -1,5 +1,11 @@
 # Executive Summary — Cosmic Horizon Storage Architecture (Phase 2)
 
+Alignment anchors
+- Frontend UX source of truth: [../FRONTEND_UI.md](../FRONTEND_UI.md)
+- Execution backlog: [../../TODO.md](../../TODO.md)
+- Delivery plan: [../../ROADMAP.md](../../ROADMAP.md)
+
+
 Overview
 
 The Cosmic Horizon storage architecture delivers a hybrid, tiered, and federated model purpose-built for exascale radio astronomy operations such as the ngVLA. It recognizes that sustained ingest at 7.5–8 GB/s, annual archive growth in the hundreds of petabytes, and multi-decade reproducibility requirements cannot be satisfied by a single monolithic system. Instead, the architecture separates physical storage from logical governance, combining localized high-speed ingest buffers, national HPC archives for primary storage and processing, and cloud-based distribution tiers for global access. A centralized metadata control plane—implemented in the Governance & Orchestration Control Plane—provides dataset identity, lineage, and policy enforcement.

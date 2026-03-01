@@ -1,12 +1,26 @@
 import { TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 import { AppComponent } from './app.component';
-import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
+import { SidebarService } from './base/sidebar/sidebar.service';
+
+@Component({ selector: 'app-header', template: '' })
+class HeaderStubComponent {}
+@Component({ selector: 'app-sidebar', template: '' })
+class SidebarStubComponent {}
+@Component({ selector: 'app-mainstage', template: '' })
+class MainstageStubComponent {}
+@Component({ selector: 'app-footer', template: '' })
+class FooterStubComponent {}
 
 describe('AppComponent', () => {
   beforeEach(async () => {
-    const { AppModule } = await import('./app.module');
     await TestBed.configureTestingModule({
-      imports: [AppModule, RouterModule.forRoot([])],
+      declarations: [AppComponent, HeaderStubComponent, SidebarStubComponent, MainstageStubComponent, FooterStubComponent],
+      providers: [
+        { provide: Router, useValue: { navigate: () => Promise.resolve(true) } },
+        { provide: SidebarService, useValue: { setCollapsed: () => undefined } },
+      ],
     }).compileComponents();
   });
 

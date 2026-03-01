@@ -1,5 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 import { DashboardComponent } from './dashboard.component';
+
+@Component({ selector: 'app-promql-card', template: '' })
+class PromqlCardStubComponent {}
 
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
@@ -7,7 +11,7 @@ describe('DashboardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [DashboardComponent],
+      declarations: [DashboardComponent, PromqlCardStubComponent],
     }).compileComponents();
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;

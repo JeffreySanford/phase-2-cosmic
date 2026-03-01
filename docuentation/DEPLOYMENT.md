@@ -1,49 +1,80 @@
-# Deployment & Operational Considerations
+# Deployment & Operational Posture
 
-This document provides deployment guidance for Phase 2. It focuses on operational separation, scaling, and security.
+Alignment anchors
+- Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
+- Execution backlog: [../TODO.md](../TODO.md)
+- Delivery plan: [../ROADMAP.md](../ROADMAP.md)
 
-Suggested deployment topology
+This document separates current deployment reality from target production architecture.
 
-- Streaming Plane (stateless, horizontally scalable)
+## 1. Current deployment reality (implemented)
 
-  - Language: Go
+Local development stack:
+- Docker Compose services for broker, storage, observability, generator, and Java services
+- Angular frontend served via local dev workflow
+- governance API in baseline mode (not yet production hardened)
 
-  - Components: Ingestors, Gateway (triage & aggregation), Backpressure controller
+Primary command path:
+- `pnpm start:all` (developer workflow)
 
-  - Infrastructure: Kubernetes with HPA, Kafka/Pulsar clusters, Prometheus, Grafana
+## 2. Target deployment posture (planned)
 
-- Governance Plane (stateful, durable)
+Production-oriented shape:
+- stateless operational streaming services with horizontal scaling
+- stateful governance control plane with durable storage
+- segmented network boundaries with explicit API ingress
+- policy/audit controls as first-class runtime components
 
-  - Language: Java (Spring/Quarkus)
+## 3. Environment tiers
 
-  - Components: Governance API, Catalog DB (ACID), Provenance Store (graph DB or relational), Job Orchestrator
+### Dev
+- permissive defaults for speed
+- diagnostics and proxy features available
 
-  - Infrastructure: Kubernetes StatefulSets, Postgres (or CockroachDB for geo-redundancy), Neo4j/JanusGraph (optional), object storage for manifests (S3-compatible)
+### Staging
+- production-like topology
+- hardened auth and policy checks
+- full contract and reliability testing
 
-Security & isolation
+### Production
+- strict access control
+- minimal exposed debug surfaces
+- audited change and incident workflows
 
-- Network segmentation: place streaming plane and governance plane in distinct network zones with a restricted API gateway between them.
+## 4. Security controls by tier
 
-- Authentication: mTLS between services; JWTs or signed tokens for user-facing requests.
+Minimum controls to reach staging:
+- protected API boundaries
+- authN/authZ on governance operations
+- restricted diagnostics endpoints
+- structured audit events for write actions
 
-- Authorization: RBAC backed by a central policy engine (OPA or similar) integrated with the Governance API.
+## 5. Operational SLO categories
 
-Operational testing
+Track these categories:
+- API availability and error rate
+- orchestration latency and queue depth
+- ingestion health and lag
+- frontend data freshness and stale-state frequency
 
-- Contract tests: automated tests that validate event schemas and Governance API interactions.
+## 6. Frontend deployment requirements
 
-- Load tests: simulate production telemetry volume to validate gateway degradation policies.
+- environment badge and freshness indicators enabled
+- clear distinction between live and mocked data
+- route-level failure and stale-state UX active in production builds
 
-- Chaos tests: validate graceful degradation and recovery from broker outages and extreme load.
+## 7. Release readiness checklist
 
-Monitoring & SLOs
+Before promoting to next tier:
+1. `quality:ci` green
+2. OpenAPI + fixtures current
+3. known security exceptions reviewed
+4. frontend jobs workflow validated end-to-end
+5. operational dashboards and alerts updated
 
-- Streaming Plane: P95 latency < 1s for aggregated operational signals; error ratio < 0.1%.
+## 8. Related docs
 
-- Governance Plane: catalog write latency within committed SLA; provenance consistency checks succeed on each ingest.
-
-Storage lifecycle
-
-- Short-term: high-throughput object store for intermediate artifacts.
-
-- Long-term: immutable, signed manifests and hash anchors stored in an archival store with replication and retention policies.
+- [INFRA_TOPOLOGY.md](INFRA_TOPOLOGY.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [TESTING_REQUIREMENTS.md](TESTING_REQUIREMENTS.md)
+- [PROGRAM_DIRECTION.md](PROGRAM_DIRECTION.md)

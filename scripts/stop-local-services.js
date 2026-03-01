@@ -5,7 +5,8 @@ const { execSync } = require('child_process');
 const os = require('os');
 function tryCmd(cmd) {
   try {
-    execSync(cmd, { stdio: 'inherit' });
+    // run silently to avoid noisy "process not found" messages
+    execSync(cmd, { stdio: 'ignore' });
   } catch (e) {
     // ignore errors
   }
