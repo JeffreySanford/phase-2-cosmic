@@ -1,4 +1,40 @@
-.env
+# Node
+node_modules/
+pnpm-lock.yaml
+pnpm-store/
+
+# Nx & caches
+.nx/
+.nx/cache/
+.nx/cache/*
+.nx/terminalOutputs/
+
+# Build outputs
+dist/
+build/
+coverage/
+apps/coverage/
+
+# Logs
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Cypress / test artifacts
+dist/cypress/
+**/screenshots/
+**/videos/
+
+# Java/Maven
+**/target/
+!apps/java-governance/pom.xml.env
 .env.prod
 .env.local
 .env.*.local
