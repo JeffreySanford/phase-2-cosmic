@@ -1,7 +1,16 @@
 {
   "npmScope": "cosmich",
   "implicitDependencies": {},
-  "tasksRunnerOptions": {},
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "@nx/nx-cloud",
+      "options": {
+        "accessToken": "",
+        "canTrackAnalytics": false,
+        "showUsageWarnings": true
+      }
+    }
+  },
   "projects": {
     "frontend": "apps/frontend/project.json",
     "frontend-e2e": "apps/frontend-e2e/project.json"
