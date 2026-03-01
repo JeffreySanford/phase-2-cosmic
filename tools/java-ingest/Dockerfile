@@ -1,4 +1,4 @@
-FROM maven:3.9.4-eclipse-temurin-17 as builder
+FROM maven:3.9.4-eclipse-temurin-17 AS builder
 WORKDIR /workspace
 COPY pom.xml .
 COPY src ./src

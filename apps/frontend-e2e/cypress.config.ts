@@ -13,6 +13,13 @@ export default defineConfig({
       ciWebServerCommand: 'pnpm exec nx run frontend:serve-static',
       ciBaseUrl: 'http://localhost:4200',
     }),
+    // If loading the support file fails in some environments, disable it for now
+    supportFile: false,
+    // Ensure Cypress looks for specs in the app e2e folder
+    specPattern: [
+      'apps/frontend-e2e/src/**/*.cy.{js,jsx,ts,tsx}',
+      'apps/frontend-e2e/src/**/*.spec.{js,jsx,ts,tsx}'
+    ],
     baseUrl: 'http://localhost:4200',
   },
 });

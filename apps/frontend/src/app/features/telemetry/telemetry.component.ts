@@ -19,7 +19,10 @@ type Point = { t: number; v: number };
   selector: 'app-telemetry',
   templateUrl: './telemetry.component.html',
   styleUrls: ['./telemetry.component.scss'],
-  standalone: false
+  standalone: false,
+  host: {
+    'data-component-id': 'telemetry'
+  }
 })
 export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartEl!: ElementRef<HTMLDivElement>;

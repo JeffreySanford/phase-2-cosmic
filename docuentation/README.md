@@ -13,6 +13,10 @@ Files:
 - [EXECUTIVE_SUMMARY.md](EXECUTIVE_SUMMARY.md) — verbose executive summary for stakeholders
 - [ALIGNMENT.md](ALIGNMENT.md) — documentation alignment matrix and status
 - [PROGRAM_DIRECTION.md](PROGRAM_DIRECTION.md) — authoritative direction and prioritization guardrails
+- [NGVLA_MISSION_ALIGNMENT.md](NGVLA_MISSION_ALIGNMENT.md) — explicit ngVLA mission outcomes and planning rules
+- [MISSION_TO_CAPABILITY_TRACE.md](MISSION_TO_CAPABILITY_TRACE.md) — mission outcomes mapped to implemented/in-progress/planned capabilities
+- [MISSION_GATES.md](MISSION_GATES.md) — release readiness criteria tied to mission outcomes
+- [DECISIONS.md](DECISIONS.md) — mission-critical architecture and scope decision log
 - [PROFESSIONAL_CONSOLE_SPEC.md](PROFESSIONAL_CONSOLE_SPEC.md) — single-source professional console product specification
 - [API_CONTRACT_STATUS.md](API_CONTRACT_STATUS.md) — implemented vs target API contract status matrix
 

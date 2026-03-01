@@ -94,7 +94,7 @@ class SsrService {
 
     try {
       const indexHtmlRaw = readFileSync(join(process.cwd(), 'apps', 'frontend', 'src', 'index.html'), 'utf8');
-      const transformed = await viteServer.transformIndexHtml(req.originalUrl, indexHtmlRaw);
+      let transformed = await viteServer.transformIndexHtml(req.originalUrl, indexHtmlRaw);
       const tmpDir = join(process.cwd(), '.angular', 'dev_ssr');
       try {
         mkdirSync(tmpDir, { recursive: true });
@@ -102,24 +102,50 @@ class SsrService {
         void 0;
       }
       const tmpIndex = join(tmpDir, 'index.server.html');
+      // Ensure the transformed index contains a doctype and an <app-root> element
+      try {
+        if (!/<!doctype/i.test(transformed)) {
+          transformed = '<!DOCTYPE html>\n' + transformed;
+        }
+        if (!/<app-root\b/i.test(transformed)) {
+          transformed = transformed.replace(/<\/body>/i, '  <app-root></app-root>\n</body>');
+        }
+      } catch (e) {
+        console.warn('Failed to normalize transformed index for SSR:', e);
+      }
+
       writeFileSync(tmpIndex, transformed, 'utf8');
 
       const mod = await viteServer.ssrLoadModule('/apps/frontend/src/main.server.ts');
       const bootstrapFn = (mod && (mod.default || mod.bootstrap)) as any;
+      try {
+        // Debug: log which index file and a small snippet so we can confirm the document
+        try {
+          const tmpHtml = readFileSync(tmpIndex, 'utf8');
+          console.log('Dev SSR using documentFilePath:', tmpIndex);
+          console.log('Dev SSR document length:', tmpHtml.length);
+          console.log('Dev SSR document snippet:', tmpHtml.slice(0, 200).replace(/\n/g, ' '));
+        } catch (e) {
+          console.warn('Could not read tmpIndex for debug logging:', e);
+        }
 
-      return commonEngine
-        .render({
-          bootstrap: bootstrapFn,
-          documentFilePath: tmpIndex,
-          url: `${protocol}://${req.headers.host}${originalUrl}`,
-          publicPath: browserDistFolder,
-          providers: [],
-        })
-        .then((html: string) => res.send(html))
-        .catch((err: any) => {
-          console.error('Dev SSR render error:', err);
-          res.status(500).send(`<pre>${(err && err.stack) || String(err)}</pre>`);
-        });
+        return commonEngine
+          .render({
+            bootstrap: bootstrapFn,
+            documentFilePath: tmpIndex,
+            url: `${protocol}://${req.headers.host}${originalUrl}`,
+            publicPath: browserDistFolder,
+            providers: [],
+          })
+          .then((html: string) => res.send(html))
+          .catch((err: any) => {
+            console.error('Dev SSR render error:', err);
+            res.status(500).send(`<pre>${(err && err.stack) || String(err)}</pre>`);
+          });
+      } catch (e) {
+        console.error('Dev SSR pipeline error before render:', e);
+        res.status(500).send(`<pre>${String(e)}</pre>`);
+      }
     } catch (e) {
       console.error('Dev SSR pipeline error:', e);
       res.setHeader('Content-Type', 'text/html');

@@ -45,6 +45,18 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Exclude bundled Android JSON coming transitively (e.g. Vaadin) to avoid duplicate org.json classes -->
+    <dependency>
+      <groupId>org.skyscreamer</groupId>
+      <artifactId>jsonassert</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.vaadin.external.google</groupId>
+          <artifactId>android-json</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- JSON Schema validation -->
     <!-- JSON Schema validation: runtime reflection used; remove compile-time Everit dep to avoid build failures when artifact unavailable -->
     <dependency>
@@ -59,6 +71,7 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>3.3.0</version>
         <configuration>
           <mainClass>com.cosmic.governance.GovernanceApplication</mainClass>
         </configuration>

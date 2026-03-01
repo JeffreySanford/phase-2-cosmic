@@ -84,6 +84,22 @@ public class JobService {
                     rec.setState(JobState.valueOf(((String) m.get("state")).toUpperCase()));
                 } catch (Exception ignored) {}
             }
+        } else if (o instanceof String) {
+            // support raw JSON strings stored in Redis (e.g., via redis-cli or external scripts)
+            try {
+                rec = objectMapper.readValue((String) o, JobRecord.class);
+                if (rec.getState() == null) {
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> m = objectMapper.readValue((String) o, Map.class);
+                        if (m.get("state") instanceof String) {
+                            rec.setState(JobState.valueOf(((String) m.get("state")).toUpperCase()));
+                        }
+                    } catch (Exception ignored) {}
+                }
+            } catch (Exception ignored) {
+                // ignore parse errors and fall through to empty
+            }
         }
         if (rec != null) return Optional.of(toResponse(rec));
         return Optional.empty();
@@ -106,6 +122,15 @@ public class JobService {
             Map<String, String> m = (Map<String, String>) o;
             return List.of(m);
         }
+        if (o instanceof String) {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, String> m = objectMapper.readValue((String) o, Map.class);
+                return List.of(m);
+            } catch (Exception ignored) {
+                return List.of();
+            }
+        }
         return List.of();
     }
 
@@ -114,10 +139,25 @@ public class JobService {
         var keys = redisTemplate.keys(KEY_PREFIX + "*");
         if (keys == null || keys.isEmpty()) return List.of();
         return keys.stream()
+                // skip auxiliary keys (logs, artifacts, etc.) which use suffixes like ":logs" or ":artifacts"
+                .filter(k -> k != null && k.chars().filter(ch -> ch == ':').count() == 1)
                 .map(k -> redisTemplate.opsForValue().get(k))
                 .map(v -> {
                     if (v instanceof JobRecord) return (JobRecord) v;
                     if (v instanceof Map) return objectMapper.convertValue(v, JobRecord.class);
+                    if (v instanceof String) {
+                        try {
+                            return objectMapper.readValue((String) v, JobRecord.class);
+                        } catch (Exception e) {
+                            try {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> m = objectMapper.readValue((String) v, Map.class);
+                                return objectMapper.convertValue(m, JobRecord.class);
+                            } catch (Exception ignored) {
+                                return null;
+                            }
+                        }
+                    }
                     return null;
                 })
                 .filter(java.util.Objects::nonNull)

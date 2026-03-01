@@ -5,7 +5,7 @@
   "scripts": {
     "start:all": "sh ./scripts/start-all.sh",
     "serve:ssr": "pnpm exec ts-node --project apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts",
-    "start:all:reset": "sh ./scripts/start-all-reset.sh",
+    "start:all:reset": "node ./tools/run-with-logs.js \"sh ./scripts/start-all-reset.sh\" start-all-reset",
     "lint": "pnpm nx run-many --target=lint --all && pnpm run lint:docker && pnpm run lint:yaml",
     "lint:docker": "node ./scripts/hadolint-runner.js",
     "lint:yaml": "node ./scripts/yamllint-runner.js",
