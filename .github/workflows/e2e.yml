@@ -2,15 +2,11 @@
 name: quality-ci
 
 on:
-  ---
-  name: quality-ci
+  push:
+  pull_request:
 
-  on:
-    push:
-    pull_request:
-
-  jobs:
-    quality:
+jobs:
+  quality:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
