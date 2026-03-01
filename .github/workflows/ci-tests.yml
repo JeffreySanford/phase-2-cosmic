@@ -1,0 +1,45 @@
+name: Java CI - tests + preflight
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  test-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [17, 21]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+
+      - name: Cache pnpm store (node deps)
+        uses: actions/cache@v4
+        with:
+          path: pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Run CI preflight (start/check Redis)
+        run: |
+          chmod +x ./scripts/ci/preflight.sh || true
+          ./scripts/ci/preflight.sh
+
+      - name: Run Maven tests (no skipping)
+        working-directory: apps/java-governance
+        run: mvn -B test
+
+      - name: Upload Surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-java-governance
+          path: apps/java-governance/target/surefire-reports || true
