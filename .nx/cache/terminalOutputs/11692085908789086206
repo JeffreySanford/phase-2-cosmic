@@ -1,0 +1,14 @@
+
+Linting "frontend"...
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\server.nest.ts[24m[0m
+[0m  [2m99:15[22m  [31merror[39m  Empty block statement  [2mno-empty[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\features\telemetry\telemetry.component.ts[24m[0m
+[0m  [2m203:21[22m  [33mwarning[39m  Forbidden non-null assertion  [2m@typescript-eslint/no-non-null-assertion[22m[0m
+[0m  [2m208:36[22m  [33mwarning[39m  Forbidden non-null assertion  [2m@typescript-eslint/no-non-null-assertion[22m[0m
+[0m[0m
+[0m[31m[1m✖ 3 problems (1 error, 2 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
+✖ 3 problems (1 error, 2 warnings)
+

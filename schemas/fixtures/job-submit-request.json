@@ -1,0 +1,9 @@
+{
+  "workflow": "casa-imaging",
+  "datasetId": "VLASS_J1347+1217",
+  "parameters": {
+    "weighting": "briggs",
+    "robust": "0.5"
+  },
+  "requestedBy": "ci-smoke"
+}

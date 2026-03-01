@@ -1,0 +1,29 @@
+<mat-card>
+  <mat-card-title>Datasets</mat-card-title>
+  <mat-card-content>
+    <div style="display:flex; gap:8px; margin-bottom:8px;">
+      <mat-form-field appearance="fill">
+        <mat-label>Name</mat-label>
+        <input matInput [(ngModel)]="name" />
+      </mat-form-field>
+      <mat-form-field appearance="fill" style="flex:1;">
+        <mat-label>Description</mat-label>
+        <input matInput [(ngModel)]="description" />
+      </mat-form-field>
+      <button mat-flat-button color="primary" (click)="create()">Create</button>
+    </div>
+
+    <div *ngIf="datasets.length === 0">No datasets yet</div>
+    <mat-list>
+      <mat-list-item *ngFor="let d of datasets">
+        <div style="display:flex; width:100%; justify-content:space-between;">
+          <div>
+            <div><strong>{{ d.name }}</strong></div>
+            <div style="color:rgba(0,0,0,0.6)">{{ d.description }}</div>
+          </div>
+          <div style="color:rgba(0,0,0,0.6)">{{ d.createdAt | date:'short' }}</div>
+        </div>
+      </mat-list-item>
+    </mat-list>
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,34 @@
+{
+  "name": "java-governance",
+  "root": "apps/java-governance",
+  "projectType": "application",
+  "sourceRoot": "apps/java-governance/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node ./scripts/mvn-wrapper-runner.js -f apps/java-governance/pom.xml -T 1C package -DskipTests"
+        ],
+        "cwd": "./"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node ./scripts/mvn-wrapper-runner.js -f apps/java-governance/pom.xml -T 1C test"
+        ],
+        "cwd": "./"
+      }
+    },
+    "docker": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "docker build -t java-governance:latest apps/java-governance"
+        ]
+      }
+    }
+  }
+}

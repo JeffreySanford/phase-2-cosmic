@@ -1,0 +1,158 @@
+[33m❯[39m Building...
+[32m✔[39m Building...
+[37mApplication bundle generation failed. [3.235 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:13:31:
+[37m      13 │ type D3SVG = ReturnType<typeof [32md3[37m.select> | null;
+         ╵                                [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2345: Argument of type 'unknown' is not assignable to parameter of type 'PrometheusRangeResponse'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:75:111:
+[37m      75 │ ...end, step, '1m').subscribe((res) => this.handleRateResponse([32mres[37m));
+         ╵                                                                [32m~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2345: Argument of type 'unknown' is not assignable to parameter of type 'PrometheusRangeResponse'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:79:102:
+[37m      79 │ ...art, end, step).subscribe((res) => this.handleRangeResponse([32mres[37m));
+         ╵                                                                [32m~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:135:15:
+[37m      135 │     this.svg = [32md3[37m.select(el).append('svg').attr('width', w).attr(...
+          ╵                [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:153:23:
+[37m      153 │     const timeExtent = [32md3[37m.extent(points, (d: Point) => new Date(d...
+          ╵                        [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type [39m[22m[1m[31m'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:154:14:
+[37m      154 │     const x = [32md3[37m.scaleTime().range([margin.left, w - margin.right...
+          ╵               [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:155:14:
+[37m      155 │     const y = [32md3[37m.scaleLinear().range([h - margin.bottom, margin.t...
+          ╵               [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:155:81:
+[37m      155 │ ...ttom, margin.top]).domain([0, [32md3[37m.max(points, (d: Point) => d.v...
+          ╵                                  [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:156:20:
+[37m      156 │     const lineGen = [32md3[37m
+          ╵                     [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:171:22:
+[37m      171 │     const maLineGen = [32md3[37m
+          ╵                       [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:192:49:
+[37m      192 │     const svgRef = this.svg as ReturnType<typeof [32md3[37m.select>;
+          ╵                                                  [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of t[39m[22m[1m[31mype 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:194:19:
+[37m      194 │     const bisect = [32md3[37m.bisector((d: Point) => d.t).left;
+          ╵                    [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:196:19:
+[37m      196 │       const [mx] = [32md3[37m.pointer(event as PointerEvent);
+          ╵                    [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:261:16:
+[37m      261 │     const arc = [32md3[37m.arc().innerRadius(18).outerRadius(28).startAng...
+          ╵                 [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:262:17:
+[37m      262 │     const full = [32md3[37m.arc().innerRadius(18).outerRadius(28).startAn...
+          ╵                  [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:273:19:
+[37m      273 │     this.histSvg = [32md3[37m.select(el).append('svg').attr('width', w).a...
+          ╵                    [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:282:14:
+[37m      282 │     const x = [32md3[37m.scaleLinear().domain([0, d3.max(values) ?? 1]).r...
+          ╵               [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m[39m[22m[1m[31m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:282:42:
+[37m      282 │ ...= d3.scaleLinear().domain([0, [32md3[37m.max(values) ?? 1]).range([6, ...
+          ╵                                  [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:285:20:
+[37m      285 │     const rawBins = [32md3[37m.bin().thresholds(12)(values) as RawBin[];
+          ╵                     [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:288:14:
+[37m      288 │     const y = [32md3[37m.scaleLinear().domain([0, d3.max(bins, (b: Bin) =...
+          ╵               [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18046: 'd3' is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:288:42:
+[37m      288 │ ...= d3.scaleLinear().domain([0, [32md3[37m.max(bins, (b: Bin) => b.lengt...
+          ╵                                  [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'data' does not exist on type '{}'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/shared/promql-card/promql-card.component.ts:36:60:
+[37m      36 │ ...[number | string, string]> = res?.[32mdata[37m?.result?.[0]?.values || [];
+         ╵                                      [32m~~~~[0m
+
+[39m[22m

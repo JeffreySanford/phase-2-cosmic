@@ -1,0 +1,60 @@
+
+> phase-2-cosmic@0.1.0 lint C:\repos\phase-2-cosmic
+> pnpm nx run-many --target=lint --all
+
+
+[7m[1m[36m NX [39m[22m[27m  [36mRunning target [1mlint[22m for 4 projects:[39m
+
+[2m-[22m ui-visualization
+[2m-[22m frontend-e2e
+[2m-[22m frontend
+[2m-[22m ui-theme
+
+[2m[36m[39m[22m
+
+[2m> [22m[2mnx run[22m ui-visualization:lint  [2m[existing outputs match the cache, left as is][22m
+
+
+Linting "ui-visualization"...
+
+✔ All files pass linting
+
+
+[2m> [22m[2mnx run[22m ui-theme:lint  [2m[existing outputs match the cache, left as is][22m
+
+
+Linting "ui-theme"...
+
+✔ All files pass linting
+
+
+[2m> [22m[2mnx run[22m frontend-e2e:lint  [2m[existing outputs match the cache, left as is][22m
+
+
+Linting "frontend-e2e"...
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend-e2e\src\e2e\aladin.playwright.spec.ts[24m[0m
+[0m  [2m1:1[22m  [33mwarning[39m  Unused eslint-disable directive (no problems were reported from 'no-restricted-syntax')[0m
+[0m[0m
+[0m[33m[1m✖ 1 problem (0 errors, 1 warning)[22m[39m[0m
+[0m[33m[1m[22m[39m[33m[1m  0 errors and 1 warning potentially fixable with the `--fix` option.[22m[39m[0m
+[0m[33m[1m[22m[39m[0m
+✖ 1 problem (0 errors, 1 warning)
+
+  0 errors and 1 warning are potentially fixable with the `--fix` option.
+
+
+[2m> [22m[2mnx run[22m frontend:lint
+
+
+Linting "frontend"...
+
+✔ All files pass linting
+
+
+[2m[32m[39m[22m
+
+[7m[1m[32m NX [39m[22m[27m  [32mSuccessfully ran target [1mlint[22m for 4 projects[39m
+
+[2mNx read the output from the cache instead of running the command for 3 out of 4 tasks.[22m
+

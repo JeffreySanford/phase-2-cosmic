@@ -1,0 +1,392 @@
+[
+  {
+    "name": "http://localhost:4200/",
+    "entryType": "navigation",
+    "start": 0,
+    "duration": 137.09999999403954
+  },
+  {
+    "name": "visible",
+    "entryType": "visibility-state",
+    "start": 0,
+    "duration": 0
+  },
+  {
+    "name": "http://localhost:4200/@vite/client",
+    "entryType": "resource",
+    "start": 10.5,
+    "duration": 12.299999982118607
+  },
+  {
+    "name": "http://localhost:4200/styles.css",
+    "entryType": "resource",
+    "start": 10.799999982118607,
+    "duration": 12.900000005960464
+  },
+  {
+    "name": "http://localhost:4200/polyfills.js",
+    "entryType": "resource",
+    "start": 10.799999982118607,
+    "duration": 16.200000017881393
+  },
+  {
+    "name": "http://localhost:4200/main.js",
+    "entryType": "resource",
+    "start": 10.899999976158142,
+    "duration": 15.900000005960464
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/node_modules/.pnpm/vite@5.4.21_@types+node@20._81d524d2d210f41fe743be414fa4c195/node_modules/vite/dist/client/env.mjs",
+    "entryType": "resource",
+    "start": 29.19999998807907,
+    "duration": 3.0999999940395355
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/@angular_platform-browser.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 30.099999994039536,
+    "duration": 2.199999988079071
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/@angular_core.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 30.19999998807907,
+    "duration": 2.300000011920929
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/@angular_platform-browser_animations.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 30.299999982118607,
+    "duration": 12.5
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/@angular_router.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 30.399999976158142,
+    "duration": 9.200000017881393
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/@angular_material_snack-bar.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 30.399999976158142,
+    "duration": 8
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/@angular_common_http.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 30.5,
+    "duration": 9.099999994039536
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/rxjs.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 30.599999994039536,
+    "duration": 9.299999982118607
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/@angular_common.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 30.599999994039536,
+    "duration": 9.900000005960464
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/rxjs_operators.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 30.69999998807907,
+    "duration": 10.199999988079071
+  },
+  {
+    "name": "Zone",
+    "entryType": "mark",
+    "start": 34.5,
+    "duration": 0
+  },
+  {
+    "name": "Zone",
+    "entryType": "measure",
+    "start": 34.5,
+    "duration": 0.09999999403953552
+  },
+  {
+    "name": "Zone:ZoneAwarePromise",
+    "entryType": "mark",
+    "start": 34.79999998211861,
+    "duration": 0
+  },
+  {
+    "name": "Zone:ZoneAwarePromise",
+    "entryType": "measure",
+    "start": 34.79999998211861,
+    "duration": 0.30000001192092896
+  },
+  {
+    "name": "Zone:toString",
+    "entryType": "mark",
+    "start": 35.099999994039536,
+    "duration": 0
+  },
+  {
+    "name": "Zone:toString",
+    "entryType": "measure",
+    "start": 35.099999994039536,
+    "duration": 0
+  },
+  {
+    "name": "Zone:util",
+    "entryType": "mark",
+    "start": 35.19999998807907,
+    "duration": 0
+  },
+  {
+    "name": "Zone:util",
+    "entryType": "measure",
+    "start": 35.19999998807907,
+    "duration": 0.4000000059604645
+  },
+  {
+    "name": "Zone:legacy",
+    "entryType": "mark",
+    "start": 35.69999998807907,
+    "duration": 0
+  },
+  {
+    "name": "Zone:legacy",
+    "entryType": "measure",
+    "start": 35.69999998807907,
+    "duration": 0
+  },
+  {
+    "name": "Zone:timers",
+    "entryType": "mark",
+    "start": 35.69999998807907,
+    "duration": 0
+  },
+  {
+    "name": "Zone:timers",
+    "entryType": "measure",
+    "start": 35.69999998807907,
+    "duration": 0.19999998807907104
+  },
+  {
+    "name": "Zone:requestAnimationFrame",
+    "entryType": "mark",
+    "start": 35.89999997615814,
+    "duration": 0
+  },
+  {
+    "name": "Zone:requestAnimationFrame",
+    "entryType": "measure",
+    "start": 35.89999997615814,
+    "duration": 0.10000002384185791
+  },
+  {
+    "name": "Zone:blocking",
+    "entryType": "mark",
+    "start": 36,
+    "duration": 0
+  },
+  {
+    "name": "Zone:blocking",
+    "entryType": "measure",
+    "start": 36,
+    "duration": 0
+  },
+  {
+    "name": "Zone:EventTarget",
+    "entryType": "mark",
+    "start": 36,
+    "duration": 0
+  },
+  {
+    "name": "Zone:EventTarget",
+    "entryType": "measure",
+    "start": 36,
+    "duration": 0.3999999761581421
+  },
+  {
+    "name": "Zone:MutationObserver",
+    "entryType": "mark",
+    "start": 36.39999997615814,
+    "duration": 0
+  },
+  {
+    "name": "Zone:MutationObserver",
+    "entryType": "measure",
+    "start": 36.39999997615814,
+    "duration": 0.10000002384185791
+  },
+  {
+    "name": "Zone:IntersectionObserver",
+    "entryType": "mark",
+    "start": 36.5,
+    "duration": 0
+  },
+  {
+    "name": "Zone:IntersectionObserver",
+    "entryType": "measure",
+    "start": 36.5,
+    "duration": 0.09999999403953552
+  },
+  {
+    "name": "Zone:FileReader",
+    "entryType": "mark",
+    "start": 36.599999994039536,
+    "duration": 0
+  },
+  {
+    "name": "Zone:FileReader",
+    "entryType": "measure",
+    "start": 36.599999994039536,
+    "duration": 0.09999999403953552
+  },
+  {
+    "name": "Zone:on_property",
+    "entryType": "mark",
+    "start": 36.69999998807907,
+    "duration": 0
+  },
+  {
+    "name": "Zone:on_property",
+    "entryType": "measure",
+    "start": 36.69999998807907,
+    "duration": 13.400000005960464
+  },
+  {
+    "name": "Zone:customElements",
+    "entryType": "mark",
+    "start": 50.099999994039536,
+    "duration": 0
+  },
+  {
+    "name": "Zone:customElements",
+    "entryType": "measure",
+    "start": 50.099999994039536,
+    "duration": 0.19999998807907104
+  },
+  {
+    "name": "Zone:XHR",
+    "entryType": "mark",
+    "start": 50.29999998211861,
+    "duration": 0
+  },
+  {
+    "name": "Zone:XHR",
+    "entryType": "measure",
+    "start": 50.29999998211861,
+    "duration": 0.4000000059604645
+  },
+  {
+    "name": "Zone:geolocation",
+    "entryType": "mark",
+    "start": 50.69999998807907,
+    "duration": 0
+  },
+  {
+    "name": "Zone:geolocation",
+    "entryType": "measure",
+    "start": 50.69999998807907,
+    "duration": 0.09999999403953552
+  },
+  {
+    "name": "Zone:PromiseRejectionEvent",
+    "entryType": "mark",
+    "start": 50.79999998211861,
+    "duration": 0
+  },
+  {
+    "name": "Zone:PromiseRejectionEvent",
+    "entryType": "measure",
+    "start": 50.79999998211861,
+    "duration": 0.09999999403953552
+  },
+  {
+    "name": "Zone:queueMicrotask",
+    "entryType": "mark",
+    "start": 50.89999997615814,
+    "duration": 0
+  },
+  {
+    "name": "Zone:queueMicrotask",
+    "entryType": "measure",
+    "start": 50.89999997615814,
+    "duration": 0.10000002384185791
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-UYYXAC55.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 54.099999994039536,
+    "duration": 1.699999988079071
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-MFH6MNS6.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 54.19999998807907,
+    "duration": 2.5
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 54.19999998807907,
+    "duration": 9.699999988079071
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-246ZHOMM.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 54.19999998807907,
+    "duration": 19.599999994039536
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-OILVJJZE.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 54.29999998211861,
+    "duration": 8.800000011920929
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-H5SZGPO2.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 54.39999997615814,
+    "duration": 8.700000017881393
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-WDMUDEB6.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 54.39999997615814,
+    "duration": 10.200000017881393
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-TZRD7SJH.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 54.39999997615814,
+    "duration": 10.300000011920929
+  },
+  {
+    "name": "http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-TSZB3DUO.js?v=5172e5c8",
+    "entryType": "resource",
+    "start": 54.69999998807907,
+    "duration": 10.300000011920929
+  },
+  {
+    "name": "long-animation-frame",
+    "entryType": "long-animation-frame",
+    "start": 77.2999999821186,
+    "duration": 58.599999994039536
+  },
+  {
+    "name": "mark_feature_usage",
+    "entryType": "mark",
+    "start": 81.39999997615814,
+    "duration": 0
+  },
+  {
+    "name": "first-paint",
+    "entryType": "paint",
+    "start": 152,
+    "duration": 0
+  },
+  {
+    "name": "first-contentful-paint",
+    "entryType": "paint",
+    "start": 152,
+    "duration": 0
+  }
+]

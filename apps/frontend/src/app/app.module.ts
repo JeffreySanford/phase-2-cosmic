@@ -36,7 +36,6 @@ import { ViewerComponent } from './features/viewer/viewer.component';
 import { JobsComponent } from './features/jobs/jobs.component';
 import { JobsSubmitDialogComponent } from './features/jobs/jobs-submit-dialog.component';
 import { DatasetsComponent } from './features/datasets/datasets.component';
-import { DatasetsService } from './services/datasets.service';
 
 @NgModule({
   declarations: [

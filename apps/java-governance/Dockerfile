@@ -1,0 +1,11 @@
+FROM maven:3.9.4-eclipse-temurin-21 AS builder
+WORKDIR /workspace
+COPY pom.xml ./
+COPY src ./src
+RUN mvn -B -T 1C package -DskipTests
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=builder /workspace/target/java-governance-0.1.0-SNAPSHOT.jar /app/java-governance.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/java-governance.jar"]

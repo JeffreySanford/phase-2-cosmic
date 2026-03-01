@@ -6,7 +6,9 @@
     "start:all": "sh ./scripts/start-all.sh",
     "serve:ssr": "pnpm exec ts-node --project apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts",
     "start:all:reset": "sh ./scripts/start-all-reset.sh",
-    "lint": "pnpm nx run-many --target=lint --all",
+    "lint": "pnpm nx run-many --target=lint --all && pnpm run lint:docker && pnpm run lint:yaml",
+    "lint:docker": "node ./scripts/hadolint-runner.js",
+    "lint:yaml": "node ./scripts/yamllint-runner.js",
     "format:check:changed": "pnpm exec prettier --check \"**/*.{ts,tsx,js,jsx,json,md,scss,yml,yaml}\"",
     "test:libs": "pnpm nx run ui-theme:test && pnpm nx run ui-visualization:test",
     "docker:test-runner": "cross-env PNPM_STORE_DIR=./pnpm-store sh -c \"corepack enable || true; corepack prepare pnpm@latest --activate || true; mkdir -p $PNPM_STORE_DIR && pnpm install --frozen-lockfile --store-dir=$PNPM_STORE_DIR --ignore-scripts && (git rev-parse --verify origin/main >/dev/null 2>&1 && pnpm nx affected --target=test --base=origin/main --parallel=false || pnpm nx run-many --target=test --all --parallel=false)\"",
@@ -89,5 +91,6 @@
     "zone.js": "~0.14.3",
     "d3": "^7.9.0"
   },
-  "optionalDependencies": {}
+  "optionalDependencies": {},
+  "packageManager": "pnpm@10.23.0"
 }

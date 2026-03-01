@@ -1,0 +1,13 @@
+
+Linting "ui-visualization"...
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\libs\ui-visualization\src\lib\ui-visualization\ui-visualization.component.spec.ts[24m[0m
+[0m  [2m9:5[22m  [31merror[39m  Prefer RxJS Observable streams over async/await patterns in UI code; prefer `firstValueFrom` or Observables with subscription patterns where appropriate  [2mno-restricted-syntax[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\libs\ui-visualization\src\lib\ui-visualization\ui-visualization.component.ts[24m[0m
+[0m  [2m2:10[22m  [31merror[39m  'CommonModule' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[31m[1m✖ 2 problems (2 errors, 0 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
+✖ 2 problems (2 errors, 0 warnings)
+

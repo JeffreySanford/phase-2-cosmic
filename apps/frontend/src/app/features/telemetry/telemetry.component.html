@@ -1,0 +1,66 @@
+<mat-card>
+  <mat-card-title>Data Generator Telemetry</mat-card-title>
+  <mat-card-content>
+    <div class="controls">
+      <mat-form-field appearance="outline">
+        <mat-label>Metric</mat-label>
+        <mat-select (selectionChange)="setMetric($event.value)" [value]="'generator_bytes_produced_total'">
+          <mat-option value="generator_bytes_produced_total">Bytes produced (total)</mat-option>
+          <mat-option value="generator_records_produced_total">Records produced</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Polling</mat-label>
+        <mat-select (selectionChange)="setPolling($event.value)" [value]="'5s'">
+          <mat-option value="live">Live (1s)</mat-option>
+          <mat-option value="5s">5s</mat-option>
+          <mat-option value="15s">15s</mat-option>
+          <mat-option value="60s">60s</mat-option>
+          <mat-option value="off">Paused</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Time Range</mat-label>
+        <mat-select (selectionChange)="setRangeSec($event.value)" [value]="300">
+          <mat-option [value]="300">5 minutes</mat-option>
+          <mat-option [value]="900">15 minutes</mat-option>
+          <mat-option [value]="3600">1 hour</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <p>Current: <strong>{{ currentValue | number }}</strong></p>
+    <div class="stats">
+      <mat-card class="stat-card">
+        <mat-card-title>Current Value</mat-card-title>
+        <mat-card-content>
+          <div class="big">{{ currentValue | number }}</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="stat-card">
+        <mat-card-title>Throughput</mat-card-title>
+        <mat-card-content>
+          <div class="gauge-container" #gauge></div>
+          <div class="big">{{ currentRateHuman }}</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="stat-card">
+        <mat-card-title>Stats (range)</mat-card-title>
+        <mat-card-content>
+          <div>Min: <strong>{{ stats.min | number }}</strong></div>
+          <div>Avg: <strong>{{ stats.avg | number:'1.0-2' }}</strong></div>
+          <div>Max: <strong>{{ stats.max | number }}</strong></div>
+          <div>P95: <strong>{{ stats.p95 | number:'1.0-2' }}</strong></div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+    <div class="controls-row">
+      <button mat-stroked-button color="primary" (click)="exportCsv()">Export CSV</button>
+      <span class="last-updated">Last: {{ lastUpdated ? (lastUpdated | date:'medium') : 'n/a' }}</span>
+    </div>
+    <div class="chart" #chart></div>
+    <div class="hist" #hist></div>
+  </mat-card-content>
+</mat-card>

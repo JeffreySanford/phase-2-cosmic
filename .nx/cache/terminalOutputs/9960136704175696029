@@ -1,0 +1,34 @@
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\app.component.spec.ts[24m[0m
+[0m   [2m8:7[22m   [31merror[39m  Component class names should end with one of these suffixes: "Component" (https://angular.dev/style-guide#style-02-03)  [2m@angular-eslint/component-class-suffix[22m[0m
+[0m  [2m10:7[22m   [31merror[39m  Component class names should end with one of these suffixes: "Component" (https://angular.dev/style-guide#style-02-03)  [2m@angular-eslint/component-class-suffix[22m[0m
+[0m  [2m12:7[22m   [31merror[39m  Component class names should end with one of these suffixes: "Component" (https://angular.dev/style-guide#style-02-03)  [2m@angular-eslint/component-class-suffix[22m[0m
+[0m  [2m14:7[22m   [31merror[39m  Component class names should end with one of these suffixes: "Component" (https://angular.dev/style-guide#style-02-03)  [2m@angular-eslint/component-class-suffix[22m[0m
+[0m  [2m21:51[22m  [31merror[39m  '_' is defined but never used                                                                                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m21:54[22m  [31merror[39m  Unexpected any. Specify a different type                                                                                [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m21:62[22m  [31merror[39m  Unexpected empty method 'navigate'                                                                                      [2m@typescript-eslint/no-empty-function[22m[0m
+[0m  [2m22:63[22m  [31merror[39m  '_' is defined but never used                                                                                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m22:78[22m  [31merror[39m  Unexpected empty method 'setCollapsed'                                                                                  [2m@typescript-eslint/no-empty-function[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\features\telemetry\telemetry.component.ts[24m[0m
+[0m   [2m6:24[22m   [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m7:11[22m   [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m14:14[22m   [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m76:85[22m   [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m76:124[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m78:59[22m   [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m80:75[22m   [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m80:115[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\shared\promql-card\promql-card.component.spec.ts[24m[0m
+[0m  [2m13:20[22m  [31merror[39m  'q' is defined but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m14:18[22m  [31merror[39m  'q' is defined but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m14:29[22m  [31merror[39m  's' is defined but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m14:40[22m  [31merror[39m  'e' is defined but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m14:51[22m  [31merror[39m  'st' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\shared\promql-card\promql-card.component.ts[24m[0m
+[0m  [2m37:33[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[31m[1m✖ 23 problems (23 errors, 0 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m

@@ -1,0 +1,10 @@
+.toolbar { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+.spacer { flex:1 1 auto; }
+.list table { width:100%; border-collapse:collapse; }
+.list th { text-align:left; border-bottom:1px solid #eee; padding:6px; }
+.list td { padding:6px; border-bottom:1px dashed #f0f0f0; }
+.mono { font-family: monospace; font-size: 0.9rem; }
+.submit { margin-top:12px; }
+.submit .payload { width:100%; }
+.detail { margin-top:12px; background:#fbfbfb; padding:8px; border-radius:4px; }
+.payload { white-space:pre-wrap; }

@@ -1,0 +1,64 @@
+<mat-card>
+  <mat-card-title>Governance Jobs</mat-card-title>
+  <mat-card-content>
+    <div class="toolbar">
+      <button mat-raised-button color="primary" (click)="openSubmit()">New Job</button>
+      <button mat-stroked-button (click)="reload()">Refresh</button>
+      <span class="spacer"></span>
+      <div *ngIf="loading">Loading…</div>
+    </div>
+
+    <div class="list">
+      <table>
+        <thead>
+          <tr><th>Id</th><th>Type</th><th>State</th><th>Created</th><th>Updated</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let j of jobs">
+            <td class="mono">{{ j.jobId }}</td>
+            <td>{{ j.workflow }}</td>
+            <td>{{ j.status }}</td>
+            <td>{{ j.createdAt | date:'short' }}</td>
+            <td>{{ j.updatedAt | date:'short' }}</td>
+            <td>
+              <button mat-button (click)="view(j)">View</button>
+              <mat-menu #m="matMenu">
+                <button mat-menu-item (click)="transition(j,'QUEUED')">Queue</button>
+                <button mat-menu-item (click)="transition(j,'RUNNING')">Run</button>
+                <button mat-menu-item (click)="transition(j,'COMPLETED')">Complete</button>
+                <button mat-menu-item (click)="transition(j,'FAILED')">Fail</button>
+                <button mat-menu-item (click)="transition(j,'CANCELED')">Cancel</button>
+              </mat-menu>
+              <button mat-icon-button [matMenuTriggerFor]="m" aria-label="Actions">⋯</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- submit now handled via dialog -->
+
+    <div *ngIf="selectedJob" class="detail">
+      <h3>Job: {{ selectedJob.jobId }}</h3>
+      <div>Workflow: {{ selectedJob.workflow }}</div>
+      <div>Status: {{ selectedJob.status }}</div>
+      <div>Created: {{ selectedJob.createdAt | date:'medium' }}</div>
+      <div>Updated: {{ selectedJob.updatedAt | date:'medium' }}</div>
+      <pre class="payload">{{ selectedJob.parameters | json }}</pre>
+
+      <div class="logs">
+        <h4>Logs</h4>
+        <div *ngIf="logs.length === 0">(no logs yet)</div>
+        <pre *ngFor="let line of logs">{{ line }}</pre>
+      </div>
+
+      <div class="artifacts">
+        <h4>Artifacts</h4>
+        <div *ngIf="artifacts.length === 0">(no artifacts)</div>
+        <ul>
+          <li *ngFor="let a of artifacts"><a [href]="a.url" target="_blank">{{ a.name }}</a></li>
+        </ul>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,150 @@
+{
+  "totalSamples": 3319,
+  "top": [
+    {
+      "id": 3,
+      "count": 3257,
+      "name": "(idle) -- 0:-1"
+    },
+    {
+      "id": 2,
+      "count": 28,
+      "name": "(program) -- 0:-1"
+    },
+    {
+      "id": 15,
+      "count": 8,
+      "name": "patchProperty -- http://localhost:4200/polyfills.js:648"
+    },
+    {
+      "id": 5,
+      "count": 1,
+      "name": "loadZone -- http://localhost:4200/polyfills.js:531"
+    },
+    {
+      "id": 10,
+      "count": 1,
+      "name": "patchMethod -- http://localhost:4200/polyfills.js:796"
+    },
+    {
+      "id": 17,
+      "count": 1,
+      "name": "patchCustomElements -- http://localhost:4200/polyfills.js:1490"
+    },
+    {
+      "id": 18,
+      "count": 1,
+      "name": "(anonymous) -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:0"
+    },
+    {
+      "id": 20,
+      "count": 1,
+      "name": "_HttpClientXsrfModule -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-MFH6MNS6.js?v=5172e5c8:2030"
+    },
+    {
+      "id": 26,
+      "count": 1,
+      "name": "getComponentId -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:3008"
+    },
+    {
+      "id": 21,
+      "count": 1,
+      "name": "(anonymous) -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/@angular_material_snack-bar.js?v=5172e5c8:0"
+    },
+    {
+      "id": 34,
+      "count": 1,
+      "name": "R3Injector -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:3240"
+    },
+    {
+      "id": 43,
+      "count": 1,
+      "name": "createNgModuleRefWithProviders -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:13015"
+    },
+    {
+      "id": 90,
+      "count": 1,
+      "name": "ChangeDetectionSchedulerImpl_Factory -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:21044"
+    },
+    {
+      "id": 114,
+      "count": 1,
+      "name": "(anonymous) -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-TZRD7SJH.js?v=5172e5c8:796"
+    },
+    {
+      "id": 122,
+      "count": 1,
+      "name": "_ApplicationInitStatus -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:20100"
+    },
+    {
+      "id": 138,
+      "count": 1,
+      "name": "createLView -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:8365"
+    },
+    {
+      "id": 190,
+      "count": 1,
+      "name": "querySelector -- 0:-1"
+    },
+    {
+      "id": 193,
+      "count": 1,
+      "name": "_SidebarService -- http://localhost:4200/main.js:20"
+    },
+    {
+      "id": 207,
+      "count": 1,
+      "name": "EventEmitter_ -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:5502"
+    },
+    {
+      "id": 221,
+      "count": 1,
+      "name": "(anonymous) -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:4934"
+    },
+    {
+      "id": 230,
+      "count": 1,
+      "name": "factory -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:3542"
+    },
+    {
+      "id": 249,
+      "count": 1,
+      "name": "checkStylingProperty -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:14947"
+    },
+    {
+      "id": 267,
+      "count": 1,
+      "name": "getUniqueLViewId -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:6195"
+    },
+    {
+      "id": 275,
+      "count": 1,
+      "name": "__defNormalProp -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-WDMUDEB6.js?v=5172e5c8:6"
+    },
+    {
+      "id": 288,
+      "count": 1,
+      "name": "(anonymous) -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-TZRD7SJH.js?v=5172e5c8:4042"
+    },
+    {
+      "id": 359,
+      "count": 1,
+      "name": "processSegmentGroup -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/@angular_router.js?v=5172e5c8:2803"
+    },
+    {
+      "id": 453,
+      "count": 1,
+      "name": "ConsumerObserver2.next -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-TZRD7SJH.js?v=5172e5c8:578"
+    },
+    {
+      "id": 707,
+      "count": 1,
+      "name": "activate -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/@angular_router.js?v=5172e5c8:2099"
+    },
+    {
+      "id": 744,
+      "count": 1,
+      "name": "detectChangesInView -- http://localhost:4200/@fs/C:/repos/phase-2-cosmic/.angular/cache/18.2.21/frontend/vite/deps/chunk-E4V2Z2F4.js?v=5172e5c8:9657"
+    }
+  ]
+}

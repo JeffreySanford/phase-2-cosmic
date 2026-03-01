@@ -1,0 +1,44 @@
+# Ignore node/pnpm artifacts and editor settings
+node_modules
+.pnpm-store
+dist
+build
+.vscode
+.idea
+.DS_Store
+*.log
+*.tgz
+
+# Ignore git
+.git
+.gitignore
+
+# Ignore large data files and temporary outputs
+data/
+*.csv
+*.ndjson
+*.sqlite
+*.db
+tmp/
+logs/
+
+# Ignore prebuilt binaries and test artifacts
+data-generator*
+*.exe
+*.out
+*.bin
+*.iso
+
+# Ignore k8s manifests and local deployment files
+k8s/
+
+# Environment and local overrides
+.env
+.env.local
+
+# Other caches
+.cache
+
+# Keep Dockerfile and sources only
+!Dockerfile
+!**/src/**

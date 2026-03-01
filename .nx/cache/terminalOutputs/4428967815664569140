@@ -1,0 +1,283 @@
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/settings/[22m[1msettings.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/dashboard/[22m[1mdashboard.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/base/mainstage/[22m[1mmainstage.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/base/sidebar/[22m[1msidebar.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/base/footer/[22m[1mfooter.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/landing/[22m[1mlanding.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/topology/[22m[1mtopology.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/base/header/[22m[1mheader.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/diagnostics/[22m[1mdiagnostics.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/shared/promql-card/[22m[1mpromql-card.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/viewer/[22m[1mviewer.component.spec.ts[22m
+  [1m● [22mConsole
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] sidebar toggled, resizing to 0 0
+[2m[22m
+[2m      [2mat [22m[2msrc/app/features/viewer/viewer.component.ts[2m:128:21[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] sidebar toggled, resizing to 0 0
+[2m[22m
+[2m      [2mat [22m[2msrc/app/features/viewer/viewer.component.ts[2m:128:21[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] sidebar toggled, resizing to 0 0
+[2m[22m
+[2m      [2mat [22m[2msrc/app/features/viewer/viewer.component.ts[2m:128:21[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] sidebar toggled, resizing to 0 0
+[2m[22m
+[2m      [2mat [22m[2msrc/app/features/viewer/viewer.component.ts[2m:128:21[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+[0m[7m[1m[31m FAIL [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/[22m[1mapp.component.spec.ts[22m
+[1m[31m  [1m● [22m[1mAppComponent › should render title[39m[22m
+
+    NG0304: 'app-header' is not a known element (used in the 'AppComponent' component template):
+    1. If 'app-header' is an Angular component, then verify that it is a part of an @NgModule where this component is declared.
+    2. If 'app-header' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.
+[2m[22m
+[2m      [2mat validateElementIsKnown ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:10533:23)[22m[2m[22m
+[2m      [2mat ɵɵelementStart ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:24343:9)[22m[2m[22m
+[2m      [2mat AppComponent_Template ([22m[2m../../ng:/AppComponent.js[2m:8:9)[22m[2m[22m
+[2m      [2mat executeTemplate ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:12159:9)[22m[2m[22m
+[2m      [2mat renderView ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:13366:13)[22m[2m[22m
+[2m      [2mat renderComponent ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:13312:5)[22m[2m[22m
+[2m      [2mat renderChildComponents ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:13414:9)[22m[2m[22m
+[2m      [2mat renderView ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:13394:13)[22m[2m[22m
+[2m      [2mat ComponentFactory.create ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:16768:17)[22m[2m[22m
+[2m      [2mat initComponent ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/testing.mjs[2m:2039:51)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:416:32)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2176:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat Object.onInvoke ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:7251:33)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat ZoneImpl.run ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:147:47)[22m[2m[22m
+[2m      [2mat NgZone.run ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:7097:28)[22m[2m[22m
+[2m      [2mat _TestBedImpl.createComponent ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/testing.mjs[2m:2051:41)[22m[2m[22m
+[2m      [2mat Function.createComponent ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/testing.mjs[2m:1842:37)[22m[2m[22m
+[2m      [2mat [22m[2m[0m[36msrc/app/app.component.spec.ts[39m[0m[2m:18:29[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:416:32)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2176:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat ZoneImpl.run ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:147:47)[22m[2m[22m
+[2m      [2mat Object.wrappedFunc ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:450:38)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mAppComponent › should have as title 'frontend'[39m[22m
+
+    NG0304: 'app-header' is not a known element (used in the 'AppComponent' component template):
+    1. If 'app-header' is an Angular component, then verify that it is a part of an @NgModule where this component is declared.
+    2. If 'app-header' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.
+[2m[22m
+[2m      [2mat validateElementIsKnown ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:10533:23)[22m[2m[22m
+[2m      [2mat ɵɵelementStart ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:24343:9)[22m[2m[22m
+[2m      [2mat AppComponent_Template ([22m[2m../../ng:/AppComponent.js[2m:8:9)[22m[2m[22m
+[2m      [2mat executeTemplate ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:12159:9)[22m[2m[22m
+[2m      [2mat renderView ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:13366:13)[22m[2m[22m
+[2m      [2mat renderComponent ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:13312:5)[22m[2m[22m
+[2m      [2mat renderChildComponents ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:13414:9)[22m[2m[22m
+[2m      [2mat renderView ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:13394:13)[22m[2m[22m
+[2m      [2mat ComponentFactory.create ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:16768:17)[22m[2m[22m
+[2m      [2mat initComponent ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/testing.mjs[2m:2039:51)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:416:32)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2176:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat Object.onInvoke ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:7251:33)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat ZoneImpl.run ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:147:47)[22m[2m[22m
+[2m      [2mat NgZone.run ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs[2m:7097:28)[22m[2m[22m
+[2m      [2mat _TestBedImpl.createComponent ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/testing.mjs[2m:2051:41)[22m[2m[22m
+[2m      [2mat Function.createComponent ([22m[2m../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/testing.mjs[2m:1842:37)[22m[2m[22m
+[2m      [2mat [22m[2m[0m[36msrc/app/app.component.spec.ts[39m[0m[2m:24:29[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:416:32)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2176:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat ZoneImpl.run ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:147:47)[22m[2m[22m
+[2m      [2mat Object.wrappedFunc ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:450:38)[22m[2m[22m
+
+[1mTest Suites: [22m[1m[31m1 failed[39m[22m, [1m[32m11 passed[39m[22m, 12 total
+[1mTests:       [22m[1m[31m2 failed[39m[22m, [1m[32m22 passed[39m[22m, 24 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        4.866 s
+[2mRan all test suites[22m[2m.[22m

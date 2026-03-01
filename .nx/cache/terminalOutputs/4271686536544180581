@@ -1,0 +1,18 @@
+[33m❯[39m Building...
+[32m✔[39m Building...
+[37m[1mInitial chunk files[22m  [2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mmain-HKADDEQL.js[37m     [2m | [22m[2mmain[22m         [2m | [22m[36m431.68 kB[37m[2m | [22m              [36m105.58 kB[37m
+[32mpolyfills-YTAVFQFU.js[37m[2m | [22m[2mpolyfills[22m    [2m | [22m [36m34.52 kB[37m[2m | [22m               [36m11.28 kB[37m
+[32mchunk-4CLCTAJ7.js[37m    [2m | [22m[2m-[22m            [2m | [22m[36m830 bytes[37m[2m | [22m              [36m830 bytes[37m
+[32mstyles-5INURTSO.css[37m  [2m | [22m[2mstyles[22m       [2m | [22m  [36m0 bytes[37m[2m | [22m                [36m0 bytes[37m
+
+[1m [22m                    [2m | [22m[1mInitial total[22m[2m | [22m[1m467.03 kB[22m[2m | [22m              [1m117.69 kB[22m
+
+[1mLazy chunk files[22m     [2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-NDNMOURL.js[37m    [2m | [22m[2maladin[22m       [2m | [22m  [36m2.35 MB[37m[2m | [22m              [36m649.85 kB[37m
+[32mchunk-PU3OZY36.js[37m    [2m | [22m[2mpackage-json[22m [2m | [22m  [36m2.48 kB[37m[2m | [22m              [36m982 bytes[37m
+
+Application bundle generation complete. [7.727 seconds]
+[39m
+[37mOutput location: C:\repos\phase-2-cosmic\dist\apps\frontend
+[39m

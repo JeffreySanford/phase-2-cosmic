@@ -1,0 +1,10 @@
+
+Linting "frontend"...
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\server.nest.ts[24m[0m
+[0m  [2m99:16[22m  [31merror[39m  'err' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[31m[1m✖ 1 problem (1 error, 0 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
+✖ 1 problem (1 error, 0 warnings)
+

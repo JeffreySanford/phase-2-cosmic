@@ -1,0 +1,77 @@
+[0m[7m[1m[31m FAIL [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/viewer/[22m[1mviewer.component.spec.ts[22m
+  [1m● [22mTest suite failed to run
+
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m87[0m:[93m66[0m - [91merror[0m[90m TS4111: [0mProperty '__aladin_init_attempt' comes from an index signature, so it must be accessed with ['__aladin_init_attempt'].
+
+    [7m87[0m               (globalThis as unknown as Record<string, unknown>).__aladin_init_attempt = true;
+    [7m  [0m [91m                                                                 ~~~~~~~~~~~~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m242[0m:[93m24[0m - [91merror[0m[90m TS18047: [0m'instAny' is possibly 'null'.
+
+    [7m242[0m             if (typeof instAny.setOptions === 'function') {
+    [7m   [0m [91m                       ~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m242[0m:[93m32[0m - [91merror[0m[90m TS4111: [0mProperty 'setOptions' comes from an index signature, so it must be accessed with ['setOptions'].
+
+    [7m242[0m             if (typeof instAny.setOptions === 'function') {
+    [7m   [0m [91m                               ~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m243[0m:[93m15[0m - [91merror[0m[90m TS18047: [0m'instAny' is possibly 'null'.
+
+    [7m243[0m               instAny.setOptions(optsControls);
+    [7m   [0m [91m              ~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m243[0m:[93m23[0m - [91merror[0m[90m TS4111: [0mProperty 'setOptions' comes from an index signature, so it must be accessed with ['setOptions'].
+
+    [7m243[0m               instAny.setOptions(optsControls);
+    [7m   [0m [91m                      ~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m246[0m:[93m24[0m - [91merror[0m[90m TS18047: [0m'instAny' is possibly 'null'.
+
+    [7m246[0m             if (typeof instAny.addControl === 'function') {
+    [7m   [0m [91m                       ~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m246[0m:[93m32[0m - [91merror[0m[90m TS4111: [0mProperty 'addControl' comes from an index signature, so it must be accessed with ['addControl'].
+
+    [7m246[0m             if (typeof instAny.addControl === 'function') {
+    [7m   [0m [91m                               ~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m247[0m:[93m51[0m - [91merror[0m[90m TS18047: [0m'instAny' is possibly 'null'.
+
+    [7m247[0m               if (optsControls.showLayersControl) instAny.addControl('layers');
+    [7m   [0m [91m                                                  ~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m247[0m:[93m59[0m - [91merror[0m[90m TS4111: [0mProperty 'addControl' comes from an index signature, so it must be accessed with ['addControl'].
+
+    [7m247[0m               if (optsControls.showLayersControl) instAny.addControl('layers');
+    [7m   [0m [91m                                                          ~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m248[0m:[93m49[0m - [91merror[0m[90m TS18047: [0m'instAny' is possibly 'null'.
+
+    [7m248[0m               if (optsControls.showZoomControl) instAny.addControl('zoom');
+    [7m   [0m [91m                                                ~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m248[0m:[93m57[0m - [91merror[0m[90m TS4111: [0mProperty 'addControl' comes from an index signature, so it must be accessed with ['addControl'].
+
+    [7m248[0m               if (optsControls.showZoomControl) instAny.addControl('zoom');
+    [7m   [0m [91m                                                        ~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m249[0m:[93m55[0m - [91merror[0m[90m TS18047: [0m'instAny' is possibly 'null'.
+
+    [7m249[0m               if (optsControls.showFullScreenControl) instAny.addControl('fullscreen');
+    [7m   [0m [91m                                                      ~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m249[0m:[93m63[0m - [91merror[0m[90m TS4111: [0mProperty 'addControl' comes from an index signature, so it must be accessed with ['addControl'].
+
+    [7m249[0m               if (optsControls.showFullScreenControl) instAny.addControl('fullscreen');
+    [7m   [0m [91m                                                              ~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m253[0m:[93m24[0m - [91merror[0m[90m TS18047: [0m'instAny' is possibly 'null'.
+
+    [7m253[0m             if (typeof instAny.update === 'function') instAny.update(optsControls);
+    [7m   [0m [91m                       ~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m253[0m:[93m32[0m - [91merror[0m[90m TS4111: [0mProperty 'update' comes from an index signature, so it must be accessed with ['update'].
+
+    [7m253[0m             if (typeof instAny.update === 'function') instAny.update(optsControls);
+    [7m   [0m [91m                               ~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m253[0m:[93m55[0m - [91merror[0m[90m TS18047: [0m'instAny' is possibly 'null'.
+
+    [7m253[0m             if (typeof instAny.update === 'function') instAny.update(optsControls);
+    [7m   [0m [91m                                                      ~~~~~~~[0m
+    [96mapps/frontend/src/app/features/viewer/viewer.component.ts[0m:[93m253[0m:[93m63[0m - [91merror[0m[90m TS4111: [0mProperty 'update' comes from an index signature, so it must be accessed with ['update'].
+
+    [7m253[0m             if (typeof instAny.update === 'function') instAny.update(optsControls);
+    [7m   [0m [91m                                                              ~~~~~~[0m
+
+[1mTest Suites: [22m[1m[31m1 failed[39m[22m, 1 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        2.08 s
+[2mRan all test suites[22m[2m matching [22m/viewer.component.spec.ts/i[2m.[22m

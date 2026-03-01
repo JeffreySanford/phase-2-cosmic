@@ -1,0 +1,17 @@
+
+Linting "frontend-e2e"...
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend-e2e\src\e2e\aladin.playwright.spec.ts[24m[0m
+[0m   [2m5:3[22m   [31merror[39m  Prefer RxJS Observable streams over async/await patterns in UI code; prefer `firstValueFrom` or Observables with subscription patterns where appropriate  [2mno-restricted-syntax[22m[0m
+[0m   [2m8:3[22m   [31merror[39m  Prefer RxJS Observable streams over async/await patterns in UI code; prefer `firstValueFrom` or Observables with subscription patterns where appropriate  [2mno-restricted-syntax[22m[0m
+[0m  [2m11:3[22m   [31merror[39m  Prefer RxJS Observable streams over async/await patterns in UI code; prefer `firstValueFrom` or Observables with subscription patterns where appropriate  [2mno-restricted-syntax[22m[0m
+[0m  [2m12:17[22m  [31merror[39m  Prefer RxJS Observable streams over async/await patterns in UI code; prefer `firstValueFrom` or Observables with subscription patterns where appropriate  [2mno-restricted-syntax[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend-e2e\src\e2e\aladin.spec.ts[24m[0m
+[0m  [2m13:41[22m  [31merror[39m  Unexpected any. Specify a different type                               [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m14:7[22m   [31merror[39m  Expected an assignment or function call and instead saw an expression  [2m@typescript-eslint/no-unused-expressions[22m[0m
+[0m[0m
+[0m[31m[1m✖ 6 problems (6 errors, 0 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
+✖ 6 problems (6 errors, 0 warnings)
+

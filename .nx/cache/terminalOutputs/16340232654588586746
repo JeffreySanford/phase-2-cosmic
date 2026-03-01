@@ -1,0 +1,25 @@
+[33m❯[39m Building...
+[32m✔[39m Building...
+[37mApplication bundle generation failed. [3.035 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2503: Cannot find namespace 'd3'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:100:45:
+[37m      100 │ ...romPoints(points: Point[], x: [32md3[37m.ScaleTime<number, number>, y:...
+          ╵                                  [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2503: Cannot find namespace 'd3'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:100:78:
+[37m      100 │ ...ScaleTime<number, number>, y: [32md3[37m.ScaleLinear<number, number>):...
+          ╵                                  [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'b' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:170:56:
+[37m      170 │ ...ear().domain([0, d3.max(bins, ([32mb[37m) => b.length) ?? 1]).range([h...
+          ╵                                   [32m^[0m
+
+[39m[22m

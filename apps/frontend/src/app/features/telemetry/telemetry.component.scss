@@ -1,0 +1,32 @@
+.chart {
+  width: 100%;
+  height: 160px;
+  margin-bottom: 6px;
+}
+
+.line {
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.x-axis text, .y-axis text { font-size: 11px; fill: #444; }
+.x-axis path, .y-axis path, .x-axis line, .y-axis line { stroke: #ddd; }
+
+.hist {
+  height: 120px;
+  margin-top: 6px;
+}
+
+.gauge-container {
+  width: 220px;
+  height: 110px;
+  margin: 0 auto 2px auto;
+}
+
+.stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.stat-card { flex: 1; text-align: center; }
+.stat-card .big { font-size: 1.5rem; font-weight: 600; }

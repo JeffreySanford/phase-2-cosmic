@@ -1,0 +1,32 @@
+%% Security boundary topology — Phase 2 Cosmic
+flowchart LR
+  subgraph Internal [Internal Network]
+    direction TB
+    DG[Data Generator]
+    Kafka[Kafka]
+    MinIO[MinIO]
+    Backend[Nest SSR + API]
+    Prom[Prometheus]
+  end
+
+  subgraph Exposed [Developer Host / Browser]
+    direction TB
+    Browser[Developer Browser]
+    Frontend[Angular Dev Server]
+  end
+
+  subgraph External [Third-party / Public]
+    direction TB
+    ExternalIRSA[IRSA / HiPS Tiles]
+  end
+
+  Browser -->|HTTP(S) requests| Frontend
+  Frontend -->|proxied `/api`| Backend
+  Backend -->|internal metrics queries| Prom
+  Backend -->|reads/writes| MinIO
+  DG -->|push metrics| Prom
+
+  classDef internal fill:#f3f4f6,stroke:#cbd5e1
+  classDef exposed fill:#fff7ed,stroke:#f59e0b
+  class Internal internal
+  class Exposed exposed

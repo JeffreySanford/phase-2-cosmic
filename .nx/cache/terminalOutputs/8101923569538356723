@@ -1,0 +1,13 @@
+[33m❯[39m Building...
+[32m✔[39m Building...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m         [2m | [22m  [36m1.30 MB[37m[2m | [22m
+[32mpolyfills.js[37m       [2m | [22m[2mpolyfills[22m    [2m | [22m [36m90.23 kB[37m[2m | [22m
+[32mstyles.css[37m         [2m | [22m[2mstyles[22m       [2m | [22m[36m110 bytes[37m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m  [1m1.39 MB[22m
+
+Application bundle generation complete. [1.670 seconds]
+[39m
+[37mOutput location: C:\repos\phase-2-cosmic\dist\apps\frontend
+[39m

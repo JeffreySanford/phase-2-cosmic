@@ -1,0 +1,266 @@
+---
+openapi: 3.1.0
+info:
+  title: Cosmic Horizon Governance API
+  version: 0.1.0
+  description: |
+    Canonical control-plane API for ingest metadata and job orchestration.
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/v1/health:
+    get:
+      operationId: getHealth
+      tags: [Health]
+      responses:
+        '200':
+          description: Service health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/v1/ingest:
+    post:
+      operationId: postIngest
+      tags: [Ingest]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestRequest'
+      responses:
+        '202':
+          description: Ingest accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestResponse'
+  /api/v1/jobs:
+    get:
+      operationId: listJobs
+      tags: [Jobs]
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobStatusResponse'
+    post:
+      operationId: submitJob
+      tags: [Jobs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobSubmitRequest'
+      responses:
+        '202':
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobSubmitResponse'
+  /api/v1/jobs/{id}:
+    get:
+      operationId: getJobStatus
+      tags: [Jobs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/jobs/{id}/transition:
+    post:
+      operationId: transitionJob
+      tags: [Jobs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  type: string
+                  enum:
+                    - QUEUED
+                    - RUNNING
+                    - COMPLETED
+                    - FAILED
+                    - CANCELED
+                    - TIMED_OUT
+      responses:
+        '200':
+          description: Job transitioned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - timestamp
+      properties:
+        status:
+          type: string
+          const: ok
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    IngestRequest:
+      type: object
+      required:
+        - source
+        - eventType
+        - payloadBytes
+      properties:
+        source:
+          type: string
+          minLength: 1
+        eventType:
+          type: string
+          minLength: 1
+        payloadBytes:
+          type: integer
+          minimum: 0
+        traceId:
+          type: string
+      additionalProperties: false
+    IngestResponse:
+      type: object
+      required:
+        - ingestId
+        - status
+        - acceptedAt
+      properties:
+        ingestId:
+          type: string
+        status:
+          type: string
+          const: ACCEPTED
+        acceptedAt:
+          type: string
+          format: date-time
+    JobSubmitRequest:
+      type: object
+      required:
+        - workflow
+        - datasetId
+      properties:
+        workflow:
+          type: string
+          minLength: 1
+        datasetId:
+          type: string
+          minLength: 1
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+        requestedBy:
+          type: string
+      additionalProperties: false
+    JobSubmitResponse:
+      type: object
+      required:
+        - jobId
+        - status
+        - queuedAt
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum:
+            - QUEUED
+            - RUNNING
+            - COMPLETED
+            - FAILED
+            - CANCELED
+            - TIMED_OUT
+        queuedAt:
+          type: string
+          format: date-time
+    JobStatusResponse:
+      type: object
+      required:
+        - jobId
+        - workflow
+        - datasetId
+        - status
+        - createdAt
+        - updatedAt
+        - parameters
+      properties:
+        jobId:
+          type: string
+        workflow:
+          type: string
+        datasetId:
+          type: string
+        status:
+          type: string
+          enum:
+            - QUEUED
+            - RUNNING
+            - COMPLETED
+            - FAILED
+            - CANCELED
+            - TIMED_OUT
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+        requestedBy:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        jobId:
+          type: string

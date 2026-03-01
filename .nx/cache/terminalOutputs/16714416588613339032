@@ -1,0 +1,78 @@
+
+Linting "frontend"...
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\server.nest.ts[24m[0m
+[0m  [2m1:1[22m  [33mwarning[39m  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any', '@typescript-eslint/no-var-requires', 'no-empty', or '@typescript-eslint/no-unused-vars')[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\app.module.ts[24m[0m
+[0m  [2m39:10[22m  [31merror[39m  'DatasetsService' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\features\datasets\datasets.component.ts[24m[0m
+[0m  [2m22:104[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m27:155[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\features\jobs\jobs-submit-dialog.component.ts[24m[0m
+[0m    [2m7:16[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m85:33[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m104:37[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\features\jobs\jobs.component.ts[24m[0m
+[0m    [2m1:29[22m  [31merror[39m    'OnDestroy' is defined but never used                                                                                          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m70:47[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                       [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m73:47[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                       [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m88:47[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                       [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m100:41[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                       [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m107:41[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                       [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m118:41[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                       [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m122:3[22m   [33mwarning[39m  Lifecycle interface 'OnDestroy' should be implemented for method 'ngOnDestroy'. (https://angular.dev/style-guide#style-09-01)  [2m@angular-eslint/use-lifecycle-interface[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\features\telemetry\telemetry.component.ts[24m[0m
+[0m  [2m186:83[22m   [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m187:58[22m   [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m187:78[22m   [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m188:119[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m189:113[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\features\topology\topology.component.ts[24m[0m
+[0m   [2m41:33[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                                                  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m42:33[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                                                  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m43:39[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                                                  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m44:41[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                                                  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m45:36[22m  [31merror[39m    Unexpected any. Specify a different type                                                                                                                  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m66:5[22m   [31merror[39m    Prefer RxJS Observable streams over async/await patterns in UI code; prefer `firstValueFrom` or Observables with subscription patterns where appropriate  [2mno-restricted-syntax[22m[0m
+[0m   [2m80:5[22m   [31merror[39m    Prefer RxJS Observable streams over async/await patterns in UI code; prefer `firstValueFrom` or Observables with subscription patterns where appropriate  [2mno-restricted-syntax[22m[0m
+[0m  [2m101:19[22m  [31merror[39m    Prefer RxJS Observable streams over async/await patterns in UI code; prefer `firstValueFrom` or Observables with subscription patterns where appropriate  [2mno-restricted-syntax[22m[0m
+[0m  [2m105:14[22m  [31merror[39m    '_err' is defined but never used                                                                                                                          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m108:27[22m  [31merror[39m    '_tag' is defined but never used                                                                                                                          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m109:25[22m  [31merror[39m    '_name' is defined but never used                                                                                                                         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m109:40[22m  [31merror[39m    '_value' is defined but never used                                                                                                                        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m110:27[22m  [31merror[39m    '_sel' is defined but never used                                                                                                                          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m111:30[22m  [31merror[39m    '_sel' is defined but never used                                                                                                                          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m112:25[22m  [31merror[39m    '_d' is defined but never used                                                                                                                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m114:25[22m  [31merror[39m    '_fn' is defined but never used                                                                                                                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m115:25[22m  [31merror[39m    '_t' is defined but never used                                                                                                                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m118:39[22m  [31merror[39m    '_ev' is defined but never used                                                                                                                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m118:52[22m  [31merror[39m    '_handler' is defined but never used                                                                                                                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m121:21[22m  [31merror[39m    Unexpected empty method 'stop'                                                                                                                            [2m@typescript-eslint/no-empty-function[22m[0m
+[0m  [2m122:23[22m  [31merror[39m    '_n' is defined but never used                                                                                                                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m123:24[22m  [31merror[39m    Unexpected empty method 'restart'                                                                                                                         [2m@typescript-eslint/no-empty-function[22m[0m
+[0m  [2m124:14[22m  [31merror[39m    '_ev' is defined but never used                                                                                                                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m124:27[22m  [31merror[39m    '_cb' is defined but never used                                                                                                                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m125:17[22m  [31merror[39m    '_name' is defined but never used                                                                                                                         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m125:32[22m  [31merror[39m    '_f' is defined but never used                                                                                                                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m131:27[22m  [31merror[39m    '_nodes' is defined but never used                                                                                                                        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m132:21[22m  [31merror[39m    '_links' is defined but never used                                                                                                                        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m134:23[22m  [31merror[39m    '_x' is defined but never used                                                                                                                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m134:35[22m  [31merror[39m    '_y' is defined but never used                                                                                                                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m142:5[22m   [33mwarning[39m  Forbidden non-null assertion                                                                                                                              [2m@typescript-eslint/no-non-null-assertion[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\typings.d.ts[24m[0m
+[0m  [2m17:13[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[31m[1m✖ 52 problems (49 errors, 3 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[31m[1m  0 errors and 2 warnings potentially fixable with the `--fix` option.[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
+✖ 52 problems (49 errors, 3 warnings)
+
+  0 errors and 2 warnings are potentially fixable with the `--fix` option.
+

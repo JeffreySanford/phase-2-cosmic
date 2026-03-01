@@ -1,17 +1,21 @@
+---
+# yamllint disable=truthy,new-lines
 name: Java CI - tests + preflight
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test-matrix:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [17, 21]
+        java:
+          - 17
+          - 21
     steps:
       - name: Checkout
         uses: actions/checkout@v4

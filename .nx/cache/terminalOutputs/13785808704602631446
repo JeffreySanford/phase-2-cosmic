@@ -1,0 +1,419 @@
+ [1mPort 4200 is already in use.
+Would you like to use a different port?[22m [2m(Y/n)[22m[47G[48G[2K[1A[2K[G [1mPort 4200 is already in use.
+Would you like to use a different port?[22m [2m(Y/n)[22m Y[48G[47G[2K[1A[2K[G [1mPort 4200 is already in use.
+Would you like to use a different port?[22m [36myes[39m[44G
+[?25h[33m❯[39m Building...
+[32m✔[39m Building...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m
+[32mstyles.css[37m         [2m | [22m[2mstyles[22m       [2m | [22m [36m97.95 kB[37m[2m | [22m
+[32mpolyfills.js[37m       [2m | [22m[2mpolyfills[22m    [2m | [22m [36m90.23 kB[37m[2m | [22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m         [2m | [22m [36m40.42 kB[37m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m[1m228.61 kB[22m
+
+Application bundle generation complete. [1.674 seconds]
+[39m
+[37mWatch mode enabled. Watching for file changes...[39m
+[37mNOTE: Raw file sizes do not reflect development server per-request transformations.[39m
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m49645[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.427 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS-992003: No suitable injection token for parameter 'ngZone' of class 'ViewerComponent'.
+  Consider using the @Inject decorator to specify an injection token.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:61:14:
+[37m      61 │       private [32mngZone[37m: import('@angular/core').NgZone,
+         ╵               [32m~~~~~~[0m
+
+  This type is not supported as injection token.
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:61:22:
+[37m      61 │       private ngZone: [32mimport('@angular/core').NgZone[37m,
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.186 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS-992003: No suitable injection token for parameter 'ngZone' of class 'ViewerComponent'.
+  Consider using the @Inject decorator to specify an injection token.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:61:14:
+[37m      61 │       private [32mngZone[37m: import('@angular/core').NgZone,
+         ╵               [32m~~~~~~[0m
+
+  This type is not supported as injection token.
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:61:22:
+[37m      61 │       private ngZone: [32mimport('@angular/core').NgZone[37m,
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.197 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS-992003: No suitable injection token for parameter 'ngZone' of class 'ViewerComponent'.
+  Consider using the @Inject decorator to specify an injection token.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:62:14:
+[37m      62 │       private [32mngZone[37m: import('@angular/core').NgZone,
+         ╵               [32m~~~~~~[0m
+
+  This type is not supported as injection token.
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:62:22:
+[37m      62 │       private ngZone: [32mimport('@angular/core').NgZone[37m,
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.188 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS-992003: No suitable injection token for parameter 'ngZone' of class 'ViewerComponent'.
+  Consider using the @Inject decorator to specify an injection token.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:63:14:
+[37m      63 │       private [32mngZone[37m: import('@angular/core').NgZone,
+         ╵               [32m~~~~~~[0m
+
+  This type is not supported as injection token.
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:63:22:
+[37m      63 │       private ngZone: [32mimport('@angular/core').NgZone[37m,
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m
+[32mstyles.css[37m         [2m | [22m[2mstyles[22m       [2m | [22m [36m97.95 kB[37m[2m | [22m
+[32mpolyfills.js[37m       [2m | [22m[2mpolyfills[22m    [2m | [22m [36m90.23 kB[37m[2m | [22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m         [2m | [22m [36m42.77 kB[37m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m[1m230.96 kB[22m
+
+Application bundle generation complete. [0.220 seconds]
+[39m
+[37mPage reload sent to client(s).[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m
+No output file changes.
+
+Application bundle generation complete. [0.217 seconds]
+[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m
+No output file changes.
+
+Application bundle generation complete. [0.227 seconds]
+[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.155 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property '__aladin_init_attempt' comes from an index signature, so it must be accessed with ['__aladin_init_attempt'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:87:65:
+[37m      87 │ ... unknown as Record<string, unknown>).[32m__aladin_init_attempt[37m = true;
+         ╵                                         [32m~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.129 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property '__aladin_init_attempt' comes from an index signature, so it must be accessed with ['__aladin_init_attempt'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:87:65:
+[37m      87 │ ... unknown as Record<string, unknown>).[32m__aladin_init_attempt[37m = true;
+         ╵                                         [32m~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.108 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property '__aladin_init_attempt' comes from an index signature, so it must be accessed with ['__aladin_init_attempt'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:87:65:
+[37m      87 │ ... unknown as Record<string, unknown>).[32m__aladin_init_attempt[37m = true;
+         ╵                                         [32m~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.167 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property '__aladin_init_attempt' comes from an index signature, so it must be accessed with ['__aladin_init_attempt'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:87:65:
+[37m      87 │ ... unknown as Record<string, unknown>).[32m__aladin_init_attempt[37m = true;
+         ╵                                         [32m~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.196 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property '__aladin_init_attempt' comes from an index signature, so it must be accessed with ['__aladin_init_attempt'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:87:65:
+[37m      87 │ ... unknown as Record<string, unknown>).[32m__aladin_init_attempt[37m = true;
+         ╵                                         [32m~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:242:23:
+[37m      242 │             if (typeof [32minstAny[37m.setOptions === 'function') {
+          ╵                        [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'setOptions' comes from an index signature, so it must be accessed with ['setOptions'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:242:31:
+[37m      242 │             if (typeof instAny.[32msetOptions[37m === 'function') {
+          ╵                                [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:243:14:
+[37m      243 │               [32minstAny[37m.setOptions(optsControls);
+          ╵               [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'setOptions' comes from an index signature, so it must be accessed with ['setOptions'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:243:22:
+[37m      243 │               instAny.[32msetOptions[37m(optsControls);
+          ╵                       [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: '[39m[22m[1m[31minstAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:246:23:
+[37m      246 │             if (typeof [32minstAny[37m.addControl === 'function') {
+          ╵                        [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'addControl' comes from an index signature, so it must be accessed with ['addControl'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:246:31:
+[37m      246 │             if (typeof instAny.[32maddControl[37m === 'function') {
+          ╵                                [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:247:50:
+[37m      247 │ ...if (optsControls.showLayersControl) [32minstAny[37m.addControl('layers');
+          ╵                                        [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'addControl' comes from an index signature, so it must be accessed with ['addControl'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:247:58:
+[37m      247 │ ...if (optsControls.showLayersControl) instAny.[32maddControl[37m('layers');
+          ╵                                                [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:248:48:
+[37m      248 │ ...    if (optsControls.showZoomControl) [32minstAny[37m.addControl('zoom');
+          ╵                                          [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'addControl' comes from an index signature, so it must be[39m[22m[1m[31m accessed with ['addControl'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:248:56:
+[37m      248 │ ...    if (optsControls.showZoomControl) instAny.[32maddControl[37m('zoom');
+          ╵                                                  [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:249:54:
+[37m      249 │ ...Controls.showFullScreenControl) [32minstAny[37m.addControl('fullscreen');
+          ╵                                    [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'addControl' comes from an index signature, so it must be accessed with ['addControl'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:249:62:
+[37m      249 │ ...Controls.showFullScreenControl) instAny.[32maddControl[37m('fullscreen');
+          ╵                                            [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:253:23:
+[37m      253 │             if (typeof [32minstAny[37m.update === 'function') instAny.upd...
+          ╵                        [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'update' comes from an index signature, so it must be accessed with ['update'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:253:31:
+[37m      253 │             if (typeof instAny.[32mupdate[37m === 'function') instAny.upd...
+          ╵                                [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin ang[39m[22m[1m[31mular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:253:54:
+[37m      253 │ ...peof instAny.update === 'function') [32minstAny[37m.update(optsControls);
+          ╵                                        [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'update' comes from an index signature, so it must be accessed with ['update'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:253:62:
+[37m      253 │ ...peof instAny.update === 'function') instAny.[32mupdate[37m(optsControls);
+          ╵                                                [32m~~~~~~[0m
+
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.260 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:242:23:
+[37m      242 │             if (typeof [32minstAny[37m.setOptions === 'function') {
+          ╵                        [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'setOptions' comes from an index signature, so it must be accessed with ['setOptions'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:242:31:
+[37m      242 │             if (typeof instAny.[32msetOptions[37m === 'function') {
+          ╵                                [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:243:14:
+[37m      243 │               [32minstAny[37m.setOptions(optsControls);
+          ╵               [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'setOptions' comes from an index signature, so it must be accessed with ['setOptions'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:243:22:
+[37m      243 │               instAny.[32msetOptions[37m(optsControls);
+          ╵                       [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:246:23:
+[37m      246 │             if (typeof [32minstAny[37m.addControl === 'function') {
+          ╵                        [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'addControl' comes from an index signature, so it must be accessed with ['addControl'].[0m [1m[35m[plugin angular-co[39m[22m[1m[31mmpiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:246:31:
+[37m      246 │             if (typeof instAny.[32maddControl[37m === 'function') {
+          ╵                                [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:247:50:
+[37m      247 │ ...if (optsControls.showLayersControl) [32minstAny[37m.addControl('layers');
+          ╵                                        [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'addControl' comes from an index signature, so it must be accessed with ['addControl'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:247:58:
+[37m      247 │ ...if (optsControls.showLayersControl) instAny.[32maddControl[37m('layers');
+          ╵                                                [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:248:48:
+[37m      248 │ ...    if (optsControls.showZoomControl) [32minstAny[37m.addControl('zoom');
+          ╵                                          [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'addControl' comes from an index signature, so it must be accessed with ['addControl'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:248:56:
+[37m      248 │ ...    if (optsControls.showZoomControl) instAny.[32maddControl[37m('zoom');
+          ╵                                                  [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/fron[39m[22m[1m[31mtend/src/app/features/viewer/viewer.component.ts:249:54:
+[37m      249 │ ...Controls.showFullScreenControl) [32minstAny[37m.addControl('fullscreen');
+          ╵                                    [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'addControl' comes from an index signature, so it must be accessed with ['addControl'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:249:62:
+[37m      249 │ ...Controls.showFullScreenControl) instAny.[32maddControl[37m('fullscreen');
+          ╵                                            [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:253:23:
+[37m      253 │             if (typeof [32minstAny[37m.update === 'function') instAny.upd...
+          ╵                        [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'update' comes from an index signature, so it must be accessed with ['update'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:253:31:
+[37m      253 │             if (typeof instAny.[32mupdate[37m === 'function') instAny.upd...
+          ╵                                [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS18047: 'instAny' is possibly 'null'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:253:54:
+[37m      253 │ ...peof instAny.update === 'function') [32minstAny[37m.update(optsControls);
+          ╵                                        [32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS4111: Property 'update' comes from an index signature, so it must be accessed with ['update'].[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/a[39m[22m[1m[31mpp/features/viewer/viewer.component.ts:253:62:
+[37m      253 │ ...peof instAny.update === 'function') instAny.[32mupdate[37m(optsControls);
+          ╵                                                [32m~~~~~~[0m
+
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m
+[32mstyles.css[37m         [2m | [22m[2mstyles[22m       [2m | [22m [36m97.95 kB[37m[2m | [22m
+[32mpolyfills.js[37m       [2m | [22m[2mpolyfills[22m    [2m | [22m [36m90.23 kB[37m[2m | [22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m         [2m | [22m [36m42.80 kB[37m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m[1m230.99 kB[22m
+
+Application bundle generation complete. [0.222 seconds]
+[39m
+[37mPage reload sent to client(s).[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m
+No output file changes.
+
+Application bundle generation complete. [0.204 seconds]
+[39m

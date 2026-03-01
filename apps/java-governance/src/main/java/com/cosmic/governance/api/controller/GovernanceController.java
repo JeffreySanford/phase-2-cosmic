@@ -1,0 +1,165 @@
+package com.cosmic.governance.api.controller;
+
+import com.cosmic.governance.api.dto.IngestRequest;
+import com.cosmic.governance.api.dto.IngestResponse;
+import com.cosmic.governance.api.dto.JobStatusResponse;
+import com.cosmic.governance.api.dto.JobSubmitRequest;
+import com.cosmic.governance.api.dto.JobSubmitResponse;
+import com.cosmic.governance.api.service.JobService;
+import com.cosmic.governance.api.service.DatasetService;
+import com.cosmic.governance.api.dto.DatasetRequest;
+import com.cosmic.governance.api.dto.DatasetResponse;
+import jakarta.validation.Valid;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/v1")
+public class GovernanceController {
+    private final JobService jobService;
+    private final com.cosmic.governance.api.service.SchemaService schemaService;
+    private final DatasetService datasetService;
+
+    public GovernanceController(JobService jobService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService) {
+        this.jobService = jobService;
+        this.schemaService = schemaService;
+        this.datasetService = datasetService;
+    }
+
+    @GetMapping("/health")
+    public Map<String, String> health() {
+        return Map.of(
+                "status", "ok",
+                "service", "java-governance",
+                "timestamp", Instant.now().toString()
+        );
+    }
+
+    @PostMapping("/ingest")
+    public ResponseEntity<IngestResponse> ingest(@Valid @RequestBody IngestRequest request) {
+        String acceptedAt = Instant.now().toString();
+        IngestResponse response = new IngestResponse(
+                "ing-" + UUID.randomUUID(),
+                "ACCEPTED",
+                acceptedAt
+        );
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+    }
+
+    @PostMapping("/jobs")
+    public ResponseEntity<JobSubmitResponse> submitJob(@Valid @RequestBody JobSubmitRequest request) {
+        // server-side JSON Schema validation (if a schema exists for the workflow)
+        var vr = schemaService.validate(request.workflow(), request.parameters());
+        if (!vr.schemaFound() && !vr.valid()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new JobSubmitResponse("", "INVALID_SCHEMA", ""));
+        }
+        if (vr.schemaFound() && !vr.valid()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new JobSubmitResponse("", "validation_failed", Instant.now().toString()));
+        }
+
+        JobStatusResponse created = jobService.submit(request);
+        JobSubmitResponse response = new JobSubmitResponse(
+                created.jobId(),
+                created.status(),
+                created.createdAt()
+        );
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+    }
+
+    @PostMapping("/jobs/validate")
+    public ResponseEntity<?> validatePayload(@RequestBody java.util.Map<String, Object> body) {
+        String type = (String) body.get("type");
+        Object payload = body.get("payload");
+        if (type == null) return ResponseEntity.badRequest().body(Map.of("error","missing_type"));
+        var vr = schemaService.validate(type, payload);
+        if (!vr.schemaFound()) return ResponseEntity.ok(Map.of("valid", true, "schemaFound", false));
+        if (vr.valid()) return ResponseEntity.ok(Map.of("valid", true));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("valid", false, "message", vr.message()));
+    }
+
+    @GetMapping("/jobs/{id}")
+    public ResponseEntity<?> jobStatus(@PathVariable("id") String id) {
+        return jobService.get(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                        "error", "job_not_found",
+                        "jobId", id
+                )));
+    }
+
+        @GetMapping("/jobs")
+        public ResponseEntity<?> listJobs() {
+        return ResponseEntity.ok(jobService.listAll());
+        }
+
+            @GetMapping("/jobs/types")
+            public ResponseEntity<?> jobTypes() {
+            return ResponseEntity.ok(jobService.types());
+            }
+
+            @GetMapping("/jobs/{id}/logs")
+            public ResponseEntity<?> jobLogs(@PathVariable("id") String id) {
+                String key = "job:" + id + ":logs";
+                var vals = jobService.getLogs(id);
+                return ResponseEntity.ok(vals);
+            }
+
+            @GetMapping("/jobs/{id}/artifacts")
+            public ResponseEntity<?> jobArtifacts(@PathVariable("id") String id) {
+                var arts = jobService.getArtifacts(id);
+                return ResponseEntity.ok(arts);
+            }
+
+            @GetMapping("/jobs/{id}/artifacts/{name}")
+            public ResponseEntity<String> artifactContent(@PathVariable("id") String id, @PathVariable("name") String name) {
+                // try to serve a file from local artifact store
+                try {
+                    java.nio.file.Path base = java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "governance-artifacts", id);
+                    java.nio.file.Path file = base.resolve(name).normalize();
+                    if (java.nio.file.Files.exists(file) && file.startsWith(base)) {
+                        String content = java.nio.file.Files.readString(file);
+                        return ResponseEntity.ok(content);
+                    }
+                } catch (Exception ignored) {}
+                // fallback to simulated artifact content for dev/testing
+                String content = "Simulated artifact for job " + id + " - " + name + "\nResult: OK";
+                return ResponseEntity.ok(content);
+            }
+
+            @PostMapping("/datasets")
+            public ResponseEntity<DatasetResponse> createDataset(@RequestBody DatasetRequest req) {
+                DatasetResponse d = datasetService.create(req);
+                return ResponseEntity.status(HttpStatus.CREATED).body(d);
+            }
+
+            @GetMapping("/datasets")
+            public ResponseEntity<?> listDatasets() {
+                return ResponseEntity.ok(datasetService.listAll());
+            }
+
+            @GetMapping("/datasets/{id}")
+            public ResponseEntity<?> getDataset(@PathVariable("id") String id) {
+                return datasetService.get(id)
+                        .<ResponseEntity<?>>map(ResponseEntity::ok)
+                        .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","dataset_not_found","id",id)));
+            }
+
+        @PostMapping("/jobs/{id}/transition")
+        public ResponseEntity<?> transitionJob(@PathVariable("id") String id, @Valid @RequestBody com.cosmic.governance.api.dto.JobTransitionRequest req) {
+        return jobService.transition(id, req.state())
+            .<ResponseEntity<?>>map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                "error", "job_not_found",
+                "jobId", id
+            )));
+        }
+}

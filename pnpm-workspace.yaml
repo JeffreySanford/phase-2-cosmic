@@ -1,0 +1,10 @@
+---
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@parcel/watcher'
+  - '@swc/core'
+  - cypress
+  - esbuild
+  - lmdb
+  - msgpackr-extract
+  - nx

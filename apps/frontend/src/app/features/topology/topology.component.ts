@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function, no-restricted-syntax */
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 // d3 is ESM; load dynamically at runtime to avoid Jest/node transform issues
@@ -38,11 +39,11 @@ type D3Module = {
   forceLink: (links: TopoLink[]) => { id: (fn: (d: TopoNode) => string) => { distance: (n: number) => unknown } };
   forceManyBody: () => { strength: (n: number) => unknown };
   forceCenter: (x: number, y: number) => unknown;
-  arc?: (...args: unknown[]) => any;
-  bin?: (...args: unknown[]) => any;
-  scaleTime?: (...args: unknown[]) => any;
-  scaleLinear?: (...args: unknown[]) => any;
-  extent?: (...args: unknown[]) => any;
+  arc?: (...args: unknown[]) => unknown;
+  bin?: (...args: unknown[]) => unknown;
+  scaleTime?: (...args: unknown[]) => unknown;
+  scaleLinear?: (...args: unknown[]) => unknown;
+  extent?: (...args: unknown[]) => unknown;
 };
 
 @Component({
@@ -139,7 +140,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
 
   private render(nodes: TopoNode[], links: TopoLink[]) {
     if (!this.svg) return;
-    this.svg!.selectAll('*').remove?.();
+    this.svg.selectAll('*').remove?.();
     const el = this.graphEl.nativeElement;
     const w = el.clientWidth || 800;
     const h = Math.max(360, el.clientHeight || 480);

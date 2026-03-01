@@ -1,0 +1,260 @@
+  [2mconsole.debug[22m
+    viewer:init - loadFactory start
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:163:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - existing global factory present? false
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:168:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - injecting Aladin script tag
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:176:17)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - loadFactory start
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:163:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - existing global factory present? false
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:168:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - loadFactory start
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:163:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - existing global factory present? false
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:168:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - loadFactory start
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:163:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - existing global factory present? false
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:168:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - loadFactory start
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:163:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - existing global factory present? false
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:168:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - loadFactory start
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:163:15)[22m[2m[22m
+
+  [2mconsole.debug[22m
+    viewer:init - existing global factory present? false
+[2m[22m
+[2m      [2mat ViewerComponent.<anonymous> ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:168:15)[22m[2m[22m
+
+[0m[7m[1m[31m FAIL [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/viewer/[22m[1mviewer.component.spec.ts[22m
+  ViewerComponent
+    [31m×[39m [2memits viewerReady when factory returns instance (146 ms)[22m
+    [31m×[39m [2mcalls aladin init and factory during init (26 ms)[22m
+    [31m×[39m [2mcreates the viewer inside the container element (78 ms)[22m
+    [31m×[39m [2mshows loading indicator until viewerReady and then removes it (81 ms)[22m
+    [31m×[39m [2menables controls (addControl or setOptions) when inputs request them (73 ms)[22m
+    [31m×[39m [2mcalls remove/destroy on ngOnDestroy (77 ms)[22m
+
+[1m[31m  [1m● [22m[1mViewerComponent › emits viewerReady when factory returns instance[39m[22m
+
+    [2mexpect([22m[31mjest.fn()[39m[2m).[22mtoHaveBeenCalled[2m()[22m
+
+    Expected number of calls: >= [32m1[39m
+    Received number of calls:    [31m0[39m
+[2m[22m
+[2m    [0m [90m 63 |[39m     [90m// wait for async init pipeline[39m[22m
+[2m     [90m 64 |[39m     [36mreturn[39m firstValueFrom(timer([35m50[39m))[33m.[39mthen(() [33m=>[39m {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 65 |[39m       expect(readySpy)[33m.[39mtoHaveBeenCalled()[33m;[39m[22m
+[2m     [90m    |[39m                        [31m[1m^[22m[2m[39m[22m
+[2m     [90m 66 |[39m       [36mconst[39m instance [33m=[39m readySpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m[22m
+[2m     [90m 67 |[39m       expect(instance)[33m.[39mtoBeTruthy()[33m;[39m[22m
+[2m     [90m 68 |[39m       expect([36mtypeof[39m instance[33m.[39mremove)[33m.[39mtoBe([32m'function'[39m)[33m;[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2m[0m[36msrc/app/features/viewer/viewer.component.spec.ts[39m[0m[2m:65:24[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:416:32)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2176:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat ZoneImpl.run ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:147:47)[22m[2m[22m
+[2m      [2mat [22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:2598:42[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:449:37)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2207:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:448:42)[22m[2m[22m
+[2m      [2mat ZoneImpl.runTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:196:51)[22m[2m[22m
+[2m      [2mat drainMicroTaskQueue ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:638:39)[22m[2m[22m
+[2m      [2mat ZoneTask.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:535:25)[22m[2m[22m
+[2m      [2mat ZoneTask.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:520:52)[22m[2m[22m
+[2m      [2mat data.args.<computed> ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:1839:36)[22m[2m[22m
+[2m      [2mat Timeout.task ([22m[2m../../node_modules/.pnpm/jsdom@20.0.3/node_modules/jsdom/lib/jsdom/browser/Window.js[2m:520:19)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mViewerComponent › calls aladin init and factory during init[39m[22m
+
+    [2mexpect([22m[31mjest.fn()[39m[2m).[22mtoHaveBeenCalled[2m()[22m
+
+    Expected number of calls: >= [32m1[39m
+    Received number of calls:    [31m0[39m
+[2m[22m
+[2m    [0m [90m 82 |[39m     [90m// allow next tick for idle/fallback scheduling[39m[22m
+[2m     [90m 83 |[39m     [36mreturn[39m firstValueFrom(timer([35m0[39m))[33m.[39mthen(() [33m=>[39m {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 84 |[39m       expect(initSpy)[33m.[39mtoHaveBeenCalled()[33m;[39m[22m
+[2m     [90m    |[39m                       [31m[1m^[22m[2m[39m[22m
+[2m     [90m 85 |[39m       expect(factorySpy)[33m.[39mtoHaveBeenCalled()[33m;[39m[22m
+[2m     [90m 86 |[39m     })[33m;[39m[22m
+[2m     [90m 87 |[39m   })[33m;[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2m[0m[36msrc/app/features/viewer/viewer.component.spec.ts[39m[0m[2m:84:23[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:416:32)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2176:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat ZoneImpl.run ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:147:47)[22m[2m[22m
+[2m      [2mat [22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:2598:42[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:449:37)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2207:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:448:42)[22m[2m[22m
+[2m      [2mat ZoneImpl.runTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:196:51)[22m[2m[22m
+[2m      [2mat drainMicroTaskQueue ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:638:39)[22m[2m[22m
+[2m      [2mat ZoneTask.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:535:25)[22m[2m[22m
+[2m      [2mat ZoneTask.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:520:52)[22m[2m[22m
+[2m      [2mat data.args.<computed> ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:1839:36)[22m[2m[22m
+[2m      [2mat Timeout.task ([22m[2m../../node_modules/.pnpm/jsdom@20.0.3/node_modules/jsdom/lib/jsdom/browser/Window.js[2m:520:19)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mViewerComponent › creates the viewer inside the container element[39m[22m
+
+    [2mexpect([22m[31mjest.fn()[39m[2m).[22mtoHaveBeenCalled[2m()[22m
+
+    Expected number of calls: >= [32m1[39m
+    Received number of calls:    [31m0[39m
+[2m[22m
+[2m    [0m [90m 94 |[39m       }[33m;[39m[22m
+[2m     [90m 95 |[39m       [36mconst[39m factorySpy [33m=[39m mod[33m.[39maladin [36mas[39m jest[33m.[39m[33mMock[39m[33m;[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 96 |[39m       expect(factorySpy)[33m.[39mtoHaveBeenCalled()[33m;[39m[22m
+[2m     [90m    |[39m                          [31m[1m^[22m[2m[39m[22m
+[2m     [90m 97 |[39m       [36mconst[39m calledWith [33m=[39m factorySpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m[22m
+[2m     [90m 98 |[39m       [36mif[39m ([36mtypeof[39m calledWith [33m===[39m [32m'string'[39m) {[22m
+[2m     [90m 99 |[39m         [90m// factory may accept a selector string; ensure it references the container id[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2m[0m[36msrc/app/features/viewer/viewer.component.spec.ts[39m[0m[2m:96:26[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:416:32)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2176:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat ZoneImpl.run ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:147:47)[22m[2m[22m
+[2m      [2mat [22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:2598:42[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:449:37)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2207:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:448:42)[22m[2m[22m
+[2m      [2mat ZoneImpl.runTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:196:51)[22m[2m[22m
+[2m      [2mat drainMicroTaskQueue ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:638:39)[22m[2m[22m
+[2m      [2mat ZoneTask.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:535:25)[22m[2m[22m
+[2m      [2mat ZoneTask.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:520:52)[22m[2m[22m
+[2m      [2mat data.args.<computed> ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:1839:36)[22m[2m[22m
+[2m      [2mat Timeout.task ([22m[2m../../node_modules/.pnpm/jsdom@20.0.3/node_modules/jsdom/lib/jsdom/browser/Window.js[2m:520:19)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mViewerComponent › shows loading indicator until viewerReady and then removes it[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeFalsy[2m()[22m
+
+    Received: [31m<div class="loading">Loading viewer…</div>[39m
+[2m[22m
+[2m    [0m [90m 117 |[39m     [36mreturn[39m firstValueFrom(timer([35m50[39m))[33m.[39mthen(() [33m=>[39m {[22m
+[2m     [90m 118 |[39m       fixture[33m.[39mdetectChanges()[33m;[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 119 |[39m       expect(root[33m.[39mquerySelector([32m'.loading'[39m))[33m.[39mtoBeFalsy()[33m;[39m[22m
+[2m     [90m     |[39m                                              [31m[1m^[22m[2m[39m[22m
+[2m     [90m 120 |[39m     })[33m;[39m[22m
+[2m     [90m 121 |[39m   })[33m;[39m[22m
+[2m     [90m 122 |[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2m[0m[36msrc/app/features/viewer/viewer.component.spec.ts[39m[0m[2m:119:46[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:416:32)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2176:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat ZoneImpl.run ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:147:47)[22m[2m[22m
+[2m      [2mat [22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:2598:42[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:449:37)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2207:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:448:42)[22m[2m[22m
+[2m      [2mat ZoneImpl.runTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:196:51)[22m[2m[22m
+[2m      [2mat drainMicroTaskQueue ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:638:39)[22m[2m[22m
+[2m      [2mat ZoneTask.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:535:25)[22m[2m[22m
+[2m      [2mat ZoneTask.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:520:52)[22m[2m[22m
+[2m      [2mat data.args.<computed> ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:1839:36)[22m[2m[22m
+[2m      [2mat Timeout.task ([22m[2m../../node_modules/.pnpm/jsdom@20.0.3/node_modules/jsdom/lib/jsdom/browser/Window.js[2m:520:19)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mViewerComponent › enables controls (addControl or setOptions) when inputs request them[39m[22m
+
+    TypeError: Cannot read properties of undefined (reading 'value')
+[2m[22m
+[2m    [0m [90m 132 |[39m       [36mconst[39m mod [33m=[39m jest[33m.[39mrequireMock([32m'aladin-lite'[39m) [36mas[39m unknown [36mas[39m { aladin[33m:[39m jest[33m.[39m[33mMock[39m }[33m;[39m[22m
+[2m     [90m 133 |[39m       [36mconst[39m factorySpy [33m=[39m mod[33m.[39maladin [36mas[39m jest[33m.[39m[33mMock[39m[33m;[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 134 |[39m       [36mconst[39m inst [33m=[39m factorySpy[33m.[39mmock[33m.[39mresults[[35m0[39m][33m.[39mvalue [36mas[39m any[33m;[39m[22m
+[2m     [90m     |[39m                                               [31m[1m^[22m[2m[39m[22m
+[2m     [90m 135 |[39m       [90m// either setOptions was called with optsControls or addControl called for at least one control[39m[22m
+[2m     [90m 136 |[39m       [36mconst[39m setOptionsCalled [33m=[39m inst[33m.[39msetOptions [33m&&[39m inst[33m.[39msetOptions[33m.[39mmock[33m.[39mcalls[33m.[39mlength [33m>[39m [35m0[39m[33m;[39m[22m
+[2m     [90m 137 |[39m       [36mconst[39m addControlCalled [33m=[39m inst[33m.[39maddControl [33m&&[39m inst[33m.[39maddControl[33m.[39mmock[33m.[39mcalls[33m.[39mlength [33m>[39m [35m0[39m[33m;[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2m[0m[36msrc/app/features/viewer/viewer.component.spec.ts[39m[0m[2m:134:47[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:416:32)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2176:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat ZoneImpl.run ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:147:47)[22m[2m[22m
+[2m      [2mat [22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:2598:42[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:449:37)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2207:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:448:42)[22m[2m[22m
+[2m      [2mat ZoneImpl.runTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:196:51)[22m[2m[22m
+[2m      [2mat drainMicroTaskQueue ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:638:39)[22m[2m[22m
+[2m      [2mat ZoneTask.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:535:25)[22m[2m[22m
+[2m      [2mat ZoneTask.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:520:52)[22m[2m[22m
+[2m      [2mat data.args.<computed> ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:1839:36)[22m[2m[22m
+[2m      [2mat Timeout.task ([22m[2m../../node_modules/.pnpm/jsdom@20.0.3/node_modules/jsdom/lib/jsdom/browser/Window.js[2m:520:19)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mViewerComponent › calls remove/destroy on ngOnDestroy[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mnull[39m
+[2m[22m
+[2m    [0m [90m 145 |[39m     [36mreturn[39m firstValueFrom(timer([35m50[39m))[33m.[39mthen(() [33m=>[39m {[22m
+[2m     [90m 146 |[39m       [90m// ensure instance is set[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 147 |[39m       expect(component[33m.[39minstance)[33m.[39mtoBeTruthy()[33m;[39m[22m
+[2m     [90m     |[39m                                  [31m[1m^[22m[2m[39m[22m
+[2m     [90m 148 |[39m[22m
+[2m     [90m 149 |[39m       [36mconst[39m inst [33m=[39m component[33m.[39minstance [36mas[39m unknown [36mas[39m { remove[33m?[39m[33m:[39m jest[33m.[39m[33mMock[39m[33m;[39m destroy[33m?[39m[33m:[39m jest[33m.[39m[33mMock[39m }[33m;[39m[22m
+[2m     [90m 150 |[39m       [36mconst[39m removeSpy [33m=[39m inst[33m.[39mremove [36mas[39m jest[33m.[39m[33mMock[39m [33m|[39m undefined[33m;[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2m[0m[36msrc/app/features/viewer/viewer.component.spec.ts[39m[0m[2m:147:34[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:416:32)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2176:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:415:38)[22m[2m[22m
+[2m      [2mat ZoneImpl.run ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:147:47)[22m[2m[22m
+[2m      [2mat [22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:2598:42[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:449:37)[22m[2m[22m
+[2m      [2mat ProxyZoneSpec.Object.<anonymous>.ProxyZoneSpec.onInvokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone-testing.umd.js[2m:2207:43)[22m[2m[22m
+[2m      [2mat _ZoneDelegate.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:448:42)[22m[2m[22m
+[2m      [2mat ZoneImpl.runTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:196:51)[22m[2m[22m
+[2m      [2mat drainMicroTaskQueue ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:638:39)[22m[2m[22m
+[2m      [2mat ZoneTask.invokeTask ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:535:25)[22m[2m[22m
+[2m      [2mat ZoneTask.invoke ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:520:52)[22m[2m[22m
+[2m      [2mat data.args.<computed> ([22m[2m../../node_modules/.pnpm/zone.js@0.14.10/node_modules/zone.js/bundles/zone.umd.js[2m:1839:36)[22m[2m[22m
+[2m      [2mat Timeout.task ([22m[2m../../node_modules/.pnpm/jsdom@20.0.3/node_modules/jsdom/lib/jsdom/browser/Window.js[2m:520:19)[22m[2m[22m
+
+[1mTest Suites: [22m[1m[31m1 failed[39m[22m, 1 total
+[1mTests:       [22m[1m[31m6 failed[39m[22m, 6 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        2.483 s
+[2mRan all test suites[22m[2m matching [22m/apps\\frontend\\src\\app\\features\\viewer\\viewer.component.spec.ts/i[2m.[22m

@@ -1,0 +1,17 @@
+[33m❯[39m Building...
+[32m✔[39m Building...
+[37mApplication bundle generation failed. [1.870 seconds]
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG1: Property 'aladinInstance' is private and only accessible within class 'ViewComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/view/view.component.html:4:33:
+[37m      4 │ ...div class="loading" *ngIf="![32maladinInstance[37m">Loading viewer…</div>
+        ╵                                [32m~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component ViewComponent.
+
+    apps/frontend/src/app/features/view/view.component.ts:33:15:
+[37m      33 │   templateUrl: [32m'./view.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m

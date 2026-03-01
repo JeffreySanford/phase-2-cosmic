@@ -1,0 +1,41 @@
+
+Linting "frontend"...
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\server.nest.ts[24m[0m
+[0m    [2m4:10[22m   [31merror[39m  'ExpressAdapter' is defined but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m16:16[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m41:27[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m75:11[22m   [31merror[39m  'baseUrl' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m81:35[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m88:22[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m100:15[22m   [31merror[39m  Empty block statement                         [2mno-empty[22m[0m
+[0m  [2m105:70[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m116:22[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m170:17[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m187:17[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m204:17[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m232:119[22m  [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m234:63[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m236:40[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m236:52[22m   [31merror[39m  Unexpected any. Specify a different type      [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\__mocks__\aladin-lite.ts[24m[0m
+[0m  [2m8:35[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\features\telemetry\telemetry.component.ts[24m[0m
+[0m  [2m194:37[22m  [31merror[39m    Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m195:40[22m  [31merror[39m    Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m203:21[22m  [33mwarning[39m  Forbidden non-null assertion              [2m@typescript-eslint/no-non-null-assertion[22m[0m
+[0m  [2m204:38[22m  [31merror[39m    Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m208:36[22m  [33mwarning[39m  Forbidden non-null assertion              [2m@typescript-eslint/no-non-null-assertion[22m[0m
+[0m[0m
+[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\typings.d.ts[24m[0m
+[0m   [2m9:57[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m9:65[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m10:20[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m17:13[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[31m[1m✖ 26 problems (24 errors, 2 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
+✖ 26 problems (24 errors, 2 warnings)
+

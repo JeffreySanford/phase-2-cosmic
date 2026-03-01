@@ -1,3 +1,4 @@
+---
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
@@ -8,7 +9,12 @@ services:
       - "2181:2181"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      test:
+        - "CMD"
+        - "nc"
+        - "-z"
+        - "localhost"
+        - "2181"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,7 +33,11 @@ services:
       - "9092:9092"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/9092 || exit 1"]
+      test:
+        - "CMD"
+        - "bash"
+        - "-c"
+        - "echo > /dev/tcp/localhost/9092 || exit 1"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,7 +49,10 @@ services:
       - "15672:15672"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      test:
+        - "CMD"
+        - "rabbitmq-diagnostics"
+        - "status"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -54,7 +67,11 @@ services:
       - "9000:9000"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:9000/minio/health/live"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -67,7 +84,11 @@ services:
       - "9090:9090"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9090/-/ready"]
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:9090/-/ready"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -87,7 +108,11 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:3000/api/health"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -146,7 +171,11 @@ services:
       - prometheus
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:8080/actuator/health"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -164,7 +193,11 @@ services:
       - SPRING_REDIS_PORT=6379
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:8080/actuator/health"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -191,7 +224,9 @@ services:
       - pnpm-store:/pnpm-store
     depends_on:
       - prometheus
-    entrypoint: ["/bin/bash", "-lc"]
+    entrypoint:
+      - "/bin/bash"
+      - "-lc"
     command: "./scripts/docker-test-runner.sh"
     restart: 'no'
 

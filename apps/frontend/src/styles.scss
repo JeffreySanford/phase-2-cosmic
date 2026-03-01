@@ -1,0 +1,82 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* Angular Material theme */
+@use './styles/material-theme' as *;
+
+/* Basic app defaults */
+body {
+	margin: 0;
+	font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+/* Position Material overlayed snackbars above the app footer. The service
+	 keeps --app-footer-height updated to match the footer element's height. */
+.cdk-overlay-container .cdk-global-overlay-wrapper {
+	position: fixed !important;
+	left: 0 !important;
+	right: 0 !important;
+	bottom: calc(var(--app-footer-height, 0px) + 8px) !important;
+	display: flex !important;
+	justify-content: center !important;
+	pointer-events: none !important;
+	z-index: 10000 !important;
+}
+
+.cdk-overlay-container .cdk-global-overlay-wrapper .mat-snack-bar-container {
+	pointer-events: auto !important;
+}
+
+/* Color-coded snack variants */
+.app-snack.mat-snack-bar-container {
+	border-radius: 6px;
+}
+.snack-success.mat-snack-bar-container { background: #2e7d32; color: #fff; }
+.snack-error.mat-snack-bar-container { background: #c62828; color: #fff; }
+.snack-info.mat-snack-bar-container { background: #1565c0; color: #fff; }
+
+/* Ensure app and main layout allow full-height flex children (viewer needs this) */
+html, body {
+	height: 100%;
+}
+
+app-root {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+
+/* ensure both the custom element wrapper and the <main> inside behave as full-height flex containers */
+app-mainstage,
+main.app-mainstage {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 0;
+	min-height: 0;
+	/* the header spacing is applied as padding instead of a top margin
+	   so that children can stretch to the very top of the stage without
+	   needing negative margins. keeps layout sane and avoids downstream
+	   hacks in feature components. */
+	padding-top: 56px;
+	margin-top: 0;
+}
+
+/* make direct children of the main stage (route host elements) stretch to fill the stage */
+main.app-mainstage > *,
+app-mainstage > * {
+	/* Don't force every routed child to be a flex item here — some pages
+	   should size by their content. Individual components that need to
+	   stretch should declare `display:flex; flex:1 1 0;` on their host.
+	   Keep `min-height:0` so stretched children can shrink correctly. */
+	min-height: 0;
+}
+
+/* global safeguard: prevent any component from injecting a negative top margin
+   on the viewer container. this overrides accidental hacks with !important.
+   the E2E test also asserts this condition. */
+.viewer-root {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 0;
+	min-height: 0;
+	margin-top: 0 !important;
+}
+

@@ -1,0 +1,42 @@
+%% Higher-fidelity container diagram for Phase 2 Cosmic
+flowchart LR
+  subgraph Infra [Infrastructure Services]
+    direction TB
+    ZK[Zookeeper]
+    Kafka[Kafka]
+    Rabbit[RabbitMQ]
+    MinIO[MinIO (S3 API)]
+    Prom[Prometheus]
+  end
+
+  subgraph App [Application Stack]
+    direction TB
+    DG[Data Generator (container)]
+    Backend[Nest SSR & API\n`apps/frontend/server.nest.ts`]
+    Frontend[Angular Frontend\n(dev / static)]
+    TestRunner[CI / Test Runner\n(Playwright / Cypress)]
+  end
+
+  subgraph Client [Client / External]
+    direction TB
+    Browser[Browser]
+    Aladin[Aladin-lite viewer]
+    ExternalIRSA[External HiPS / IRSA]
+  end
+
+  Logs[Payload logs\n`tools/data-generator/logs`]
+
+  DG -->|writes events| Kafka
+  Kafka -->|ingest consumer| Backend
+  DG -->|writes payload files| Logs
+  DG -->|uploads artifacts| MinIO
+  DG -->|exposes metrics| Prom
+
+  Backend -->|API & Prometheus proxy| Frontend
+  Frontend -->|calls `/api/proxy/prometheus`| Backend
+  Frontend -->|renders viewer| Aladin
+  TestRunner -->|runs e2e against| Frontend
+  TestRunner -->|calls APIs| Backend
+
+  Backend -->|serves `system-specs.json`| Frontend
+  ExternalIRSA -->|tiles| Frontend

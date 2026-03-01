@@ -1,0 +1,22 @@
+{
+  "id": null,
+  "title": "Phase2 - Simple Metrics",
+  "uid": "phase2-simple",
+  "schemaVersion": 36,
+  "version": 1,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Java Ingest - CPU/Memory (example)",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "process_cpu_seconds_total{job=\"java-ingest\"}",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" }
+}

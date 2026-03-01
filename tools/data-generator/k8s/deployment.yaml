@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,24 +14,24 @@ spec:
         app: data-generator
     spec:
       containers:
-      - name: data-generator
-        image: ghcr.io/your-org/data-generator:latest
-        args:
-          - "--metrics-addr=:9100"
-          - "--no-stdout"
-          - "--sink=file:/var/log/data-generator/payloads.bin"
-        ports:
-          - containerPort: 9100
-        resources:
-          requests:
-            cpu: "4"
-            memory: "8Gi"
-          limits:
-            cpu: "16"
-            memory: "32Gi"
-        volumeMounts:
-          - name: logs
-            mountPath: /var/log/data-generator
+        - name: data-generator
+          image: ghcr.io/your-org/data-generator:latest
+          args:
+            - "--metrics-addr=:9100"
+            - "--no-stdout"
+            - "--sink=file:/var/log/data-generator/payloads.bin"
+          ports:
+            - containerPort: 9100
+          resources:
+            requests:
+              cpu: "4"
+              memory: "8Gi"
+            limits:
+              cpu: "16"
+              memory: "32Gi"
+          volumeMounts:
+            - name: logs
+              mountPath: /var/log/data-generator
       volumes:
         - name: logs
           emptyDir: {}

@@ -1,0 +1,6 @@
+{
+  "source": "go-streaming-plane",
+  "eventType": "telemetry.batch",
+  "payloadBytes": 4096,
+  "traceId": "trace-20260228-001"
+}

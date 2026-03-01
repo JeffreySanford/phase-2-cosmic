@@ -1,0 +1,1707 @@
+[33m❯[39m Building...
+[32m✔[39m Building...
+[37mApplication bundle generation failed. [4.488 seconds]
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:[39m[22m[1m[33m
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │ [39m[22m[1m[33m  [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [1m[35m[plugin angular-compiler][0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "dependencies" in object literal[0m [duplicate-object-key]
+
+    package.json:83:2:
+[37m      83 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+  The original key "dependencies" is here:
+
+    package.json:61:2:
+[37m      61 │   [32m"dependencies"[37m: {
+         ╵   [32m~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/router' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.component.ts:2:23:
+[37m      2 │ import { Router } from [32m'@angular/router'[37m;
+        ╵                        [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/app.component.ts:12:26:
+[37m      12 │ import { Component } from [32m'@angular/core'[37m;
+         ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/router"[0m
+
+    apps/frontend/src/app/app.component.ts:13:23:
+[37m      13 │ import { Router } from [32m'@angular/router'[37m;
+         ╵                        [32m~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/router" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS-992003: No suitable injection token for parameter 'router' of class 'AppComponent'.
+  Consider using the @Inject decorator to specify an injection token.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.component.ts:15:22:
+[37m      15 │   constructor(private [32mrouter[37m: Router, private sidebarService: Side...
+         ╵                       [32m~~~[39m[22m[1m[31m~~~[0m
+
+  This type does not have a value, so it cannot be used as injection token.
+
+    apps/frontend/src/app/app.component.ts:15:30:
+[37m      15 │   constructor(private router: [32mRouter[37m, private sidebarService: Side...
+         ╵                               [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.config.server.ts:1:58:
+[37m      1 │ ...{ mergeApplicationConfig, ApplicationConfig } from [32m'@angular/core'[37m;
+        ╵                                                       [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/platform-server' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.config.server.ts:2:39:
+[37m      2 │ import { provideServerRendering } from [32m'@angular/platform-server'[37m;
+        ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.config.ts:1:62:
+[37m      1 │ ...plicationConfig, provideZoneChangeDetection } from [32m'@angular/core'[37m;
+        ╵                                                       [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/router' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.config.ts:2:30:
+[37m      2 │ import { provideRouter } from [32m'@angular/router'[37m;
+        ╵                               [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/platform-browser' or i[39m[22m[1m[31mts corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.config.ts:4:39:
+[37m      4 │ import { provideClientHydration } from [32m'@angular/platform-browser'[37m;
+        ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:1:49:
+[37m      1 │ import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from [32m'@angular/core'[37m;
+        ╵                                                  [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/platform-browser' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:2:30:
+[37m      2 │ import { BrowserModule } from [32m'@angular/platform-browser'[37m;
+        ╵                               [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/platform-browser/animations' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:3:40:
+[37m      3 │ ...wserAnimationsModule } from [32m'@angular/platform-browser/animations'[37m;
+        ╵                                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/material/snack-bar' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:4:34:
+[37m      4 │ import { MatSnackBarModule } from [32m'@angular/material/snack-bar'[37m;
+        ╵                                   [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot [39m[22m[1m[31mfind module '@angular/material/card' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:5:30:
+[37m      5 │ import { MatCardModule } from [32m'@angular/material/card'[37m;
+        ╵                               [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/material/form-field' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:6:35:
+[37m      6 │ import { MatFormFieldModule } from [32m'@angular/material/form-field'[37m;
+        ╵                                    [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/material/select' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:7:32:
+[37m      7 │ import { MatSelectModule } from [32m'@angular/material/select'[37m;
+        ╵                                 [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/material/button' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:8:32:
+[37m      8 │ import { MatButtonModule } from [32m'@angular/material/button'[37m;
+        ╵                                 [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/app.module.ts:8:49:
+[37m      8 │ import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from [32m'@angular/core'[37m;
+        ╵                                                  [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[3[39m[22m[1m[31m1mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/platform-browser"[0m
+
+    apps/frontend/src/app/app.module.ts:9:30:
+[37m      9 │ import { BrowserModule } from [32m'@angular/platform-browser'[37m;
+        ╵                               [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/platform-browser" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/material/slide-toggle' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:9:37:
+[37m      9 │ import { MatSlideToggleModule } from [32m'@angular/material/slide-toggle'[37m;
+        ╵                                      [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/cdk/layout' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:10:29:
+[37m      10 │ import { LayoutModule } from [32m'@angular/cdk/layout'[37m;
+         ╵                              [32m~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/platform-browser/animations"[0m
+
+    apps/frontend/src/app/app.module.ts:10:40:
+[37m      10 │ ...serAnimationsModule } from [32m'@angular/platform-browser/animations'[37m;
+         ╵                               [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/platform-browser/animations" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/router' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/ap[39m[22m[1m[31mp/app.module.ts:11:29:
+[37m      11 │ import { RouterModule } from [32m'@angular/router'[37m;
+         ╵                              [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/material/snack-bar"[0m
+
+    apps/frontend/src/app/app.module.ts:11:34:
+[37m      11 │ import { MatSnackBarModule } from [32m'@angular/material/snack-bar'[37m;
+         ╵                                   [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/material/snack-bar" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/material/card"[0m
+
+    apps/frontend/src/app/app.module.ts:12:30:
+[37m      12 │ import { MatCardModule } from [32m'@angular/material/card'[37m;
+         ╵                               [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/material/card" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/common/http' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:12:33:
+[37m      12 │ import { HttpClientModule } from [32m'@angular/common/http'[37m;
+         ╵                                  [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/material/form-field"[0m
+
+    apps/frontend/src/app/app.module.ts:13:35:
+[37m      13 │ import { MatFormFieldModule } from [32m'@angular/material/form-field'[37m;
+         ╵                                    [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/material/form-field" as external to exclude it from the bundle, which will remove this error and leave the unresolved p[39m[22m[1m[31math in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/material/select"[0m
+
+    apps/frontend/src/app/app.module.ts:14:32:
+[37m      14 │ import { MatSelectModule } from [32m'@angular/material/select'[37m;
+         ╵                                 [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/material/select" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/material/button"[0m
+
+    apps/frontend/src/app/app.module.ts:15:32:
+[37m      15 │ import { MatButtonModule } from [32m'@angular/material/button'[37m;
+         ╵                                 [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/material/button" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/material/slide-toggle"[0m
+
+    apps/frontend/src/app/app.module.ts:16:37:
+[37m      16 │ ...rt { MatSlideToggleModule } from [32m'@angular/material/slide-toggle'[37m;
+         ╵                                     [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/material/slide-toggle" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/cdk/layout"[0m
+
+    apps/frontend/src/app/app.module.ts:17:29:
+[37m      17 │ import { LayoutModule } from [32m'@angular/cdk/layout'[37m;
+         ╵                              [32m~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/cdk/layout" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould [39m[22m[1m[31mnot resolve "@angular/router"[0m
+
+    apps/frontend/src/app/app.module.ts:18:29:
+[37m      18 │ import { RouterModule } from [32m'@angular/router'[37m;
+         ╵                              [32m~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/router" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/common/http"[0m
+
+    apps/frontend/src/app/app.module.ts:19:33:
+[37m      19 │ import { HttpClientModule } from [32m'@angular/common/http'[37m;
+         ╵                                  [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/common/http" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS-991010: Value at position 0 in the NgModule.imports of AppModule is not a reference
+  Value could not be determined statically.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.module.ts:49:11:
+[37m      49 │   imports: [32m[[37m
+         ╵            [32m^[0m
+
+  Unknown reference.
+
+    apps/frontend/src/app/app.module.ts:50:4:
+[37m      50 │     [32mBrowserModule[37m,
+         ╵     [32m~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/router' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/app.routes.ts:1:22:
+[37m      1 │ import { Route } from [32m'@angular/router'[37m;
+        ╵                       [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'json'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/environment/environment.component.html:3:28:
+[37m      3 │   <pre *ngIf="env">{{ env | [32mjson[37m }}</pre>
+        ╵                     [39m[22m[1m[31m        [32m~~~~[0m
+
+  Error occurs in the template of component EnvironmentComponent.
+
+    apps/frontend/src/app/base/environment/environment.component.ts:6:15:
+[37m      6 │   templateUrl: [32m'./environment.component.html'[37m,
+        ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/base/environment/environment.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/environment/environment.component.ts:1:34:
+[37m      1 │ import { Component, OnInit } from [32m'@angular/core'[37m;
+        ╵                                   [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'v' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/environment/environment.component.ts:19:38:
+[37m      19 │     this.envService.load().subscribe(([32mv[37m) => (this.env = v));
+         ╵                                       [32m^[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/environment/environment.service.ts:1:27:
+[37m      1 │ import { Injectable } from [32m'@angular/core'[37m;
+        ╵                            [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/common/http' or its cor[39m[22m[1m[31mresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/environment/environment.service.ts:2:27:
+[37m      2 │ import { HttpClient } from [32m'@angular/common/http'[37m;
+        ╵                            [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module 'rxjs' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/environment/environment.service.ts:3:27:
+[37m      3 │ import { Observable } from [32m'rxjs'[37m;
+        ╵                            [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/base/environment/environment.service.ts:12:27:
+[37m      12 │ import { Injectable } from [32m'@angular/core'[37m;
+         ╵                            [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/common/http"[0m
+
+    apps/frontend/src/app/base/environment/environment.service.ts:13:27:
+[37m      13 │ import { HttpClient } from [32m'@angular/common/http'[37m;
+         ╵                            [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/common/http" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS-992003: No suitable injection token for parameter 'http' of class 'EnvironmentService'.
+  Consider using the @Inject decorator to specify an injection token.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/environment/environment.service.ts:17:22:
+[37m      17 │   constructor(private [32mhttp[37m: HttpClient) {}
+         ╵                  [39m[22m[1m[31m     [32m~~~~[0m
+
+  This type does not have a value, so it cannot be used as injection token.
+
+    apps/frontend/src/app/base/environment/environment.service.ts:17:28:
+[37m      17 │   constructor(private http: [32mHttpClient[37m) {}
+         ╵                             [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/base/footer/footer.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/footer/footer.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/base/header/header.component.ts:1:48:
+[37m      1 │ import { Component, EventEmitter, Output } from [32m'@angular/core'[37m;
+        ╵                                                 [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/header/header.component.ts:1:48:
+[37m      1 │ import { Component, EventEmitter, Output } from [32m'@angular/core'[37m;
+        ╵                                                 [32m~~~~~~~~~~~~~~~[0[39m[22m[1m[31mm
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'router-outlet' is not a known element:
+1. If 'router-outlet' is an Angular component, then verify that it is part of this module.
+2. If 'router-outlet' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/mainstage/mainstage.component.html:3:4:
+[37m      3 │     [32m<router-outlet>[37m</router-outlet>
+        ╵     [32m~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component MainstageComponent.
+
+    apps/frontend/src/app/base/mainstage/mainstage.component.ts:5:15:
+[37m      5 │   templateUrl: [32m'./mainstage.component.html'[37m,
+        ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/base/mainstage/mainstage.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/mainstage/mainstage.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/base/sidebar/sidebar.component.ts:1:55:
+[37m      1 │ ...rt { Component, Input, Output, EventEmitter } from [32m'@angular/core'[37m;
+        ╵                                                       [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the p[39m[22m[1m[31math "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/sidebar/sidebar.component.ts:1:55:
+[37m      1 │ ...rt { Component, Input, Output, EventEmitter } from [32m'@angular/core'[37m;
+        ╵                                                       [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/base/sidebar/sidebar.service.ts:1:27:
+[37m      1 │ import { Injectable } from [32m'@angular/core'[37m;
+        ╵                            [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/sidebar/sidebar.service.ts:1:27:
+[37m      1 │ import { Injectable } from [32m'@angular/core'[37m;
+        ╵                            [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "rxjs"[0m
+
+    apps/frontend/src/app/base/sidebar/sidebar.service.ts:2:32:
+[37m      2 │ import { BehaviorSubject } from [32m'rxjs'[37m;
+        ╵                                 [32m~~~~~~[0m
+
+  You can mark the path "rxjs" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module 'rxjs' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/base/sidebar/sid[39m[22m[1m[31mebar.service.ts:2:32:
+[37m      2 │ import { BehaviorSubject } from [32m'rxjs'[37m;
+        ╵                                 [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/features/dashboard/dashboard.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/dashboard/dashboard.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/features/diagnostics/diagnostics.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/diagnostics/diagnostics.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/features/landing/landing.component.ts:1:26:
+[37m      1 │ import { Component[39m[22m[1m[31m } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/landing/landing.component.ts:1:37:
+[37m      1 │ import { Component, OnDestroy } from [32m'@angular/core'[37m;
+        ╵                                      [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "rxjs"[0m
+
+    apps/frontend/src/app/features/landing/landing.component.ts:3:29:
+[37m      3 │ import { Subscription } from [32m'rxjs'[37m;
+        ╵                              [32m~~~~~~[0m
+
+  You can mark the path "rxjs" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module 'rxjs' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/landing/landing.component.ts:3:29:
+[37m      3 │ import { Subscription } from [32m'rxjs'[37m;
+        ╵                              [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'v' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/landing/landing.component.ts:15:47:
+[37m      15 │ ...ub.add(sidebar.collapsed$.subscribe(([32mv[37m) => (this.collapsed = v)));
+         ╵                                         [32m^[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/features/settings/settings.component.ts:1:26:
+[37m      1 │ import { Component } from [32m[39m[22m[1m[31m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/settings/settings.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-card' is not a known element:
+1. If 'mat-card' is an Angular component, then verify that it is part of this module.
+2. If 'mat-card' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:0:0:
+[37m      0 │ [32m[37m
+        ╵ [32m^[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-card-title' is not a known element:
+1. If 'mat-card-title' is an Angular component, then verify that it is part of this module.
+2. If 'mat-card-title' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:2:2:
+[37m      2 │   [32m<mat-card-title>[37mData Generator Telemetry</mat-card-title>
+        ╵   [32m~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of compone[39m[22m[1m[31mnt TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-card-content' is not a known element:
+1. If 'mat-card-content' is an Angular component, then verify that it is part of this module.
+2. If 'mat-card-content' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:3:2:
+[37m      3 │   [32m<mat-card-content>[37m
+        ╵   [32m~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-form-field' is not a known element:
+1. If 'mat-form-field' is an Angular component, then verify that it is part of this module.
+2. If 'mat-form-field' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:5:6:
+[37m      5 │       [32m<mat-form-field appearance="outline">[37m
+        ╵       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-label' is not a [39m[22m[1m[31mknown element:
+1. If 'mat-label' is an Angular component, then verify that it is part of this module.
+2. If 'mat-label' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:6:8:
+[37m      6 │         [32m<mat-label>[37mMetric</mat-label>
+        ╵         [32m~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-select' is not a known element:
+1. If 'mat-select' is an Angular component, then verify that it is part of this module.
+2. If 'mat-select' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:7:8:
+[37m      7 │         [32m<mat-select (selectionChange)="setMetric($event.value)" [va[37m...
+        ╵         [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG9: Property 'value' does not exist on type 'Event'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:7:56:
+[37m      7 │ ...tionChange)="setMetric($event.[32mvalue[37m)" [value]="'generator_bytes_...
+        ╵                            [39m[22m[1m[31m      [32m~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8002: Can't bind to 'value' since it isn't a known property of 'mat-select'.
+1. If 'mat-select' is an Angular component and it has 'value' input, then verify that it is part of this module.
+2. If 'mat-select' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.
+3. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this component.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:7:64:
+[37m      7 │ ...etMetric($event.value)" [32m[value]="'generator_bytes_produced_total'"[37m>
+        ╵                            [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-option' is not a known element:
+1. If 'mat-option' is an Angular component, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:8:10:
+[37m      8 │           [32m<mat-option value="generator_bytes_produced_total">[37mBytes ...
+        ╵           [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the[39m[22m[1m[31m template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-option' is not a known element:
+1. If 'mat-option' is an Angular component, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:9:10:
+[37m      9 │           [32m<mat-option value="generator_records_produced_total">[37mReco...
+        ╵           [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-form-field' is not a known element:
+1. If 'mat-form-field' is an Angular component, then verify that it is part of this module.
+2. If 'mat-form-field' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:13:6:
+[37m      13 │       [32m<mat-form-field appearance="outline">[37m
+         ╵       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~[39m[22m[1m[31m~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-label' is not a known element:
+1. If 'mat-label' is an Angular component, then verify that it is part of this module.
+2. If 'mat-label' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:14:8:
+[37m      14 │         [32m<mat-label>[37mPolling</mat-label>
+         ╵         [32m~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-select' is not a known element:
+1. If 'mat-select' is an Angular component, then verify that it is part of this module.
+2. If 'mat-select' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:15:8:
+[37m      15 │         [32m<mat-select (selectionChange)="setPolling($event.value)" [[37m...
+         ╵         [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG9: Property 'value' does not exist on type 'Event'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:15:57:
+[37m      15 │ ...elect (se[39m[22m[1m[31mlectionChange)="setPolling($event.[32mvalue[37m)" [value]="'5s'">
+         ╵                                               [32m~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8002: Can't bind to 'value' since it isn't a known property of 'mat-select'.
+1. If 'mat-select' is an Angular component and it has 'value' input, then verify that it is part of this module.
+2. If 'mat-select' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.
+3. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this component.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:15:65:
+[37m      15 │ ...elect (selectionChange)="setPolling($event.value)" [32m[value]="'5s'"[37m>
+         ╵                                                       [32m~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-option' is not a known element:
+1. If 'mat-option' is an Angular component, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:16:10:
+[37m      16 │           [32m<mat-option value="live">[37mLive (1s)</mat-op[39m[22m[1m[31mtion>
+         ╵           [32m~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-option' is not a known element:
+1. If 'mat-option' is an Angular component, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:17:10:
+[37m      17 │           [32m<mat-option value="5s">[37m5s</mat-option>
+         ╵           [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-option' is not a known element:
+1. If 'mat-option' is an Angular component, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:18:10:
+[37m      18 │           [32m<mat-option value="15s">[37m15s</mat-option>
+         ╵           [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵           [39m[22m[1m[31m     [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-option' is not a known element:
+1. If 'mat-option' is an Angular component, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:19:10:
+[37m      19 │           [32m<mat-option value="60s">[37m60s</mat-option>
+         ╵           [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-option' is not a known element:
+1. If 'mat-option' is an Angular component, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:20:10:
+[37m      20 │           [32m<mat-option value="off">[37mPaused</mat-option>
+         ╵           [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-form-field' is not a known element:
+1. If 'mat-form-field' is an Angular component, then verify that it is part of this module.
+2. If 'mat-form-field' is a Web Component then add 'CUST[39m[22m[1m[31mOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:24:6:
+[37m      24 │       [32m<mat-form-field appearance="outline">[37m
+         ╵       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-label' is not a known element:
+1. If 'mat-label' is an Angular component, then verify that it is part of this module.
+2. If 'mat-label' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:25:8:
+[37m      25 │         [32m<mat-label>[37mTime Range</mat-label>
+         ╵         [32m~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-select' is not a known element:
+1. If 'mat-select' is an Angular component, then verify that it is part of this module.
+2. If 'mat-select' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:26:8:
+[37m      26 │         [32m<mat-select (selectionChange)="setRangeSec($event.value)" [37m...
+         ╵  [39m[22m[1m[31m       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG9: Property 'value' does not exist on type 'Event'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:26:58:
+[37m      26 │ ...elect (selectionChange)="setRangeSec($event.[32mvalue[37m)" [value]="300">
+         ╵                                                [32m~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8002: Can't bind to 'value' since it isn't a known property of 'mat-select'.
+1. If 'mat-select' is an Angular component and it has 'value' input, then verify that it is part of this module.
+2. If 'mat-select' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.
+3. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this component.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:26:66:
+[37m      26 │ ...elect (selectionChange)="setRangeSec($event.value)" [32m[value]="300"[37m>
+         ╵                                                        [32m~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.compon[39m[22m[1m[31ment.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-option' is not a known element:
+1. If 'mat-option' is an Angular component, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:27:10:
+[37m      27 │           [32m<mat-option [value]="300">[37m5 minutes</mat-option>
+         ╵           [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8002: Can't bind to 'value' since it isn't a known property of 'mat-option'.
+1. If 'mat-option' is an Angular component and it has 'value' input, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.
+3. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this component.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:27:22:
+[37m      27 │           <mat-option [32m[value]="300"[37m>5 minutes</mat-option>
+         ╵                       [32m~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][39m[22m[1m[31m[0m [1mNG8001: 'mat-option' is not a known element:
+1. If 'mat-option' is an Angular component, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:28:10:
+[37m      28 │           [32m<mat-option [value]="900">[37m15 minutes</mat-option>
+         ╵           [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8002: Can't bind to 'value' since it isn't a known property of 'mat-option'.
+1. If 'mat-option' is an Angular component and it has 'value' input, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.
+3. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this component.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:28:22:
+[37m      28 │           <mat-option [32m[value]="900"[37m>15 minutes</mat-option>
+         ╵                       [32m~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'mat-option' is not a known element:
+1. If 'mat-option' is an Angular component, then verify that it [39m[22m[1m[31mis part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:29:10:
+[37m      29 │           [32m<mat-option [value]="3600">[37m1 hour</mat-option>
+         ╵           [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8002: Can't bind to 'value' since it isn't a known property of 'mat-option'.
+1. If 'mat-option' is an Angular component and it has 'value' input, then verify that it is part of this module.
+2. If 'mat-option' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.
+3. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this component.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:29:22:
+[37m      29 │           <mat-option [32m[value]="3600"[37m>1 hour</mat-option>
+         ╵                       [32m~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.html:34:42:
+[37m      34 │     <p>Current: <strong>{{ currentValue | [32mnumbe[39m[22m[1m[31mr[37m }}</strong></p>
+         ╵                                           [32m~~~~~~[0m
+
+  Error occurs in the template of component TelemetryComponent.
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:10:15:
+[37m      10 │   templateUrl: [32m'./telemetry.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:1:49:
+[37m      1 │ import { Component, ViewChild, ElementRef } from [32m'@angular/core'[37m;
+        ╵                                                  [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:1:83:
+[37m      1 │ ...t, OnDestroy, OnInit, ViewChild, ElementRef } from [32m'@angular/core'[37m;
+        ╵                                                       [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "rxjs"[0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:3:46:
+[37m      3 │ import { BehaviorSubject, timer, NEVER } from [32m'rxjs'[37m;
+        ╵                                               [32m~~~~~~[0m
+
+  You can mark the path "rxjs" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module 'rxjs' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:3:60:
+[37m   [39m[22m[1m[31m   3 │ import { BehaviorSubject, Subscription, timer, NEVER } from [32m'rxjs'[37m;
+        ╵                                                             [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "rxjs/operators"[0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:4:26:
+[37m      4 │ import { switchMap } from [32m'rxjs/operators'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "rxjs/operators" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module 'rxjs/operators' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:4:26:
+[37m      4 │ import { switchMap } from [32m'rxjs/operators'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7016: Could not find a declaration file for module 'd3'. 'C:/repos/phase-2-cosmic/node_modules/.pnpm/d3@7.9.0/node_modules/d3/src/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/d3` if it exists or add a new declaration (.d.ts) file containing `declare module 'd3';`[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:6:20:
+[37m      6 │ import * as d3 from [32m'd3'[37m;
+        ╵                     [32m~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'ms' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:37:19:
+[37m      37 │         switchMap(([32mms[37m) => (ms > 0 ? timer(0, ms) : NEVER))
+         ╵                    [32m~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'res' implicitly has an [39m[22m[1m[31m'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:59:67:
+[37m      59 │ ... start, end, step).subscribe(([32mres[37m) => this.handleRangeResponse(...
+         ╵                                  [32m~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'd' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:96:94:
+[37m      96 │ ...in.right]).domain(d3.extent(points, ([32md[37m) => new Date(d.t)) as any);
+         ╵                                         [32m^[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'd' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:97:97:
+[37m      97 │ ...bottom, margin.top]).domain([0, d3.max(points, ([32md[37m) => d.v) || 1]);
+         ╵                                                    [32m^[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'd' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:98:56:
+[37m      98 │ ...{ t: number; v: number }>().x(([32md[37m) => x(new Date(d.t))).y((d) =>...
+         ╵                                   [32m^[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'd' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/telemetry/telemetry.component.ts:98:83:
+[37m      98 │ ...umber; v: number }>().x((d) => x(new Date(d.t))).y(([32md[37m) => y(d.v));
+         ╵                                                        [32m^[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'b' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/tele[39m[22m[1m[31mmetry/telemetry.component.ts:119:56:
+[37m      119 │ ...ear().domain([0, d3.max(bins, ([32mb[37m) => b.length) || 1]).range([h...
+          ╵                                   [32m^[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/features/topology/topology.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/topology/topology.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:15:7:
+[37m      15 │ } from [32m'@angular/core'[37m;
+         ╵        [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/common' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:16:25:
+[37m      16 │ import { DOCUMENT } from [32m'@angular/common'[37m;
+         ╵                          [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:17:149:
+[37m      17 │ ...tectionStrategy, ChangeDetectorRef, NgZone } from [32m'@angular/core'[37m;
+         ╵     [39m[22m[1m[31m                                                 [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/common"[0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:18:25:
+[37m      18 │ import { DOCUMENT } from [32m'@angular/common'[37m;
+         ╵                          [32m~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/common" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module 'rxjs' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:18:54:
+[37m      18 │ import { from, of, defer, interval, throwError } from [32m'rxjs'[37m;
+         ╵                                                       [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module 'rxjs/operators' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:19:107:
+[37m      19 │ ..., retryWhen, delay, tap, mapTo, startWith } from [32m'rxjs/operators'[37m;
+         ╵                                                     [32m~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "rxjs"[0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:20:54:
+[37m      20 │ import { from, of, defer, interval, throwError } from [32m'rxjs'[37m;
+         ╵                                                       [32m~~~~~~[0m
+
+  You can mark the path "rxjs" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41[39m[22m[1m[31m;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "rxjs/operators"[0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:21:107:
+[37m      21 │ ..., retryWhen, delay, tap, mapTo, startWith } from [32m'rxjs/operators'[37m;
+         ╵                                                     [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "rxjs/operators" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS-992003: No suitable injection token for parameter 'renderer' of class 'ViewerComponent'.
+  Consider using the @Inject decorator to specify an injection token.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:62:12:
+[37m      62 │     private [32mrenderer[37m: Renderer2,
+         ╵             [32m~~~~~~~~[0m
+
+  This type does not have a value, so it cannot be used as injection token.
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:62:22:
+[37m      62 │     private renderer: [32mRenderer2[37m,
+         ╵                       [32m~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'err' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:70:39:
+[37m      70 │     this.initViewer().pipe(catchError(([32merr[37m) => {
+         ╵                                        [32m~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "aladin-lite"[0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:203:44:
+[37m      203 │ ...port$ = defer(() => from(import([32m'aladin-lite'[37m))).pipe(tap(() => {
+          ╵                                    [32m~~~~~~~~~~~~~[0m
+
+  You can mark the path "aladin-lite" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bun[39m[22m[1m[31mdle. You can also add ".catch()" here to handle this failure at run-time instead of bundle-time.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'm' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:235:11:
+[37m      235 │       map(([32mm[37m) => (m && (m.default ?? m)) as AladinModule),
+          ╵            [32m^[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'mod' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:288:16:
+[37m      288 │       mergeMap(([32mmod[37m) => initAndWait$(mod)),
+          ╵                 [32m~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'mod' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:289:16:
+[37m      289 │       mergeMap(([32mmod[37m) => create$(mod).pipe(
+          ╵                 [32m~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'errors' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:290:19:
+[37m      290 │         retryWhen(([32merrors[37m) => errors.pipe(
+          ╵                    [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'inst' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/features/viewer/viewer.component.ts:300:11:
+[37m      300 │       tap(([32minst[37m) => {
+          ╵            [32m~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/services/snack.service.ts:1:27:
+[37m      1 │ import { Injectable }[39m[22m[1m[31m from [32m'@angular/core'[37m;
+        ╵                            [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/material/snack-bar' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/services/snack.service.ts:2:47:
+[37m      2 │ ...atSnackBar, MatSnackBarConfig } from [32m'@angular/material/snack-bar'[37m;
+        ╵                                         [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS-992003: No suitable injection token for parameter 'snackBar' of class 'SnackService'.
+  Consider using the @Inject decorator to specify an injection token.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/services/snack.service.ts:6:22:
+[37m      6 │   constructor(private [32msnackBar[37m: MatSnackBar) {
+        ╵                       [32m~~~~~~~~[0m
+
+  This type does not have a value, so it cannot be used as injection token.
+
+    apps/frontend/src/app/services/snack.service.ts:6:32:
+[37m      6 │   constructor(private snackBar: [32mMatSnackBar[37m) {
+        ╵                                 [32m~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/common/http' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/services/telemetry.service.ts:1:39:
+[37m      1 │ import { HttpClient, HttpParams } from [32m'@angular/common/http'[37m;
+        ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/services/telemetry.service.ts:2:27:
+[37m      2 │ import { Injectable } from [32m'@angular/core'[37m;
+        ╵                            [32m~~~~~[39m[22m[1m[31m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module 'rxjs/operators' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/services/telemetry.service.ts:3:20:
+[37m      3 │ import { map } from [32m'rxjs/operators'[37m;
+        ╵                     [32m~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module 'rxjs' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/services/telemetry.service.ts:4:27:
+[37m      4 │ import { Observable } from [32m'rxjs'[37m;
+        ╵                            [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS-992003: No suitable injection token for parameter 'http' of class 'TelemetryService'.
+  Consider using the @Inject decorator to specify an injection token.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/services/telemetry.service.ts:12:22:
+[37m      12 │   constructor(private [32mhttp[37m: HttpClient) {}
+         ╵                       [32m~~~~[0m
+
+  This type does not have a value, so it cannot be used as injection token.
+
+    apps/frontend/src/app/services/telemetry.service.ts:12:28:
+[37m      12 │   constructor(private http: [32mHttpClient[37m) {}
+         ╵                             [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/common/http"[0m
+
+    apps/frontend/src/app/services/telemetry.service.ts:12:39:
+[37m      12 │ import { HttpClient, HttpParams } from [32m'@angular/common/http'[37m;
+         ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/common/http" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+  [39m[22m[1m[31m  apps/frontend/src/app/services/telemetry.service.ts:13:27:
+[37m      13 │ import { Injectable } from [32m'@angular/core'[37m;
+         ╵                            [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "rxjs/operators"[0m
+
+    apps/frontend/src/app/services/telemetry.service.ts:14:20:
+[37m      14 │ import { map } from [32m'rxjs/operators'[37m;
+         ╵                     [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "rxjs/operators" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'res' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/app/services/telemetry.service.ts:17:11:
+[37m      17 │       map(([32mres[37m) => {
+         ╵            [32m~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/platform-server' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/main.server.ts:1:31:
+[37m      1 │ import { platformServer } from [32m'@angular/platform-server'[37m;
+        ╵                                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/main.server.ts:3:31:
+[37m      3 │ import { ApplicationRef } from [32m'@angular/core'[37m;
+        ╵                                [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'mod' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/main.s[39m[22m[1m[31merver.ts:8:9:
+[37m      8 │     .then(([32mmod[37m) => mod.injector.get(ApplicationRef));
+        ╵            [32m~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/platform-browser"[0m
+
+    apps/frontend/src/main.ts:1:37:
+[37m      1 │ import * as __NgCli_bootstrap_1 from [32m"@angular/platform-browser"[37m;
+        ╵                                      [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/platform-browser" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/platform-browser-dynamic' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/main.ts:1:39:
+[37m      1 │ ... platformBrowserDynamic } from [32m'@angular/platform-browser-dynamic'[37m;
+        ╵                                   [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'err' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    apps/frontend/src/main.ts:5:10:
+[37m      5 │   .catch(([32merr[37m) => console.error(err));
+        ╵           [32m~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    libs/ui-theme/src/lib/ui-theme/ui-theme.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    libs/ui-theme/src/lib/ui-theme/ui-theme.component.ts:1:26:
+[37m      1 │ imp[39m[22m[1m[31mort { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/common' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    libs/ui-theme/src/lib/ui-theme/ui-theme.component.ts:2:29:
+[37m      2 │ import { CommonModule } from [32m'@angular/common'[37m;
+        ╵                              [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/core"[0m
+
+    libs/ui-visualization/src/lib/ui-visualization/ui-visualization.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/core" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/core' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    libs/ui-visualization/src/lib/ui-visualization/ui-visualization.component.ts:1:26:
+[37m      1 │ import { Component } from [32m'@angular/core'[37m;
+        ╵                           [32m~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module '@angular/common' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    libs/ui-visualization/src/lib/ui-visualization/ui-visualization.component.ts:2:29:
+[37m      2 │ import { CommonModule } from [32m'@angular/common'[37m;
+        ╵                              [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "zone.js"[0m
+
+    angular:polyfills:angular:polyfills:1:7:
+[37m      1 │ import [32m'zone.js'[37m;
+        ╵        [32m~~~~~~~~~[0m
+
+  You can mark the path "zone.js" as externa[39m[22m[1m[31ml to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@angular/material/prebuilt-themes/indigo-pink.css"[0m
+
+    apps/frontend/src/styles.scss:4:8:
+[37m      4 │ @import [32m"@angular/material/prebuilt-themes/indigo-pink.css"[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@angular/material/prebuilt-themes/indigo-pink.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m

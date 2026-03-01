@@ -1,0 +1,12 @@
+{
+  "jobId": "6f3e3ef2-f9bb-4a10-a69f-20f767d58f13",
+  "workflow": "casa-imaging",
+  "datasetId": "VLASS_J1347+1217",
+  "status": "QUEUED",
+  "createdAt": "2026-02-28T20:13:00Z",
+  "updatedAt": "2026-02-28T20:13:00Z",
+  "parameters": {
+    "weighting": "briggs"
+  },
+  "requestedBy": "ci-smoke"
+}

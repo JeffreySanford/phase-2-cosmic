@@ -1,0 +1,58 @@
+---
+name: quality-ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Enable corepack (pnpm)
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Format check
+        run: pnpm run format:check:changed
+
+      - name: Unit tests with coverage
+        run: pnpm run unit-test
+
+      - name: OpenAPI + fixture validation
+        run: pnpm run openapi-validate
+
+      - name: Install Cypress binary
+        run: pnpm exec cypress install
+
+      - name: E2E smoke
+        run: pnpm run e2e-smoke
+
+      - name: Upload Cypress artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: dist/cypress || ''
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage || ''

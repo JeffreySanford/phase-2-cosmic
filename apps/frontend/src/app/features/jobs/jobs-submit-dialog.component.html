@@ -1,0 +1,35 @@
+<h2 mat-dialog-title>Submit Job</h2>
+<mat-dialog-content>
+  <mat-form-field appearance="fill" style="width:100%">
+    <mat-label>Workflow</mat-label>
+    <mat-select [(ngModel)]="workflow" (ngModelChange)="onTypeChange($event)">
+      <mat-option *ngFor="let t of availableTypes" [value]="t">{{ t }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" style="width:100%">
+    <mat-label>Dataset Id</mat-label>
+    <input matInput [(ngModel)]="datasetId" placeholder="optional dataset id" />
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" style="width:100%">
+    <mat-label>Requested By</mat-label>
+    <input matInput [(ngModel)]="requestedBy" placeholder="your name or id" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" style="width:100%">
+    <mat-label>Parameters (JSON)</mat-label>
+    <textarea matInput rows="8" [(ngModel)]="payloadText"></textarea>
+  </mat-form-field>
+
+  <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+    <button mat-stroked-button (click)="generateSample()">Generate sample</button>
+    <div *ngIf="workflow !== 'custom'" style="color:rgba(0,0,0,0.6)">Sample for selected type</div>
+  </div>
+
+  <div *ngIf="error" class="error">{{ error }}</div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="submit()">Submit</button>
+</mat-dialog-actions>

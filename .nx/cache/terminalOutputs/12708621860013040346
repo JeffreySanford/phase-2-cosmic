@@ -1,0 +1,262 @@
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/settings/[22m[1msettings.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/landing/[22m[1mlanding.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/dashboard/[22m[1mdashboard.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/base/footer/[22m[1mfooter.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/base/mainstage/[22m[1mmainstage.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/base/header/[22m[1mheader.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/base/sidebar/[22m[1msidebar.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/[22m[1mapp.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/diagnostics/[22m[1mdiagnostics.component.spec.ts[22m
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/shared/promql-card/[22m[1mpromql-card.component.spec.ts[22m
+[0m[7m[1m[31m FAIL [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/topology/[22m[1mtopology.component.spec.ts[22m
+  [1m● [22mTest suite failed to run
+
+    [96mapps/frontend/src/app/features/topology/topology.component.ts[0m:[93m109[0m:[93m7[0m - [91merror[0m[90m TS2322: [0mType '(_name: string, _value?: string | number | ((...args: unknown[]) => unknown)) => D3Selection' is not assignable to type '(name: string, value?: unknown) => D3Selection'.
+      Types of parameters '_value' and 'value' are incompatible.
+        Type 'unknown' is not assignable to type 'string | number | ((...args: unknown[]) => unknown) | undefined'.
+
+    [7m109[0m       selection.attr = (_name: string, _value?: string | number | ((...args: unknown[]) => unknown)) => selection;
+    [7m   [0m [91m      ~~~~~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/topology/topology.component.ts[0m:[93m142[0m:[93m5[0m - [91merror[0m[90m TS2722: [0mCannot invoke an object which is possibly 'undefined'.
+
+    [7m142[0m     this.svg!.selectAll('*').remove();
+    [7m   [0m [91m    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/topology/topology.component.ts[0m:[93m165[0m:[93m13[0m - [91merror[0m[90m TS2345: [0mArgument of type 'D3Drag' is not assignable to parameter of type '(sel: D3Selection) => void'.
+      Type 'D3Drag' provides no match for the signature '(sel: D3Selection): void'.
+
+    [7m165[0m       .call(d3.drag().on('start', (event: D3DragEvent, d: TopoNode) => this.dragstarted(event, d)).on('drag', (event: D3DragEvent, d: TopoNode) => this.dragged(event, d)).on('end', (event: D3DragEvent, d: TopoNode) => this.dragended(event, d)));
+    [7m   [0m [91m            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/topology/topology.component.ts[0m:[93m168[0m:[93m5[0m - [91merror[0m[90m TS2722: [0mCannot invoke an object which is possibly 'undefined'.
+
+    [7m168[0m     node
+    [7m   [0m [91m    ~~~~[0m
+    [7m169[0m       .append('text')
+    [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~[0m
+    [7m...[0m 
+    [7m172[0m       .attr('font-size', 12)
+    [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+    [7m173[0m       .text((d: TopoNode) => d.label ?? d.id);
+    [7m   [0m [91m~~~~~~~~~~~[0m
+    [96mapps/frontend/src/app/features/topology/topology.component.ts[0m:[93m173[0m:[93m13[0m - [91merror[0m[90m TS2345: [0mArgument of type '(d: TopoNode) => string' is not assignable to parameter of type 'string'.
+
+    [7m173[0m       .text((d: TopoNode) => d.label ?? d.id);
+    [7m   [0m [91m            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+      [96mapps/frontend/src/app/features/topology/topology.component.ts[0m:[93m173[0m:[93m13[0m
+        [7m173[0m       .text((d: TopoNode) => d.label ?? d.id);
+        [7m   [0m [96m            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+        Did you mean to call this expression?
+    [96mapps/frontend/src/app/features/topology/topology.component.ts[0m:[93m205[0m:[93m24[0m - [91merror[0m[90m TS2722: [0mCannot invoke an object which is possibly 'undefined'.
+
+    [7m205[0m     if (!event.active) this.simulation.alphaTarget(0.3).restart();
+    [7m   [0m [91m                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [0m[7m[37m frontend [39m[27m[0m [2mapps/frontend/src/app/features/viewer/[22m[1mviewer.component.spec.ts[22m
+  [1m● [22mConsole
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] sidebar toggled, resizing to 0 0
+[2m[22m
+[2m      [2mat [22m[2msrc/app/features/viewer/viewer.component.ts[2m:128:21[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] sidebar toggled, resizing to 0 0
+[2m[22m
+[2m      [2mat [22m[2msrc/app/features/viewer/viewer.component.ts[2m:128:21[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] sidebar toggled, resizing to 0 0
+[2m[22m
+[2m      [2mat [22m[2msrc/app/features/viewer/viewer.component.ts[2m:128:21[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] initViewer container bounds 0 0
+[2m[22m
+[2m      [2mat ViewerComponent.initViewer ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:207:15)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] sidebar toggled, resizing to 0 0
+[2m[22m
+[2m      [2mat [22m[2msrc/app/features/viewer/viewer.component.ts[2m:128:21[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor DIV offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor BODY offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+    [2mconsole.debug[22m
+      [Viewer] ancestor HTML offsetTop 0 rect.top 0 height 0
+[2m[22m
+[2m      [2mat Object.next ([22m[2msrc/app/features/viewer/viewer.component.ts[2m:111:19)[22m[2m[22m
+
+
+[1mTest Suites: [22m[1m[31m1 failed[39m[22m, [1m[32m11 passed[39m[22m, 12 total
+[1mTests:       [22m[1m[32m22 passed[39m[22m, 22 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        [1m[33m4.678 s[39m[22m
+[2mRan all test suites[22m[2m.[22m
