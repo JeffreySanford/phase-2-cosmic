@@ -40,51 +40,59 @@ Template:
   - Validation evidence: <tests, contract checks, dashboards, drill, etc.>
 ```
 
-## [NOW] 0. Stabilize what exists
+## Completed Tasks
 
-Mission linkage:
+These items have been finished and are kept here for historical context.
 
-- Mission outcome: Institutional trust and audit
-- Operator/science impact: Establishes reliable quality gates so teams can trust baseline behavior before scaling science workflows.
-- Validation evidence: `pnpm run quality:ci`, CI required checks, contract validation artifacts.
+- Added baseline Java governance API endpoints (health, ingest, jobs CRUD).
+- Initial OpenAPI contract and schema fixtures added.
+- CI gate flow for lint/format/unit/OpenAPI/e2e smoke implemented.
+- Missing unit tests for error/validation paths in Java governance are in place.
+- CI coverage threshold enforcement script created and verified.
+- CI now runs the full test matrix; skips removed and reporting/artifacts enabled.
+- Java workflows split into verify/package stages and `docker:test-runner` expanded.
+- Java ingest module gained a test/coverage lane.
+- Scale-profile smoke/stress harness available.
+- Frontend port configuration and proxy updated for SSR.
 
-- [DONE] Add baseline Java governance API endpoints:
-  - `GET /api/v1/health`
-  - `POST /api/v1/ingest`
-  - `POST /api/v1/jobs`
-  - `GET /api/v1/jobs/{id}`
-- [DONE] Add initial OpenAPI contract at `openapi/governance.yaml`.
-- [DONE] Add schema fixtures under `schemas/fixtures/`.
-- [DONE] Add CI gate flow for lint + format + unit + OpenAPI + e2e smoke.
-- [NEXT] Add missing unit tests for error and validation paths in Java governance.
-- [NEXT] Add CI coverage threshold enforcement script (fail if aggregated < 90%).
-  - Mission outcome: Institutional trust and audit
-  - Operator/science impact: Ensures test coverage doesn't regress, improving confidence in changes
-  - Validation evidence: coverage check job failures when threshold not met
-- [NEXT] Ensure CI runs the full test matrix (unit, integration, e2e, coverage) without `-DskipTests`.
-  - Mission outcome: Institutional trust and audit
-  - Operator/science impact: Guarantees all tests run as part of PR validation, reducing blind spots
-  - Validation evidence: CI job matrix shows all stages executed for each PR
-- [NEXT] Add verbose test reporting and archived test artifacts (JUnit XML, coverage reports) to CI runs for easier failure triage.
-  - Mission outcome: Institutional trust and audit
-  - Operator/science impact: Simplifies incident triage and reduces time-to-resolution for build breaks
-  - Validation evidence: artifacts available in CI job logs for every run
-- [NEXT] Remove `-DskipTests` from required CI Java workflows (`.github/workflows/maven.yml`) and split build stages into:
-  - `verify` (tests + coverage) as required status check
-  - `package` (image/jar build) as non-test packaging stage
-- [NEXT] Add a Java test/coverage lane for `tools/java-ingest` (module currently has no `src/test` coverage).
-- [NEXT] Convert `docker/test-runner` from "Nx test only" to full matrix runner:
-  - unit (`nx run-many --target=test`)
-  - integration (container-backed tests)
-  - e2e smoke (`frontend-e2e`)
-  - publish reports to mounted artifact directory
-- [NEXT] Create scale-profile smoke/stress harness for synthetic large-volume validation:
-  - `profile-smoke` (minutes, PR-safe)
-  - `profile-soak` (30-90 min, nightly)
-  - `profile-stress` (burst/failure injection, scheduled)
-  - include explicit throughput + failure budget assertions
-- [DONE] Make `scripts/start-all.sh` export `FRONTEND_PORT` and set default to 4000 for cross-platform dev runs.
-- [DONE] Update `apps/frontend/proxy.conf.json` to target `http://localhost:4000` (aligns dev proxy with SSR shim).
+## [NOW] Current Focus
+
+These are the high-priority items to work on next; they correspond to core MVP
+and durability goals.
+
+- Harden Java governance core API (health, ingest, jobs lifecycle, transitions).
+- Continue Go services implementation for ingest/processing.
+- Progress frontend pages for `Jobs`, `Datasets`, `Diagnostics`, `Topology`.
+- Backfill mission linkage fields for top-priority legacy TODO items.
+- Add explicit integration/e2e stress tests and verbose test harness.
+- Add fixture compatibility tests for request/response examples across API versions.
+- Add backward-compatibility checks when `openapi/governance.yaml` changes.
+
+## [NEXT] Upcoming Work
+
+Once the `NOW` items are underway or complete, shift focus to these
+near-term tasks:
+
+- Start minimal demo/playground script automation (todo exists at
+  `scripts/demo-verify.sh`).
+- Define job control contract and implement cancellation/idempotency semantics.
+- Add request-id/trace-id propagation across governance APIs.
+- Add optimistic-locking/versioning for job updates.
+- Add explicit CMS tests for NGVLA constant drift (address later backlog items).
+
+## [LATER] Additional Backlog
+
+These represent longer-term roadmap ideas that follow MVP:
+
+- Reconcile architecture docs and continue documentation clarity work.
+- Reconcile service naming across docs/compose (largely done).
+- Decide and standardize job control contract (see above).
+- Enhance frontend UI with shared page-state components and stress profile controls.
+- Add performance/scope metrics and logging for end-to-end loops.
+- Re-enable CI hardening, Nx Cloud, Dependabot, and onboarding once MVP exit criteria are met.
+- Implement health/metrics, audit, and security hardening for production readiness.
+
+---
 
 ## [NOW] MVP: Core servers & UI (focus)
 
