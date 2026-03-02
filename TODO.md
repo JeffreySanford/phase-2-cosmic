@@ -3,10 +3,6 @@
 This is the authoritative execution backlog for the repo root.  
 Status legend: `[NOW]`, `[NEXT]`, `[LATER]`, `[DONE]`.
 
-> NOTE: MVP-FIRST PRIORITIZATION
->
-> For the current development cycle we are deferring CI, automation, and team-onboarding work until the MVP phase is complete. Focus now is on delivering the core servers (Java + Go), the operator UI pages, and a small demo/playground. CI and broader team processes will be re-enabled after the MVP exit criteria are met.
-
 Testing architecture references:
 
 - [docuentation/TESTING_FRAMEWORK_ARCHITECTURE.md](docuentation/TESTING_FRAMEWORK_ARCHITECTURE.md)
@@ -143,7 +139,7 @@ Mission linkage:
 - [DONE] Fix docker compose mounts for Loki/Grafana/Alertmanager (corrected `docker/dev-compose.yml` paths).
 - [DONE] Align developer SSR port to avoid conflicts with Grafana (set `FRONTEND_PORT=4000` default).
 
-## [NEXT] 2. Governance durability and correctness
+## [NOW] 2. Governance durability and correctness
 
 Mission linkage:
 
