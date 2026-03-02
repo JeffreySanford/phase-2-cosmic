@@ -114,6 +114,15 @@ jobs:
           path: |
             tools/java-ingest/target/surefire-reports/**
 
+  docs-lint:
+    name: Docs Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run docs validation
+        run: bash scripts/check-docs.sh
+
       - name: Archive surefire reports
         if: always()
         uses: actions/upload-artifact@v4

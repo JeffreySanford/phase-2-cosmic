@@ -58,8 +58,17 @@ Mission linkage:
 - [DONE] Add CI gate flow for lint + format + unit + OpenAPI + e2e smoke.
 - [NEXT] Add missing unit tests for error and validation paths in Java governance.
 - [NEXT] Add CI coverage threshold enforcement script (fail if aggregated < 90%).
+  - Mission outcome: Institutional trust and audit
+  - Operator/science impact: Ensures test coverage doesn't regress, improving confidence in changes
+  - Validation evidence: coverage check job failures when threshold not met
 - [NEXT] Ensure CI runs the full test matrix (unit, integration, e2e, coverage) without `-DskipTests`.
+  - Mission outcome: Institutional trust and audit
+  - Operator/science impact: Guarantees all tests run as part of PR validation, reducing blind spots
+  - Validation evidence: CI job matrix shows all stages executed for each PR
 - [NEXT] Add verbose test reporting and archived test artifacts (JUnit XML, coverage reports) to CI runs for easier failure triage.
+  - Mission outcome: Institutional trust and audit
+  - Operator/science impact: Simplifies incident triage and reduces time-to-resolution for build breaks
+  - Validation evidence: artifacts available in CI job logs for every run
 - [NEXT] Remove `-DskipTests` from required CI Java workflows (`.github/workflows/maven.yml`) and split build stages into:
   - `verify` (tests + coverage) as required status check
   - `package` (image/jar build) as non-test packaging stage
@@ -88,8 +97,8 @@ Mission linkage:
 - [NOW] Implement and harden Java governance core API endpoints (health, ingest, jobs CRUD, transitions).
 - [NOW] Implement Go services required for ingest/processing (idempotent ingest path, basic metrics, health).
 - [NOW] Finish UI pages for `Jobs`, `Datasets`, `Diagnostics`, `Topology` and wire to local APIs.
-- [NEXT] Create a minimal demo/playground that runs `docker/dev-compose.yml` + `pnpm run serve:ssr` and exercises key flows.
-- [NEXT] Define MVP acceptance criteria & success metrics (latency, durability, basic coverage of job lifecycle).
+- [DONE] Create a minimal demo/playground that runs `docker/dev-compose.yml` + `pnpm run serve:ssr` and exercises key flows. (completed)
+- [DONE] Define MVP acceptance criteria & success metrics (latency, durability, basic coverage of job lifecycle).
 - [LATER] Re-enable CI hardening, Nx Cloud, Dependabot and team onboarding once MVP exit criteria are achieved.
 
 ## [NOW] 0B. Documentation clarity and mission communication
@@ -106,7 +115,7 @@ Mission linkage:
   - Mission outcome: Institutional trust and audit
   - Operator/science impact: Makes planning rationale explicit and reviewable across disciplines.
   - Validation evidence: Top `[NOW]` and `[NEXT]` items include `Mission outcome`, `Operator/science impact`, `Validation evidence`.
-- [NEXT] Add a lightweight docs lint/check in CI for required anchors and mission-link fields in root planning docs.
+- [DONE] Add a lightweight docs lint/check in CI for required anchors and mission-link fields in root planning docs.
   - Mission outcome: Institutional trust and audit
   - Operator/science impact: Prevents silent drift between mission docs, backlog, and roadmap.
   - Validation evidence: CI step fails when required doc policy fields are missing.
@@ -121,8 +130,8 @@ Mission linkage:
 
 - [DONE] Fix broken doc links in `docuentation/README.md`.
 - [DONE] Fix malformed Mermaid code fences in messaging docs.
-- [NEXT] Mark each architecture doc section as `implemented` / `in-progress` / `planned`.
-- [NEXT] Reconcile service naming between docs and compose (`java-ingest` vs `java-governance`) in all docs.
+- [DONE] Mark each architecture doc section as `implemented` / `in-progress` / `planned`.
+- [DONE] Reconcile service naming between docs and compose (`java-ingest` vs `java-governance`) in all docs.
 - [DONE] Fix docker compose mounts for Loki/Grafana/Alertmanager (corrected `docker/dev-compose.yml` paths).
 - [DONE] Align developer SSR port to avoid conflicts with Grafana (set `FRONTEND_PORT=4000` default).
 

@@ -41,7 +41,8 @@ The MVP must encode and preserve these domain assumptions in docs, fixtures, and
    - Topology, mock fixtures, and copy do not contradict the documented ngVLA reference configuration or frequency range.
    - Domain labels distinguish `Main`, `Long Baseline`, and `SBA` concepts where represented.
 7. Demo execution
-   - `DEMO_CHECKLIST.md` runs end-to-end locally with observable pass/fail outcomes.
+   - `DEMO_CHECKLIST.md` runs end-to-end locally with observable pass/fail outcomes.  
+  *Note: the playground is now implemented and has been exercised successfully during development.*
 
 ## Non-Functional Acceptance Criteria
 
