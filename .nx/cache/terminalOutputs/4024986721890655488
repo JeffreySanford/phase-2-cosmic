@@ -1,7 +1,0 @@
-[0m[0m
-[0m[4mC:\repos\phase-2-cosmic\apps\frontend\src\app\app.component.spec.ts[24m[0m
-[0m  [2m21:56[22m  [31merror[39m  Unexpected empty method 'navigate'      [2m@typescript-eslint/no-empty-function[22m[0m
-[0m  [2m22:68[22m  [31merror[39m  Unexpected empty method 'setCollapsed'  [2m@typescript-eslint/no-empty-function[22m[0m
-[0m[0m
-[0m[31m[1m✖ 2 problems (2 errors, 0 warnings)[22m[39m[0m
-[0m[31m[1m[22m[39m[0m

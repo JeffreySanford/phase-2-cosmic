@@ -1,5 +1,0 @@
-[2m> [22mmvn -f apps/java-governance/pom.xml -T 1C test
-
-'mvn' is not recognized as an internal or external command,
-operable program or batch file.
-Warning: command "mvn -f apps/java-governance/pom.xml -T 1C test" exited with non-zero status code
