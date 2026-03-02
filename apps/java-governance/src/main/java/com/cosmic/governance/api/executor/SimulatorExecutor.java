@@ -10,10 +10,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import com.cosmic.governance.api.util.RedisMarshaller;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class SimulatorExecutor implements JobExecutor {
     private static final ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(2);
+    private final RedisMarshaller marshaller;
+
+    public SimulatorExecutor(@Autowired RedisMarshaller marshaller) {
+        this.marshaller = marshaller;
+    }
 
     @Override
     public String name() { return "simulator"; }
@@ -24,8 +31,9 @@ public class SimulatorExecutor implements JobExecutor {
         // schedule running
         EXEC.schedule(() -> {
             Object o = redisTemplate.opsForValue().get(jobKey);
-            if (o instanceof JobRecord) {
-                JobRecord r = (JobRecord) o;
+            JobRecord r = null;
+            r = marshaller.toJobRecord(o);
+            if (r != null) {
                 r.setState(JobState.RUNNING);
                 r.setUpdatedAt(Instant.now().toString());
                 var newParams = r.getParameters() == null ? new java.util.HashMap<String, Object>() : new java.util.HashMap<String, Object>(r.getParameters());
@@ -40,25 +48,26 @@ public class SimulatorExecutor implements JobExecutor {
 
         EXEC.schedule(() -> {
             Object o = redisTemplate.opsForValue().get(jobKey);
-            if (o instanceof JobRecord) {
-                JobRecord r = (JobRecord) o;
-                r.setState(JobState.COMPLETED);
-                r.setUpdatedAt(Instant.now().toString());
-                var newParams = r.getParameters() == null ? new java.util.HashMap<String, Object>() : new java.util.HashMap<String, Object>(r.getParameters());
+            JobRecord r2 = null;
+            r2 = marshaller.toJobRecord(o);
+            if (r2 != null) {
+                r2.setState(JobState.COMPLETED);
+                r2.setUpdatedAt(Instant.now().toString());
+                var newParams = r2.getParameters() == null ? new java.util.HashMap<String, Object>() : new java.util.HashMap<String, Object>(r2.getParameters());
                 newParams.put("completedAt", Instant.now().toString());
-                r.setParameters(newParams);
-                redisTemplate.opsForValue().set(jobKey, r);
+                r2.setParameters(newParams);
+                redisTemplate.opsForValue().set(jobKey, r2);
                 redisTemplate.opsForList().rightPush(jobKey + ":logs", "Simulator: job completed");
                 // create a small artifact marker and write a file to tmp artifact store
                 String artKey = jobKey + ":artifacts";
                 String name = "result.txt";
-                var artifact = Map.of("name", name, "url", "/api/v1/jobs/" + r.getJobId() + "/artifacts/" + name);
+                var artifact = Map.of("name", name, "url", "/api/v1/jobs/" + r2.getJobId() + "/artifacts/" + name);
                 redisTemplate.opsForValue().set(artKey, artifact);
                 try {
-                    java.nio.file.Path base = java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "governance-artifacts", r.getJobId());
+                    java.nio.file.Path base = java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "governance-artifacts", r2.getJobId());
                     java.nio.file.Files.createDirectories(base);
                     java.nio.file.Path file = base.resolve(name);
-                    java.nio.file.Files.writeString(file, "Simulator artifact for job " + r.getJobId() + "\nOK\n");
+                    java.nio.file.Files.writeString(file, "Simulator artifact for job " + r2.getJobId() + "\nOK\n");
                 } catch (Exception ignored) {}
             }
         }, 6, TimeUnit.SECONDS);

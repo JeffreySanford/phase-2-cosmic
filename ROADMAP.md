@@ -2,6 +2,10 @@
 
 This roadmap is the working plan for moving the repository from "strong architecture docs + partial scaffolds" to an executable hybrid platform with enforceable quality gates.
 
+> NOTE: MVP-FIRST FOCUS
+>
+> During the current development cycle we are deferring CI automation, dependency/Dependabot configuration, and team-onboarding work until after the MVP exit criteria are met. The roadmap below is adjusted to prioritize delivering the Java and Go server functionality, completing the operator UI pages, and producing a minimal demo/playground that demonstrates submit -> observe -> recover flows locally. CI and security automation will be reintroduced post-MVP to harden and automate quality gates.
+
 Testing architecture references:
 
 - [docuentation/TESTING_FRAMEWORK_ARCHITECTURE.md](docuentation/TESTING_FRAMEWORK_ARCHITECTURE.md)
@@ -51,6 +55,7 @@ Canonical mission outcomes:
 ## Mission communication model
 
 The roadmap is consumed by mixed audiences. Each phase must answer:
+
 1. What mission outcome improves?
 2. What operators/scientists can do better afterward?
 3. What evidence proves it?
@@ -90,6 +95,7 @@ Exit criteria:
 - Java modules are test-verified in CI before packaging and no required workflow uses silent skip flags.
 
 Mission linkage:
+
 - Mission outcome: Institutional trust and audit
 - Operator/science impact: Teams can trust CI and contracts as a reliable baseline for all later science workflows.
 - Validation evidence: Required quality gates pass and fail deterministically on drift.
@@ -114,6 +120,7 @@ Exit criteria:
 - Job lifecycle and errors are queryable and auditable.
 
 Mission linkage:
+
 - Mission outcome: Reproducible science
 - Operator/science impact: Workflow state and outcomes are durable, inspectable, and restart-safe.
 - Validation evidence: Lifecycle contract tests, restart durability checks, and API error taxonomy coverage.
@@ -137,9 +144,42 @@ Exit criteria:
 - UI clearly differentiates live vs stale vs unavailable data.
 
 Mission linkage:
+
 - Mission outcome: Human decision speed
 - Operator/science impact: Operators can submit and monitor jobs without leaving the console.
 - Validation evidence: e2e journeys for submit/status/error/recovery paths.
+
+## Phase 1C: NGVLA reference fidelity and demo automation (Week 6-8, parallel)
+
+Goals:
+
+- Prevent drift between NGVLA reference documentation, platform constants, fixtures, and demo messaging.
+- Convert MVP/demo validation from manual checklist-only flow to partially automated and auditable execution.
+
+Deliverables:
+
+- `docuentation/NGVLA_REFERENCES.md` canonical reference/citation index.
+- NGVLA array fixtures for `main`, `long-baseline`, and `sba` modeling.
+- Contract/domain additions for `arraySegment`, `antennaClass`, and `frequencyBandGHz`.
+- Drift-regression tests for approved NGVLA constants.
+- `scripts/demo-verify.sh` to execute demo checks and print pass/fail status.
+- CI docs validation for broken links and required citations in MVP/demo docs.
+- `Topology` copy/tooltips normalized to `Main`, `Long Baseline`, and `SBA`.
+- UI modeling disclaimer language added for demo-facing pages.
+- `Datasets` provenance linkage panel for workflow/job traceability.
+- `demo-notes/` evidence bundle convention (terminal output, screenshots, deviation log).
+
+Exit criteria:
+
+- NGVLA facts are centralized and referenced consistently by MVP/demo docs and fixtures.
+- Automated demo verification script passes on a developer workstation.
+- Drift tests fail when NGVLA constants are modified without approved reference updates.
+
+Mission linkage:
+
+- Mission outcome: Reproducible science
+- Operator/science impact: Domain-accurate metadata and provenance signals improve trust in workflow interpretation and demo evidence.
+- Validation evidence: reference doc + fixtures + contract tests + demo verification artifacts.
 
 ## Phase 2: Streaming-to-governance integration (Week 6-10)
 
@@ -159,6 +199,7 @@ Exit criteria:
 - End-to-end ingest flow validated in integration tests with broker downtime scenarios.
 
 Mission linkage:
+
 - Mission outcome: Observatory continuity
 - Operator/science impact: Ingest disruptions are visible, bounded, and recoverable with replay-safe behavior.
 - Validation evidence: Integration tests with broker interruption and replay drills.
@@ -181,6 +222,7 @@ Exit criteria:
 - Operator can submit a job, watch status transitions, and inspect failure reasons from UI.
 
 Mission linkage:
+
 - Mission outcome: Human decision speed
 - Operator/science impact: Faster diagnosis and action during operational incidents.
 - Validation evidence: operator-critical e2e tests and route-level state handling checks.
@@ -204,6 +246,7 @@ Exit criteria:
 - Security review checklist completed for API and SSR shim.
 
 Mission linkage:
+
 - Mission outcome: Institutional trust and audit
 - Operator/science impact: Secure and predictable behavior under load and failure.
 - Validation evidence: security checks, load/fault tests, and audit event verification.
@@ -226,6 +269,7 @@ Exit criteria:
 - Demonstrable "reference architecture prototype" for hybrid control + compute orchestration.
 
 Mission linkage:
+
 - Mission outcome: Compute-to-archive efficiency
 - Operator/science impact: Processing orchestration aligns with HPC archive realities for large-scale science pipelines.
 - Validation evidence: adapter contract tests, mock-to-real integration lab checkpoints, and provenance-linked outputs.

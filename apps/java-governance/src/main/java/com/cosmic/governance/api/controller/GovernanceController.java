@@ -135,6 +135,28 @@ public class GovernanceController {
                 return ResponseEntity.ok(content);
             }
 
+        @GetMapping("/admin/dispatch")
+        public ResponseEntity<?> getDispatchConfig() {
+            return ResponseEntity.ok(Map.of(
+                "intervalSeconds", jobService.getScannerIntervalSeconds(),
+                "scannedCount", jobService.getScannedCount(),
+                "dispatchedCount", jobService.getDispatchedCount()
+            ));
+        }
+
+        @PostMapping("/admin/dispatch")
+        public ResponseEntity<?> setDispatchInterval(@RequestBody Map<String, Object> body) {
+            Object v = body.get("intervalSeconds");
+            if (v == null) return ResponseEntity.badRequest().body(Map.of("error","missing_intervalSeconds"));
+            try {
+                int seconds = Integer.parseInt(String.valueOf(v));
+                jobService.setScannerIntervalSeconds(seconds);
+                return ResponseEntity.ok(Map.of("intervalSeconds", seconds));
+            } catch (Exception ex) {
+                return ResponseEntity.badRequest().body(Map.of("error","invalid_intervalSeconds"));
+            }
+        }
+
             @PostMapping("/datasets")
             public ResponseEntity<DatasetResponse> createDataset(@RequestBody DatasetRequest req) {
                 DatasetResponse d = datasetService.create(req);
