@@ -20,6 +20,21 @@ Environment variables
 - `RATE`: messages per second (default `10`).
 - `TOTAL`: total messages to publish (default `100`).
 
+## Profiles
+
+A convenience wrapper is provided to run predefined profiles:
+
+```bash
+# smoke: short burst
+bash tools/perf/run-profile.sh smoke
+
+# soak: longer run for 10k messages
+bash tools/perf/run-profile.sh soak
+
+# stress: high‑rate burst of 50k messages
+bash tools/perf/run-profile.sh stress
+```
+
 Notes & next steps
 
 - This simple script is for quick smoke/load checks. For robust performance testing use a dedicated tool (Gatling, k6, or JMeter) and run against an isolated staging environment.

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Simple job publisher for load testing: POSTs jobs to governance API in a loop
 
-import fetch from 'node-fetch';
+// Node 18+ has a global fetch; fall back to node-fetch if necessary
+const fetch = global.fetch || (await import('node-fetch')).default;
 
 const url = process.env.GOV_URL || 'http://localhost:8080/api/v1/jobs';
 const rate = parseInt(process.env.RATE || '10', 10); // messages per second

@@ -28,6 +28,20 @@ class GovernanceControllerTest extends AbstractRedisTest {
     }
 
     @Test
+    void submitJobMissingWorkflowReturnsBadRequest() throws Exception {
+        String invalid = "{\"datasetId\":\"foo\"}";
+        mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(invalid))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void submitJobInvalidJsonReturnsBadRequest() throws Exception {
+        String invalid = "{not a json}";
+        mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(invalid))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void submitJobAndReadStatus() throws Exception {
         String body = """
                 {

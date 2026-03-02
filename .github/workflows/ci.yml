@@ -83,8 +83,36 @@ jobs:
       - name: Build frontend
         run: pnpm -C apps/frontend build
 
-      - name: Run java-governance unit tests (skip ITs)
-        run: mvn -f apps/java-governance/pom.xml test -DskipITs
+      - name: Run java-governance verify (unit + IT)
+        run: |
+          mvn -f apps/java-governance/pom.xml clean verify -Pwith-containers -B
+
+      - name: Generate JaCoCo report
+        run: mvn -f apps/java-governance/pom.xml jacoco:report
+
+      - name: Run coverage enforcement
+        run: bash scripts/check-coverage.sh 90
+
+      - name: Archive JVM test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-reports
+          path: |
+            apps/java-governance/target/surefire-reports/**
+            apps/java-governance/target/failsafe-reports/**
+            apps/java-governance/target/site/jacoco/**
+
+      - name: Run java-ingest verify (unit)
+        run: mvn -f tools/java-ingest/pom.xml clean verify -B
+
+      - name: Archive java-ingest reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-ingest-reports
+          path: |
+            tools/java-ingest/target/surefire-reports/**
 
       - name: Archive surefire reports
         if: always()

@@ -22,24 +22,36 @@ public class KafkaIngestIntegrationTest {
     @Container
     static KafkaContainer kafka = new KafkaContainer("confluentinc/cp-kafka:7.4.1");
 
-    @DynamicPropertySource
-    static void kafkaProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
-    }
+    // start a Redis container alongside Kafka so the full pipeline writes to storage
+    @Container
+    static org.testcontainers.containers.GenericContainer<?> redis =
+            new org.testcontainers.containers.GenericContainer<>("redis:7-alpine")
+                    .withExposedPorts(6379);
 
-    @MockBean
-    private JobService jobService;
+    @DynamicPropertySource
+    static void dynamicProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", () -> redis.getFirstMappedPort().toString());
+    }
 
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
 
+    @Autowired
+    private org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate;
+
     @Test
-    public void testKafkaMessageTriggersJobSubmit() throws Exception {
+    public void testKafkaMessageResultsInRedisEntry() throws Exception {
         String payload = "{\"workflow\":\"ingest\",\"datasetId\":\"ds1\",\"parameters\":{},\"requestedBy\":\"tester\"}";
 
         kafkaTemplate.send("phase2-events", payload).get(10, TimeUnit.SECONDS);
 
-        // verify JobService.submit was called within time
-        Mockito.verify(jobService, Mockito.timeout(5000)).submit(Mockito.any());
+        // allow some time for the listener to process and store
+        Thread.sleep(2000);
+
+        // verify at least one job key exists in Redis
+        var keys = redisTemplate.keys("job:*");
+        assertThat(keys).isNotEmpty();
     }
 }
