@@ -36,6 +36,13 @@
       </table>
     </div>
 
+    <div class="scanner-config" style="margin-top:12px;">
+      <h4>Dispatch Scanner</h4>
+      <div>Interval (seconds): <input type="number" [(ngModel)]="scannerIntervalSeconds" style="width:80px;"/></div>
+      <div style="margin-top:6px;"><button mat-stroked-button (click)="setScannerInterval()">Set Interval</button></div>
+      <div style="margin-top:8px;">Scanned: {{ scannedCount }} — Dispatched: {{ dispatchedCount }}</div>
+    </div>
+
     <!-- submit now handled via dialog -->
 
     <div *ngIf="selectedJob" class="detail">

@@ -3,6 +3,10 @@
 This is the authoritative execution backlog for the repo root.  
 Status legend: `[NOW]`, `[NEXT]`, `[LATER]`, `[DONE]`.
 
+> NOTE: MVP-FIRST PRIORITIZATION
+>
+> For the current development cycle we are deferring CI, automation, and team-onboarding work until the MVP phase is complete. Focus now is on delivering the core servers (Java + Go), the operator UI pages, and a small demo/playground. CI and broader team processes will be re-enabled after the MVP exit criteria are met.
+
 Testing architecture references:
 
 - [docuentation/TESTING_FRAMEWORK_ARCHITECTURE.md](docuentation/TESTING_FRAMEWORK_ARCHITECTURE.md)
@@ -39,6 +43,7 @@ Template:
 ## [NOW] 0. Stabilize what exists
 
 Mission linkage:
+
 - Mission outcome: Institutional trust and audit
 - Operator/science impact: Establishes reliable quality gates so teams can trust baseline behavior before scaling science workflows.
 - Validation evidence: `pnpm run quality:ci`, CI required checks, contract validation artifacts.
@@ -72,6 +77,21 @@ Mission linkage:
 - [DONE] Make `scripts/start-all.sh` export `FRONTEND_PORT` and set default to 4000 for cross-platform dev runs.
 - [DONE] Update `apps/frontend/proxy.conf.json` to target `http://localhost:4000` (aligns dev proxy with SSR shim).
 
+## [NOW] MVP: Core servers & UI (focus)
+
+Mission linkage:
+
+- Mission outcome: Reproducible science / Human decision speed
+- Operator/science impact: Provide a minimally viable control-plane and operator console enabling submit -> observe -> recover flows locally.
+- Validation evidence: Local end-to-end demo (compose + SSR) that runs submit -> status -> artifact retrieval and a minimal OpenAPI-validated contract for governance.
+
+- [NOW] Implement and harden Java governance core API endpoints (health, ingest, jobs CRUD, transitions).
+- [NOW] Implement Go services required for ingest/processing (idempotent ingest path, basic metrics, health).
+- [NOW] Finish UI pages for `Jobs`, `Datasets`, `Diagnostics`, `Topology` and wire to local APIs.
+- [NEXT] Create a minimal demo/playground that runs `docker/dev-compose.yml` + `pnpm run serve:ssr` and exercises key flows.
+- [NEXT] Define MVP acceptance criteria & success metrics (latency, durability, basic coverage of job lifecycle).
+- [LATER] Re-enable CI hardening, Nx Cloud, Dependabot and team onboarding once MVP exit criteria are achieved.
+
 ## [NOW] 0B. Documentation clarity and mission communication
 
 - [DONE] Add mission alignment documents and mission gate model under `docuentation/`.
@@ -94,6 +114,7 @@ Mission linkage:
 ## [NOW] 1. Remove architecture drift
 
 Mission linkage:
+
 - Mission outcome: Human decision speed
 - Operator/science impact: Reduces confusion and handoff delays by keeping docs consistent with what is actually implemented.
 - Validation evidence: Alignment review in `docuentation/ALIGNMENT.md` and corrected cross-document links/status tags.
@@ -108,6 +129,7 @@ Mission linkage:
 ## [NEXT] 2. Governance durability and correctness
 
 Mission linkage:
+
 - Mission outcome: Reproducible science
 - Operator/science impact: Durable, traceable lifecycle semantics let engineers and scientists trust workflow state and outcomes.
 - Validation evidence: lifecycle contract tests, restart durability checks, API response consistency.
@@ -131,6 +153,7 @@ Mission linkage:
 ## [NEXT] 3. Frontend operations-console delivery
 
 Mission linkage:
+
 - Mission outcome: Human decision speed
 - Operator/science impact: Operators can submit, monitor, and recover workflows from one console with clear system-state feedback.
 - Validation evidence: operator e2e journeys, route-state tests, UI/API contract conformance.
@@ -145,6 +168,7 @@ Mission linkage:
 ## [NEXT] 4. Security hardening
 
 Mission linkage:
+
 - Mission outcome: Institutional trust and audit
 - Operator/science impact: Protects sensitive operational surfaces and makes governance actions auditable under production-like constraints.
 - Validation evidence: authN/authZ checks, protected route behavior, audit event verification.
@@ -159,6 +183,7 @@ Mission linkage:
 ## [NEXT] 5. Integration and contract reliability
 
 Mission linkage:
+
 - Mission outcome: Observatory continuity
 - Operator/science impact: Streaming-to-governance failures become detectable, recoverable, and less disruptive during operations.
 - Validation evidence: integration tests with dependency failures, compatibility checks, replay/stress run outputs.
@@ -171,6 +196,7 @@ Mission linkage:
 ## [NEXT] 5B. Test Matrix By Service/Container
 
 Mission linkage:
+
 - Mission outcome: Institutional trust and audit
 - Operator/science impact: Service-level coverage prevents blind spots and improves confidence in changes across the full platform.
 - Validation evidence: per-service test reports, coverage publication, compose smoke and failure-injection results.
@@ -193,6 +219,25 @@ Mission linkage:
 - `docker/dev-compose.yml` stack:
   - add compose smoke script that blocks until healthchecks are green, then runs API and UI probes
   - add a failure-injection smoke (broker restart, Redis restart) to verify graceful degradation/recovery
+
+## [NEXT] 5C. NGVLA reference fidelity and demo automation
+
+Mission linkage:
+
+- Mission outcome: Reproducible science
+- Operator/science impact: Keeps mission-facing configuration and demo behavior consistent with published ngVLA reference facts and prevents silent drift.
+- Validation evidence: source-linked reference doc, contract/fixture checks, drift tests, automated demo verification output.
+
+- [NEXT] Add `docuentation/NGVLA_REFERENCES.md` as canonical NGVLA fact/citation index for platform docs.
+- [NEXT] Add NGVLA array fixtures (`main`, `long-baseline`, `sba`) and wire them into demo/mock data paths.
+- [NEXT] Extend contract/domain models with `arraySegment`, `antennaClass`, and `frequencyBandGHz`.
+- [NEXT] Add regression tests that fail when NGVLA constants diverge from approved reference values.
+- [NEXT] Add `scripts/demo-verify.sh` to automate `DEMO_CHECKLIST.md` checks and emit pass/fail output.
+- [NEXT] Add CI doc-validation for broken links and required citations in `MVP_ACCEPTANCE_CRITERIA.md` and `DEMO_CHECKLIST.md`.
+- [NEXT] Normalize `Topology` UI labels/tooltips to `Main`, `Long Baseline`, and `SBA`.
+- [NEXT] Add explicit modeling disclaimer banner/text in operator UI routes used for demo.
+- [NEXT] Add dataset provenance linkage panel (`workflow`, `jobId`, provenance reference) in `Datasets`.
+- [NEXT] Add `demo-notes/` evidence package output requirements (terminal snippets, screenshots, deviation notes).
 
 ## [LATER] 6. Streaming and control-plane parity
 

@@ -11,10 +11,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import com.cosmic.governance.api.util.RedisMarshaller;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class TaccExecutorStub implements JobExecutor {
     private final ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(1);
+    private final RedisMarshaller marshaller;
+
+    public TaccExecutorStub(@Autowired RedisMarshaller marshaller) {
+        this.marshaller = marshaller;
+    }
 
     @Override
     public String name() { return "tacc"; }
@@ -25,8 +32,8 @@ public class TaccExecutorStub implements JobExecutor {
         // simulate network submission delay
         EXEC.schedule(() -> {
             Object o = redisTemplate.opsForValue().get(jobKey);
-            if (!(o instanceof JobRecord)) return;
-            JobRecord r = (JobRecord) o;
+            JobRecord r = marshaller.toJobRecord(o);
+            if (r == null) return;
             r.setState(JobState.RUNNING);
             r.setUpdatedAt(Instant.now().toString());
             var newParams = r.getParameters() == null ? new HashMap<String, Object>() : new HashMap<String, Object>(r.getParameters());
@@ -41,8 +48,8 @@ public class TaccExecutorStub implements JobExecutor {
             // simulate remote work and artifact creation
             EXEC.schedule(() -> {
                 Object o2 = redisTemplate.opsForValue().get(jobKey);
-                if (!(o2 instanceof JobRecord)) return;
-                JobRecord r2 = (JobRecord) o2;
+                JobRecord r2 = marshaller.toJobRecord(o2);
+                if (r2 == null) return;
                 r2.setState(JobState.COMPLETED);
                 r2.setUpdatedAt(Instant.now().toString());
                 var p2 = r2.getParameters() == null ? new HashMap<String, Object>() : new HashMap<String, Object>(r2.getParameters());

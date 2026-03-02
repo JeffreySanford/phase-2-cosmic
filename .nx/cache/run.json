@@ -1,53 +1,20 @@
 {
   "run": {
-    "command": "nx run-many --target=lint --all",
-    "startTime": "2026-03-02T00:25:15.181Z",
-    "endTime": "2026-03-02T00:25:15.290Z",
+    "command": "nx build frontend --skip-nx-cache",
+    "startTime": "2026-03-02T06:36:56.893Z",
+    "endTime": "2026-03-02T06:37:04.850Z",
     "inner": false
   },
   "tasks": [
     {
-      "taskId": "ui-visualization:lint",
-      "target": "lint",
-      "projectName": "ui-visualization",
-      "hash": "6778256953565909665",
-      "startTime": "2026-03-02T00:25:15.207Z",
-      "endTime": "2026-03-02T00:25:15.209Z",
-      "params": "",
-      "cacheStatus": "local-cache-hit",
-      "status": 0
-    },
-    {
-      "taskId": "ui-theme:lint",
-      "target": "lint",
-      "projectName": "ui-theme",
-      "hash": "12186320373253147640",
-      "startTime": "2026-03-02T00:25:15.214Z",
-      "endTime": "2026-03-02T00:25:15.234Z",
-      "params": "",
-      "cacheStatus": "local-cache-hit",
-      "status": 0
-    },
-    {
-      "taskId": "frontend:lint",
-      "target": "lint",
+      "taskId": "frontend:build:production",
+      "target": "build",
       "projectName": "frontend",
-      "hash": "11200438306234960407",
-      "startTime": "2026-03-02T00:25:15.241Z",
-      "endTime": "2026-03-02T00:25:15.246Z",
+      "hash": "4908191501124762256",
+      "startTime": "2026-03-02T06:36:56.901Z",
+      "endTime": "2026-03-02T06:37:04.842Z",
       "params": "",
-      "cacheStatus": "local-cache-hit",
-      "status": 0
-    },
-    {
-      "taskId": "frontend-e2e:lint",
-      "target": "lint",
-      "projectName": "frontend-e2e",
-      "hash": "5982620612964950446",
-      "startTime": "2026-03-02T00:25:15.254Z",
-      "endTime": "2026-03-02T00:25:15.255Z",
-      "params": "",
-      "cacheStatus": "local-cache-hit",
+      "cacheStatus": "cache-miss",
       "status": 0
     }
   ]

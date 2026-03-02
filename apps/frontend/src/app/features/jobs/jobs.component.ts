@@ -14,6 +14,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   jobs: JobStatus[] = [];
   loading = false;
   error: string | null = null;
+  // scanner admin info
+  scannerIntervalSeconds: number | null = null;
+  scannedCount = 0;
+  dispatchedCount = 0;
 
   private pollSub: Subscription | null = null;
 
@@ -25,6 +29,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.reload();
+    this.loadDispatchConfig();
   }
 
   reload() {
@@ -89,6 +94,25 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.fetchLogs(job.jobId);
     this.fetchArtifacts(job.jobId);
     this.startLogPolling(job.jobId);
+  }
+
+  loadDispatchConfig() {
+    this.jobsSvc.getDispatchConfig().subscribe(
+      (c) => {
+        this.scannerIntervalSeconds = c.intervalSeconds;
+        this.scannedCount = c.scannedCount;
+        this.dispatchedCount = c.dispatchedCount;
+      },
+      (e) => (this.error = this.errMsg(e))
+    );
+  }
+
+  setScannerInterval() {
+    if (!this.scannerIntervalSeconds || this.scannerIntervalSeconds <= 0) return;
+    this.jobsSvc.setDispatchInterval(this.scannerIntervalSeconds).subscribe(
+      () => this.loadDispatchConfig(),
+      (e) => (this.error = this.errMsg(e))
+    );
   }
 
   fetchLogs(id: string) {

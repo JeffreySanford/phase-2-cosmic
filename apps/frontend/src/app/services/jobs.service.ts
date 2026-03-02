@@ -87,7 +87,25 @@ export class JobsService {
   }
 
   artifacts(id: string): Observable<{ name: string; url: string }[]> {
-    return this.http.get<{ name: string; url: string }[]>(`${this.base}/${id}/artifacts`);
+    return this.http
+      .get<{ name: string; url: string }[]>(`${this.base}/${id}/artifacts`)
+      .pipe(
+        map((arr) =>
+          (arr || []).map((a) => ({
+            name: a.name,
+            url: a.url && typeof a.url === 'string' && a.url.startsWith('/') ? window.location.origin + a.url : a.url,
+          }))
+        )
+      );
+  }
+
+  // Dispatch scanner admin endpoints
+  getDispatchConfig(): Observable<{ intervalSeconds: number; scannedCount: number; dispatchedCount: number }> {
+    return this.http.get<{ intervalSeconds: number; scannedCount: number; dispatchedCount: number }>(`/api/v1/admin/dispatch`);
+  }
+
+  setDispatchInterval(seconds: number): Observable<any> {
+    return this.http.post(`/api/v1/admin/dispatch`, { intervalSeconds: seconds });
   }
 
   validate(type: string, payload: Record<string, unknown>): Observable<unknown> {
