@@ -80,3 +80,113 @@ app-mainstage > * {
 	margin-top: 0 !important;
 }
 
+/* Footer load-profile menu styling (menu panel renders in CDK overlay container) */
+.profile-menu-overlay .mat-mdc-menu-panel,
+.mat-mdc-menu-panel.profile-menu-panel,
+.profile-menu-panel,
+.cdk-overlay-pane .profile-menu-panel {
+	--mat-menu-container-color: #0b1220;
+	--mdc-menu-container-color: #0b1220;
+	border: 1px solid #22c55e !important;
+	border-radius: 8px;
+	background: #0b1220 !important;
+	box-shadow:
+		0 0 0 1px rgba(34, 197, 94, 0.35),
+		0 8px 24px rgba(34, 197, 94, 0.25),
+		0 0 18px rgba(34, 197, 94, 0.25) !important;
+}
+
+.profile-menu-overlay .mat-mdc-menu-content,
+.profile-menu-panel .mat-mdc-menu-content {
+	padding: 0.25rem;
+	background: transparent !important;
+}
+
+.profile-menu-item {
+	min-height: 48px;
+	margin: 0.18rem 0;
+	border: 1px solid rgba(34, 197, 94, 0.55);
+	border-radius: 6px;
+	background: linear-gradient(135deg, #86efac 0%, #4ade80 100%) !important;
+	padding-right: 0.6rem !important;
+	box-shadow:
+		0 0 0 1px rgba(34, 197, 94, 0.45),
+		0 0 14px rgba(34, 197, 94, 0.26);
+}
+
+.profile-menu-item .mdc-list-item__primary-text,
+.profile-menu-item .mat-mdc-menu-item-text {
+	color: #052e16 !important;
+	width: 100%;
+}
+
+.profile-menu-item .profile-option-content {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	gap: 0.6rem;
+}
+
+.profile-menu-item .profile-option-row {
+	display: flex;
+	flex-direction: column;
+	gap: 0.08rem;
+	min-width: 0;
+}
+
+.profile-menu-item .profile-option-main {
+	font-size: 0.86rem;
+	font-weight: 600;
+	line-height: 1.1;
+}
+
+.profile-menu-item .profile-option-note {
+	font-size: 0.72rem;
+	color: #14532d;
+	line-height: 1.1;
+}
+
+.profile-menu-item .profile-option-check {
+	color: #052e16;
+	font-weight: 700;
+	font-size: 0.95rem;
+	flex: 0 0 auto;
+	margin-right: 0.4rem;
+}
+
+.profile-menu-item:hover {
+	background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%) !important;
+}
+
+.profile-menu-item.selected {
+	background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%) !important;
+	box-shadow:
+		inset 0 0 0 1px rgba(5, 46, 22, 0.55),
+		0 0 16px rgba(34, 197, 94, 0.3);
+	animation: profile-glow-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes profile-glow-pulse {
+	0% {
+		box-shadow:
+			inset 0 0 0 1px rgba(5, 46, 22, 0.55),
+			0 0 10px rgba(34, 197, 94, 0.2);
+	}
+	50% {
+		box-shadow:
+			inset 0 0 0 1px rgba(5, 46, 22, 0.7),
+			0 0 18px rgba(34, 197, 94, 0.42);
+	}
+	100% {
+		box-shadow:
+			inset 0 0 0 1px rgba(5, 46, 22, 0.55),
+			0 0 10px rgba(34, 197, 94, 0.2);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.profile-menu-item.selected {
+		animation: none !important;
+	}
+}

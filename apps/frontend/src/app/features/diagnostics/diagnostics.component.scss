@@ -21,3 +21,25 @@
 
 .promql-section { margin-top: 1rem; }
 .promql-cards { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.files-section {
+	margin-top: 1rem;
+}
+
+.files-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.count-select {
+	width: 120px;
+}
+
+.recent-files {
+	margin: 0.5rem 0;
+	max-height: 240px;
+	overflow: auto;
+	padding-left: 1.25rem;
+}

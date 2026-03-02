@@ -1,3 +1,38 @@
 <footer class="app-footer">
-  <div class="content">© Phase-2 Cosmic — local dev</div>
+  <div class="content">
+    <span class="brand">Phase-2 Cosmic</span>
+    <span class="sep">|</span>
+    <span class="label">Load profile</span>
+    <ng-container *ngIf="profile$ | async as profile">
+      <button mat-stroked-button [matMenuTriggerFor]="profileMenu" class="profile-trigger">
+        {{ profile }}%
+      </button>
+    </ng-container>
+  </div>
 </footer>
+
+<mat-menu
+  #profileMenu="matMenu"
+  xPosition="before"
+  yPosition="above"
+  panelClass="profile-menu-panel"
+  overlayPanelClass="profile-menu-overlay"
+>
+  <ng-container *ngIf="profile$ | async as profile">
+    <button
+      mat-menu-item
+      class="profile-menu-item"
+      *ngFor="let option of profileOptions"
+      (click)="setProfile(option.value)"
+      [class.selected]="profile === option.value"
+    >
+      <span class="profile-option-content">
+        <span class="profile-option-check" *ngIf="profile === option.value">✓</span>
+        <span class="profile-option-row">
+          <span class="profile-option-main">{{ option.label }}</span>
+          <span class="profile-option-note">{{ option.note }}</span>
+        </span>
+      </span>
+    </button>
+  </ng-container>
+</mat-menu>

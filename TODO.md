@@ -150,6 +150,20 @@ Mission linkage:
 - Added a minimal Datasets API scaffold and frontend `Datasets` page route/component.
 - Fixed `apps/java-governance` POM JSON Schema dependency version.
 
+- [DONE] Integrate governance & messaging: added a basic Kafka consumer path in the governance
+  service (`KafkaIngestListener`) and wired `spring-kafka` dependency in `apps/java-governance`.
+  - Mission outcome: Observatory continuity
+  - Operator/science impact: Enables streaming event handoff into governance for submit workflows.
+  - Validation evidence: compile-time verification and local runtime consumer logs; schema validation
+    and integration tests remain as follow-ups.
+
+- [DONE] Performance tooling (initial): added `tools/perf/job-publisher.js` and
+  `docuentation/PERF_TESTING.md` to allow quick smoke/perf runs against the governance API.
+  - Mission outcome: Compute-to-archive efficiency
+  - Operator/science impact: Provides a repeatable smoke harness to exercise ingest and job
+    submission paths for throughput verification.
+  - Validation evidence: manual smoke runs and docs showing usage; formal load harness is next.
+
 ## [NEXT] 3. Frontend operations-console delivery
 
 Mission linkage:
@@ -164,6 +178,17 @@ Mission linkage:
 - Add shared page-state components (`loading`, `empty`, `stale`, `error`, `recovered`).
 - Evolve `Datasets` from CRUD scaffold to readiness/provenance operational view.
 - Add global status/freshness band in app shell.
+- [NEXT] Promote global footer stress profile from scaffold to runtime control plane:
+  - keep footer selector as primary cross-route control (`10%`, `25%`, `50%`, `100%`)
+  - add backend runtime control API so profile selection affects generator behavior
+  - enforce bounded `100%` smoke duration with automatic safe revert
+  - Mission outcome: Observatory continuity
+  - Operator/science impact: Enables repeatable stress/recovery drills in development with lower operator error risk.
+  - Validation evidence: e2e profile transition test (`50% -> 100% -> 50%`) with throughput/load trend checks and revert confirmation.
+- [NEXT] Add source-state labels to all data-driven pages (`live`, `fallback`, `mock`, `stale`) and remove unlabeled placeholders.
+  - Mission outcome: Human decision speed
+  - Operator/science impact: Operators can immediately judge confidence level of any displayed signal.
+  - Validation evidence: component/e2e tests asserting correct source label behavior per route.
 
 ## [NEXT] 4. Security hardening
 

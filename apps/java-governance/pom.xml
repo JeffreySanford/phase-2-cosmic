@@ -4,10 +4,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.0</version>
-    <relativePath/>
+    <groupId>com.cosmic</groupId>
+    <artifactId>phase-2-parent</artifactId>
+    <version>0.1.0</version>
+    <relativePath>../../pom-parent.xml</relativePath>
   </parent>
 
   <groupId>com.cosmic</groupId>
@@ -45,6 +45,19 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Testcontainers for isolated Redis in integration tests -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>1.19.8</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>1.19.8</version>
+      <scope>test</scope>
+    </dependency>
     <!-- Exclude bundled Android JSON coming transitively (e.g. Vaadin) to avoid duplicate org.json classes -->
     <dependency>
       <groupId>org.skyscreamer</groupId>
@@ -64,6 +77,17 @@
       <artifactId>json</artifactId>
       <version>20220320</version>
     </dependency>
+    <!-- Kafka integration for ingest events -->
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+    <!-- OpenAPI / Swagger UI for interactive API docs -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>2.1.0</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -76,6 +100,36 @@
           <mainClass>com.cosmic.governance.GovernanceApplication</mainClass>
         </configuration>
       </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.2.5</version>
+          <configuration>
+            <excludes>
+              <!-- Exclude container-style integration tests by default; enable with -Pwith-containers -->
+              <exclude>**/*ContainerIntegrationTest.java</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>with-containers</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.2.5</version>
+            <configuration>
+              <!-- When enabling this profile, do not exclude container tests -->
+              <excludes />
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

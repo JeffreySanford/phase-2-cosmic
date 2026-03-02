@@ -60,7 +60,29 @@
       <button mat-stroked-button color="primary" (click)="exportCsv()">Export CSV</button>
       <span class="last-updated">Last: {{ lastUpdated ? (lastUpdated | date:'medium') : 'n/a' }}</span>
     </div>
-    <div class="chart" #chart></div>
-    <div class="hist" #hist></div>
+    <mat-tab-group [(selectedIndex)]="selectedVizTab" (selectedIndexChange)="onVizTabChanged()">
+      <mat-tab label="Trend">
+        <div class="chart" #chart></div>
+      </mat-tab>
+      <mat-tab label="Distribution">
+        <div class="hist" #hist></div>
+      </mat-tab>
+      <mat-tab label="Recent Samples">
+        <div class="samples" *ngIf="recentSamples.length; else noSamples">
+          <div class="sample-row" *ngFor="let s of recentSamples">
+            <div class="sample-head">
+              <span class="sample-time">{{ s.time }}</span>
+              <span class="sample-value">{{ s.valueHuman }}</span>
+            </div>
+            <div class="sample-bar">
+              <span [style.width.%]="s.pct"></span>
+            </div>
+          </div>
+        </div>
+        <ng-template #noSamples>
+          <p class="empty-note">No samples available yet.</p>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
   </mat-card-content>
 </mat-card>

@@ -183,6 +183,10 @@ public class JobService {
     }
 
     public List<JobStatusResponse> listAll() {
+        return list(null, null, 0, Integer.MAX_VALUE);
+    }
+
+    public List<JobStatusResponse> list(String workflowFilter, JobState stateFilter, int page, int size) {
         // Note: For small dev usage we use keys scan; in production use a proper index or sorted set.
         var keys = redisTemplate.keys(KEY_PREFIX + "*");
         if (keys == null || keys.isEmpty()) return List.of();
@@ -190,10 +194,20 @@ public class JobService {
                 // skip auxiliary keys (logs, artifacts, etc.) which use suffixes like ":logs" or ":artifacts"
                 .filter(k -> k != null && k.chars().filter(ch -> ch == ':').count() == 1)
                 .map(k -> redisTemplate.opsForValue().get(k))
-                .map(v -> {
-                    return marshaller.toJobRecord(v);
-                })
+                .map(v -> marshaller.toJobRecord(v))
                 .filter(java.util.Objects::nonNull)
+                .filter(rec -> {
+                    if (workflowFilter != null && !workflowFilter.isBlank()) {
+                        if (rec.getWorkflow() == null || !rec.getWorkflow().equalsIgnoreCase(workflowFilter)) return false;
+                    }
+                    if (stateFilter != null) {
+                        if (rec.getState() != stateFilter) return false;
+                    }
+                    return true;
+                })
+                .sorted((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt()))
+                .skip((long) page * size)
+                .limit(size <= 0 ? Integer.MAX_VALUE : size)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -221,10 +235,24 @@ public class JobService {
         if (o == null) return Optional.empty();
         JobRecord rec = marshaller.toJobRecord(o);
         if (rec == null) return Optional.empty();
+        JobState current = rec.getState();
+        if (!isValidTransition(current, newState)) {
+            log.warn("Invalid state transition attempted for {}: {} -> {}", jobId, current, newState);
+            return Optional.empty();
+        }
         rec.setState(newState);
         rec.setUpdatedAt(Instant.now().toString());
         redisTemplate.opsForValue().set(key, rec);
         return Optional.of(toResponse(rec));
+    }
+
+    private boolean isValidTransition(JobState from, JobState to) {
+        if (from == to) return true;
+        return switch (from) {
+            case QUEUED -> to == JobState.RUNNING || to == JobState.CANCELED || to == JobState.TIMED_OUT || to == JobState.FAILED;
+            case RUNNING -> to == JobState.COMPLETED || to == JobState.FAILED || to == JobState.CANCELED || to == JobState.TIMED_OUT;
+            case COMPLETED, FAILED, CANCELED, TIMED_OUT -> false;
+        };
     }
 
     private JobStatusResponse toResponse(JobRecord record) {

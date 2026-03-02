@@ -12,6 +12,7 @@ import com.cosmic.governance.api.dto.DatasetResponse;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -96,10 +97,23 @@ public class GovernanceController {
                 )));
     }
 
-        @GetMapping("/jobs")
-        public ResponseEntity<?> listJobs() {
-        return ResponseEntity.ok(jobService.listAll());
-        }
+            @GetMapping("/jobs")
+            public ResponseEntity<?> listJobs(
+                    @org.springframework.web.bind.annotation.RequestParam(value = "workflow", required = false) String workflow,
+                    @org.springframework.web.bind.annotation.RequestParam(value = "state", required = false) String state,
+                    @org.springframework.web.bind.annotation.RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                    @org.springframework.web.bind.annotation.RequestParam(value = "size", required = false, defaultValue = "50") int size
+            ) {
+                com.cosmic.governance.api.model.JobState stateFilter = null;
+                if (state != null && !state.isBlank()) {
+                    try {
+                        stateFilter = com.cosmic.governance.api.model.JobState.valueOf(state.toUpperCase());
+                    } catch (IllegalArgumentException ex) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "invalid_state", "allowed", List.of("QUEUED","RUNNING","COMPLETED","FAILED","CANCELED","TIMED_OUT")));
+                    }
+                }
+                return ResponseEntity.ok(jobService.list(workflow, stateFilter, page, size));
+            }
 
             @GetMapping("/jobs/types")
             public ResponseEntity<?> jobTypes() {

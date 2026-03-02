@@ -1,6 +1,7 @@
 # Cosmic Horizon Frontend UI Specification (Phase 2)
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](../TODO.md)
 - Delivery plan: [../ROADMAP.md](../ROADMAP.md)
@@ -8,6 +9,7 @@ Alignment anchors
 This document defines the target frontend product for Cosmic Horizon as an operational control-room application, not a generic dashboard.
 
 It replaces the previous theme-only guidance with an execution-ready UI spec:
+
 - user roles and workflows
 - information architecture
 - page-level interaction and data contracts
@@ -16,6 +18,7 @@ It replaces the previous theme-only guidance with an execution-ready UI spec:
 - implementation sequencing and acceptance criteria
 
 Use this together with:
+
 - [GETTING_STARTED.md](GETTING_STARTED.md)
 - [VIEWER_MODEB.md](VIEWER_MODEB.md)
 - [JAVA_GOVERNANCE_SPEC.md](JAVA_GOVERNANCE_SPEC.md)
@@ -26,15 +29,19 @@ Use this together with:
 The frontend must support three simultaneous goals:
 
 1. Operational awareness:
+
 - detect and communicate current platform health in seconds
 
 2. Orchestration control:
+
 - submit, monitor, and diagnose data processing jobs
 
 3. Trust and traceability:
+
 - show provenance/context for data and outputs with clear audit visibility
 
 The UI is successful when an operator can answer, quickly and confidently:
+
 - What is healthy right now?
 - What is failing right now?
 - What action should I take now?
@@ -42,28 +49,37 @@ The UI is successful when an operator can answer, quickly and confidently:
 ## 2. Primary user personas
 
 ### 2.1 Observatory Operator
+
 Primary goal:
+
 - keep ingest and processing stable during active operations
 
 Top tasks:
+
 - monitor ingest rate and queue depth
 - identify incidents and degraded services
 - trigger approved recovery actions
 
 ### 2.2 Pipeline Engineer
+
 Primary goal:
+
 - diagnose and resolve failed or slow jobs
 
 Top tasks:
+
 - inspect job parameters, logs, statuses, and transitions
 - compare run behavior across datasets or versions
 - verify retries/timeouts and failure modes
 
 ### 2.3 Data Steward / Scientist
+
 Primary goal:
+
 - confirm dataset readiness and output trustworthiness
 
 Top tasks:
+
 - find dataset state and metadata
 - inspect provenance and artifact links
 - verify that outputs map to expected pipeline runs
@@ -82,6 +98,7 @@ The app must expose these top-level sections:
 8. Settings
 
 Current codebase status:
+
 - `Telemetry`, `Topology`, `Diagnostics`, and `Viewer` exist in baseline form.
 - `Jobs` and `Datasets` routes now exist in baseline scaffold form and are the highest-priority surfaces for professionalization.
 
@@ -116,14 +133,16 @@ flowchart LR
 ### 4.1 App shell
 
 Required shell regions:
+
 - Header: app identity, environment tag, global health indicator
 - Left navigation: stable section links
 - Main stage: route content
-- Footer: build/version and timestamp zone
+- Footer: build/version and timestamp zone plus global stress-profile control (`10%`, `25%`, `50%`, `100%`)
 
 ### 4.2 Global status band
 
 A persistent status band must show:
+
 - environment (`dev`, `staging`, `prod`)
 - data freshness (`live`, `stale`)
 - incident count
@@ -132,12 +151,15 @@ A persistent status band must show:
 ### 4.3 Responsive behavior
 
 Desktop (>=1280px):
+
 - three-panel job and diagnostics layouts allowed
 
 Tablet (768-1279px):
+
 - two-panel layouts
 
 Mobile (<768px):
+
 - single-column with collapsible details
 - no horizontal data table overflow without explicit control
 
@@ -146,9 +168,11 @@ Mobile (<768px):
 ## 5.1 Overview
 
 Purpose:
+
 - provide a 30-second situational snapshot
 
 Must include:
+
 - ingest rate KPI
 - active jobs KPI
 - failed jobs last 24h
@@ -156,30 +180,36 @@ Must include:
 - service health summary
 
 Interaction requirements:
+
 - KPI cards drill into owning page with filters pre-applied
 - stale-data banner if core telemetry older than threshold
 
 Data contract summary:
+
 - `GET /api/proxy/prometheus` (short-term baseline)
 - future: governance summary endpoint for consolidated KPIs
 
 ## 5.2 Jobs (highest-priority missing page)
 
 Purpose:
+
 - operational control plane for job orchestration
 
 Primary components:
+
 - submit panel
 - queue/status table
 - job detail drawer
 
 Submit panel fields:
+
 - workflow
 - dataset id
 - parameter editor (key/value)
 - requested by
 
 Queue table columns:
+
 - job id
 - workflow
 - dataset
@@ -189,6 +219,7 @@ Queue table columns:
 - requested by
 
 Detail drawer tabs:
+
 - summary
 - parameters
 - timeline
@@ -196,26 +227,32 @@ Detail drawer tabs:
 - artifacts (future)
 
 Status model:
+
 - `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, `CANCELED`, `TIMED_OUT`
 
 Baseline API mapping:
+
 - `POST /api/v1/jobs`
 - `GET /api/v1/jobs/{id}`
 
 Future required API additions:
+
 - `GET /api/v1/jobs?status=&workflow=&datasetId=&page=`
 - `POST /api/v1/jobs/{id}/cancel`
 
 ## 5.3 Datasets
 
 Purpose:
+
 - searchable metadata and readiness lens for science data
 
 Core UI:
+
 - dataset table with quick filters
 - detail panel for metadata + provenance summary
 
 Must show:
+
 - dataset id
 - source
 - size
@@ -226,12 +263,15 @@ Must show:
 ## 5.4 Topology
 
 Purpose:
+
 - dependency awareness and bottleneck localization
 
 Current baseline:
+
 - D3 graph with fallback mock data
 
 Required improvements:
+
 - explicit edge health indicators
 - link throughput/latency overlays
 - service node status colors with legend
@@ -240,12 +280,15 @@ Required improvements:
 ## 5.5 Telemetry
 
 Purpose:
+
 - metric trend analysis and short-term performance inspection
 
 Current baseline:
+
 - metric select, polling/range controls, line chart, histogram, gauge, CSV export
 
 Required improvements:
+
 - annotate incident windows
 - compare two metrics overlay mode
 - configurable rollups and units
@@ -253,12 +296,15 @@ Required improvements:
 ## 5.6 Diagnostics
 
 Purpose:
+
 - evidence and troubleshooting workspace
 
 Current baseline:
+
 - diagnostics index and system specs views
 
 Required improvements:
+
 - structured log search/filtering
 - runbook linkouts
 - environment-gated access controls (must be restricted outside dev)
@@ -266,12 +312,15 @@ Required improvements:
 ## 5.7 Viewer
 
 Purpose:
+
 - sky/asset visualization linked to operational context
 
 Current baseline:
+
 - Aladin container bootstrap
 
 Required improvements:
+
 - attach selected dataset/job context
 - include provenance badge and timestamp
 - expose visualization mode switching consistent with `VIEWER_MODEB.md`
@@ -279,9 +328,11 @@ Required improvements:
 ## 5.8 Settings
 
 Purpose:
+
 - user-level behavior preferences
 
 Must include:
+
 - theme mode
 - refresh cadence defaults
 - reduced motion toggle
@@ -290,6 +341,7 @@ Must include:
 ## 6. State model and UX behavior standards
 
 Every page with remote data must support:
+
 - loading
 - empty
 - partial
@@ -298,10 +350,12 @@ Every page with remote data must support:
 - recovered
 
 State copy standards:
+
 - never use generic “something went wrong”
 - include concise cause + next action
 
 Example:
+
 - “Job status unavailable (timeout after 10s). Retry now or open diagnostics.”
 
 ## 7. Data freshness and reliability UX
@@ -309,16 +363,27 @@ Example:
 The UI must represent confidence, not just values.
 
 Required signals:
+
 - last updated timestamp per widget
 - stale threshold indicator color
 - explicit “live polling paused” state
 - source badge (`mock`, `live`, `cached`)
+- global profile context (`10%`, `25%`, `50%`, `100%`) where telemetry intensity can affect refresh cadence
+
+Current development reality (March 2, 2026):
+
+- Data source mix is expected across pages:
+  - `live`: Prometheus proxy and governance APIs where implemented
+  - `fallback`: topology fallback graph on API miss
+  - `mock/placeholder`: pages/components still in scaffold state
+- UI must label source type explicitly as pages are hardened.
 
 ## 8. Visual design and professional quality bar
 
 ## 8.1 Design direction
 
 Visual tone:
+
 - disciplined operations console
 - high signal density without clutter
 - stable hierarchy and low cognitive load
@@ -328,6 +393,7 @@ Visual tone:
 Use Angular Material MD3 with centralized tokens in `libs/ui-theme`.
 
 Token categories:
+
 - color semantic roles (success/warn/error/info/neutral)
 - type scale and emphasis
 - spacing and density
@@ -344,6 +410,7 @@ Token categories:
 ## 9. Accessibility requirements
 
 Must satisfy:
+
 - WCAG AA contrast minimum for operational text and controls
 - full keyboard navigation for all primary workflows
 - visible focus indicators
@@ -353,11 +420,13 @@ Must satisfy:
 ## 10. Performance budgets and constraints
 
 Frontend targets:
+
 - initial app shell interactive in <=2.5s on standard dev hardware
 - route transitions <=300ms perceived response
 - telemetry updates without full chart teardown/recreate
 
 Implementation constraints:
+
 - prefer incremental chart updates
 - avoid large synchronous transforms on main thread
 - debounce high-frequency UI updates
@@ -367,6 +436,7 @@ Implementation constraints:
 UI must reflect backend mode and restrictions.
 
 Requirements:
+
 - diagnostics routes/features disabled or guarded outside dev
 - no rendering of host absolute paths
 - clear banner when data source is mocked
@@ -398,16 +468,19 @@ flowchart TD
 ## 13. Implementation roadmap (frontend-specific)
 
 Phase A (immediate):
+
 1. Build `Jobs` page using current governance endpoints.
 2. Add global status band and stale-data indicators.
 3. Harden diagnostics/proxy visibility in UI for non-dev modes.
 
 Phase B:
+
 1. Build `Datasets` page and integrate with governance metadata APIs.
 2. Add topology overlays and node detail drilldowns.
 3. Add consistent empty/error/retry patterns across all routes.
 
 Phase C:
+
 1. Integrate provenance context into Viewer and Jobs detail.
 2. Add role-aware UI behavior.
 3. Add advanced incident annotation and timeline correlations.
@@ -428,3 +501,4 @@ The frontend is considered professionally ready when:
 2. Add shared page-state components (`loading`, `empty`, `error`, `stale`).
 3. Add app-level health/status bar in main shell.
 4. Update e2e coverage to include Jobs submission and status polling flow.
+5. Add global stress profile labeling (`scaffold` vs `runtime-controlled`) and source badges on all telemetry-facing pages.

@@ -1,10 +1,10 @@
 # Diagnostics
 
 Alignment anchors
+
 - Frontend UX source of truth: [../../FRONTEND_UI.md](../../FRONTEND_UI.md)
 - Execution backlog: [../../../TODO.md](../../../TODO.md)
 - Delivery plan: [../../../ROADMAP.md](../../../ROADMAP.md)
-
 
 This document describes the diagnostics that run inside the `data-generator` container image, where their artifacts land, and how to use them for troubleshooting or capacity planning.
 
@@ -12,6 +12,12 @@ This document describes the diagnostics that run inside the `data-generator` con
 
 - A lightweight passive collector runs automatically on container start and writes output to `logs/system-specs.txt` inside the container (and to the mapped host folder when using `docker-compose` with volume mounts).
 - Optionally, when `DIAG_RUN=true`, short active benchmarks are executed if the required tools are available: `fio` for a quick disk IO micro-benchmark and `iperf3` for a short network benchmark (requires `DIAG_IPERF_TARGET`).
+
+Current relationship to global stress profile:
+
+- The frontend footer profile (`10%`, `25%`, `50%`, `100%`) currently affects telemetry polling intensity only.
+- Diagnostics outputs here are still the primary machine-capacity reference for development planning.
+- Runtime machine stress control is planned and will require live host metrics + generator control APIs.
 
 ## Files produced
 
@@ -57,6 +63,7 @@ After bringing the compose stack up, the diagnostics files will appear in `tools
 
 - Use `logs/system-specs.txt` as the canonical snapshot of the container's view of the host/node (kernel, CPU features, mounts, cgroup limits). Attach it to bug reports when investigating IO or network anomalies.
 - Active benchmark outputs are intentionally short; they are for signal and trend, not exhaustive benchmarking.
+- Treat startup diagnostics as baseline envelope data for choosing stress profile defaults in development until live host exporters are integrated.
 
 ## Privacy & Safety
 
@@ -84,7 +91,9 @@ flowchart LR
 ## Recommended next steps
 
 - The Nest SSR server now exposes two readonly diagnostics endpoints:
+
   - `GET /api/diagnostics` — lists files present under `tools/data-generator/logs` (readonly index)
   - `GET /api/diagnostics/system-specs` — returns `system-specs.txt` content when present
 
 - Add a JSON output mode for machine parsing, and a small summary parser that extracts CPU/memory/disk metrics into a single JSON file.
+- Add a diagnostics summary endpoint specifically for stress-profile planning (`cpu_cores`, `mem_total`, `net_iface`, optional `gpu_present`) to support automatic dev profile recommendations.

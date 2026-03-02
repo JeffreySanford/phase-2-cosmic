@@ -216,6 +216,10 @@ Deliverables:
 - Route-level state model for job lifecycle, errors, and retry affordances.
 - Security hardening for diagnostics/proxy routes in SSR shim.
 - UX segmentation: operational telemetry vs governance state vs diagnostics artifacts.
+- Global stress-profile UX standardization:
+  - single footer control surface (`10%`, `25%`, `50%`, `100%`)
+  - route-level profile visibility
+  - explicit source labels (`live`, `fallback`, `mock`, `stale`)
 
 Exit criteria:
 
@@ -239,11 +243,19 @@ Deliverables:
 - Rate limiting and authN/authZ enforcement for governance APIs.
 - Structured audit events with immutable append strategy.
 - SLO-oriented dashboards (availability, latency, queue depth, error budget).
+- Development stress control plane:
+  - runtime generator load-profile API
+  - bounded smoke mode with auto-revert
+  - profile-state telemetry and audit trail
+- Host-metric realism baseline:
+  - CPU/memory/network live metrics in Prometheus
+  - optional GPU metrics in GPU-enabled environments
 
 Exit criteria:
 
 - Controlled degradation under synthetic stress.
 - Security review checklist completed for API and SSR shim.
+- End-to-end profile test proves: select `100%` profile -> measurable load increase -> safe auto-revert -> return to developer default telemetry posture.
 
 Mission linkage:
 
@@ -297,6 +309,14 @@ Mission linkage:
 - Performance:
   - Quarterly benchmark snapshots for generator throughput and governance latency.
 
+### Testing roadmap additions (short/medium/long-term)
+
+- Short-term: continue using the `start-all:reset` script's post-start verification to surface integration failures quickly on developer workstations and CI runners. This validates that the compose stack, Redis host mapping, and governance service boot are functioning before running broader test suites.
+
+- Medium-term (next sprint): migrate Java governance integration tests to Testcontainers. Use `org.testcontainers:redis` together with JUnit/Testcontainers lifecycle management so each integration test can provision an isolated Redis instance programmatically. This improves reproducibility across developer machines and CI, reduces reliance on pre-existing compose services, and provides per-test isolation while preserving realistic Redis behavior.
+
+- Long-term: add a dedicated integration test profile (JUnit tag) that intentionally exercises the full submit->observe->recover loop against a running compose stack. Run this profile on a scheduled nightly/regression lane to validate end-to-end behavior (broker/Redis restarts, replay drills, and recoverability) while keeping the PR gate fast by only running smoke/quick tests there.
+
 ## Risks and mitigations
 
 - Scope overload across Go + Java + Angular:
@@ -316,12 +336,16 @@ Mission linkage:
 - Added Jobs list/transition/types/logs/artifacts endpoints for iterative UI development.
 - Added Datasets API scaffold (`create/list/get`) and frontend datasets route scaffold.
 - Introduced contract/status documentation to manage implemented-vs-target API alignment.
+- Implemented Kafka consumer path in the governance service (basic listener) and a lightweight
+   performance job-publisher script (`tools/perf/job-publisher.js`) with documentation under
+   `docuentation/PERF_TESTING.md`.
 
 ## Testing Program (Detailed Execution Plan)
 
 ### Track A: Required PR gate (fast confidence)
 
 - Lint + format + OpenAPI validation.
+  - Scope drift gate: PRs that modify OpenAPI or documentation must pass spec validation; the CI OpenAPI job is path-filtered to run only when `openapi/**` or `docuentation/**` change.
 - Unit tests for all Nx projects with coverage.
 - Java governance verify lane with surefire + JaCoCo.
 - Frontend smoke e2e (critical path only).

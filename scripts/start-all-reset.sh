@@ -242,3 +242,47 @@ cross-env BUILD_ALL=true sh ./scripts/start-all.sh 2>&1 | tee -a "$LOG_FILE"
 
 log "Dev compose restarted. Use: docker compose -f docker/dev-compose.yml logs -f"
 log "[start-all-reset] finished"
+
+# Final verification: after the full compose stack is up, perform a lightweight
+# smoke check against the governance service health endpoint and (optionally)
+# run a short Maven smoke/integration test that exercises Redis-backed behavior.
+# This helps surface integration failures (missing redis host mapping, port
+# collisions, or service boot failures) immediately in the console/log file.
+log "[start-all-reset] Running post-start verification checks"
+
+# wait_for_url <url> <retries> <delay_seconds>
+wait_for_url() {
+  url="$1"; retries=${2:-30}; delay=${3:-2};
+  n=0
+  until curl -sSf "$url" >/dev/null 2>&1; do
+    n=$((n+1))
+    if [ "$n" -ge "$retries" ]; then
+      log "[start-all-reset] Timeout waiting for $url after ${retries} attempts"
+      return 1
+    fi
+    sleep "$delay"
+  done
+  return 0
+}
+
+# governance health endpoint (matches apps/java-governance server.port + actuator)
+GOV_URL="http://localhost:8080/actuator/health"
+
+if wait_for_url "$GOV_URL" 60 2; then
+  log "[start-all-reset] Governance health endpoint reachable: $GOV_URL"
+  # Optionally run a short governance test run to verify Redis-backed behavior.
+  if [ -z "${SKIP_POST_START_TESTS:-}" ]; then
+    log "[start-all-reset] Running governance smoke tests (will log to console)"
+    if command -v mvn >/dev/null 2>&1; then
+      mvn -B -f apps/java-governance test -DskipITs || log "[start-all-reset] Governance tests returned non-zero exit code"
+    elif [ -x "${REPO_ROOT}/mvnw" ]; then
+      (cd "$REPO_ROOT" && ./mvnw -B -f apps/java-governance test -DskipITs) || log "[start-all-reset] Governance tests returned non-zero exit code"
+    else
+      log "[start-all-reset] mvn not found; skipping governance test run. To enable, install Maven or provide MAVEN_DOCKER_IMAGE."
+    fi
+  else
+    log "[start-all-reset] SKIP_POST_START_TESTS set - skipping governance smoke tests"
+  fi
+else
+  log "[start-all-reset] Governance health check failed; inspect compose logs for failures"
+fi

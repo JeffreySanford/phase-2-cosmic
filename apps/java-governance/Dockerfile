@@ -1,5 +1,7 @@
 FROM maven:3.9.4-eclipse-temurin-21 AS builder
 WORKDIR /workspace
+COPY pom-parent.xml /pom-parent.xml
+RUN mvn -f /pom-parent.xml -DskipTests install
 COPY pom.xml ./
 COPY src ./src
 RUN mvn -B -T 1C package -DskipTests

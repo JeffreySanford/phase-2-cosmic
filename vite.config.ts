@@ -48,5 +48,10 @@ export default defineConfig({
         secure: false,
       },
     },
+    // Ignore noisy folders that contain static diagnostic HTML/logs so Vite
+    // dependency scanning doesn't try to resolve script imports inside them.
+    watch: {
+      ignored: ['**/logs/**', '**/tmp/**']
+    }
   },
 });

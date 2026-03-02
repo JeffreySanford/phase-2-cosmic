@@ -6,6 +6,9 @@ import { DiagnosticsComponent } from './diagnostics.component';
 class PromqlCardStubComponent {}
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('DiagnosticsComponent', () => {
   let fixture: ComponentFixture<DiagnosticsComponent>;
@@ -14,7 +17,7 @@ describe('DiagnosticsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, MatButtonModule],
+      imports: [HttpClientTestingModule, MatButtonModule, MatFormFieldModule, MatSelectModule, NoopAnimationsModule],
       declarations: [DiagnosticsComponent, PromqlCardStubComponent],
     }).compileComponents();
 
@@ -26,8 +29,16 @@ describe('DiagnosticsComponent', () => {
   it('fetches index and system-specs', () => {
     fixture.detectChanges();
     const req = httpMock.expectOne('/api/diagnostics');
-    req.flush({ path: '/tmp/logs', files: ['system-specs.txt'] });
+    req.flush({
+      path: '/tmp/logs',
+      files: ['.gitkeep', 'system-specs.txt', 'payloads.log.20260302T172915Z', 'payloads.log.20260302T170944Z'],
+    });
     expect(comp.index).toBeTruthy();
+    expect(comp.visibleFileCount).toBe(5);
+    expect(comp.visibleFiles.length).toBe(3);
+    expect(comp.visibleFiles[0]).toBe('payloads.log.20260302T172915Z');
+    comp.setVisibleFileCount(-1);
+    expect(comp.visibleFiles.length).toBe(3);
     // request system-specs
     comp.viewSystemSpecs();
     const req2 = httpMock.expectOne('/api/diagnostics/system-specs');

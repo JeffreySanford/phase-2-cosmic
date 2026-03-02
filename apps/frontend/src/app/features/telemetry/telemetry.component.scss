@@ -1,7 +1,21 @@
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.controls mat-form-field {
+  flex: 1 1 260px;
+  max-width: 32%;
+  min-width: 220px;
+}
+
 .chart {
   width: 100%;
   height: 160px;
-  margin-bottom: 6px;
+  margin: 8px 0 12px 0;
 }
 
 .line {
@@ -13,14 +27,14 @@
 .x-axis path, .y-axis path, .x-axis line, .y-axis line { stroke: #ddd; }
 
 .hist {
-  height: 120px;
-  margin-top: 6px;
+  height: 140px;
+  margin: 8px 0 12px 0;
 }
 
 .gauge-container {
   width: 220px;
   height: 110px;
-  margin: 0 auto 2px auto;
+  margin: -10px auto 2px auto;
 }
 
 .stats {
@@ -30,3 +44,67 @@
 }
 .stat-card { flex: 1; text-align: center; }
 .stat-card .big { font-size: 1.5rem; font-weight: 600; }
+
+mat-tab-group {
+  margin-top: 6px;
+  margin-bottom: 56px;
+}
+
+.samples {
+  margin: 10px 0 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sample-row {
+  padding: 8px 10px;
+  border: 1px solid #d9f2de;
+  border-radius: 8px;
+  background: #f7fffa;
+}
+
+.sample-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.sample-time {
+  color: #3f3f46;
+}
+
+.sample-value {
+  color: #14532d;
+  font-weight: 600;
+}
+
+.sample-bar {
+  margin-top: 6px;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #dcfce7;
+  overflow: hidden;
+}
+
+.sample-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.empty-note {
+  margin: 12px 0;
+  color: #52525b;
+}
+
+@media (max-width: 900px) {
+  .controls mat-form-field {
+    max-width: 100%;
+    min-width: 0;
+    flex-basis: 100%;
+  }
+}

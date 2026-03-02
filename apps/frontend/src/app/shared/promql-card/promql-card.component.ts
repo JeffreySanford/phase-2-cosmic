@@ -1,5 +1,8 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { TelemetryService } from '../../services/telemetry.service';
+import { LoadProfileService, LoadProfilePct } from '../../services/load-profile.service';
+import { Subscription, timer } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 type PrometheusRangeResponseLocal = { data?: { result?: { values?: Array<[number | string, string]> }[] } };
 
@@ -8,7 +11,7 @@ type PrometheusRangeResponseLocal = { data?: { result?: { values?: Array<[number
   templateUrl: './promql-card.component.html',
   styleUrls: ['./promql-card.component.scss'],
 })
-export class PromqlCardComponent implements OnInit {
+export class PromqlCardComponent implements OnInit, OnDestroy {
   @Input() query = '';
   @Input() title = '';
 
@@ -16,12 +19,26 @@ export class PromqlCardComponent implements OnInit {
   points: number[] = [];
   path = '';
   loading = false;
+  profilePct: LoadProfilePct = 50;
+  private refreshSub?: Subscription;
+  private profileSub?: Subscription;
 
-  constructor(private telemetry: TelemetryService) {}
+  constructor(
+    private telemetry: TelemetryService,
+    private loadProfile: LoadProfileService
+  ) {}
 
   ngOnInit(): void {
     if (!this.query) return;
-    this.refresh();
+    this.refreshSub = this.loadProfile.pollingMs$
+      .pipe(switchMap((ms) => timer(0, ms)))
+      .subscribe(() => this.refresh());
+    this.profileSub = this.loadProfile.profile$.subscribe((pct) => (this.profilePct = pct));
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
+    this.profileSub?.unsubscribe();
   }
 
   refresh() {

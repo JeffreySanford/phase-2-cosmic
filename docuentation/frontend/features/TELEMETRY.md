@@ -1,12 +1,103 @@
 # Telemetry (Prometheus → Frontend)
 
 Alignment anchors
+
 - Frontend UX source of truth: [../../FRONTEND_UI.md](../../FRONTEND_UI.md)
 - Execution backlog: [../../../TODO.md](../../../TODO.md)
 - Delivery plan: [../../../ROADMAP.md](../../../ROADMAP.md)
 
-
 This document explains how Prometheus metrics are proxied to the frontend and how the telemetry visuals are wired (line chart, histogram, radial gauge). It also documents the endpoints and developer workflow for capturing telemetry screenshots and logs.
+
+## Proposed load-test presets (analysis only, not implemented)
+
+Status: approved as a good direction for development realism, but it needs control-plane and metrics additions first.
+
+Current implementation status (March 2, 2026):
+
+- A global footer load-profile selector (`10%`, `25%`, `50%`, `100%`) now exists in the frontend and propagates to telemetry widgets as a shared polling-intensity profile.
+- This is intentionally a scaffold for future development and does **not** yet enforce host CPU/GPU utilization targets by itself.
+
+### Global stress-testing plan (development)
+
+Phase 1 (implemented scaffold):
+
+- Global profile state in footer and shared telemetry refresh cadence.
+- Cross-page visual reflection in telemetry-driven widgets.
+
+Phase 2 (next):
+
+- Add runtime generator control API to adjust effective throughput without full manual restarts.
+- Add explicit source badge per widget (`live`, `mock`, `fallback`, `stale`).
+
+Phase 3 (next):
+
+- Add live host metrics for CPU, memory, and network into Prometheus scrape path.
+- Add optional GPU metrics in GPU-enabled environments.
+
+Phase 4 (next):
+
+- Add closed-loop profile controllers:
+  - `25%`: low-intensity bounded target
+  - `50%`: steady-state target
+  - `100%`: smoke burst with max duration + auto-revert
+
+Phase 5 (next):
+
+- Add e2e and soak tests that validate profile changes are visible globally and revert safely to developer default.
+
+### Why this is useful
+
+- It gives developers a fast way to validate throughput visual behavior under realistic pressure.
+- It helps validate that the green throughput visuals track machine load changes instead of only fixed generator defaults.
+- It enables repeatable smoke checks (for example, a short 100% stress profile) without manual shell workflows.
+
+### Current constraints in this repository
+
+- `TelemetryComponent` is currently observability-only (Prometheus query UI), not a runtime load controller.
+- The metric dropdown currently contains only:
+  - `generator_bytes_produced_total`
+  - `generator_records_produced_total`
+- The data generator uses startup flags (`--rate`, `--payload-size`) and does not expose a runtime API to change load.
+- `system-specs` diagnostics are a startup snapshot (`system-specs.txt`), not a live stream.
+- No live GPU utilization metric path exists today in the local stack.
+
+### Recommended design
+
+Add a separate **Load Profile** control (do not overload Metric semantics):
+
+- `Developer Default` (current baseline behavior)
+- `Rated 50%` (attempt to stabilize around ~50% host resource utilization)
+- `Smoke 100%` (bounded-duration max stress run, then auto-revert)
+
+Keep Metric dropdown for visualization queries only. Selecting bytes/records should continue to be read-only and should return to default profile behavior if a stress profile is active.
+
+### Required backend/runtime capabilities
+
+- A generator control endpoint to update target throughput at runtime (or restart with explicit profile parameters).
+- Live host telemetry exporters:
+  - CPU/memory/network (node-level metrics via Prometheus-scraped exporters)
+  - GPU utilization metrics where GPU exists (for example, NVIDIA DCGM exporter in GPU environments)
+- A feedback controller loop to tune generator rate toward target utilization (50% profile), rather than fixed rate assumptions.
+- Safety rails:
+  - max duration for smoke mode
+  - explicit stop/revert
+  - profile state visible in UI
+  - disabled in production unless explicitly allowed
+
+### Throughput visualization behavior target
+
+- The green throughput visual should be derived from real `rate(generator_bytes_produced_total[window])` data and correlated with live host utilization signals.
+- Visual labels should indicate whether values are baseline, rated (50%), or smoke (100%) profile-driven.
+- On profile exit or switch back to normal bytes/records workflow, revert generator to developer default rate and poll cadence.
+
+### Implementation order (recommended)
+
+1. Add live host metrics to Prometheus and validate queries for CPU/memory/network (plus GPU where available).
+2. Add generator runtime control API and safe profile state machine.
+3. Add Telemetry UI `Load Profile` selector and profile status chip.
+4. Add closed-loop tuning logic for rated 50% target.
+5. Add smoke-100% bounded run and automatic reversion.
+6. Add e2e checks for profile transitions and default reversion.
 
 ## Overview
 
