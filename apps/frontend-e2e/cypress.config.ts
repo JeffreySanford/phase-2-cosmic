@@ -16,12 +16,13 @@ export default defineConfig({
       ciWebServerCommand: 'pnpm exec nx run frontend:serve-static',
       ciBaseUrl: 'http://localhost:4200',
     }),
-    // Load the project's support file (registers custom commands like `cy.login`)
-    supportFile: 'src/support/e2e.ts',
-    // Ensure Cypress looks for specs in the app e2e folder
+    // Disable TypeScript support file to avoid preprocessor issues in this environment
+    // If you need custom commands, use the JS support file at src/support/e2e.js
+    supportFile: false,
+    // Ensure Cypress looks for specs in this app's e2e folder
     specPattern: [
-      'src/**/*.cy.{js,jsx,ts,tsx}',
-      'src/specs/**/*.spec.{js,jsx,ts,tsx}'
+      'apps/frontend-e2e/src/**/*.cy.{js,jsx,ts,tsx}',
+      'apps/frontend-e2e/src/specs/**/*.spec.{js,jsx,ts,tsx}'
     ],
     baseUrl: 'http://localhost:4200',
   },
