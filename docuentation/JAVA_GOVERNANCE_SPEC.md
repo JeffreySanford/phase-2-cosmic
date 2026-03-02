@@ -1,10 +1,10 @@
 # Java Governance API Specification
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](../TODO.md)
 - Delivery plan: [../ROADMAP.md](../ROADMAP.md)
-
 
 Status: Baseline implemented (Phase 2)
 

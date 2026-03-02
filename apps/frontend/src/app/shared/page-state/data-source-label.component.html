@@ -1,0 +1,8 @@
+<mat-chip-set class="data-source-label">
+  <mat-chip [ngClass]="'data-source-label__chip--' + source.label">
+    <span class="data-source-label__text">{{ source.label.toUpperCase() }}</span>
+    <span *ngIf="source.lastUpdated" class="data-source-label__timestamp">
+      {{ formatTimestamp(source.lastUpdated) }}
+    </span>
+  </mat-chip>
+</mat-chip-set>

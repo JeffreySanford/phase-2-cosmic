@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "ngVLA Main Array configuration fixture - 214 antennas, baseline range 26m to 1,005km",
+  "arraySegment": "Main",
+  "arrayConfiguration": {
+    "name": "Main Array",
+    "canonicalLabel": "Main",
+    "numberOfAntennas": 214,
+    "antennaClass": "18m",
+    "baselineRange": {
+      "minimum": 26,
+      "maximum": 1005000,
+      "unit": "meters"
+    },
+    "geographicExtent": "Southwestern United States",
+    "primaryScience": "General-purpose array for medium-to-high resolution observations",
+    "angularResolution": {
+      "typical": "0.01-1 arcseconds",
+      "description": "Depending on frequency and baseline"
+    }
+  },
+  "frequencyBands": [
+    {
+      "band": "Band 1",
+      "frequencyRangeGHz": {
+        "min": 1.2,
+        "max": 3.5
+      },
+      "wavelengthCm": {
+        "min": 8.6,
+        "max": 25.0
+      },
+      "keyScience": ["HI", "AGN jets", "pulsar timing"]
+    },
+    {
+      "band": "Band 2",
+      "frequencyRangeGHz": {
+        "min": 2.4,
+        "max": 8.0
+      },
+      "wavelengthCm": {
+        "min": 3.75,
+        "max": 12.5
+      },
+      "keyScience": ["Continuum surveys", "transients", "masers"]
+    },
+    {
+      "band": "Band 3",
+      "frequencyRangeGHz": {
+        "min": 6.0,
+        "max": 18.0
+      },
+      "wavelengthCm": {
+        "min": 1.7,
+        "max": 5.0
+      },
+      "keyScience": ["Molecular lines (NH₃, H₂O)", "continuum"]
+    },
+    {
+      "band": "Band 4",
+      "frequencyRangeGHz": {
+        "min": 12.0,
+        "max": 26.0
+      },
+      "wavelengthCm": {
+        "min": 1.15,
+        "max": 2.5
+      },
+      "keyScience": ["CO", "dust continuum", "protoplanetary disks"]
+    },
+    {
+      "band": "Band 5",
+      "frequencyRangeGHz": {
+        "min": 26.0,
+        "max": 50.0
+      },
+      "wavelengthCm": {
+        "min": 0.6,
+        "max": 1.15
+      },
+      "keyScience": ["High-frequency continuum", "molecular spectroscopy"]
+    },
+    {
+      "band": "Band 6",
+      "frequencyRangeGHz": {
+        "min": 50.0,
+        "max": 116.0
+      },
+      "wavelengthCm": {
+        "min": 0.26,
+        "max": 0.6
+      },
+      "keyScience": ["Ultra-high-resolution imaging", "dust/molecular lines"]
+    }
+  ],
+  "reference": {
+    "primary": "ngVLA Memo #55 - Array Configuration Optimization (Selina et al. 2018)",
+    "url": "https://library.nrao.edu/public/memos/ngvla/NGVLA_memo55.pdf"
+  }
+}

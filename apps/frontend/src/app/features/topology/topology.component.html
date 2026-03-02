@@ -1,4 +1,9 @@
 <div class="view-container">
+  <app-disclaimer-banner 
+    type="modeling" 
+    message="Topology visualization includes both infrastructure and ngVLA array segment modeling for demonstration purposes.">
+  </app-disclaimer-banner>
+
   <div class="toolbar">
     <h1>Topology</h1>
     <div class="actions">
@@ -7,7 +12,11 @@
   </div>
 
   <div class="meta">
-    <p class="hint">Interactive topology graph. Click nodes for details (console).</p>
+    <p class="hint">Interactive topology graph. Click nodes for details (console). 
+      <span class="ngvla-legend">
+        🟢 ngVLA Arrays | 🔵 Infrastructure | 🟡 Applications
+      </span>
+    </p>
     <div *ngIf="loading" class="loading">Loading topology…</div>
     <div *ngIf="lastError" class="error">{{ lastError }}</div>
   </div>

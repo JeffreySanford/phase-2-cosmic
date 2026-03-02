@@ -7,8 +7,8 @@ describe('frontend-e2e', () => {
     // Custom command example, see `../support/commands.ts` file
     cy.login('my-email@something.com', 'myPassword');
 
-    // Function helper example, see `../support/app.po.ts` file
-    getGreeting().contains(/Welcome/);
+    // Check landing hero heading
+    cy.get('h1').contains(/Mission control/i);
   });
 
   it('layout: header, sidebar, mainstage present and sidebar toggles', () => {

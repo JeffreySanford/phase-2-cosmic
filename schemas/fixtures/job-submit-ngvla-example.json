@@ -1,0 +1,21 @@
+{
+  "workflow": "casa-imaging",
+  "datasetId": "NGVLA_PROTOSTAR_IC348",
+  "parameters": {
+    "weighting": "briggs",
+    "robust": "0.5",
+    "niter": "10000",
+    "threshold": "0.1mJy"
+  },
+  "ngvlaParams": {
+    "arraySegment": "Main",
+    "antennaClass": "18m",
+    "frequencyBandGHz": {
+      "min": 12.0,
+      "max": 18.0
+    },
+    "centralFrequencyGHz": 15.0,
+    "bandwidthMHz": 2000
+  },
+  "requestedBy": "ngvla-operator"
+}

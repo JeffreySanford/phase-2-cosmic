@@ -58,7 +58,10 @@ and durability goals.
 
 - [DONE] Harden Java governance core API (health, ingest, jobs lifecycle, transitions).  
   *(implemented – endpoints exercised by integration tests and demo).*
-  *(implemented – endpoints exercised by integration tests and demo).*
+- [DONE] Add lightweight authN/authZ middleware (dev-permissive shim).
+  *(toggleable filter with tests, ready for production policy hooks).*
+- [DONE] Add audit logging for job submissions and state transitions.
+  *(log entries now include `Audit:` prefix; reviewable in logs).*
 - [DONE] Continue Go services implementation for ingest/processing.  
   *(scaffold in place; basic idempotent ingest and metrics added).*
   *(scaffold in place; basic idempotent ingest and metrics added).*
@@ -82,8 +85,8 @@ near-term tasks:
 - Start minimal demo/playground script automation (todo exists at
   `scripts/demo-verify.sh`).
 - Define job control contract and implement cancellation/idempotency semantics.
-- Add request-id/trace-id propagation across governance APIs.
-- Add optimistic-locking/versioning for job updates.
+- [DONE] Add request-id/trace-id propagation across governance APIs.
+- [DONE] Add optimistic-locking/versioning for job updates (`expectedVersion` + `409 version_mismatch` flows).
 - [DONE] Add explicit CMS tests for NGVLA constant drift (address later backlog items).
 
 ## [LATER] Additional Backlog
@@ -158,14 +161,14 @@ Mission linkage:
 - Validation evidence: lifecycle contract tests, restart durability checks, API response consistency.
 
 - [DONE] Replace in-memory job store with durable storage (Redis dev baseline).
-- Implement full job lifecycle transitions:
+- [DONE] Implement full job lifecycle transitions:
   - `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, `CANCELED`, `TIMED_OUT`.
-- [NEXT] Decide and standardize job control contract:
-  - keep `/jobs/{id}/transition`, or
-  - introduce explicit action endpoints (`/cancel`, `/retry`, etc.).
-- Add job cancellation endpoint and idempotent update semantics.
-- Add request-id and trace-id propagation across all governance APIs.
-- Add optimistic-locking/versioning for job updates.
+- [DONE] Decide and standardize job control contract:
+  - Implemented explicit action endpoints: `/jobs/{id}/cancel`, `/jobs/{id}/retry`
+  - Retained `/jobs/{id}/transition` for flexible state management
+- [DONE] Add job cancellation endpoint and idempotent update semantics.
+- [DONE] Add request-id and trace-id propagation across all governance APIs.
+- [DONE] Add optimistic-locking/versioning for job updates.
 
 ### Recent updates
 
@@ -198,9 +201,12 @@ Mission linkage:
 - [DONE] Implement `Jobs` route and baseline submit/status/transition flow.
 - [DONE] Implement `Datasets` route and baseline CRUD scaffold.
 - [NEXT] Normalize frontend models and UX labels to canonical contract (`jobId/workflow/status`) and remove legacy field naming.
-- Add shared page-state components (`loading`, `empty`, `stale`, `error`, `recovered`).
-- Evolve `Datasets` from CRUD scaffold to readiness/provenance operational view.
-- Add global status/freshness band in app shell.
+- [DONE] Add shared page-state components (`loading`, `empty`, `stale`, `error`, `recovered`).
+  - Implemented: `page-state.component.ts`, `data-source-label.component.ts`
+- [DONE] Evolve `Datasets` from CRUD scaffold to readiness/provenance operational view.
+  - Implemented: ProvenancePanelComponent with workflow/jobId/sourceDatasetId/ngvlaParams display
+- [DONE] Add global status/freshness band in app shell.
+  - Implemented: `status-band.component.ts`
 - [NEXT] Promote global footer stress profile from scaffold to runtime control plane:
   - keep footer selector as primary cross-route control (`10%`, `25%`, `50%`, `100%`)
   - add backend runtime control API so profile selection affects generator behavior
@@ -221,12 +227,13 @@ Mission linkage:
 - Operator/science impact: Protects sensitive operational surfaces and makes governance actions auditable under production-like constraints.
 - Validation evidence: authN/authZ checks, protected route behavior, audit event verification.
 
-- Add authN/authZ middleware to Java governance API.
+- [DONE] Add authN/authZ middleware to Java governance API (dev-permissive baseline with header enforcement toggle).
+- [NEXT] Add token validation/claims extraction and production policy checks in `AuthFilter`.
 - Add environment-based route hardening in frontend Nest shim:
   - disable diagnostics listing in production
   - protect Prometheus proxy
   - remove absolute path disclosure
-- Add audit logging for job submissions and state transitions.
+- [DONE] Add audit logging for job submissions and state transitions.
 
 ## [NEXT] 5. Integration and contract reliability
 
@@ -276,16 +283,24 @@ Mission linkage:
 - Operator/science impact: Keeps mission-facing configuration and demo behavior consistent with published ngVLA reference facts and prevents silent drift.
 - Validation evidence: source-linked reference doc, contract/fixture checks, drift tests, automated demo verification output.
 
-- [NEXT] Add `docuentation/NGVLA_REFERENCES.md` as canonical NGVLA fact/citation index for platform docs.
-- [NEXT] Add NGVLA array fixtures (`main`, `long-baseline`, `sba`) and wire them into demo/mock data paths.
-- [NEXT] Extend contract/domain models with `arraySegment`, `antennaClass`, and `frequencyBandGHz`.
-- [NEXT] Add regression tests that fail when NGVLA constants diverge from approved reference values.
-- [NEXT] Add `scripts/demo-verify.sh` to automate `DEMO_CHECKLIST.md` checks and emit pass/fail output.
+- [DONE] Add `documentation/NGVLA_REFERENCES.md` as canonical NGVLA fact/citation index for platform docs.
+  - Created with comprehensive ngVLA array configuration, frequency bands, and technical specifications
+- [DONE] Add NGVLA array fixtures (`main`, `long-baseline`, `sba`) and wire them into demo/mock data paths.
+  - Created: `schemas/fixtures/ngvla-main-array.json`, `ngvla-long-baseline.json`, `ngvla-short-baseline.json`
+- [DONE] Extend contract/domain models with `arraySegment`, `antennaClass`, and `frequencyBandGHz`.
+  - Implemented: NgvlaObservationParams schema added to OpenAPI governance.yaml
+- [DONE] Add regression tests that fail when NGVLA constants diverge from approved reference values.
+  - Created: `apps/frontend/src/app/tests/ngvla-drift-regression.spec.ts` with comprehensive test suite
+- [DONE] Enhance `scripts/demo-verify.sh` to automate `DEMO_CHECKLIST.md` checks and emit pass/fail output.
+  - Enhanced with color output, pass/fail tracking, ngVLA job submission tests, pagination/filtering tests
 - [NEXT] Add CI doc-validation for broken links and required citations in `MVP_ACCEPTANCE_CRITERIA.md` and `DEMO_CHECKLIST.md`.
-- [NEXT] Normalize `Topology` UI labels/tooltips to `Main`, `Long Baseline`, and `SBA`.
-- [NEXT] Add explicit modeling disclaimer banner/text in operator UI routes used for demo.
-- [NEXT] Add dataset provenance linkage panel (`workflow`, `jobId`, provenance reference) in `Datasets`.
-- [NEXT] Add `demo-notes/` evidence package output requirements (terminal snippets, screenshots, deviation notes).
+- [DONE] Normalize `Topology` UI labels/tooltips to `Main`, `Long Baseline`, and `SBA`.
+  - Updated: topology.component.ts with ngVLA array segments and color coding
+- [DONE] Add explicit modeling disclaimer banner/text in operator UI routes used for demo.
+  - Created: DisclaimerBannerComponent with 4 disclaimer types, integrated in Jobs, Datasets, Diagnostics, Topology
+- [DONE] Add dataset provenance linkage panel (`workflow`, `jobId`, provenance reference) in `Datasets`.
+  - Created: ProvenancePanelComponent with workflow/jobId/sourceDatasetId/ngvlaParams display, integrated in Datasets
+- [LATER] Add `demo-notes/` evidence package output requirements (terminal snippets, screenshots, deviation notes).
 
 ## [LATER] 6. Streaming and control-plane parity
 

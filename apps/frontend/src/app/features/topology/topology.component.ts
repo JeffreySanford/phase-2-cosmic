@@ -165,7 +165,11 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
       .append('g')
       .call(d3.drag().on('start', (event: D3DragEvent, d: TopoNode) => this.dragstarted(event, d)).on('drag', (event: D3DragEvent, d: TopoNode) => this.dragged(event, d)).on('end', (event: D3DragEvent, d: TopoNode) => this.dragended(event, d)));
 
-    node.append('circle').attr('r', 14).attr('fill', (d: TopoNode) => (d.group === 'infra' ? '#90caf9' : '#ffd54f')).attr('stroke', '#374151');
+    node.append('circle').attr('r', 14).attr('fill', (d: TopoNode) => {
+      if (d.group === 'ngvla') return '#4caf50'; // Green for ngVLA array segments
+      if (d.group === 'infra') return '#90caf9'; // Blue for infrastructure
+      return '#ffd54f'; // Yellow for application nodes
+    }).attr('stroke', '#374151');
     node
       .append('text')
       .attr('x', 18)
@@ -263,7 +267,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
 
   private mockNodes(): TopoNode[] {
     return [
-      { id: 'dg', label: 'Data Generator', group: 'app' },
+      // Infrastructure nodes
       { id: 'kafka', label: 'Kafka', group: 'infra' },
       { id: 'backend', label: 'Nest SSR', group: 'app' },
       { id: 'frontend', label: 'Angular Frontend', group: 'app' },
@@ -272,25 +276,36 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
       { id: 'grafana', label: 'Grafana', group: 'infra' },
       { id: 'loki', label: 'Loki', group: 'infra' },
       { id: 'alertmanager', label: 'Alertmanager', group: 'infra' },
-      { id: 'java-ingest', label: 'Java Ingest', group: 'app' },
+      { id: 'java-governance', label: 'Java Governance', group: 'app' },
       { id: 'nginx', label: 'NGINX (static)', group: 'infra' },
+      // ngVLA Array Segment nodes
+      { id: 'dg-main', label: 'Data Generator (Main)', group: 'ngvla' },
+      { id: 'array-main', label: 'Main Array (214 × 18m)', group: 'ngvla' },
+      { id: 'array-lbl', label: 'Long Baseline (19 × 6m)', group: 'ngvla' },
+      { id: 'array-sba', label: 'SBA (19 × 18m)', group: 'ngvla' },
     ];
   }
 
   private mockLinks(): TopoLink[] {
     return [
-      { source: 'dg', target: 'kafka' },
-      { source: 'dg', target: 'minio' },
-      { source: 'dg', target: 'prom' },
+      // Infrastructure connections
       { source: 'kafka', target: 'backend' },
       { source: 'backend', target: 'frontend' },
       { source: 'frontend', target: 'prom' },
       { source: 'prom', target: 'grafana' },
       { source: 'loki', target: 'grafana' },
       { source: 'prom', target: 'alertmanager' },
-      { source: 'java-ingest', target: 'kafka' },
-      { source: 'java-ingest', target: 'minio' },
+      { source: 'java-governance', target: 'kafka' },
+      { source: 'java-governance', target: 'minio' },
       { source: 'frontend', target: 'nginx' },
+      // ngVLA array segment connections
+      { source: 'dg-main', target: 'kafka' },
+      { source: 'dg-main', target: 'array-main' },
+      { source: 'dg-main', target: 'array-lbl' },
+      { source: 'dg-main', target: 'array-sba' },
+      { source: 'array-main', target: 'minio', value: 3 },
+      { source: 'array-lbl', target: 'minio', value: 2 },
+      { source: 'array-sba', target: 'minio', value: 2 },
     ];
   }
 }

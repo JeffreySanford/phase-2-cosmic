@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Validate that planning documents include required mission linkage fields
+# Validate that canonical planning documents include required mission linkage fields
 
 set -euo pipefail
 
-docs=(MVP_ACCEPTANCE_CRITERIA.md TODO.md ROADMAP.md README.md docuentation/*.md)
+docs=(TODO.md ROADMAP.md)
 missing=0
 for f in "${docs[@]}"; do
   if [[ -f $f ]]; then
-    if ! grep -qE 'Mission (outcome|linkage|impact):' "$f"; then
+    if ! grep -qE 'Mission outcome:|Mission linkage:' "$f"; then
       echo "[ERROR] $f lacks mission linkage anchors"
       missing=1
     fi

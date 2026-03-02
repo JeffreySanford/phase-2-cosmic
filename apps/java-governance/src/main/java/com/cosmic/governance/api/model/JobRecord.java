@@ -11,8 +11,12 @@ public class JobRecord {
     private String updatedAt;
     private Map<String, Object> parameters;
     private String requestedBy;
+    // optimistic lock version counter; incremented on each update
+    private long version;
 
-    public JobRecord() {}
+    public JobRecord() {
+        this.version = 0L;
+    }
 
     public JobRecord(String jobId, String workflow, String datasetId, JobState state, String createdAt, String updatedAt,
                      Map<String, Object> parameters, String requestedBy) {
@@ -24,6 +28,7 @@ public class JobRecord {
         this.updatedAt = updatedAt;
         this.parameters = parameters;
         this.requestedBy = requestedBy;
+        this.version = 0L;
     }
 
     // getters and setters
@@ -43,4 +48,7 @@ public class JobRecord {
     public void setParameters(Map<String, Object> parameters) { this.parameters = parameters; }
     public String getRequestedBy() { return requestedBy; }
     public void setRequestedBy(String requestedBy) { this.requestedBy = requestedBy; }
+
+    public long getVersion() { return version; }
+    public void setVersion(long version) { this.version = version; }
 }

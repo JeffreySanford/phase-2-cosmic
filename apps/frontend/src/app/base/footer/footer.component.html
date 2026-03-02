@@ -8,6 +8,10 @@
         {{ profile }}%
       </button>
     </ng-container>
+    <ng-container *ngIf="mode$ | async as mode">
+      <span class="sep">|</span>
+      <span class="label">Mode: {{ mode }}</span>
+    </ng-container>
   </div>
 </footer>
 

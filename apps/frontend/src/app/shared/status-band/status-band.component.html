@@ -1,0 +1,16 @@
+<div class="status-band" [ngClass]="'status-band--' + status.health" *ngIf="shouldShow">
+  <div class="status-band__content">
+    <mat-icon class="status-band__icon">{{ getIcon() }}</mat-icon>
+    <span class="status-band__message">{{ getMessage() }}</span>
+    <span class="status-band__timestamp">Last checked: {{ getTimestamp() }}</span>
+    
+    <div class="status-band__services" matTooltip="Service Health">
+      <span class="status-badge" [class.status-badge--offline]="status.services.governance === 'offline'">
+        Governance
+      </span>
+      <span class="status-badge" [class.status-badge--offline]="status.services.streaming === 'offline'">
+        Streaming
+      </span>
+    </div>
+  </div>
+</div>

@@ -4,9 +4,8 @@
     <div class="controls">
       <mat-form-field appearance="outline">
         <mat-label>Metric</mat-label>
-        <mat-select (selectionChange)="setMetric($event.value)" [value]="'generator_bytes_produced_total'">
-          <mat-option value="generator_bytes_produced_total">Bytes produced (total)</mat-option>
-          <mat-option value="generator_records_produced_total">Records produced</mat-option>
+        <mat-select (selectionChange)="setMetric($event.value)" [value]="metric$.value">
+          <mat-option *ngFor="let m of metricOptions" [value]="m.id">{{ m.label }}</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -31,16 +30,16 @@
       </mat-form-field>
     </div>
 
-    <p>Current: <strong>{{ currentValue | number }}</strong></p>
+    <p>Current: <strong>{{ formatCurrentValue(currentValue) }}</strong></p>
     <div class="stats">
       <mat-card class="stat-card">
         <mat-card-title>Current Value</mat-card-title>
         <mat-card-content>
-          <div class="big">{{ currentValue | number }}</div>
+          <div class="big">{{ formatCurrentValue(currentValue) }}</div>
         </mat-card-content>
       </mat-card>
       <mat-card class="stat-card">
-        <mat-card-title>Throughput</mat-card-title>
+        <mat-card-title>{{ rateCardTitle }}</mat-card-title>
         <mat-card-content>
           <div class="gauge-container" #gauge></div>
           <div class="big">{{ currentRateHuman }}</div>
@@ -49,10 +48,10 @@
       <mat-card class="stat-card">
         <mat-card-title>Stats (range)</mat-card-title>
         <mat-card-content>
-          <div>Min: <strong>{{ stats.min | number }}</strong></div>
-          <div>Avg: <strong>{{ stats.avg | number:'1.0-2' }}</strong></div>
-          <div>Max: <strong>{{ stats.max | number }}</strong></div>
-          <div>P95: <strong>{{ stats.p95 | number:'1.0-2' }}</strong></div>
+          <div>Min: <strong>{{ formatStat(stats.min) }}</strong></div>
+          <div>Avg: <strong>{{ formatStat(stats.avg) }}</strong></div>
+          <div>Max: <strong>{{ formatStat(stats.max) }}</strong></div>
+          <div>P95: <strong>{{ formatStat(stats.p95) }}</strong></div>
         </mat-card-content>
       </mat-card>
     </div>

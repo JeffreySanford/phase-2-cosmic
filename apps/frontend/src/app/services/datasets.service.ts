@@ -10,6 +10,17 @@ export interface Dataset {
   description?: string;
   createdAt?: string;
   metadata?: Record<string, unknown>;
+  // Provenance linkage for reproducible science
+  workflow?: string;
+  jobId?: string;
+  sourceDatasetId?: string;
+  processingTimestamp?: string;
+  parameters?: Record<string, unknown>;
+  ngvlaParams?: {
+    arraySegment?: string;
+    antennaClass?: string;
+    frequencyBandGHz?: { min: number; max: number };
+  };
 }
 
 export interface DatasetRequest {

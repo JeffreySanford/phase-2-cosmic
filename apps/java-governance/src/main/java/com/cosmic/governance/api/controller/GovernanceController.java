@@ -57,14 +57,14 @@ public class GovernanceController {
     }
 
     @PostMapping("/jobs")
-    public ResponseEntity<JobSubmitResponse> submitJob(@Valid @RequestBody JobSubmitRequest request) {
+    public ResponseEntity<?> submitJob(@Valid @RequestBody JobSubmitRequest request) {
         // server-side JSON Schema validation (if a schema exists for the workflow)
         var vr = schemaService.validate(request.workflow(), request.parameters());
         if (!vr.schemaFound() && !vr.valid()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new JobSubmitResponse("", "INVALID_SCHEMA", ""));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse("invalid_schema", null, null));
         }
         if (vr.schemaFound() && !vr.valid()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new JobSubmitResponse("", "validation_failed", Instant.now().toString()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse("validation_failed", null, null));
         }
 
         JobStatusResponse created = jobService.submit(request);
@@ -91,10 +91,7 @@ public class GovernanceController {
     public ResponseEntity<?> jobStatus(@PathVariable("id") String id) {
         return jobService.get(id)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-                        "error", "job_not_found",
-                        "jobId", id
-                )));
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse("job_not_found", id, null)));
     }
 
             @GetMapping("/jobs")
@@ -109,7 +106,15 @@ public class GovernanceController {
                     try {
                         stateFilter = com.cosmic.governance.api.model.JobState.valueOf(state.toUpperCase());
                     } catch (IllegalArgumentException ex) {
-                        return ResponseEntity.badRequest().body(Map.of("error", "invalid_state", "allowed", List.of("QUEUED","RUNNING","COMPLETED","FAILED","CANCELED","TIMED_OUT")));
+                        // we include allowed list as extra info but still conform to ErrorResponse schema
+                        var details = Map.<String,Object>of(
+                                "allowed", List.of("QUEUED","RUNNING","COMPLETED","FAILED","CANCELED","TIMED_OUT")
+                        );
+                        var err = new com.cosmic.governance.api.dto.ErrorResponse("invalid_state", null, null);
+                        // merge into map
+                        Map<String,Object> resp = new java.util.HashMap<>(details);
+                        resp.put("error", err.error());
+                        return ResponseEntity.badRequest().body(resp);
                     }
                 }
                 return ResponseEntity.ok(jobService.list(workflow, stateFilter, page, size));
@@ -191,11 +196,87 @@ public class GovernanceController {
 
         @PostMapping("/jobs/{id}/transition")
         public ResponseEntity<?> transitionJob(@PathVariable("id") String id, @Valid @RequestBody com.cosmic.governance.api.dto.JobTransitionRequest req) {
-        return jobService.transition(id, req.state())
-            .<ResponseEntity<?>>map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-                "error", "job_not_found",
-                "jobId", id
-            )));
+        // attempt transition; handle missing job, invalid transition, or version mismatch
+        try {
+            var result = jobService.transition(id, req.state(), req.expectedVersion());
+            if (result.isPresent()) {
+                return ResponseEntity.ok(result.get());
+            }
+        } catch (IllegalStateException ex) {
+            if (ex.getMessage().startsWith("version_mismatch")) {
+                long current = -1;
+                String[] parts = ex.getMessage().split(":");
+                if (parts.length > 1) {
+                    try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}
+                }
+                Map<String,Object> resp = new java.util.HashMap<>();
+                resp.put("error", "version_mismatch");
+                resp.put("jobId", id);
+                resp.put("currentVersion", current);
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
+            }
+            throw ex;
+        }
+        // determine whether job existed
+        if (jobService.get(id).isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse("job_not_found", id, null));
+        }
+        // otherwise it was an invalid state transition
+        var err = new com.cosmic.governance.api.dto.ErrorResponse("invalid_transition", id, null);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+        }
+
+        @PostMapping("/jobs/{id}/cancel")
+        public ResponseEntity<?> cancelJob(@PathVariable("id") String id, @Valid @RequestBody com.cosmic.governance.api.dto.JobCancelRequest req) {
+            try {
+                var res = jobService.cancel(id, req.expectedVersion());
+                if (res.isPresent()) {
+                    return ResponseEntity.ok(res.get());
+                }
+            } catch (IllegalStateException ex) {
+                if (ex.getMessage().startsWith("version_mismatch")) {
+                    long current = -1;
+                    String[] parts = ex.getMessage().split(":");
+                    if (parts.length > 1) {
+                        try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}
+                    }
+                    Map<String,Object> resp = new java.util.HashMap<>();
+                    resp.put("error", "version_mismatch");
+                    resp.put("jobId", id);
+                    resp.put("currentVersion", current);
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
+                }
+                throw ex;
+            }
+            if (jobService.get(id).isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse("job_not_found", id));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse("cannot_cancel", id));
+        }
+
+        @PostMapping("/jobs/{id}/retry")
+        public ResponseEntity<?> retryJob(@PathVariable("id") String id, @Valid @RequestBody com.cosmic.governance.api.dto.JobTransitionRequest req) {
+            try {
+                var result = jobService.retry(id, req.expectedVersion());
+                if (result.isPresent()) return ResponseEntity.ok(result.get());
+            } catch (IllegalStateException ex) {
+                if (ex.getMessage().startsWith("version_mismatch")) {
+                    long current = -1;
+                    String[] parts = ex.getMessage().split(":");
+                    if (parts.length > 1) {
+                        try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}
+                    }
+                    Map<String,Object> resp = new java.util.HashMap<>();
+                    resp.put("error", "version_mismatch");
+                    resp.put("jobId", id);
+                    resp.put("currentVersion", current);
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
+                }
+                throw ex;
+            }
+            if (jobService.get(id).isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse("job_not_found", id));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse("cannot_retry", id));
         }
 }

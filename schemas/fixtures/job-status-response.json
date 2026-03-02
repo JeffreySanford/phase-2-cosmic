@@ -8,5 +8,6 @@
   "parameters": {
     "weighting": "briggs"
   },
-  "requestedBy": "ci-smoke"
+  "requestedBy": "ci-smoke",
+  "version": 1
 }

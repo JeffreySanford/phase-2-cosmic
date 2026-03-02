@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "ngVLA Long Baseline Array configuration fixture - 19 antennas, transcontinental baselines up to 8,946km",
+  "arraySegment": "Long Baseline",
+  "arrayConfiguration": {
+    "name": "Long Baseline Array (LBL)",
+    "canonicalLabel": "Long Baseline",
+    "numberOfAntennas": 19,
+    "antennaClass": "6m",
+    "baselineRange": {
+      "minimum": 1000000,
+      "maximum": 8946000,
+      "unit": "meters",
+      "description": "Transcontinental extent"
+    },
+    "geographicExtent": "Continental US + strategic international sites",
+    "primaryScience": "Ultra-high-resolution imaging (milli-arcsecond to sub-milli-arcsecond scales)",
+    "angularResolution": {
+      "typical": "0.0001-0.001 arcseconds",
+      "description": "Sub-milliarcsecond capability at high frequencies"
+    }
+  },
+  "frequencyBands": [
+    {
+      "band": "Band 5",
+      "frequencyRangeGHz": {
+        "min": 26.0,
+        "max": 50.0
+      },
+      "wavelengthCm": {
+        "min": 0.6,
+        "max": 1.15
+      },
+      "keyScience": ["High-frequency continuum", "molecular spectroscopy"],
+      "note": "6m antennas optimized for high-frequency operations"
+    },
+    {
+      "band": "Band 6",
+      "frequencyRangeGHz": {
+        "min": 70.0,
+        "max": 116.0
+      },
+      "wavelengthCm": {
+        "min": 0.26,
+        "max": 0.43
+      },
+      "keyScience": ["Ultra-high-resolution imaging", "AGN jets", "protoplanetary disks"],
+      "note": "Primary high-frequency band for LBL operations"
+    }
+  ],
+  "reference": {
+    "primary": "ngVLA Memo #75 - Science with the ngVLA (Murphy et al. 2017), Chapter 12: High Angular Resolution Science",
+    "url": "https://library.nrao.edu/public/memos/ngvla/NGVLA_memo75.pdf"
+  }
+}

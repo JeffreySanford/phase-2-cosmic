@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild, ElementRef, Inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { TelemetryService } from '../../services/telemetry.service';
 import { BehaviorSubject, Subscription, timer, NEVER, from, of } from 'rxjs';
 import { switchMap, map, catchError } from 'rxjs/operators';
@@ -15,6 +16,16 @@ type D3SVG = ReturnType<D3Module['select']> | null;
 type D3G = ReturnType<D3Module['select']> | null;
 
 type Point = { t: number; v: number };
+type MetricKind = 'counter' | 'gauge';
+type MetricFormat = 'bytes_per_sec' | 'records_per_sec' | 'percent';
+type MetricOption = {
+  id: string;
+  label: string;
+  rangeQuery: string;
+  instantQuery: string;
+  kind: MetricKind;
+  format: MetricFormat;
+};
 
 @Component({
   selector: 'app-telemetry',
@@ -33,7 +44,34 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   // BehaviorSubjects to control polling and time range from the UI
   pollIntervalMs$ = new BehaviorSubject<number>(5000); // default 5s
   timeRangeSec$ = new BehaviorSubject<number>(300); // default 5m
-  metric$ = new BehaviorSubject<string>('generator_bytes_produced_total');
+  readonly metricOptions: MetricOption[] = [
+    {
+      id: 'generator_bytes_produced_total',
+      label: 'Bytes produced (total)',
+      rangeQuery: 'generator_bytes_produced_total',
+      instantQuery: 'generator_bytes_produced_total',
+      kind: 'counter',
+      format: 'bytes_per_sec',
+    },
+    {
+      id: 'generator_records_produced_total',
+      label: 'Records produced',
+      rangeQuery: 'generator_records_produced_total',
+      instantQuery: 'generator_records_produced_total',
+      kind: 'counter',
+      format: 'records_per_sec',
+    },
+    {
+      id: 'system_cpu_load_pct',
+      label: 'System',
+      rangeQuery: '100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))',
+      instantQuery: '100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))',
+      kind: 'gauge',
+      format: 'percent',
+    },
+  ];
+
+  metric$ = new BehaviorSubject<string>(this.metricOptions[0].id);
 
   currentValue = 0;
   currentRate = 0; // in units per second (matches metric units, e.g., bytes/sec)
@@ -47,6 +85,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private pollSub?: Subscription;
   private profileSub?: Subscription;
+  private routeSub?: Subscription;
   private stop$ = new BehaviorSubject<boolean>(false);
 
   private svg: D3SVG | null = null;
@@ -57,10 +96,19 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     @Inject(TelemetryService) private telemetry: TelemetryService,
-    @Inject(LoadProfileService) private loadProfile: LoadProfileService
+    @Inject(LoadProfileService) private loadProfile: LoadProfileService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    this.routeSub = this.route.queryParamMap.subscribe((params) => {
+      const metric = params.get('metric');
+      if (!metric) return;
+      const valid = this.metricOptions.some((m) => m.id === metric);
+      if (!valid) return;
+      if (this.metric$.value !== metric) this.metric$.next(metric);
+    });
+
     this.profileSub = this.loadProfile.profile$.subscribe((pct) => {
       if (pct === 10) this.pollIntervalMs$.next(30000);
       if (pct === 25) this.pollIntervalMs$.next(15000);
@@ -83,26 +131,28 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.pollSub?.unsubscribe();
     this.profileSub?.unsubscribe();
+    this.routeSub?.unsubscribe();
     this.stop$.next(true);
     this.stop$.complete();
   }
 
   private fetchRangeAndRender(): void {
-    const metric = this.metric$.value;
+    const selectedMetric = this.getSelectedMetric();
     const range = this.timeRangeSec$.value;
     const end = Math.floor(Date.now() / 1000);
     const start = end - range;
     const step = Math.max(Math.floor(range / 120), 1); // ~120 samples
-    // If metric looks like a Prometheus counter (ends with _total), request a rate() series instead
-    if (metric.endsWith('_total')) {
-      // request a 1m window rate by default
+    if (selectedMetric.kind === 'counter') {
       this.telemetry
-        .queryRangeRate(metric, start, end, step, '1m')
+        .queryRangeRate(selectedMetric.rangeQuery, start, end, step, '1m')
         .subscribe((res: unknown) => this.handleRateResponse(res as PrometheusRangeResponse));
-      // also fetch the instant (raw counter) to display currentValue
-      this.telemetry.queryInstant(metric).subscribe((val: unknown) => (this.currentValue = Number(val as unknown as number)));
+      this.telemetry
+        .queryInstant(selectedMetric.instantQuery)
+        .subscribe((val: unknown) => (this.currentValue = Number(val as unknown as number)));
     } else {
-      this.telemetry.queryRange(metric, start, end, step).subscribe((res: unknown) => this.handleRangeResponse(res as PrometheusRangeResponse));
+      this.telemetry
+        .queryRange(selectedMetric.rangeQuery, start, end, step)
+        .subscribe((res: unknown) => this.handleRangeResponse(res as PrometheusRangeResponse));
     }
   }
 
@@ -157,7 +207,15 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       this.updateRecentSamples(this.points);
       this.renderLine(this.points, ma);
       this.renderHistogram(this.points.map((p) => p.v));
-      this.computeRate(this.points);
+      if (this.getSelectedMetric().kind === 'gauge') {
+        this.currentRate = this.currentValue;
+        this.currentRateHuman = this.humanRate(this.currentRate);
+        const nextCap = Math.max(1, Number(this.stats.p95) * 1.15, Number(this.stats.max) * 1.05, this.currentRate * 1.05);
+        this.gaugeCap = Math.max(nextCap, this.gaugeCap * 0.9);
+        this.renderGauge(this.currentRate, this.gaugeCap);
+      } else {
+        this.computeRate(this.points);
+      }
     } catch {
       // ignore parse errors
     }
@@ -427,8 +485,18 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private humanRate(v: number) {
-    // format bytes/sec or generic units/sec depending on magnitude
-    if (!isFinite(v) || v === 0) return '0 B/s';
+    const metric = this.getSelectedMetric();
+    if (!isFinite(v)) return '0';
+
+    if (metric.format === 'percent') {
+      return `${v.toFixed(2)}%`;
+    }
+
+    if (metric.format === 'records_per_sec') {
+      return `${v.toFixed(2)} rec/s`;
+    }
+
+    if (v === 0) return '0 B/s';
     const abs = Math.abs(v);
     const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
     let i = 0;
@@ -467,6 +535,8 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   setMetric(m: string) {
     this.metric$.next(m);
+    this.gaugeCap = 1;
+    this.fetchRangeAndRender();
   }
 
   onVizTabChanged() {
@@ -492,5 +562,26 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       valueHuman: this.humanRate(p.v),
       pct: Math.min(100, Math.max(0, (p.v / max) * 100)),
     }));
+  }
+
+  private getSelectedMetric(): MetricOption {
+    return this.metricOptions.find((m) => m.id === this.metric$.value) ?? this.metricOptions[0];
+  }
+
+  get rateCardTitle(): string {
+    const selected = this.getSelectedMetric();
+    if (selected.format === 'percent') return 'System Load';
+    if (selected.format === 'records_per_sec') return 'Throughput (records)';
+    return 'Throughput';
+  }
+
+  formatCurrentValue(v: number): string {
+    const selected = this.getSelectedMetric();
+    if (selected.kind === 'counter') return new Intl.NumberFormat().format(Math.round(v));
+    return this.humanRate(v);
+  }
+
+  formatStat(v: number): string {
+    return this.humanRate(v);
   }
 }

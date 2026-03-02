@@ -44,10 +44,9 @@ workstation with as few dependencies as possible.
    legacy Angular dev server, use `pnpm -C apps/frontend serve` instead, but
    SSR is closer to the production build used in the demo.)
 
-
 ## Exercising the workflow
 
-1. Open the browser at http://localhost:4000 and navigate to the **Jobs** page.
+1. Open the browser at <http://localhost:4000> and navigate to the **Jobs** page.
    The page should load and show an empty job list.
 
 2. Click **Submit job**, fill in a workflow name (e.g. `demo-workflow`), any
@@ -75,7 +74,6 @@ workstation with as few dependencies as possible.
    consumer to see the event flow, or run the `tools/perf/run-profile.sh smoke`
    to generate a burst of synthetic jobs.
 
-
 ## Notes
 
 - The playground is intentionally lightweight; long-running data and operators
@@ -89,8 +87,9 @@ workstation with as few dependencies as possible.
   `docker compose -f docker/dev-compose.yml down -v` and stop the frontend
   server with Ctrl-C.
 
-
 ## Linking to MVP docs
 
 This file is referenced from the `MVP_ACCEPTANCE_CRITERIA.md` and can be used
-as the central guide when running the demo checklist.
+as the central guide when running the demo checklist.  An automated verifier
+script `/scripts/demo-verify.sh` provides a pass/fail summary for repeatable
+runs.

@@ -1,0 +1,40 @@
+<div class="page-state" [ngClass]="'page-state--' + config.state">
+  <!-- Loading State -->
+  <div *ngIf="config.state === 'loading'" class="page-state__content">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p class="page-state__message">{{ config.message || 'Loading...' }}</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="config.state === 'empty'" class="page-state__content">
+    <mat-icon class="page-state__icon">inbox</mat-icon>
+    <p class="page-state__message">{{ config.message || 'No items found' }}</p>
+    <button *ngIf="config.action" mat-raised-button color="primary" (click)="config.action.callback()">
+      {{ config.action.label }}
+    </button>
+  </div>
+
+  <!-- Stale State -->
+  <div *ngIf="config.state === 'stale'" class="page-state__content page-state__banner">
+    <mat-icon class="page-state__icon">warning</mat-icon>
+    <p class="page-state__message">{{ config.message || 'Data may be stale' }}</p>
+    <button *ngIf="config.action" mat-stroked-button (click)="config.action.callback()">
+      {{ config.action.label }}
+    </button>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="config.state === 'error'" class="page-state__content">
+    <mat-icon class="page-state__icon page-state__icon--error">error</mat-icon>
+    <p class="page-state__message">{{ config.message || 'An error occurred' }}</p>
+    <button *ngIf="config.action" mat-raised-button color="warn" (click)="config.action.callback()">
+      {{ config.action.label }}
+    </button>
+  </div>
+
+  <!-- Recovered State (temporary notification) -->
+  <div *ngIf="config.state === 'recovered'" class="page-state__content page-state__banner page-state__banner--success">
+    <mat-icon class="page-state__icon">check_circle</mat-icon>
+    <p class="page-state__message">{{ config.message || 'Connection recovered' }}</p>
+  </div>
+</div>

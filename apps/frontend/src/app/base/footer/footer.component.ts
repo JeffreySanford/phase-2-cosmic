@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy } from '@angular/core';
 import { LoadProfilePct, LoadProfileService } from '../../services/load-profile.service';
 
 @Component({
@@ -6,7 +6,7 @@ import { LoadProfilePct, LoadProfileService } from '../../services/load-profile.
   templateUrl: './footer.component.html',
   styleUrls: ['./footer.component.scss'],
 })
-export class FooterComponent {
+export class FooterComponent implements AfterViewInit, OnDestroy {
   readonly profileOptions: Array<{ value: LoadProfilePct; label: string; note: string }> = [
     { value: 10, label: '10% (Default)', note: 'Normal development' },
     { value: 25, label: '25%', note: 'Low stress profile' },
@@ -14,15 +14,62 @@ export class FooterComponent {
     { value: 100, label: '100%', note: 'Smoke stress profile' },
   ];
 
-  // avoid using injected service in property initializer (TS runs initializers before
-  // constructor assignment). Expose as a getter to defer access until runtime.
-  constructor(private loadProfile: LoadProfileService) {}
+  private resizeObserver?: ResizeObserver;
+  private readonly onWindowResize = () => this.updateFooterHeightVar();
+
+  constructor(
+    private loadProfile: LoadProfileService,
+    private readonly el: ElementRef<HTMLElement>,
+    private readonly zone: NgZone
+  ) {}
+
+  ngAfterViewInit(): void {
+    this.updateFooterHeightVar();
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.addEventListener('resize', this.onWindowResize);
+    const footer = this.findFooterElement();
+    if (!footer || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    this.zone.runOutsideAngular(() => {
+      this.resizeObserver = new ResizeObserver(() => this.updateFooterHeightVar());
+      this.resizeObserver.observe(footer);
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('resize', this.onWindowResize);
+    }
+    this.resizeObserver?.disconnect();
+  }
 
   get profile$() {
     return this.loadProfile.profile$;
   }
 
+  get mode$() {
+    return this.loadProfile.mode$;
+  }
+
   setProfile(pct: LoadProfilePct): void {
     this.loadProfile.setProfile(pct);
+  }
+
+  private findFooterElement(): HTMLElement | null {
+    return this.el.nativeElement.querySelector('footer.app-footer');
+  }
+
+  private updateFooterHeightVar(): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const footer = this.findFooterElement();
+    const height = footer ? Math.ceil(footer.getBoundingClientRect().height) : 0;
+    document.documentElement.style.setProperty('--app-footer-height', `${height}px`);
   }
 }

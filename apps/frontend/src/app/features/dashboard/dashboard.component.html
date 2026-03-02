@@ -1,12 +1,149 @@
-<div class="view-container">
-  <h1>Dashboard</h1>
-  <p>This is the dashboard view where ingestion rates, backlog, and health indicators will be shown.</p>
-  <section class="promql-section">
-    <h2>Quick Signals</h2>
-    <div class="promql-cards">
-      <app-promql-card title="Ingest rate (1m)" query='rate(generator_bytes_produced_total[1m])'></app-promql-card>
-      <app-promql-card title="Total bytes" query='generator_bytes_produced_total'></app-promql-card>
-      <app-promql-card title="Generator up" query='up{job="data-generator"}'></app-promql-card>
+<div class="dashboard view-container">
+  <header class="dash-header aurora-shell">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Operational command surface for telemetry, diagnostics, and generator posture.</p>
     </div>
+    <div class="header-meta">
+      <span class="chip">Profile {{ profilePct }}%</span>
+      <span class="chip">Poll {{ pollingMs / 1000 }}s</span>
+      <span class="chip">Mode {{ widgetMode }}</span>
+      <button mat-stroked-button color="primary" (click)="refresh()" [disabled]="loading">
+        {{ loading ? 'Refreshing...' : 'Refresh' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="kpi-strip">
+    <article class="kpi-card" *ngFor="let kpi of headerKpis" [attr.data-tone]="kpi.tone">
+      <p class="kpi-label">{{ kpi.label }}</p>
+      <p class="kpi-value">{{ kpi.value }}</p>
+    </article>
+  </section>
+
+  <section class="dash-tabs panel">
+    <mat-tab-group animationDuration="250ms" dynamicHeight>
+      <mat-tab label="Pulse">
+        <div class="tab-body">
+          <section class="panel infographic-grid">
+            <mat-card class="infographic-card pulse-glow">
+              <p class="mini-label">Operational Health</p>
+              <div class="ring-wrap">
+                <div class="ring" [style.background]="ringStyle(healthScore)">
+                  <div class="ring-core">{{ healthScore }}%</div>
+                </div>
+              </div>
+              <p class="mini-note">Composite score from scrape status, load, throughput, and diagnostics.</p>
+            </mat-card>
+
+            <mat-card class="infographic-card">
+              <p class="mini-label">System Load</p>
+              <div class="ring-wrap">
+                <div class="ring warm" [style.background]="ringStyle(cpuLoadPct)">
+                  <div class="ring-core">{{ cpuLoadPct | number:'1.0-0' }}%</div>
+                </div>
+              </div>
+              <p class="mini-note">CPU utilization from live Prometheus process metrics.</p>
+            </mat-card>
+
+            <mat-card class="infographic-card">
+              <p class="mini-label">System Energy</p>
+              <div class="barscape">
+                <div class="barscape-row" *ngFor="let band of signalBands" [attr.data-tone]="band.tone">
+                  <span>{{ band.label }}</span>
+                  <div class="barscape-track">
+                    <div class="barscape-fill" [style.width.%]="band.value"></div>
+                  </div>
+                  <strong>{{ band.value }}%</strong>
+                </div>
+              </div>
+              <p class="mini-note">Infographic blend of throughput, headroom, and health signals.</p>
+            </mat-card>
+          </section>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="System">
+        <div class="tab-body">
+          <section class="panel">
+            <h2>System Summary</h2>
+            <div class="tile-grid">
+              <article class="tile" *ngFor="let tile of systemTiles" [attr.data-tone]="tile.tone">
+                <p class="tile-title">{{ tile.title }}</p>
+                <p class="tile-value">{{ tile.value }}</p>
+                <p class="tile-note">{{ tile.note }}</p>
+                <svg *ngIf="tile.sparkPath" class="sparkline" viewBox="0 0 140 30" preserveAspectRatio="none" aria-hidden="true">
+                  <path [attr.d]="tile.sparkPath"></path>
+                </svg>
+                <p class="tile-source">source: {{ tile.source }}</p>
+              </article>
+            </div>
+          </section>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Telemetry">
+        <div class="tab-body">
+          <section class="panel">
+            <h2>Telemetry Overview</h2>
+            <div class="tile-grid telemetry">
+              <a class="tile link" routerLink="/telemetry" [queryParams]="{ metric: tile.metricId }" *ngFor="let tile of telemetryTiles">
+                <p class="tile-title">{{ tile.title }}</p>
+                <p class="tile-value">{{ tile.value }}</p>
+                <p class="tile-note">{{ tile.query }}</p>
+                <div class="intensity-track">
+                  <span [style.width.%]="tile.intensity * 100"></span>
+                </div>
+                <p class="tile-source">source: {{ tile.source }}</p>
+              </a>
+            </div>
+          </section>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Ops">
+        <div class="tab-body">
+          <section class="panel two-col">
+            <article class="panel-card">
+              <h2>Recent Diagnostics</h2>
+              <p>System specs: <strong>{{ diagnosticsSummary.systemSpecsPresent ? 'present' : 'missing' }}</strong></p>
+              <p>Artifacts: <strong>{{ diagnosticsSummary.artifactCount }}</strong></p>
+              <p>fio logs: <strong>{{ diagnosticsSummary.fioCount }}</strong></p>
+              <p>iperf3 logs: <strong>{{ diagnosticsSummary.iperfCount }}</strong></p>
+              <p>Latest: <strong>{{ diagnosticsSummary.latestArtifact }}</strong></p>
+              <p class="tile-source">source: {{ diagnosticsSummary.source }}</p>
+              <a routerLink="/diagnostics">Open diagnostics</a>
+            </article>
+
+            <article class="panel-card">
+              <h2>Generator Status</h2>
+              <p>Scrape status: <strong>{{ generatorStatus.scrapeUp ? 'healthy' : 'down' }}</strong></p>
+              <p>Targets up: <strong>{{ generatorStatus.targetsUp }}</strong></p>
+              <p>Last seen: <strong>{{ generatorStatus.lastSeen }}</strong></p>
+              <p class="tile-source">source: {{ generatorStatus.source }}</p>
+              <a routerLink="/telemetry">Inspect generator telemetry</a>
+            </article>
+          </section>
+
+          <section class="panel">
+            <h2>Alerts & Warnings</h2>
+            <ul class="alerts">
+              <li *ngFor="let alert of alerts" [attr.data-level]="alert.level">
+                <span class="badge">{{ alert.level }}</span>
+                <span>{{ alert.message }}</span>
+              </li>
+            </ul>
+          </section>
+
+          <section class="panel">
+            <h2>Quick Links</h2>
+            <div class="quick-links">
+              <a *ngFor="let link of quickLinks" [routerLink]="link.route">{{ link.label }}</a>
+            </div>
+            <p class="stamp" *ngIf="lastUpdated">Last update: {{ lastUpdated | date:'medium' }}</p>
+          </section>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
   </section>
 </div>

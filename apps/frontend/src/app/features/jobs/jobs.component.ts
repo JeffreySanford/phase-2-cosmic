@@ -28,23 +28,32 @@ export class JobsComponent implements OnInit, OnDestroy {
   constructor(private jobsSvc: JobsService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
-    this.reload();
+    // subscribe to the shared hot list observable; it will poll automatically
+    this.jobsSvc.listHot().subscribe(
+      (result) => {
+        if (result.ok) {
+          this.jobs = result.value || [];
+        } else {
+          this.error = this.errMsg(result.error);
+        }
+        this.loading = false;
+      },
+      (err) => {
+        this.error = this.errMsg(err);
+        this.loading = false;
+      }
+    );
+
     this.loadDispatchConfig();
   }
 
   reload() {
+    // trigger the cached stream to refetch and show loader until the
+    // next value arrives
     this.loading = true;
     this.error = null;
-    this.jobsSvc.list().subscribe(
-      (list) => {
-        this.jobs = list || [];
-        this.loading = false;
-      },
-      (err) => {
-        this.error = String(err?.message || err);
-        this.loading = false;
-      }
-    );
+    this.jobsSvc.invalidateList();
+    // subscriber already exists from ngOnInit so we don't need to re-subscribe.
   }
 
   openSubmit() {
@@ -67,8 +76,12 @@ export class JobsComponent implements OnInit, OnDestroy {
         () => {
           this.jobsSvc.submitJob(req).subscribe(
             (created) => {
-              // created contains jobId; fetch the job status
+              // created contains jobId; force a list refresh so the new job
+              // will appear (polling will also pick it up shortly).
+              this.jobsSvc.invalidateList();
               if (created?.jobId) {
+                // optionally fetch the individual record and prepend to
+                // the list immediately
                 this.jobsSvc.get(created.jobId).subscribe((full) => (this.jobs = [full, ...this.jobs]));
               }
             },
@@ -84,11 +97,13 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   view(job: JobStatus) {
     this.selectedJob = job;
-    // start polling for updates
+
+    // use the shared hot observable that polls a single job status
     this.pollSub?.unsubscribe();
-    this.pollSub = interval(2000)
-      .pipe(startWith(0), switchMap(() => this.jobsSvc.get(job.jobId)))
-      .subscribe((j) => (this.selectedJob = j), (err) => (this.error = this.errMsg(err)));
+    this.pollSub = this.jobsSvc.watchJob(job.jobId).subscribe(
+      (j) => (this.selectedJob = j),
+      (err) => (this.error = this.errMsg(err))
+    );
 
     // also fetch logs and artifacts initially
     this.fetchLogs(job.jobId);

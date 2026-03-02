@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "ngVLA Short Baseline Array configuration fixture - 19 antennas, compact core 9m to 330m",
+  "arraySegment": "SBA",
+  "arrayConfiguration": {
+    "name": "Short Baseline Array (SBA)",
+    "canonicalLabel": "SBA",
+    "numberOfAntennas": 19,
+    "antennaClass": "18m",
+    "baselineRange": {
+      "minimum": 9,
+      "maximum": 330,
+      "unit": "meters",
+      "description": "Compact core configuration"
+    },
+    "geographicExtent": "Central compact core (co-located with VLA site or similar)",
+    "primaryScience": "Maximum surface-brightness sensitivity for extended structures",
+    "angularResolution": {
+      "typical": "1-10 arcseconds",
+      "description": "Optimized for extended emission mapping"
+    }
+  },
+  "frequencyBands": [
+    {
+      "band": "Band 1",
+      "frequencyRangeGHz": {
+        "min": 1.2,
+        "max": 3.5
+      },
+      "wavelengthCm": {
+        "min": 8.6,
+        "max": 25.0
+      },
+      "keyScience": ["HI extended emission", "diffuse ionized gas", "large-scale structure"]
+    },
+    {
+      "band": "Band 2",
+      "frequencyRangeGHz": {
+        "min": 2.4,
+        "max": 8.0
+      },
+      "wavelengthCm": {
+        "min": 3.75,
+        "max": 12.5
+      },
+      "keyScience": ["Extended continuum emission", "OH masers", "large molecular clouds"]
+    },
+    {
+      "band": "Band 3",
+      "frequencyRangeGHz": {
+        "min": 6.0,
+        "max": 18.0
+      },
+      "wavelengthCm": {
+        "min": 1.7,
+        "max": 5.0
+      },
+      "keyScience": ["NH₃ extended structures", "H₂O emission", "star-forming regions"]
+    },
+    {
+      "band": "Band 4",
+      "frequencyRangeGHz": {
+        "min": 12.0,
+        "max": 26.0
+      },
+      "wavelengthCm": {
+        "min": 1.15,
+        "max": 2.5
+      },
+      "keyScience": ["CO mapping", "extended dust emission", "nearby galaxies"]
+    }
+  ],
+  "reference": {
+    "primary": "ngVLA Memo #49 - Short-Spacing Considerations (Carilli & Holdaway 2017)",
+    "url": "https://library.nrao.edu/public/memos/ngvla/NGVLA_memo49.pdf"
+  }
+}

@@ -3,13 +3,37 @@
 import { NestFactory } from '@nestjs/core';
 import '@angular/compiler';
 // explicit any usage in this bootstrap file is intentional (vite dev middleware, SSR bootstrap)
-import { Module, Controller, Get, Req, Res, Injectable, All } from '@nestjs/common';
+import { Module, Controller, Get, Post, Req, Res, Injectable, All } from '@nestjs/common';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { CommonEngine } from '@angular/ssr';
 import { join } from 'path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
 import { Request, Response } from 'express';
+import { spawn, type ChildProcess } from 'child_process';
+
+type LoadProfilePct = 10 | 25 | 50 | 100;
+
+type RuntimeProfileSpec = {
+  workers: number;
+  ratePerWorker: number;
+  payloadSize: number;
+  note: string;
+};
+
+const PROFILE_MAP: Record<LoadProfilePct, RuntimeProfileSpec> = {
+  10: { workers: 0, ratePerWorker: 0, payloadSize: 512, note: 'baseline (no extra runtime workers)' },
+  25: { workers: 2, ratePerWorker: 500_000, payloadSize: 1024, note: 'low stress' },
+  50: { workers: 4, ratePerWorker: 1_500_000, payloadSize: 1024, note: 'medium stress' },
+  100: { workers: 8, ratePerWorker: 3_000_000, payloadSize: 2048, note: 'smoke stress (bounded)' },
+};
+
+type WorkerState = {
+  id: number;
+  cmd: string;
+  args: string[];
+  proc: ChildProcess;
+};
 
 interface SsrOptions {
   browserDistFolder: string;
@@ -154,9 +178,158 @@ class SsrService {
   }
 }
 
+@Injectable()
+class RuntimeLoadProfileService {
+  private profile: LoadProfilePct = 10;
+  private workers: WorkerState[] = [];
+  private smokeTimer: NodeJS.Timeout | null = null;
+  private readonly defaultSmokeSeconds = 180;
+
+  status() {
+    return {
+      profilePct: this.profile,
+      workers: this.workers.length,
+      mode: this.workers.length > 0 ? 'runtime-controlled' : 'baseline',
+      note: PROFILE_MAP[this.profile].note,
+    };
+  }
+
+  async setProfile(pct: LoadProfilePct, smokeSeconds?: number): Promise<Record<string, unknown>> {
+    this.clearSmokeTimer();
+    await this.stopWorkers();
+    this.profile = pct;
+    const spec = PROFILE_MAP[pct];
+
+    if (spec.workers <= 0) {
+      return this.status();
+    }
+
+    const started: WorkerState[] = [];
+    try {
+      for (let i = 0; i < spec.workers; i++) {
+        const w = this.spawnWorker(i + 1, spec);
+        started.push(w);
+      }
+      this.workers = started;
+    } catch (e) {
+      for (const w of started) {
+        try {
+          w.proc.kill('SIGTERM');
+        } catch {
+          void 0;
+        }
+      }
+      this.workers = [];
+      this.profile = 10;
+      throw e;
+    }
+
+    if (pct === 100) {
+      const seconds = Math.max(30, Number(smokeSeconds || this.defaultSmokeSeconds));
+      this.smokeTimer = setTimeout(() => {
+        void this.setProfile(10).catch((err) => console.error('Auto-revert to 10% failed:', err));
+      }, seconds * 1000);
+    }
+
+    return this.status();
+  }
+
+  async shutdown(): Promise<void> {
+    this.clearSmokeTimer();
+    await this.stopWorkers();
+  }
+
+  private clearSmokeTimer() {
+    if (this.smokeTimer) {
+      clearTimeout(this.smokeTimer);
+      this.smokeTimer = null;
+    }
+  }
+
+  private resolveGeneratorExecutable(): string {
+    const isWin = process.platform === 'win32';
+    const candidate = isWin
+      ? join(process.cwd(), 'tools', 'data-generator', 'data-generator.exe')
+      : join(process.cwd(), 'tools', 'data-generator', 'data-generator-linux');
+    if (!existsSync(candidate)) {
+      throw new Error(`data-generator executable not found at ${candidate}`);
+    }
+    return candidate;
+  }
+
+  private spawnWorker(id: number, spec: RuntimeProfileSpec): WorkerState {
+    const cmd = this.resolveGeneratorExecutable();
+    const logDir = join(process.cwd(), 'tools', 'data-generator', 'logs');
+    try {
+      mkdirSync(logDir, { recursive: true });
+    } catch {
+      void 0;
+    }
+    const sink = `file:${join(logDir, `runtime-profile.worker-${id}.bin`)}`;
+    const args = [
+      `--rate=${spec.ratePerWorker}`,
+      `--payload-size=${spec.payloadSize}`,
+      '--no-stdout',
+      `--sink=${sink}`,
+      '--audit-every=2000',
+    ];
+
+    const proc = spawn(cmd, args, {
+      cwd: process.cwd(),
+      stdio: ['ignore', 'ignore', 'pipe'],
+      windowsHide: true,
+    });
+    proc.stderr?.on('data', (chunk) => {
+      const msg = String(chunk || '').trim();
+      if (msg) console.log(`[runtime-load worker-${id}] ${msg}`);
+    });
+    proc.on('exit', (code, signal) => {
+      console.log(`[runtime-load worker-${id}] exited code=${code} signal=${signal}`);
+      this.workers = this.workers.filter((w) => w.id !== id);
+    });
+    proc.on('error', (err) => {
+      console.error(`[runtime-load worker-${id}] error`, err);
+    });
+    return { id, cmd, args, proc };
+  }
+
+  private async stopWorkers(): Promise<void> {
+    const current = [...this.workers];
+    this.workers = [];
+    await Promise.all(
+      current.map(
+        (w) =>
+          new Promise<void>((resolve) => {
+            if (w.proc.killed || w.proc.exitCode !== null) {
+              resolve();
+              return;
+            }
+            const done = () => resolve();
+            w.proc.once('exit', done);
+            try {
+              w.proc.kill('SIGTERM');
+            } catch {
+              resolve();
+            }
+            setTimeout(() => {
+              if (w.proc.exitCode === null) {
+                try {
+                  w.proc.kill('SIGKILL');
+                } catch {
+                  void 0;
+                }
+              }
+              resolve();
+            }, 2000);
+          })
+      )
+    );
+  }
+}
+
 @Controller()
 class AppController {
-  constructor(private ssr: SsrService) {}
+  constructor(private ssr: SsrService, private runtimeLoad: RuntimeLoadProfileService) {}
 
   @Get('/api/env')
   getEnv() {
@@ -303,6 +476,29 @@ class AppController {
     }
   }
 
+  @Get('/api/load-profile')
+  getLoadProfile() {
+    return this.runtimeLoad.status();
+  }
+
+  @Post('/api/load-profile')
+  async setLoadProfile(@Req() req: Request, @Res() res: Response): Promise<void> {
+    try {
+      const body = (req as any).body || {};
+      const pctRaw = Number(body.profilePct);
+      const smokeSeconds = body.smokeSeconds !== undefined ? Number(body.smokeSeconds) : undefined;
+      if (![10, 25, 50, 100].includes(pctRaw)) {
+        res.status(400).json({ error: 'invalid_profile_pct' });
+        return;
+      }
+      const result = await this.runtimeLoad.setProfile(pctRaw as LoadProfilePct, smokeSeconds);
+      res.status(200).json(result);
+    } catch (e: any) {
+      console.error('Failed to set runtime load profile:', e);
+      res.status(500).json({ error: 'load_profile_failed', message: String(e) });
+    }
+  }
+
   @All('/api/v1/*')
   async proxyGovernance(@Req() req: Request, @Res() res: Response): Promise<void> {
     const governanceBase = process.env['GOVERNANCE_API_URL'] || 'http://localhost:8082';
@@ -357,7 +553,7 @@ class AppController {
   }
 }
 
-@Module({ providers: [SsrService], controllers: [AppController] })
+@Module({ providers: [SsrService, RuntimeLoadProfileService], controllers: [AppController] })
 class AppModule {}
 
 async function bootstrap() {
@@ -387,8 +583,20 @@ async function bootstrap() {
   }
 
   const nestPort = process.env['PORT'] || process.env['FRONTEND_PORT'] || 3000;
+  const runtimeLoad = app.get(RuntimeLoadProfileService);
+  app.enableShutdownHooks();
   await app.listen(nestPort);
   console.log('Nest SSR server listening on', nestPort);
+
+  const shutdown = async () => {
+    await runtimeLoad.shutdown();
+  };
+  process.on('SIGINT', () => {
+    void shutdown();
+  });
+  process.on('SIGTERM', () => {
+    void shutdown();
+  });
 }
 
 bootstrap().catch((e) => console.error(e));

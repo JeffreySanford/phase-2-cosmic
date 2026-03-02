@@ -56,11 +56,50 @@ public class JobService {
     @PostConstruct
     public void recoverQueuedJobs() {
         // run an immediate recovery scan and schedule periodic scans for late arrivals
-        Executors.newSingleThreadExecutor().submit(this::dispatchQueuedJobs);
+        Executors.newSingleThreadExecutor().submit(() -> {
+            // dispatch any queued jobs first
+            dispatchQueuedJobs();
+            // convert any previously-running simulator jobs to completed so they don't hang
+            completeStaleRunningJobs();
+        });
         scannerFuture = scanner.scheduleAtFixedRate(this::dispatchQueuedJobs, scannerIntervalSeconds, scannerIntervalSeconds, TimeUnit.SECONDS);
     }
 
-    private void dispatchQueuedJobs() {
+    /**
+     * If a job was in RUNNING state when the service restarted we have no
+     * guarantee the simulator completion task ran.  For the simple demo
+     * executor we just mark those jobs completed so they won't sit in RUNNING
+     * forever.
+     */
+    // package-private so tests can call it
+    void completeStaleRunningJobs() {
+        try {
+            var keys = redisTemplate.keys(KEY_PREFIX + "*");
+            if (keys == null) return;
+            for (String k : keys) {
+                Object o = redisTemplate.opsForValue().get(k);
+                JobRecord rec = marshaller.toJobRecord(o);
+                if (rec == null) continue;
+                if (rec.getState() == JobState.RUNNING) {
+                    // only apply to simulator jobs (other executors may have proper persistence)
+                    Map<String, Object> params = rec.getParameters();
+                    String execName = params != null && params.containsKey("executor") ? String.valueOf(params.get("executor")) : "simulator";
+                    if ("simulator".equals(execName)) {
+                        log.warn("Completing stale running job {} after restart", rec.getJobId());
+                        rec.setState(JobState.COMPLETED);
+                        rec.setUpdatedAt(Instant.now().toString());
+                        rec.setVersion(rec.getVersion() + 1);
+                        redisTemplate.opsForValue().set(k, rec);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to complete stale running jobs", e);
+        }
+    }
+
+    /* package-private for testing */
+    void dispatchQueuedJobs() {
         try {
             var keys = redisTemplate.keys(KEY_PREFIX + "*");
             if (keys == null) return;
@@ -115,7 +154,19 @@ public class JobService {
                 params,
                 request.requestedBy()
         );
+        // start version at 1 now that the record is persisted
+        record.setVersion(1);
+        // preserve requestId/traceId if available
+        String rid = org.slf4j.MDC.get("requestId");
+        String tid = org.slf4j.MDC.get("traceId");
+        if ((rid != null && !rid.isBlank()) || (tid != null && !tid.isBlank())) {
+            var p = new java.util.HashMap<>(record.getParameters() == null ? Map.of() : record.getParameters());
+            if (rid != null && !rid.isBlank()) p.put("requestId", rid);
+            if (tid != null && !tid.isBlank()) p.put("traceId", tid);
+            record.setParameters(p);
+        }
         redisTemplate.opsForValue().set(KEY_PREFIX + jobId, record);
+        log.info("Audit: job submitted {} workflow={} dataset={}", jobId, request.workflow(), request.datasetId());
 
         // pick executor (explicit param 'executor' overrides; default to 'tacc' for ingest workflow)
         String executorName = "simulator";
@@ -185,7 +236,38 @@ public class JobService {
     public List<JobStatusResponse> listAll() {
         return list(null, null, 0, Integer.MAX_VALUE);
     }
+    /**
+     * Cancel a job if it is in a state that can still be aborted.
+     */
+    public Optional<JobStatusResponse> cancel(String jobId, Long expectedVersion) {
+        // explicit cancel wrapper to handle allowed-from states if needed
+        return transition(jobId, JobState.CANCELED, expectedVersion);
+    }
 
+    /**
+     * Retry a job by resetting its state to QUEUED.  Only FAILED, CANCELED or
+     * TIMED_OUT jobs may be retried.
+     */
+    public Optional<JobStatusResponse> retry(String jobId, Long expectedVersion) {
+        String key = KEY_PREFIX + jobId;
+        Object o = redisTemplate.opsForValue().get(key);
+        if (o == null) return Optional.empty();
+        JobRecord rec = marshaller.toJobRecord(o);
+        if (rec == null) return Optional.empty();
+        if (expectedVersion != null && rec.getVersion() != expectedVersion) {
+            return Optional.empty();
+        }
+        if (rec.getState() != JobState.FAILED && rec.getState() != JobState.CANCELED && rec.getState() != JobState.TIMED_OUT) {
+            log.warn("Cannot retry job {} from state {}", jobId, rec.getState());
+            return Optional.empty();
+        }
+        rec.setState(JobState.QUEUED);
+        rec.setUpdatedAt(Instant.now().toString());
+        rec.setVersion(rec.getVersion() + 1);
+        redisTemplate.opsForValue().set(key, rec);
+        log.info("Audit: job {} retried (version now {})", jobId, rec.getVersion());
+        return Optional.of(toResponse(rec));
+    }
     public List<JobStatusResponse> list(String workflowFilter, JobState stateFilter, int page, int size) {
         // Note: For small dev usage we use keys scan; in production use a proper index or sorted set.
         var keys = redisTemplate.keys(KEY_PREFIX + "*");
@@ -229,19 +311,24 @@ public class JobService {
         log.info("Scanner interval updated to {} seconds", scannerIntervalSeconds);
     }
 
-    public Optional<JobStatusResponse> transition(String jobId, JobState newState) {
+    public Optional<JobStatusResponse> transition(String jobId, JobState newState, Long expectedVersion) {
         String key = KEY_PREFIX + jobId;
         Object o = redisTemplate.opsForValue().get(key);
         if (o == null) return Optional.empty();
         JobRecord rec = marshaller.toJobRecord(o);
         if (rec == null) return Optional.empty();
+        if (expectedVersion != null && rec.getVersion() != expectedVersion) {
+            throw new IllegalStateException("version_mismatch:" + rec.getVersion());
+        }
         JobState current = rec.getState();
         if (!isValidTransition(current, newState)) {
             log.warn("Invalid state transition attempted for {}: {} -> {}", jobId, current, newState);
             return Optional.empty();
         }
+        log.info("Audit: job {} transitioning {} -> {}", jobId, current, newState);
         rec.setState(newState);
         rec.setUpdatedAt(Instant.now().toString());
+        rec.setVersion(rec.getVersion() + 1);
         redisTemplate.opsForValue().set(key, rec);
         return Optional.of(toResponse(rec));
     }
@@ -264,7 +351,8 @@ public class JobService {
                 record.getCreatedAt(),
                 record.getUpdatedAt(),
                 record.getParameters(),
-                record.getRequestedBy()
+                record.getRequestedBy(),
+                record.getVersion()
         );
     }
 }

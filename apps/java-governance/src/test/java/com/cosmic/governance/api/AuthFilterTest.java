@@ -1,0 +1,38 @@
+package com.cosmic.governance.api;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+/**
+ * Verifies the lightweight AuthFilter behavior when authentication is enabled.
+ * Runs in a separate context with the property turned on so other tests are
+ * unaffected.
+ */
+@SpringBootTest(properties = {"governance.auth.enabled=true","spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration"})
+@AutoConfigureMockMvc
+class AuthFilterTest {
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void requestsWithoutHeaderAreRejected() throws Exception {
+        mockMvc.perform(get("/api/v1/health").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("unauthorized"));
+    }
+
+    @Test
+    void requestsWithAuthorizationHeaderSucceed() throws Exception {
+        mockMvc.perform(get("/api/v1/health").header("Authorization", "Bearer foo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"));
+    }
+}

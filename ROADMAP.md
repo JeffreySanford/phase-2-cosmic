@@ -100,7 +100,7 @@ Mission linkage:
 - Operator/science impact: Teams can trust CI and contracts as a reliable baseline for all later science workflows.
 - Validation evidence: Required quality gates pass and fail deterministically on drift.
 
-## Phase 1: Governance API maturity (Week 3-6)
+## Phase 1: Governance API maturity (Week 3-6) - COMPLETED
 
 Goals:
 
@@ -108,16 +108,18 @@ Goals:
 
 Deliverables:
 
-- Durable job manifest store (Redis dev baseline completed; production durability strategy next).
-- Explicit job state machine: `QUEUED -> RUNNING -> COMPLETED|FAILED|CANCELED|TIMED_OUT`.
-- Request validation and error model aligned with OpenAPI.
-- `/api/v1/jobs` pagination and filtering support.
-- Auth baseline (dev permissive mode + production policy hooks).
+- ✅ Durable job manifest store (Redis dev baseline completed; production durability strategy next).
+- ✅ Explicit job state machine: `QUEUED -> RUNNING -> COMPLETED|FAILED|CANCELED|TIMED_OUT`.
+- ✅ Request validation and error model aligned with OpenAPI (ErrorResponse schema + controller mapping).
+- ✅ `/api/v1/jobs` pagination and filtering support.
+- ✅ Auth baseline (dev permissive mode + production policy hooks via AuthFilter toggle and tests).
+- ✅ Job cancellation and retry endpoints: `/jobs/{id}/cancel`, `/jobs/{id}/retry`.
+- ✅ Request-id and trace-id propagation across governance APIs.
 
 Exit criteria:
 
-- Jobs survive service restarts.
-- Job lifecycle and errors are queryable and auditable.
+- ✅ Jobs survive service restarts.
+- ✅ Job lifecycle and errors are queryable and auditable.
 
 Mission linkage:
 
@@ -125,7 +127,7 @@ Mission linkage:
 - Operator/science impact: Workflow state and outcomes are durable, inspectable, and restart-safe.
 - Validation evidence: Lifecycle contract tests, restart durability checks, and API error taxonomy coverage.
 
-## Phase 1B: Frontend orchestration baseline (Week 4-7, parallel)
+## Phase 1B: Frontend orchestration baseline (Week 4-7, parallel) - COMPLETED
 
 Goals:
 
@@ -133,15 +135,17 @@ Goals:
 
 Deliverables:
 
-- `Jobs` route with submit/status flows wired to governance API. (baseline complete)
-- Shared page-state UX primitives (`loading`, `stale`, `error`, `empty`, `recovered`).
-- App-level status/freshness band.
-- `Datasets` route scaffold with baseline create/list/detail flow. (baseline complete)
+- ✅ `Jobs` route with submit/status flows wired to governance API.
+- ✅ Shared page-state UX primitives (`loading`, `stale`, `error`, `empty`, `recovered`).
+  - Implemented: `PageStateComponent`, `DataSourceLabelComponent`
+- ✅ App-level status/freshness band.
+  - Implemented: `StatusBandComponent`
+- ✅ `Datasets` route scaffold with baseline create/list/detail flow.
 
 Exit criteria:
 
-- Operator can complete a full job submit-and-monitor loop in UI.
-- UI clearly differentiates live vs stale vs unavailable data.
+- ✅ Operator can complete a full job submit-and-monitor loop in UI.
+- ✅ UI clearly differentiates live vs stale vs unavailable data.
 
 Mission linkage:
 
@@ -149,7 +153,7 @@ Mission linkage:
 - Operator/science impact: Operators can submit and monitor jobs without leaving the console.
 - Validation evidence: e2e journeys for submit/status/error/recovery paths.
 
-## Phase 1C: NGVLA reference fidelity and demo automation (Week 6-8, parallel)
+## Phase 1C: NGVLA reference fidelity and demo automation (Week 6-8, parallel) - COMPLETED
 
 Goals:
 
@@ -158,22 +162,35 @@ Goals:
 
 Deliverables:
 
-- `docuentation/NGVLA_REFERENCES.md` canonical reference/citation index.
-- NGVLA array fixtures for `main`, `long-baseline`, and `sba` modeling.
-- Contract/domain additions for `arraySegment`, `antennaClass`, and `frequencyBandGHz`.
-- Drift-regression tests for approved NGVLA constants.
-- `scripts/demo-verify.sh` to execute demo checks and print pass/fail status.
-- CI docs validation for broken links and required citations in MVP/demo docs.
-- `Topology` copy/tooltips normalized to `Main`, `Long Baseline`, and `SBA`.
-- UI modeling disclaimer language added for demo-facing pages.
-- `Datasets` provenance linkage panel for workflow/job traceability.
-- `demo-notes/` evidence bundle convention (terminal output, screenshots, deviation log).
+- ✅ `documentation/NGVLA_REFERENCES.md` canonical reference/citation index.
+  - Comprehensive reference with array configs, frequency bands, and technical specs
+- ✅ NGVLA array fixtures for `main`, `long-baseline`, and `sba` modeling.
+  - Created: `schemas/fixtures/ngvla-main-array.json`, `ngvla-long-baseline.json`, `ngvla-short-baseline.json`
+- ✅ Contract/domain additions for `arraySegment`, `antennaClass`, and `frequencyBandGHz`.
+  - Implemented: NgvlaObservationParams schema added to OpenAPI governance.yaml
+- ✅ Drift-regression tests for approved NGVLA constants.
+  - Created: `apps/frontend/src/app/tests/ngvla-drift-regression.spec.ts` with comprehensive test suite
+- ✅ `scripts/demo-verify.sh` enhancements to execute demo checks and print pass/fail status.
+  - Enhanced with color output, pass/fail tracking, ngVLA job submission tests, pagination/filtering tests
+- ⏸️ CI docs validation for broken links and required citations in MVP/demo docs.
+  - **Status**: Deferred to Phase 2
+- ✅ `Topology` copy/tooltips normalized to `Main`, `Long Baseline`, and `SBA`.
+  - Updated: topology.component.ts with ngVLA array segments and color coding
+- ✅ UI modeling disclaimer language added for demo-facing pages.
+  - Created: DisclaimerBannerComponent with 4 disclaimer types, integrated in Jobs, Datasets, Diagnostics, Topology
+- ✅ `Datasets` provenance linkage panel for workflow/job traceability.
+  - Created: ProvenancePanelComponent with workflow/jobId/sourceDatasetId/ngvlaParams display, integrated in Datasets
+- ⏸️ `demo-notes/` evidence bundle convention (terminal output, screenshots, deviation log).
+  - **Status**: Deferred to Phase 2
 
 Exit criteria:
 
-- NGVLA facts are centralized and referenced consistently by MVP/demo docs and fixtures.
-- Automated demo verification script passes on a developer workstation.
-- Drift tests fail when NGVLA constants are modified without approved reference updates.
+- ✅ NGVLA facts are centralized and referenced consistently by MVP/demo docs and fixtures.
+  - Complete: References documented, fixtures created, contracts extended
+- ✅ Automated demo verification script passes on a developer workstation.
+  - Complete: scripts/demo-verify.sh enhanced with comprehensive automation
+- ✅ Drift tests fail when NGVLA constants are modified without approved reference updates.
+  - Complete: ngvla-drift-regression.spec.ts validates all canonical constants
 
 Mission linkage:
 

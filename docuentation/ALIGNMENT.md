@@ -1,4 +1,4 @@
-# Documentation Alignment Matrix (2026-03-01, Rev 3)
+# Documentation Alignment Matrix (2026-03-02, Rev 4)
 
 Alignment anchors
 - Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
@@ -42,10 +42,10 @@ flowchart LR
 
 | Document group | Status | Alignment notes |
 |---|---|---|
-| `README.md` + grouped READMEs | aligned | Navigation is coherent and current; mission docs are linked. |
+| Root docs entrypoint + grouped READMEs | needs-update | Root `README.md` is not present, but tooling/docs still reference it (`scripts/check-docs.sh`, TODO references). |
 | Mission docs (`NGVLA_MISSION_ALIGNMENT`, `MISSION_TO_CAPABILITY_TRACE`, `MISSION_GATES`, `DECISIONS`) | aligned | Canonical mission framing and gate model now exist. |
 | Core architecture docs (`ARCHITECTURE`, `OPERATIONAL_STREAMING_PLANE`, `GOVERNANCE_CONTROL_PLANE`) | aligned | Implemented/in-progress/planned framing matches repository status. |
-| Product and UX docs (`FRONTEND_UI`, `PROFESSIONAL_CONSOLE_SPEC`, `frontend/features/*`) | aligned | Jobs/Datasets baseline reflected; professionalization still in progress. |
+| Product and UX docs (`FRONTEND_UI`, `PROFESSIONAL_CONSOLE_SPEC`, `frontend/features/*`) | needs-update | Footer load profile exists, but machine-load control remains scaffolded (polling cadence only; no runtime generator control API). |
 | Contracts and API docs (`JAVA_GOVERNANCE_SPEC`, `API_CONTRACT_STATUS`) | aligned | Baseline endpoints and drift controls are documented and consistent. |
 | Trust and lineage docs (`DATA_TRUST_PLATFORM`, `PROVENANCE`, `storage/*`) | planned | Strategic direction is clear; several controls remain future-state. |
 | Environment/deployment/testing docs (`GETTING_STARTED`, `ENVIRONMENT`, `DEPLOYMENT`, testing docs) | aligned | Current commands and quality gates are represented. |
@@ -56,6 +56,8 @@ flowchart LR
 1. Mission intent can still be overshadowed by implementation detail if new tasks skip mission linkage fields.
 2. Storage and provenance docs are strategy-heavy; runtime checkpoints need periodic status tags.
 3. Contract shape decisions (for example job control semantics) remain partially open and should be finalized in ADR flow.
+4. Root docs entrypoint drift: missing root `README.md` while scripts and docs still depend on it.
+5. Security wording drift: docs describe auth as pending in some places, while baseline header enforcement is implemented and token/policy validation is the remaining gap.
 
 ## Alignment decisions (effective immediately)
 
@@ -69,3 +71,7 @@ flowchart LR
 1. Add mission linkage fields to existing high-priority backlog/roadmap items over time (not only new items).
 2. Add explicit status tags (`implemented`, `in-progress`, `planned`) to long-form storage sections as runtime integration lands.
 3. Keep audience navigation current in [AUDIENCE_GUIDE.md](AUDIENCE_GUIDE.md).
+4. Choose one root-doc strategy and apply consistently:
+   - add a root `README.md`, or
+   - remove root `README.md` references from scripts/docs and point to [README.md](README.md) in `docuentation/`.
+5. Keep stress-profile language explicit as `scaffold` until backend runtime load controls are delivered.

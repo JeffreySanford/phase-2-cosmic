@@ -37,6 +37,10 @@ import { ViewerComponent } from './features/viewer/viewer.component';
 import { JobsComponent } from './features/jobs/jobs.component';
 import { JobsSubmitDialogComponent } from './features/jobs/jobs-submit-dialog.component';
 import { DatasetsComponent } from './features/datasets/datasets.component';
+import { PageStateModule } from './shared/page-state/page-state.module';
+import { StatusBandModule } from './shared/status-band/status-band.module';
+import { DisclaimerBannerModule } from './shared/disclaimer-banner/disclaimer-banner.module';
+import { ProvenancePanelModule } from './shared/provenance-panel/provenance-panel.module';
 
 @NgModule({
   declarations: [
@@ -78,6 +82,10 @@ import { DatasetsComponent } from './features/datasets/datasets.component';
     MatIconModule,
     MatDialogModule,
     MatTabsModule,
+    PageStateModule,
+    StatusBandModule,
+    DisclaimerBannerModule,
+    ProvenancePanelModule,
   ],
   providers: [],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

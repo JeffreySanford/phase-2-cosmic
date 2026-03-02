@@ -1,9 +1,16 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { DiagnosticsComponent } from './diagnostics.component';
 
 @Component({ selector: 'app-promql-card', template: '' })
 class PromqlCardStubComponent {}
+
+@Component({ selector: 'app-disclaimer-banner', template: '' })
+class DisclaimerBannerStubComponent {
+  @Input() dismissible?: boolean;
+  @Input() type?: string;
+  @Input() message?: string;
+}
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,7 +25,7 @@ describe('DiagnosticsComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, MatButtonModule, MatFormFieldModule, MatSelectModule, NoopAnimationsModule],
-      declarations: [DiagnosticsComponent, PromqlCardStubComponent],
+      declarations: [DiagnosticsComponent, PromqlCardStubComponent, DisclaimerBannerStubComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DiagnosticsComponent);

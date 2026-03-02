@@ -36,6 +36,7 @@ public class SimulatorExecutor implements JobExecutor {
             if (r != null) {
                 r.setState(JobState.RUNNING);
                 r.setUpdatedAt(Instant.now().toString());
+                r.setVersion(r.getVersion() + 1);
                 var newParams = r.getParameters() == null ? new java.util.HashMap<String, Object>() : new java.util.HashMap<String, Object>(r.getParameters());
                 newParams.put("externalJobId", "sim-" + UUID.randomUUID());
                 newParams.put("executor", name());
@@ -53,6 +54,7 @@ public class SimulatorExecutor implements JobExecutor {
             if (r2 != null) {
                 r2.setState(JobState.COMPLETED);
                 r2.setUpdatedAt(Instant.now().toString());
+                r2.setVersion(r2.getVersion() + 1);
                 var newParams = r2.getParameters() == null ? new java.util.HashMap<String, Object>() : new java.util.HashMap<String, Object>(r2.getParameters());
                 newParams.put("completedAt", Instant.now().toString());
                 r2.setParameters(newParams);

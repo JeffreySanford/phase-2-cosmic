@@ -1,21 +1,21 @@
 {
   "run": {
-    "command": "nx run java-governance:test --parallel=false",
-    "startTime": "2026-03-02T18:11:51.039Z",
-    "endTime": "2026-03-02T18:11:51.652Z",
+    "command": "nx run frontend-e2e:lint",
+    "startTime": "2026-03-02T23:08:55.184Z",
+    "endTime": "2026-03-02T23:08:56.951Z",
     "inner": false
   },
   "tasks": [
     {
-      "taskId": "java-governance:test",
-      "target": "test",
-      "projectName": "java-governance",
-      "hash": "626581186548489975",
-      "startTime": "2026-03-02T18:11:51.076Z",
-      "endTime": "2026-03-02T18:11:51.649Z",
+      "taskId": "frontend-e2e:lint",
+      "target": "lint",
+      "projectName": "frontend-e2e",
+      "hash": "2529195564078661390",
+      "startTime": "2026-03-02T23:08:55.215Z",
+      "endTime": "2026-03-02T23:08:56.948Z",
       "params": "",
       "cacheStatus": "cache-miss",
-      "status": 0
+      "status": 1
     }
   ]
 }

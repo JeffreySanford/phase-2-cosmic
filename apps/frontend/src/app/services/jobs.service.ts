@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
-import { map, catchError, shareReplay } from 'rxjs/operators';
+import { Observable, of, throwError, interval } from 'rxjs';
+import { map, catchError, shareReplay, startWith, switchMap } from 'rxjs/operators';
 import { Result } from './rx-utils';
 
 export interface JobStatus {
@@ -33,7 +33,7 @@ export interface JobSubmitResponse {
 @Injectable({ providedIn: 'root' })
 export class JobsService {
   private base = '/api/v1/jobs';
-  private _listCache$?: Observable<JobStatus[]>;
+  // single declaration; duplicate removed
 
   constructor(private http: HttpClient) {}
 
@@ -41,18 +41,28 @@ export class JobsService {
     return this.http.get<JobStatus[]>(this.base);
   }
 
-  // Hot, cached observable for the job list. Use `invalidateList()` to refresh.
+  // Polling hot observable for the job list.  Subscribers share a single
+  // HTTP request stream and the data is replayed.  The cache is invalidated
+  // by `invalidateList()` or by simply waiting for the polling interval.
+  private _pollIntervalMs = 5000;
+  private _listCache$?: Observable<JobStatus[]>;
+
   listHot(forceReload = false): Observable<Result<JobStatus[]>> {
     if (forceReload || !this._listCache$) {
-      this._listCache$ = this.list().pipe(
+      // build a new polling stream
+      this._listCache$ = interval(this._pollIntervalMs).pipe(
+        startWith(0),
+        switchMap(() => this.list()),
         catchError((err) => {
+          // swallow the error; subscribers will see a failure result
           return throwError(() => err);
         }),
-        shareReplay({ bufferSize: 1, refCount: false })
+        shareReplay({ bufferSize: 1, refCount: true })
       );
     }
 
-    return this._listCache$.pipe(
+    const cache$ = this._listCache$ ?? of([] as JobStatus[]);
+    return cache$.pipe(
       map((v) => ({ ok: true as const, value: v })),
       catchError((err) => of({ ok: false as const, error: err }))
     );
@@ -60,6 +70,28 @@ export class JobsService {
 
   invalidateList(): void {
     this._listCache$ = undefined;
+  }
+
+  // ------------------------------------------------------------------------
+  // helper for watching a specific job's status.  The returned observable
+  // polls the backend and is share-replayed so multiple components can
+  // subscribe without creating duplicate HTTP requests.
+  private _jobCache = new Map<string, Observable<JobStatus>>();
+
+  watchJob(id: string): Observable<JobStatus> {
+    if (!this._jobCache.has(id)) {
+      const obs = interval(this._pollIntervalMs).pipe(
+        startWith(0),
+        switchMap(() => this.get(id)),
+        shareReplay({ bufferSize: 1, refCount: true })
+      );
+      this._jobCache.set(id, obs);
+    }
+    return this._jobCache.get(id) as Observable<JobStatus>;
+  }
+
+  invalidateJob(id: string): void {
+    this._jobCache.delete(id);
   }
 
   get(id: string): Observable<JobStatus> {

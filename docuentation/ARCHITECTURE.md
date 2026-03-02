@@ -1,6 +1,7 @@
 # Cosmic Horizon Architecture (Current + Target)
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](../TODO.md)
 - Delivery plan: [../ROADMAP.md](../ROADMAP.md)
@@ -13,17 +14,21 @@ It is the canonical bridge between conceptual design and implementation reality.
 Cosmic Horizon is a hybrid control platform composed of:
 
 1. Operational Streaming Plane (Go-centric)
+
 - low-latency telemetry ingestion, aggregation, and resilience controls
 
-2. Governance & Orchestration Control Plane (Java-centric)
+1. Governance & Orchestration Control Plane (Java-centric)
+
 - authoritative metadata, job lifecycle, policy, and audit semantics
 
-3. Frontend Operations Console (Angular)
+1. Frontend Operations Console (Angular)
+
 - operator-facing control-room UX for awareness, orchestration, and diagnostics
 
 ## 2. Status model  *(implemented documentation of current/in-progress/planned)*
 
 ### Implemented (baseline)
+
 - Angular frontend shell with telemetry/topology/diagnostics/viewer surfaces
 - Nest SSR shim for frontend APIs and proxy behavior
 - Go data generator and local observability stack
@@ -35,10 +40,12 @@ Cosmic Horizon is a hybrid control platform composed of:
 - OpenAPI contract and fixture validation in CI
 
 ### In progress
+
 - Durable governance job storage and full lifecycle semantics
 - Frontend transition from telemetry-first demo to orchestration console
 
 ### Planned
+
 - End-to-end streaming-to-governance contract hardening
 - External compute adapter integration (HPC/TACC/CosmicAI)
 - Production security and policy enforcement layers
@@ -117,12 +124,15 @@ flowchart LR
 The frontend must evolve to match control-plane maturity:
 
 1. Near-term pages:
+
 - `Overview`, `Jobs`, `Datasets`, `Topology`, `Telemetry`, `Diagnostics`, `Viewer`, `Settings`
 
-2. Critical missing surfaces:
+1. Critical missing surfaces:
+
 - `Jobs` and `Datasets` as first-class routes and workflows
 
-3. Data-state contract:
+1. Data-state contract:
+
 - every page must represent `loading`, `empty`, `stale`, `error`, and `recovered` states
 
 ## 6. Architectural constraints  *(implemented)*

@@ -1,4 +1,92 @@
-<div class="landing" [class.collapsed]="collapsed">
-  <h2>Welcome</h2>
-  <p>Select a section from the sidebar.</p>
-</div>
+<section class="landing" [class.collapsed]="collapsed">
+  <div class="aurora" aria-hidden="true"></div>
+
+  <header class="hero">
+    <div class="hero__content">
+      <p class="eyebrow">Cosmic Horizon Control Plane</p>
+      <h1>Mission control for telemetry, governance, and scientific trust.</h1>
+      <p class="lede">
+        This application unifies real-time operations with durable governance so teams can monitor system health,
+        orchestrate jobs, and preserve reproducible data lineage from first signal to final product.
+      </p>
+      <div class="hero__actions">
+        <a routerLink="/dashboard" class="btn btn-primary">Open Mission Pulse</a>
+        <a routerLink="/jobs" class="btn btn-ghost">Launch Workflow</a>
+      </div>
+    </div>
+
+    <aside class="hero__status">
+      <p class="status-label">Control Snapshot</p>
+      <p class="status-value">{{ loadingSnapshot ? 'Refreshing live signals...' : 'Systems synchronized' }}</p>
+      <p class="status-time" *ngIf="lastUpdated">Last update: {{ lastUpdated | date: 'mediumTime' }}</p>
+      <button type="button" class="refresh" (click)="refreshSnapshot()">Refresh checks</button>
+    </aside>
+  </header>
+
+  <section class="mission-tabs" aria-label="Mission overview tabs">
+    <mat-tab-group animationDuration="250ms" dynamicHeight>
+      <mat-tab label="Stats">
+        <div class="tab-pane">
+          <section class="stats-grid stats-grid--tight" aria-label="Mission statistics">
+            <article
+              class="stat-card"
+              *ngFor="let card of statCards; trackBy: trackByLabel"
+              [attr.data-tone]="card.tone"
+            >
+              <p class="stat-label">{{ card.label }}</p>
+              <p class="stat-value">{{ card.value }}</p>
+              <p class="stat-note">{{ card.note }}</p>
+            </article>
+          </section>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Signal Board">
+        <div class="tab-pane signal-board">
+          <div class="signal-board__left">
+            <h2>Capability Signal Board</h2>
+            <p>
+              The platform fuses two planes: high-speed operational streaming and authoritative governance
+              orchestration. These bars summarize readiness across observability, trust, and execution.
+            </p>
+            <div class="bars">
+              <div class="bar-row" *ngFor="let bar of signalBars; trackBy: trackByLabel">
+                <span>{{ bar.label }}</span>
+                <div class="bar-track">
+                  <div class="bar-fill" [attr.data-tone]="bar.tone" [style.width.%]="bar.value"></div>
+                </div>
+                <strong>{{ bar.value }}%</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Highlights">
+        <div class="tab-pane signal-board__right">
+          <article class="highlight" *ngFor="let item of capabilityHighlights">
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.detail }}</p>
+            <a [routerLink]="item.route">{{ item.cta }}</a>
+          </article>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </section>
+
+  <section class="checks" aria-label="Quick system checks">
+    <h2>Quick Checks</h2>
+    <div class="check-list">
+      <a
+        class="check"
+        *ngFor="let check of quickChecks; trackBy: trackByLabel"
+        [attr.data-state]="check.status"
+        [routerLink]="check.route"
+      >
+        <span class="dot" aria-hidden="true"></span>
+        <span class="check-label">{{ check.label }}</span>
+        <span class="check-detail">{{ check.detail }}</span>
+      </a>
+    </div>
+  </section>
+</section>

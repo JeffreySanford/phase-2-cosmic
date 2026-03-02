@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PromqlCardComponent } from './promql-card.component';
 import { TelemetryService } from '../../services/telemetry.service';
+import { LoadProfileService } from '../../services/load-profile.service';
 import { of } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,11 +15,19 @@ describe('PromqlCardComponent', () => {
     queryRange: () => of({ data: { result: [{ values: [[1, '1'], [2, '2'], [3, '3']] }] } }),
   } as unknown as TelemetryService;
 
+  const mockLoadProfile = {
+    pollingMs$: of(1000),
+    profile$: of(50),
+  } as unknown as LoadProfileService;
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MatCardModule, MatButtonModule],
       declarations: [PromqlCardComponent],
-      providers: [{ provide: TelemetryService, useValue: mockTelemetry }],
+      providers: [
+        { provide: TelemetryService, useValue: mockTelemetry },
+        { provide: LoadProfileService, useValue: mockLoadProfile },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PromqlCardComponent);

@@ -1,0 +1,93 @@
+<div class="provenance-panel" *ngIf="hasProvenance">
+  <div class="provenance-panel__header" (click)="toggleExpanded()">
+    <div class="provenance-panel__title">
+      <svg class="provenance-panel__icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+      </svg>
+      <span>Dataset Provenance</span>
+    </div>
+    <svg 
+      class="provenance-panel__chevron"
+      [class.provenance-panel__chevron--expanded]="expanded"
+      width="16" 
+      height="16" 
+      viewBox="0 0 16 16" 
+      fill="currentColor">
+      <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+    </svg>
+  </div>
+
+  <div class="provenance-panel__content" *ngIf="expanded">
+    <div class="provenance-panel__grid">
+      <div class="provenance-panel__item" *ngIf="provenance?.workflow">
+        <div class="provenance-panel__label">Workflow</div>
+        <div class="provenance-panel__value">
+          <code>{{ provenance?.workflow }}</code>
+        </div>
+      </div>
+
+      <div class="provenance-panel__item" *ngIf="provenance?.jobId">
+        <div class="provenance-panel__label">Job ID</div>
+        <div class="provenance-panel__value">
+          <a [routerLink]="['/jobs']" [queryParams]="{id: provenance?.jobId}" class="provenance-panel__link">
+            <code>{{ provenance?.jobId }}</code>
+          </a>
+        </div>
+      </div>
+
+      <div class="provenance-panel__item" *ngIf="provenance?.sourceDatasetId">
+        <div class="provenance-panel__label">Source Dataset</div>
+        <div class="provenance-panel__value">
+          <code>{{ provenance?.sourceDatasetId }}</code>
+        </div>
+      </div>
+
+      <div class="provenance-panel__item" *ngIf="provenance?.processingTimestamp">
+        <div class="provenance-panel__label">Processing Timestamp</div>
+        <div class="provenance-panel__value">
+          {{ provenance?.processingTimestamp | date: 'medium' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- ngVLA-specific parameters -->
+    <div class="provenance-panel__section" *ngIf="hasNgvlaParams">
+      <h4 class="provenance-panel__section-title">ngVLA Observation Parameters</h4>
+      <div class="provenance-panel__grid">
+        <div class="provenance-panel__item" *ngIf="provenance?.ngvlaParams?.arraySegment">
+          <div class="provenance-panel__label">Array Segment</div>
+          <div class="provenance-panel__value">
+            <span class="provenance-panel__badge">{{ provenance?.ngvlaParams?.arraySegment }}</span>
+          </div>
+        </div>
+
+        <div class="provenance-panel__item" *ngIf="provenance?.ngvlaParams?.antennaClass">
+          <div class="provenance-panel__label">Antenna Class</div>
+          <div class="provenance-panel__value">
+            <span class="provenance-panel__badge">{{ provenance?.ngvlaParams?.antennaClass }}</span>
+          </div>
+        </div>
+
+        <div class="provenance-panel__item" *ngIf="provenance?.ngvlaParams?.frequencyBandGHz">
+          <div class="provenance-panel__label">Frequency Band</div>
+          <div class="provenance-panel__value">
+            {{ formatFrequencyRange(provenance?.ngvlaParams?.frequencyBandGHz) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Processing parameters -->
+    <div class="provenance-panel__section" *ngIf="provenance?.parameters">
+      <h4 class="provenance-panel__section-title">Processing Parameters</h4>
+      <pre class="provenance-panel__code">{{ formatParameters(provenance?.parameters) }}</pre>
+    </div>
+
+    <div class="provenance-panel__footer">
+      <small class="provenance-panel__note">
+        This provenance information enables reproducible science by linking datasets to their originating workflows and processing parameters.
+      </small>
+    </div>
+  </div>
+</div>
