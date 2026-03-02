@@ -104,8 +104,8 @@ export class JobsService {
     return this.http.get<{ intervalSeconds: number; scannedCount: number; dispatchedCount: number }>(`/api/v1/admin/dispatch`);
   }
 
-  setDispatchInterval(seconds: number): Observable<any> {
-    return this.http.post(`/api/v1/admin/dispatch`, { intervalSeconds: seconds });
+  setDispatchInterval(seconds: number): Observable<unknown> {
+    return this.http.post<unknown>(`/api/v1/admin/dispatch`, { intervalSeconds: seconds });
   }
 
   validate(type: string, payload: Record<string, unknown>): Observable<unknown> {

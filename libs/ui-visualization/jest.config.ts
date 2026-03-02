@@ -2,7 +2,6 @@ export default {
   displayName: 'ui-visualization',
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-  coverageDirectory: '../../coverage/libs/ui-visualization',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',

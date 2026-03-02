@@ -1,0 +1,73 @@
+[NX CLOUD] Verifying current cloud bundle
+[NX CLOUD] A local bundle currently exists:  {
+  version: '2602.26.5',
+  fullPath: 'C:\\repos\\phase-2-cosmic\\.nx\\cache\\cloud\\2602.26.5'
+}
+[NX CLOUD] Last verification was within the past 30 minutes, will not verify this time
+[NX CLOUD] Done:  C:\repos\phase-2-cosmic\.nx\cache\cloud\2602.26.5
+Was not able to require.resolve module nx/src/utils/app-root from the following paths: C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\node_modules,C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules,C:\repos\phase-2-cosmic\node_modules\.pnpm\node_modules,C:\repos\phase-2-cosmic\node_modules. This may be expected.
+Was not able to require.resolve module nx/src/utils/app-root from the following paths: C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\node_modules,C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules,C:\repos\phase-2-cosmic\node_modules\.pnpm\node_modules,C:\repos\phase-2-cosmic\node_modules. This may be expected.
+[Nx Cloud Debug] Skipping foreground heartbeat since CI environment is not detected.
+[NX CLOUD] Verifying current cloud bundle
+[NX CLOUD] A local bundle currently exists:  {
+  version: '2602.26.5',
+  fullPath: 'C:\\repos\\phase-2-cosmic\\.nx\\cache\\cloud\\2602.26.5'
+}
+[NX CLOUD] Last verification was within the past 30 minutes, will not verify this time
+[NX CLOUD] Done:  C:\repos\phase-2-cosmic\.nx\cache\cloud\2602.26.5
+[Nx Cloud Debug] Attempting to acquire filesystem lock with path:  C:\Users\Sanford\AppData\Local\Temp\client-instance-id.lock
+[Nx Cloud Debug] Failed to create folder lock at path: C:\Users\Sanford\AppData\Local\Temp\client-instance-id.lock
+[Nx Cloud] Unable to detect a VCS context from the environment.
+
+[7m[1m[38;5;214m NX [39m[22m[27m  [38;5;214mRunStart[39m
+
+
+{
+  "branch": null,
+  "runGroup": "9652f06f599d761585725661320ee35f43b42ecb",
+  "ciExecutionId": null,
+  "ciExecutionEnv": "",
+  "hashes": [
+    "16536007843123543161"
+  ],
+  "machineInfo": {
+    "machineId": "c3X8GBzoATr3yOf79oimeA==",
+    "platform": "win32",
+    "version": "Windows 11 Pro",
+    "cpuCores": 24
+  },
+  "vcsContext": null,
+  "clientInstanceSource": "CLOUD_RUNNER",
+  "clientInstanceId": "d10fb3ce-1abb-4051-a129-1856f14cc4c2"
+}
+
+
+[2m> [22m[2mnx run[22m java-governance:test
+
+[2m> [22mnode ./scripts/mvn-wrapper-runner.js -f apps/java-governance/pom.xml -T 1C test
+
+no main manifest attribute, in C:\repos\phase-2-cosmic\\.mvn\wrapper\maven-wrapper.jar
+Warning: command "node ./scripts/mvn-wrapper-runner.js -f apps/java-governance/pom.xml -T 1C test" exited with non-zero status code
+[2m[31m[39m[22m
+
+[7m[1m[31m NX [39m[22m[27m  [31mRunning target [1mtest[22m for project java-governance failed[39m
+
+[2mFailed tasks:[22m
+
+[2m-[22m java-governance:test
+
+[2mHint: run the command with[22m --verbose [2mfor more details.[22m
+
+
+[7m[1m[38;5;214m NX [39m[22m[27m  [38;5;214mConnection to Nx Cloud failed with status code 401[39m
+
+Invalid Credentials (Personal Access Token): The provided personal access token does not exist or is invalid.
+
+
+[7m[1m[38;5;214m NX [39m[22m[27m  [38;5;214mStoring terminal outputs for java-governance:test with hash 16536007843123543161[39m
+
+
+[7m[1m[33m NX [39m[22m[27m  [33mNx Cloud encountered some problems[39m
+
+Invalid Credentials (Personal Access Token): The provided personal access token does not exist or is invalid. (code: 401)
+

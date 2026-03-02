@@ -6,4 +6,4 @@ IF NOT EXIST "%MAVEN_WRAPPER_JAR%" (
   echo Missing Maven wrapper jar: %MAVEN_WRAPPER_JAR%
   exit /b 1
 )
-java -jar "%MAVEN_WRAPPER_JAR%" %*
+java -Dmaven.multiModuleProjectDirectory="%SCRIPT_DIR%" -cp "%MAVEN_WRAPPER_JAR%" org.apache.maven.wrapper.MavenWrapperMain %*

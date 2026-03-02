@@ -9,4 +9,4 @@ if [ ! -f "$MAVEN_WRAPPER_JAR" ]; then
   exit 1
 fi
 
-java -jar "$MAVEN_WRAPPER_JAR" "$@"
+java -Dmaven.multiModuleProjectDirectory="${SCRIPT_DIR}" -cp "$MAVEN_WRAPPER_JAR" org.apache.maven.wrapper.MavenWrapperMain "$@"

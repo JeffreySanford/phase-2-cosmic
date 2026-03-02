@@ -36,7 +36,7 @@ jobs:
       - name: Format check
         run: pnpm run format:check:changed
 
-      - name: Unit tests with coverage
+      - name: Unit tests
         run: pnpm run unit-test
 
       - name: OpenAPI + fixture validation
@@ -55,9 +55,3 @@ jobs:
           name: e2e-artifacts
           path: "dist/cypress || ''"
 
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: "coverage || ''"

@@ -9,7 +9,31 @@ on:
     branches: [main]
 
 jobs:
+  build-maven-image:
+    name: Build Maven test image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build local Maven test image
+        uses: docker/build-push-action@v5
+        with:
+          context: tools/maven-test-image
+          file: tools/maven-test-image/Dockerfile
+          push: false
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            phase2/maven-test:17
+
   test-matrix:
+    needs: [build-maven-image]
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -10,6 +10,9 @@ export default defineConfig({
         default: 'pnpm exec nx run frontend:serve',
         production: 'pnpm exec nx run frontend:serve-static',
       },
+      webServerConfig: {
+        timeout: 180000,
+      },
       ciWebServerCommand: 'pnpm exec nx run frontend:serve-static',
       ciBaseUrl: 'http://localhost:4200',
     }),

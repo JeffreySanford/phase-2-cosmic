@@ -17,7 +17,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "node ./scripts/mvn-wrapper-runner.js -f apps/java-governance/pom.xml -T 1C test"
+          "node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml -T 1C test"
         ],
         "cwd": "./"
       }

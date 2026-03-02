@@ -93,24 +93,36 @@ if [ -z "${SKIP_JAVA_TESTS:-}" ]; then
       NETWORK_ARG="--network=container:${REDIS_NAME}"
       log "Will run Maven container in network namespace of: ${REDIS_NAME}"
     fi
+    # When running Maven locally, set Redis system properties so tests can reach
+    # the container via the host gateway (useful on Windows/MSYS where redis
+    # is published to the host). This will be ignored by Docker-run paths that
+    # set their own properties when needed.
+    if [ -n "${REDIS_CONTAINER}" ]; then
+      MAVEN_REDIS_SYS_PROP="-Dspring.redis.host=host.docker.internal -Dspring.redis.port=6379"
+    fi
+    # If we have a Redis container and its network namespace is available,
+    # prefer running Maven in Docker so the tests can resolve the 'redis' hostname.
+    if [ -n "${NETWORK_ARG}" ]; then
+      FORCE_DOCKER_MAVEN=1
+    fi
   else
     log "Warning: No Redis container started; tests that require Redis may fail."
   fi
   # Prefer to run tests using a local JDK if available; only fall back to Docker when
   # necessary. If neither Java nor Docker are available, skip the Java tests so the
   # broader dev/start workflow can continue on developer machines without a JDK.
-  if command -v java >/dev/null 2>&1; then
+  if [ -z "${FORCE_DOCKER_MAVEN:-}" ] && command -v java >/dev/null 2>&1; then
     if command -v mvn >/dev/null 2>&1; then
-      mvn -B -f apps/java-governance test
-      mvn -B -f tools/java-ingest test
+      mvn -B ${MAVEN_REDIS_SYS_PROP:-} -f apps/java-governance test
+      mvn -B ${MAVEN_REDIS_SYS_PROP:-} -f tools/java-ingest test
     elif [ -x "${REPO_ROOT}/mvnw" ] || [ -x "./mvnw" ]; then
       echo "Using project Maven Wrapper (mvnw)"
       if [ -x "${REPO_ROOT}/mvnw" ]; then
-        (cd "$REPO_ROOT" && ./mvnw -B -f apps/java-governance test)
-        (cd "$REPO_ROOT" && ./mvnw -B -f tools/java-ingest test)
+        (cd "$REPO_ROOT" && ./mvnw -B ${MAVEN_REDIS_SYS_PROP:-} -f apps/java-governance test)
+        (cd "$REPO_ROOT" && ./mvnw -B ${MAVEN_REDIS_SYS_PROP:-} -f tools/java-ingest test)
       else
-        ./mvnw -B -f apps/java-governance test
-        ./mvnw -B -f tools/java-ingest test
+        ./mvnw -B ${MAVEN_REDIS_SYS_PROP:-} -f apps/java-governance test
+        ./mvnw -B ${MAVEN_REDIS_SYS_PROP:-} -f tools/java-ingest test
       fi
     else
       log "mvn not found locally — running tests in a Maven Docker image"

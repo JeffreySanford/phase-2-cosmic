@@ -34,7 +34,7 @@
       "cache": true,
       "inputs": ["default", "^default", "{workspaceRoot}/jest.preset.js"],
       "options": { "passWithNoTests": true },
-      "configurations": { "ci": { "ci": true, "codeCoverage": true } }
+      "configurations": { "ci": { "ci": true } }
     },
     "e2e-ci--**/*": { "dependsOn": ["^build"] }
   },

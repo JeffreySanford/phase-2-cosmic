@@ -1,8 +1,8 @@
 {
   "run": {
-    "command": "nx run-many --target=lint --all",
-    "startTime": "2026-03-02T06:40:52.333Z",
-    "endTime": "2026-03-02T06:40:54.777Z",
+    "command": "nx run-many --target=lint --all -- --fix",
+    "startTime": "2026-03-02T08:49:51.727Z",
+    "endTime": "2026-03-02T08:49:56.469Z",
     "inner": false
   },
   "tasks": [
@@ -10,45 +10,45 @@
       "taskId": "ui-visualization:lint",
       "target": "lint",
       "projectName": "ui-visualization",
-      "hash": "6778256953565909665",
-      "startTime": "2026-03-02T06:40:52.354Z",
-      "endTime": "2026-03-02T06:40:52.356Z",
+      "hash": "173446452821117700",
+      "startTime": "2026-03-02T08:49:51.756Z",
+      "endTime": "2026-03-02T08:49:54.011Z",
       "params": "",
-      "cacheStatus": "local-cache-hit",
+      "cacheStatus": "cache-miss",
       "status": 0
     },
     {
       "taskId": "ui-theme:lint",
       "target": "lint",
       "projectName": "ui-theme",
-      "hash": "12186320373253147640",
-      "startTime": "2026-03-02T06:40:52.361Z",
-      "endTime": "2026-03-02T06:40:52.388Z",
+      "hash": "14430550789713721325",
+      "startTime": "2026-03-02T08:49:51.803Z",
+      "endTime": "2026-03-02T08:49:54.013Z",
       "params": "",
-      "cacheStatus": "local-cache-hit",
-      "status": 0
-    },
-    {
-      "taskId": "frontend-e2e:lint",
-      "target": "lint",
-      "projectName": "frontend-e2e",
-      "hash": "5982620612964950446",
-      "startTime": "2026-03-02T06:40:52.435Z",
-      "endTime": "2026-03-02T06:40:52.435Z",
-      "params": "",
-      "cacheStatus": "local-cache-hit",
+      "cacheStatus": "cache-miss",
       "status": 0
     },
     {
       "taskId": "frontend:lint",
       "target": "lint",
       "projectName": "frontend",
-      "hash": "6796552549918396680",
-      "startTime": "2026-03-02T06:40:52.395Z",
-      "endTime": "2026-03-02T06:40:54.775Z",
+      "hash": "11089386541164288713",
+      "startTime": "2026-03-02T08:49:51.890Z",
+      "endTime": "2026-03-02T08:49:54.801Z",
       "params": "",
       "cacheStatus": "cache-miss",
-      "status": 1
+      "status": 0
+    },
+    {
+      "taskId": "frontend-e2e:lint",
+      "target": "lint",
+      "projectName": "frontend-e2e",
+      "hash": "14122607223344200955",
+      "startTime": "2026-03-02T08:49:54.878Z",
+      "endTime": "2026-03-02T08:49:56.466Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 0
     }
   ]
 }

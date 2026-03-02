@@ -1,0 +1,29 @@
+Starting direct Temurin download+extract (no package managers)
+API_URL=https://api.adoptium.net/v3/binary/latest/17/ga/windows-x64/jdk/hotspot/normal/adoptium
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (22) The requested URL returned error: 404
+curl download failed
+Downloaded. size:
+ls: cannot access 'tmp/temurin.zip': No such file or directory
+Expand-Archive : The path 'tmp\temurin.zip' either does not exist or is not a 
+valid file system path.
+At line:1 char:1
++ Expand-Archive -Force 'tmp\temurin.zip' -DestinationPath 'tmp\jdk'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (tmp\temurin.zip:String) [Expan 
+   d-Archive], InvalidOperationException
+    + FullyQualifiedErrorId : ArchiveCmdletPathNotFound,Expand-Archive
+ 
+Expand-Archive failed
+Extraction contents:
+total 4
+drwxr-xr-x 1 Sanford 197121 0 Mar  2 00:51 ./
+drwxr-xr-x 1 Sanford 197121 0 Mar  2 00:51 ../
+JDIR=
+JAVA_HOME set to 
+bash: java: command not found
+java still not found
+Running java-governance mvn tests via nx...
+done

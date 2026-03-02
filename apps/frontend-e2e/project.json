@@ -13,5 +13,32 @@
         "lintFilePatterns": ["apps/frontend-e2e/**/*.ts"]
       }
     }
+    ,"e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/frontend-e2e",
+        "command": "cypress run"
+      },
+      "cache": true,
+      "inputs": ["default","^default"],
+      "outputs": ["{workspaceRoot}/dist/cypress/apps/frontend-e2e/videos","{workspaceRoot}/dist/cypress/apps/frontend-e2e/screenshots"],
+      "parallelism": false,
+      "metadata": {"technologies": ["cypress"], "description": "Runs Cypress Tests"}
+    },
+    "e2e-ci": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/frontend-e2e",
+        "command": "cypress run --env webServerCommand=\"pnpm exec nx run frontend:serve-static\" --config=\"{\\\"baseUrl\\\":\\\"http://localhost:4200\\\"}\""
+      },
+      "cache": true,
+      "inputs": ["default", "^default"],
+      "outputs": [
+        "{workspaceRoot}/dist/cypress/apps/frontend-e2e/videos",
+        "{workspaceRoot}/dist/cypress/apps/frontend-e2e/screenshots"
+      ],
+      "parallelism": false,
+      "metadata": { "technologies": ["cypress"], "description": "Runs Cypress Tests in CI mode" }
+    }
   }
 }
