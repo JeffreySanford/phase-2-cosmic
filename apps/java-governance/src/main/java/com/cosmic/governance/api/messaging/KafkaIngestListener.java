@@ -8,16 +8,21 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+import java.util.Set;
 
 @Component
 public class KafkaIngestListener {
     private static final Logger log = LoggerFactory.getLogger(KafkaIngestListener.class);
     private final JobService jobService;
     private final ObjectMapper mapper;
+    private final Validator validator;
 
-    public KafkaIngestListener(JobService jobService, ObjectMapper mapper) {
+    public KafkaIngestListener(JobService jobService, ObjectMapper mapper, Validator validator) {
         this.jobService = jobService;
         this.mapper = mapper;
+        this.validator = validator;
     }
 
     @KafkaListener(topics = "phase2-events", groupId = "governance-group")
@@ -31,6 +36,13 @@ public class KafkaIngestListener {
             String requestedBy = obj.containsKey("requestedBy") ? String.valueOf(obj.get("requestedBy")) : "kafka-ingest";
 
             JobSubmitRequest req = new JobSubmitRequest(workflow, datasetId, params, requestedBy);
+            // Validate the constructed request against bean validation constraints
+            Set<ConstraintViolation<JobSubmitRequest>> violations = validator.validate(req);
+            if (!violations.isEmpty()) {
+                log.warn("Kafka message failed validation: {}", violations);
+                return;
+            }
+
             log.info("Received Kafka event for workflow={} datasetId={}", workflow, datasetId);
             jobService.submit(req);
         } catch (Exception ex) {
