@@ -1,20 +1,31 @@
 {
   "run": {
-    "command": "nx build frontend --skip-nx-cache",
-    "startTime": "2026-03-02T06:36:56.893Z",
-    "endTime": "2026-03-02T06:37:04.850Z",
+    "command": "nx run-many --target=test --all --configuration=ci --parallel=false",
+    "startTime": "2026-03-02T06:40:08.913Z",
+    "endTime": "2026-03-02T06:40:09.164Z",
     "inner": false
   },
   "tasks": [
     {
-      "taskId": "frontend:build:production",
-      "target": "build",
-      "projectName": "frontend",
-      "hash": "4908191501124762256",
-      "startTime": "2026-03-02T06:36:56.901Z",
-      "endTime": "2026-03-02T06:37:04.842Z",
+      "taskId": "ui-visualization:test:ci",
+      "target": "test",
+      "projectName": "ui-visualization",
+      "hash": "4360654663796456811",
+      "startTime": "2026-03-02T06:40:08.958Z",
+      "endTime": "2026-03-02T06:40:08.978Z",
       "params": "",
-      "cacheStatus": "cache-miss",
+      "cacheStatus": "local-cache-hit",
+      "status": 0
+    },
+    {
+      "taskId": "ui-theme:test:ci",
+      "target": "test",
+      "projectName": "ui-theme",
+      "hash": "9598852416826158082",
+      "startTime": "2026-03-02T06:40:08.986Z",
+      "endTime": "2026-03-02T06:40:09.004Z",
+      "params": "",
+      "cacheStatus": "local-cache-hit",
       "status": 0
     }
   ]
