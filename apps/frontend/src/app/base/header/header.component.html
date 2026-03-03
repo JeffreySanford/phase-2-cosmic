@@ -4,16 +4,52 @@
     <div class="brand">Phase-2 Cosmic</div>
   </div>
   <div class="right">
-    <div class="user">
-      <button class="user-btn" (click)="toggleUserMenu()" aria-label="User menu">👤</button>
-      <div class="user-menu" *ngIf="showUserMenu">
-        <button class="menu-item">Profile</button>
-        <button class="menu-item">Settings</button>
-        <button class="menu-item">Theme</button>
-        <button class="menu-item">Visualizations</button>
-        <hr />
-        <button class="menu-item">Sign out</button>
-      </div>
-    </div>
+    <button
+      class="user-btn"
+      mat-stroked-button
+      [matMenuTriggerFor]="userMenu"
+      aria-label="User menu"
+    >
+      👤
+    </button>
   </div>
 </header>
+
+<mat-menu
+  #userMenu="matMenu"
+  xPosition="before"
+  yPosition="below"
+  panelClass="user-menu-panel"
+  overlayPanelClass="user-menu-overlay"
+>
+  <button mat-menu-item class="user-menu-item">
+    <span class="menu-item-content">
+      <span class="menu-label">Profile</span>
+      <span class="menu-meta">local</span>
+    </span>
+  </button>
+  <button mat-menu-item class="user-menu-item" (click)="openSettingsModal()">
+    <span class="menu-item-content">
+      <span class="menu-label">Settings</span>
+      <span class="menu-meta">modal</span>
+    </span>
+  </button>
+  <button mat-menu-item class="user-menu-item" (click)="openVisualizations()">
+    <span class="menu-item-content">
+      <span class="menu-label">Visualizations</span>
+      <span class="menu-meta">route</span>
+    </span>
+  </button>
+  <button mat-menu-item class="user-menu-item">
+    <span class="menu-item-content">
+      <span class="menu-label">Theme</span>
+      <span class="menu-meta">system</span>
+    </span>
+  </button>
+  <button mat-menu-item class="user-menu-item">
+    <span class="menu-item-content">
+      <span class="menu-label">Sign out</span>
+      <span class="menu-meta">local</span>
+    </span>
+  </button>
+</mat-menu>

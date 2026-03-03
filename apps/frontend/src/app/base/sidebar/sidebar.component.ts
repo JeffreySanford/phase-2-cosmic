@@ -24,7 +24,6 @@ export class SidebarComponent {
     { path: '/visualizations', label: 'Visualizations', icon: '📊' },
     { path: '/topology', label: 'Topology', icon: '🗺️' },
     { path: '/diagnostics', label: 'Diagnostics', icon: '🛠️' },
-    { path: '/settings', label: 'Settings', icon: '⚙️' },
   ];
 
   onNavigate(path: string) {

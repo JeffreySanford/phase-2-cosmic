@@ -1,5 +1,3 @@
-import { getGreeting } from '../support/app.po';
-
 describe('frontend-e2e', () => {
   beforeEach(() => cy.visit('/'));
 

@@ -331,6 +331,47 @@ class RuntimeLoadProfileService {
 class AppController {
   constructor(private ssr: SsrService, private runtimeLoad: RuntimeLoadProfileService) {}
 
+  private buildBaseCandidates(baseUrl: string): string[] {
+    const out = [baseUrl];
+    try {
+      const u = new URL(baseUrl);
+      if (u.hostname === 'localhost') {
+        const v4 = new URL(baseUrl);
+        v4.hostname = '127.0.0.1';
+        out.push(v4.toString().replace(/\/$/, ''));
+      } else if (u.hostname === '127.0.0.1') {
+        const local = new URL(baseUrl);
+        local.hostname = 'localhost';
+        out.push(local.toString().replace(/\/$/, ''));
+      }
+    } catch {
+      // ignore malformed base URL and use original only
+    }
+    return Array.from(new Set(out));
+  }
+
+  private async fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 7000): Promise<globalThis.Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort('timeout'), timeoutMs);
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  private async fetchWithFallback(urls: string[], init: RequestInit, timeoutMs = 7000): Promise<globalThis.Response> {
+    let lastError: unknown;
+    for (const url of urls) {
+      try {
+        return await this.fetchWithTimeout(url, init, timeoutMs);
+      } catch (e) {
+        lastError = e;
+      }
+    }
+    throw lastError ?? new Error('fetch_failed');
+  }
+
   @Get('/api/env')
   getEnv() {
     return this.ssr.getPublicEnv();
@@ -343,7 +384,7 @@ class AppController {
       res.status(403).json({ error: 'forbidden' });
       return;
     }
-    const prom = process.env['PROMETHEUS_URL'] || 'http://localhost:9090';
+    const prom = process.env['PROMETHEUS_URL'] || 'http://127.0.0.1:9090';
     // Build search params robustly from req.query (arrays, numbers, etc.)
     const qp = new URLSearchParams();
     try {
@@ -363,10 +404,11 @@ class AppController {
 
     const isRange = qp.has('start') || qp.has('end') || qp.has('step');
     const path = isRange ? '/api/v1/query_range' : '/api/v1/query';
-    const url = `${prom}${path}?${qp.toString()}`;
-    console.log('Proxying Prometheus request to', url);
+    const baseCandidates = this.buildBaseCandidates(prom);
+    const urls = baseCandidates.map((b) => `${b}${path}?${qp.toString()}`);
+    console.log('Proxying Prometheus request to', urls[0]);
     try {
-      const r = await fetch(url, { method: 'GET' });
+      const r = await this.fetchWithFallback(urls, { method: 'GET' }, 7000);
       const body = await r.text();
       const ct = r.headers.get('content-type') || 'application/json';
       console.log('Prometheus responded', r.status, 'content-type=', ct, 'len=', body?.length ?? 0);
@@ -376,7 +418,11 @@ class AppController {
       res.send(body ?? '');
     } catch (e: any) {
       console.error('Error proxying to Prometheus:', e);
-      res.status(502).send({ error: String(e) });
+      res.status(502).send({
+        error: 'prometheus_proxy_error',
+        message: String(e),
+        targetsTried: urls,
+      });
     }
   }
 
@@ -499,10 +545,11 @@ class AppController {
     }
   }
 
-  @All('/api/v1/*')
+  @All('/api/v1/*path')
   async proxyGovernance(@Req() req: Request, @Res() res: Response): Promise<void> {
-    const governanceBase = process.env['GOVERNANCE_API_URL'] || 'http://localhost:8082';
-    const targetUrl = `${governanceBase}${req.originalUrl}`;
+    const governanceBase = process.env['GOVERNANCE_API_URL'] || 'http://127.0.0.1:8082';
+    const baseCandidates = this.buildBaseCandidates(governanceBase);
+    const targetUrls = baseCandidates.map((b) => `${b}${req.originalUrl}`);
     try {
       const headers = new Headers();
       Object.entries(req.headers || {}).forEach(([k, v]) => {
@@ -530,18 +577,22 @@ class AppController {
         }
       }
 
-      const upstream = await fetch(targetUrl, { method, headers, body });
+      const upstream = await this.fetchWithFallback(targetUrls, { method, headers, body }, 7000);
       const text = await upstream.text();
       const ct = upstream.headers.get('content-type');
       if (ct) res.setHeader('content-type', ct);
       res.status(upstream.status).send(text);
     } catch (e: any) {
       console.error('Error proxying to governance API:', e);
-      res.status(502).json({ error: 'governance_proxy_error', message: String(e) });
+      res.status(502).json({
+        error: 'governance_proxy_error',
+        message: String(e),
+        targetsTried: targetUrls,
+      });
     }
   }
 
-  @Get('*')
+  @Get('/*path')
   async handleAll(@Req() req: Request, @Res() res: Response) {
     // Guard against SSR swallowing unhandled API routes.
     if (req.path && req.path.startsWith('/api/')) {

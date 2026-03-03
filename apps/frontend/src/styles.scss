@@ -8,21 +8,14 @@ body {
 	margin: 0;
 	font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
 }
-/* Position Material overlayed snackbars above the app footer. The service
-	 keeps --app-footer-height updated to match the footer element's height. */
-.cdk-overlay-container .cdk-global-overlay-wrapper {
-	position: fixed !important;
-	left: 0 !important;
-	right: 0 !important;
-	bottom: calc(var(--app-footer-height, 0px) + 8px) !important;
-	display: flex !important;
-	justify-content: center !important;
-	pointer-events: none !important;
-	z-index: 10000 !important;
+/* Keep overlays above routed content (menus/dialogs/tooltips/snackbars). */
+.cdk-overlay-container {
+	z-index: 12000 !important;
 }
 
-.cdk-overlay-container .cdk-global-overlay-wrapper .mat-snack-bar-container {
-	pointer-events: auto !important;
+/* Position snackbars above footer without altering menu/dialog overlay wrappers. */
+.mat-mdc-snack-bar-container.app-snack {
+	margin-bottom: calc(var(--app-footer-height, 0px) + 8px);
 }
 
 /* Color-coded snack variants */
@@ -189,4 +182,61 @@ app-mainstage > * {
 	.profile-menu-item.selected {
 		animation: none !important;
 	}
+}
+
+/* Header user menu (vibrant + high-contrast) */
+.user-menu-overlay .mat-mdc-menu-panel,
+.mat-mdc-menu-panel.user-menu-panel {
+	--mat-menu-container-color: #0b1220;
+	--mdc-menu-container-color: #0b1220;
+	border: 1px solid #06b6d4 !important;
+	border-radius: 10px;
+	background: linear-gradient(160deg, #0b1220 0%, #0f1a31 100%) !important;
+	box-shadow:
+		0 0 0 1px rgba(6, 182, 212, 0.42),
+		0 10px 28px rgba(8, 47, 73, 0.52);
+}
+
+.user-menu-panel .mat-mdc-menu-content {
+	padding: 0.3rem;
+}
+
+.user-menu-item {
+	border-radius: 8px;
+	margin: 0.15rem 0;
+	border: 1px solid rgba(6, 182, 212, 0.28);
+	color: #e2f8ff !important;
+	background: linear-gradient(135deg, rgba(8, 47, 73, 0.72), rgba(12, 74, 110, 0.88)) !important;
+	transition: transform 140ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.user-menu-item:hover {
+	transform: translateX(3px);
+	background: linear-gradient(135deg, rgba(14, 116, 144, 0.9), rgba(2, 132, 199, 0.92)) !important;
+	box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.5), 0 0 14px rgba(14, 165, 233, 0.35);
+}
+
+.user-menu-item .menu-item-content {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.65rem;
+	width: 100%;
+}
+
+.user-menu-item .menu-label {
+	font-size: 0.88rem;
+	font-weight: 600;
+	color: #e2f8ff;
+}
+
+.user-menu-item .menu-meta {
+	font-size: 0.72rem;
+	color: #7dd3fc;
+}
+
+/* Settings modal shell styling */
+.settings-dialog-panel .mat-mdc-dialog-surface {
+	background: transparent !important;
+	box-shadow: 0 0 0 1px rgba(103, 232, 249, 0.4), 0 18px 36px rgba(8, 47, 73, 0.56) !important;
 }

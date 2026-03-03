@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { LayoutModule } from '@angular/cdk/layout';
 import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
@@ -33,6 +33,7 @@ import { DiagnosticsComponent } from './features/diagnostics/diagnostics.compone
 import { TelemetryComponent } from './features/telemetry/telemetry.component';
 import { PromqlCardComponent } from './shared/promql-card/promql-card.component';
 import { SettingsComponent } from './features/settings/settings.component';
+import { SettingsDialogComponent } from './features/settings/settings-dialog.component';
 import { ViewerComponent } from './features/viewer/viewer.component';
 import { JobsComponent } from './features/jobs/jobs.component';
 import { JobsSubmitDialogComponent } from './features/jobs/jobs-submit-dialog.component';
@@ -59,6 +60,7 @@ import { ProvenancePanelModule } from './shared/provenance-panel/provenance-pane
     TelemetryComponent,
     PromqlCardComponent,
     SettingsComponent,
+    SettingsDialogComponent,
     ViewerComponent
     ,JobsComponent,
     JobsSubmitDialogComponent
@@ -77,6 +79,7 @@ import { ProvenancePanelModule } from './shared/provenance-panel/provenance-pane
     RouterModule.forRoot(appRoutes),
     HttpClientModule,
     FormsModule,
+    ReactiveFormsModule,
     MatMenuModule,
     MatInputModule,
     MatIconModule,

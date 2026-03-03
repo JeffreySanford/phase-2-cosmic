@@ -1,21 +1,21 @@
 {
   "run": {
-    "command": "nx run frontend:serve-static",
-    "startTime": "2026-03-02T23:22:24.831Z",
-    "endTime": "2026-03-02T23:22:38.171Z",
+    "command": "nx run frontend-e2e:e2e",
+    "startTime": "2026-03-03T05:27:44.729Z",
+    "endTime": "2026-03-03T05:28:10.790Z",
     "inner": false
   },
   "tasks": [
     {
-      "taskId": "frontend:serve-static",
-      "target": "serve-static",
-      "projectName": "frontend",
-      "hash": "14430277820042081481",
-      "startTime": "2026-03-02T23:22:24.866Z",
-      "endTime": "2026-03-02T23:22:38.168Z",
+      "taskId": "frontend-e2e:e2e",
+      "target": "e2e",
+      "projectName": "frontend-e2e",
+      "hash": "14841296676057862650",
+      "startTime": "2026-03-03T05:27:44.771Z",
+      "endTime": "2026-03-03T05:28:10.776Z",
       "params": "",
       "cacheStatus": "cache-miss",
-      "status": 1
+      "status": 0
     }
   ]
 }

@@ -40,19 +40,17 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.user { position:relative; flex:0 0 auto; }
-.user-btn { background:transparent; border:0; color:inherit; font-size:1.25rem; cursor:pointer; }
-.user-menu {
-  position:absolute;
-  right:0;
-  top:calc(100% + 6px);
-  background:#fff;
-  color:#111;
-  border-radius:6px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.12);
-  padding:0.5rem;
-  min-width:160px;
-  z-index: 20000 !important; /* must outrank global overlays (10000) */
+.user-btn {
+  background: linear-gradient(145deg, #0c4a6e, #0369a1) !important;
+  border: 1px solid rgba(103, 232, 249, 0.45) !important;
+  color: #e0fbff !important;
+  font-size: 1.05rem;
+  cursor: pointer;
+  min-width: 44px;
+  transition: transform 140ms ease, box-shadow 160ms ease;
 }
-.user-menu .menu-item { display:block; width:100%; padding:0.5rem; border:0; background:transparent; text-align:left; cursor:pointer; }
-.user-menu hr { margin:0.5rem 0; border:none; border-top:1px solid #eee; }
+
+.user-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.42), 0 0 14px rgba(14, 165, 233, 0.35);
+}
