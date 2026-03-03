@@ -15,12 +15,16 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class GovernanceControllerTest extends AbstractRedisTest {
     @Autowired
     private MockMvc mockMvc;
+
+        private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Test
     void healthEndpointReturnsOk() throws Exception {
@@ -64,7 +68,8 @@ class GovernanceControllerTest extends AbstractRedisTest {
                 .getResponse()
                 .getContentAsString();
 
-        String jobId = response.replaceAll(".*\"jobId\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+        JsonNode jobNode = MAPPER.readTree(response);
+        String jobId = jobNode.get("jobId").asText();
 
         mockMvc.perform(get("/api/v1/jobs/" + jobId))
                 .andExpect(status().isOk())
@@ -80,12 +85,14 @@ class GovernanceControllerTest extends AbstractRedisTest {
         String resp = mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isAccepted())
                 .andReturn().getResponse().getContentAsString();
-        String jobId = resp.replaceAll(".*\"jobId\"\s*:\s*\"([^\"]+)\".*", "$1");
+        JsonNode n1 = MAPPER.readTree(resp);
+        String jobId = n1.get("jobId").asText();
         // fetch status to get version
         String statusResp = mockMvc.perform(get("/api/v1/jobs/" + jobId))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        long ver = Long.parseLong(statusResp.replaceAll(".*\"version\"\s*:\s*(\d+).*", "$1"));
+        JsonNode statusNode = MAPPER.readTree(statusResp);
+        long ver = statusNode.get("version").asLong();
         // post transition with wrong version
         String trans = String.format("{\"state\":\"RUNNING\",\"expectedVersion\":%d}", ver+1);
         mockMvc.perform(post("/api/v1/jobs/" + jobId + "/transition")
@@ -102,12 +109,14 @@ class GovernanceControllerTest extends AbstractRedisTest {
         String resp = mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isAccepted())
                 .andReturn().getResponse().getContentAsString();
-        String jobId = resp.replaceAll(".*\"jobId\"\s*:\s*\"([^\"]+)\".*", "$1");
+        JsonNode n2 = MAPPER.readTree(resp);
+        String jobId = n2.get("jobId").asText();
         // cancel with version from status
         String statusResp = mockMvc.perform(get("/api/v1/jobs/" + jobId))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        long ver = Long.parseLong(statusResp.replaceAll(".*\"version\"\s*:\s*(\d+).*", "$1"));
+        JsonNode statusNode2 = MAPPER.readTree(statusResp);
+        long ver = statusNode2.get("version").asLong();
         String cancelReq = String.format("{\"expectedVersion\":%d}", ver);
         mockMvc.perform(post("/api/v1/jobs/" + jobId + "/cancel")
                         .contentType(MediaType.APPLICATION_JSON).content(cancelReq))
@@ -129,7 +138,8 @@ class GovernanceControllerTest extends AbstractRedisTest {
         String resp = mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isAccepted())
                 .andReturn().getResponse().getContentAsString();
-        String jobId = resp.replaceAll(".*\"jobId\"\s*:\s*\"([^\"]+)\".*", "$1");
+        JsonNode n3 = MAPPER.readTree(resp);
+        String jobId = n3.get("jobId").asText();
         // manually transition to FAILED
         String trans = "{\"state\":\"FAILED\"}";
         mockMvc.perform(post("/api/v1/jobs/" + jobId + "/transition")
@@ -207,8 +217,10 @@ class GovernanceControllerTest extends AbstractRedisTest {
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.status").value("QUEUED"))
                 .andReturn().getResponse().getContentAsString();
-        String id = resp.replaceAll(".*\"jobId\"\s*:\s*\"([^\"]+)\".*", "$1");
-        long version = Long.parseLong(resp.replaceAll(".*\"version\"\s*:\s*([0-9]+).*", "$1"));
+        JsonNode n4 = MAPPER.readTree(resp);
+        String id = n4.get("jobId").asText();
+        JsonNode n5 = MAPPER.readTree(resp);
+        long version = n5.get("version").asLong();
 
         // valid transition with correct version
         String trans = String.format("{\"state\":\"RUNNING\",\"expectedVersion\":%d}", version);
@@ -235,7 +247,8 @@ class GovernanceControllerTest extends AbstractRedisTest {
         String resp = mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isAccepted())
                 .andReturn().getResponse().getContentAsString();
-        String id = resp.replaceAll(".*\"jobId\"\s*:\s*\"([^\"]+)\".*", "$1");
+        JsonNode n6 = MAPPER.readTree(resp);
+        String id = n6.get("jobId").asText();
 
         // cancel immediately
         mockMvc.perform(post("/api/v1/jobs/"+id+"/cancel")).andExpect(status().isOk())
@@ -269,7 +282,8 @@ class GovernanceControllerTest extends AbstractRedisTest {
         String r = mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isAccepted())
                 .andReturn().getResponse().getContentAsString();
-        String jobId = r.replaceAll(".*\"jobId\"\s*:\s*\"([^\"]+)\".*", "$1");
+        JsonNode n7 = MAPPER.readTree(r);
+        String jobId = n7.get("jobId").asText();
 
         String badTransition = "{\"state\":\"COMPLETED\"}";
         // it's queued initially so COMPLETED is invalid

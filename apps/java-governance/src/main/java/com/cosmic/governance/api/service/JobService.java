@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.cosmic.governance.api.util.RedisMarshaller;
 import jakarta.annotation.PostConstruct;
@@ -36,6 +38,8 @@ public class JobService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final RedisMarshaller marshaller;
+    // in-memory fallback store used when RedisTemplate is not available
+    private final ConcurrentHashMap<String, Object> inMemoryStore = new ConcurrentHashMap<>();
 
     private final Map<String, JobExecutor> executorMap = new HashMap<>();
     private final ScheduledExecutorService scanner = Executors.newScheduledThreadPool(1);
@@ -51,6 +55,60 @@ public class JobService {
         if (executors != null) {
             for (JobExecutor e : executors) executorMap.put(e.name(), e);
         }
+    }
+
+    // Helper methods to abstract Redis vs in-memory store access
+    private Set<String> keys(String pattern) {
+        try {
+            if (redisTemplate != null) {
+                Set<String> ks = redisTemplate.keys(pattern);
+                return ks == null ? java.util.Set.of() : ks;
+            }
+        } catch (Throwable ignored) {}
+        // emulate simple glob behavior where pattern like "job:*" matches keys starting with prefix
+        if (pattern != null && pattern.endsWith("*")) {
+            String prefix = pattern.substring(0, pattern.length()-1);
+            return inMemoryStore.keySet().stream().filter(k -> k.startsWith(prefix)).collect(Collectors.toSet());
+        }
+        return inMemoryStore.keySet();
+    }
+
+    private Object getValue(String key) {
+        try {
+            if (redisTemplate != null) return redisTemplate.opsForValue().get(key);
+        } catch (Throwable ignored) {}
+        return inMemoryStore.get(key);
+    }
+
+    private void setValue(String key, Object value) {
+        try {
+            if (redisTemplate != null) {
+                redisTemplate.opsForValue().set(key, value);
+                return;
+            }
+        } catch (Throwable ignored) {}
+        if (value == null) inMemoryStore.remove(key); else inMemoryStore.put(key, value);
+    }
+
+    private java.util.List<Object> listRange(String key, long start, long end) {
+        try {
+            if (redisTemplate != null) {
+                java.util.List<Object> list = redisTemplate.opsForList().range(key, start, end);
+                return list == null ? List.of() : list;
+            }
+        } catch (Throwable ignored) {}
+        Object o = inMemoryStore.get(key);
+        if (o instanceof java.util.List) return (java.util.List<Object>) o;
+        return List.of();
+    }
+
+    // Package-private helpers for tests to directly manipulate the backing store
+    void putRaw(String key, Object value) {
+        setValue(key, value);
+    }
+
+    Object getRaw(String key) {
+        return getValue(key);
     }
 
     @PostConstruct
@@ -74,10 +132,10 @@ public class JobService {
     // package-private so tests can call it
     void completeStaleRunningJobs() {
         try {
-            var keys = redisTemplate.keys(KEY_PREFIX + "*");
+            var keys = keys(KEY_PREFIX + "*");
             if (keys == null) return;
             for (String k : keys) {
-                Object o = redisTemplate.opsForValue().get(k);
+                Object o = getValue(k);
                 JobRecord rec = marshaller.toJobRecord(o);
                 if (rec == null) continue;
                 if (rec.getState() == JobState.RUNNING) {
@@ -89,7 +147,7 @@ public class JobService {
                         rec.setState(JobState.COMPLETED);
                         rec.setUpdatedAt(Instant.now().toString());
                         rec.setVersion(rec.getVersion() + 1);
-                        redisTemplate.opsForValue().set(k, rec);
+                        setValue(k, rec);
                     }
                 }
             }
@@ -101,13 +159,13 @@ public class JobService {
     /* package-private for testing */
     void dispatchQueuedJobs() {
         try {
-            var keys = redisTemplate.keys(KEY_PREFIX + "*");
+            var keys = keys(KEY_PREFIX + "*");
             if (keys == null) return;
             scannedCount.addAndGet(keys.size());
             for (String k : keys) {
                 if (k == null || k.chars().filter(ch -> ch == ':').count() != 1) continue;
                 try {
-                    Object o = redisTemplate.opsForValue().get(k);
+                    Object o = getValue(k);
                     JobRecord rec = marshaller.toJobRecord(o);
                     if (rec == null) continue;
                     if (rec.getState() == JobState.QUEUED) {
@@ -165,7 +223,7 @@ public class JobService {
             if (tid != null && !tid.isBlank()) p.put("traceId", tid);
             record.setParameters(p);
         }
-        redisTemplate.opsForValue().set(KEY_PREFIX + jobId, record);
+        setValue(KEY_PREFIX + jobId, record);
         log.info("Audit: job submitted {} workflow={} dataset={}", jobId, request.workflow(), request.datasetId());
 
         // pick executor (explicit param 'executor' overrides; default to 'tacc' for ingest workflow)
@@ -187,7 +245,7 @@ public class JobService {
     }
 
     public Optional<JobStatusResponse> get(String jobId) {
-        Object o = redisTemplate.opsForValue().get(KEY_PREFIX + jobId);
+        Object o = getValue(KEY_PREFIX + jobId);
         if (o == null) return Optional.empty();
         JobRecord rec = marshaller.toJobRecord(o);
         if (rec != null) return Optional.of(toResponse(rec));
@@ -197,18 +255,16 @@ public class JobService {
     public List<String> getLogs(String jobId) {
         String key = KEY_PREFIX + jobId + ":logs";
         try {
-            var list = redisTemplate.opsForList().range(key, 0, -1);
+            var list = listRange(key, 0, -1);
             if (list == null) return List.of();
             return list.stream().map(Object::toString).collect(Collectors.toList());
         } catch (org.springframework.data.redis.serializer.SerializationException ex) {
             // fallback: read raw bytes from Redis connection and decode as UTF-8 strings
             try {
-                var raw = redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<java.util.List<byte[]>>) conn -> conn.lRange(key.getBytes(), 0, -1));
-                if (raw == null) return List.of();
-                return raw.stream().map(b -> new String(b, java.nio.charset.StandardCharsets.UTF_8)).collect(Collectors.toList());
-            } catch (Exception ex2) {
-                return List.of();
-            }
+                Object o = getValue(key);
+                if (o instanceof List) return ((List<?>) o).stream().map(Object::toString).collect(Collectors.toList());
+            } catch (Exception ignored) {}
+            return List.of();
         }
     }
 
@@ -270,12 +326,12 @@ public class JobService {
     }
     public List<JobStatusResponse> list(String workflowFilter, JobState stateFilter, int page, int size) {
         // Note: For small dev usage we use keys scan; in production use a proper index or sorted set.
-        var keys = redisTemplate.keys(KEY_PREFIX + "*");
+        var keys = keys(KEY_PREFIX + "*");
         if (keys == null || keys.isEmpty()) return List.of();
         return keys.stream()
                 // skip auxiliary keys (logs, artifacts, etc.) which use suffixes like ":logs" or ":artifacts"
                 .filter(k -> k != null && k.chars().filter(ch -> ch == ':').count() == 1)
-                .map(k -> redisTemplate.opsForValue().get(k))
+            .map(k -> getValue(k))
                 .map(v -> marshaller.toJobRecord(v))
                 .filter(java.util.Objects::nonNull)
                 .filter(rec -> {

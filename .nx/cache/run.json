@@ -1,18 +1,18 @@
 {
   "run": {
-    "command": "nx run frontend-e2e:lint",
-    "startTime": "2026-03-02T23:08:55.184Z",
-    "endTime": "2026-03-02T23:08:56.951Z",
+    "command": "nx run frontend:serve-static",
+    "startTime": "2026-03-02T23:22:24.831Z",
+    "endTime": "2026-03-02T23:22:38.171Z",
     "inner": false
   },
   "tasks": [
     {
-      "taskId": "frontend-e2e:lint",
-      "target": "lint",
-      "projectName": "frontend-e2e",
-      "hash": "2529195564078661390",
-      "startTime": "2026-03-02T23:08:55.215Z",
-      "endTime": "2026-03-02T23:08:56.948Z",
+      "taskId": "frontend:serve-static",
+      "target": "serve-static",
+      "projectName": "frontend",
+      "hash": "14430277820042081481",
+      "startTime": "2026-03-02T23:22:24.866Z",
+      "endTime": "2026-03-02T23:22:38.168Z",
       "params": "",
       "cacheStatus": "cache-miss",
       "status": 1

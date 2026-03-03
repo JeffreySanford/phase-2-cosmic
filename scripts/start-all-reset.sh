@@ -49,6 +49,13 @@ fi
 log "[start-all-reset] docker compose down (cleanup)"
 docker compose -f docker/dev-compose.yml down --remove-orphans --rmi all -v
 
+# If Docker is not available or not running, skip Java tests to avoid
+# Testcontainers/Docker-related failures during `start:all:reset`.
+if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
+  log "[start-all-reset] Docker not available or not running; setting SKIP_JAVA_TESTS=1"
+  SKIP_JAVA_TESTS=1
+fi
+
 if [ -z "${SKIP_JAVA_TESTS:-}" ]; then
   log "[start-all-reset] Running Java tests (apps/java-governance, tools/java-ingest)"
   log "[start-all-reset] Ensuring Redis is available for tests"
@@ -92,6 +99,11 @@ if [ -z "${SKIP_JAVA_TESTS:-}" ]; then
     if [ -n "${REDIS_NAME}" ]; then
       NETWORK_ARG="--network=container:${REDIS_NAME}"
       log "Will run Maven container in network namespace of: ${REDIS_NAME}"
+    fi
+    # Ensure Redis is clean before running tests
+    if docker exec "$REDIS_CONTAINER" redis-cli PING >/dev/null 2>&1; then
+      log "Flushing Redis data in container ${REDIS_CONTAINER}"
+      docker exec "$REDIS_CONTAINER" redis-cli FLUSHALL || log "Redis FLUSHALL failed (ignored)"
     fi
     # When running Maven locally, set Redis system properties so tests can reach
     # the container via the host gateway (useful on Windows/MSYS where redis
@@ -170,8 +182,14 @@ if [ -z "${SKIP_JAVA_TESTS:-}" ]; then
       fi
 
       log "[start-all-reset] Running Maven tests in Docker image: ${MAVEN_IMAGE}"
-      docker run --rm ${NETWORK_ARG:-} ${ADD_HOST_ARG:-} -v "${HOST_PWD}":/workspace "$MAVEN_IMAGE" bash -lc "java -version || true; mvn -v || true; cd /workspace && mvn -B ${MAVEN_REDIS_SYS_PROP} -f apps/java-governance test"
-      docker run --rm ${NETWORK_ARG:-} ${ADD_HOST_ARG:-} -v "${HOST_PWD}":/workspace "$MAVEN_IMAGE" bash -lc "java -version || true; mvn -v || true; cd /workspace && mvn -B ${MAVEN_REDIS_SYS_PROP} -f tools/java-ingest test"
+      # If the host Docker socket exists, mount it into the Maven container so Testcontainers can access Docker
+      DOCKER_SOCK_ARG=""
+      if [ -S /var/run/docker.sock ]; then
+        DOCKER_SOCK_ARG="-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock"
+        log "Will mount host Docker socket into Maven container for Testcontainers support"
+      fi
+      docker run --rm ${NETWORK_ARG:-} ${ADD_HOST_ARG:-} ${DOCKER_SOCK_ARG:-} -v "${HOST_PWD}":/workspace "$MAVEN_IMAGE" bash -lc "java -version || true; mvn -v || true; cd /workspace && mvn -B ${MAVEN_REDIS_SYS_PROP} -f apps/java-governance test"
+      docker run --rm ${NETWORK_ARG:-} ${ADD_HOST_ARG:-} ${DOCKER_SOCK_ARG:-} -v "${HOST_PWD}":/workspace "$MAVEN_IMAGE" bash -lc "java -version || true; mvn -v || true; cd /workspace && mvn -B ${MAVEN_REDIS_SYS_PROP} -f tools/java-ingest test"
     fi
   else
     log "Java (JDK) not found on PATH. Falling back to Docker Maven images if available."
@@ -219,8 +237,14 @@ if [ -z "${SKIP_JAVA_TESTS:-}" ]; then
         fi
 
         log "[start-all-reset] Running Maven tests in Docker image: ${MAVEN_IMAGE}"
-        docker run --rm ${NETWORK_ARG:-} ${ADD_HOST_ARG:-} -v "${HOST_PWD}":/workspace "$MAVEN_IMAGE" bash -lc "java -version || true; mvn -v || true; cd /workspace && mvn -B ${MAVEN_REDIS_SYS_PROP} -f apps/java-governance test"
-        docker run --rm ${NETWORK_ARG:-} ${ADD_HOST_ARG:-} -v "${HOST_PWD}":/workspace "$MAVEN_IMAGE" bash -lc "java -version || true; mvn -v || true; cd /workspace && mvn -B ${MAVEN_REDIS_SYS_PROP} -f tools/java-ingest test"
+        # If the host Docker socket exists, mount it into the Maven container so Testcontainers can access Docker
+        DOCKER_SOCK_ARG=""
+        if [ -S /var/run/docker.sock ]; then
+          DOCKER_SOCK_ARG="-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock"
+          log "Will mount host Docker socket into Maven container for Testcontainers support"
+        fi
+        docker run --rm ${NETWORK_ARG:-} ${ADD_HOST_ARG:-} ${DOCKER_SOCK_ARG:-} -v "${HOST_PWD}":/workspace "$MAVEN_IMAGE" bash -lc "java -version || true; mvn -v || true; cd /workspace && mvn -B ${MAVEN_REDIS_SYS_PROP} -f apps/java-governance test"
+        docker run --rm ${NETWORK_ARG:-} ${ADD_HOST_ARG:-} ${DOCKER_SOCK_ARG:-} -v "${HOST_PWD}":/workspace "$MAVEN_IMAGE" bash -lc "java -version || true; mvn -v || true; cd /workspace && mvn -B ${MAVEN_REDIS_SYS_PROP} -f tools/java-ingest test"
       fi
     else
       log "Neither Java nor Docker available — skipping Java tests. To force tests, install a JDK or set SKIP_JAVA_TESTS to run them in CI with proper tools."

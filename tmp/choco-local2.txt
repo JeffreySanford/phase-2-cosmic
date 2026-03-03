@@ -1,2 +1,0 @@
-Chocolatey v2.4.3
-Invalid argument -lo. This argument has been removed from the list command and cannot be used.

@@ -69,9 +69,10 @@ public class GovernanceController {
 
         JobStatusResponse created = jobService.submit(request);
         JobSubmitResponse response = new JobSubmitResponse(
-                created.jobId(),
-                created.status(),
-                created.createdAt()
+            created.jobId(),
+            created.status(),
+            created.createdAt(),
+            created.version()
         );
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
@@ -209,6 +210,11 @@ public class GovernanceController {
                 if (parts.length > 1) {
                     try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}
                 }
+                // if the current job is already canceled, treat cancel as idempotent and return OK
+                var optCur = jobService.get(id);
+                if (optCur.isPresent() && "CANCELED".equalsIgnoreCase(optCur.get().status())) {
+                    return ResponseEntity.ok(optCur.get());
+                }
                 Map<String,Object> resp = new java.util.HashMap<>();
                 resp.put("error", "version_mismatch");
                 resp.put("jobId", id);
@@ -227,9 +233,10 @@ public class GovernanceController {
         }
 
         @PostMapping("/jobs/{id}/cancel")
-        public ResponseEntity<?> cancelJob(@PathVariable("id") String id, @Valid @RequestBody com.cosmic.governance.api.dto.JobCancelRequest req) {
+        public ResponseEntity<?> cancelJob(@PathVariable("id") String id, @Valid @RequestBody(required = false) com.cosmic.governance.api.dto.JobCancelRequest req) {
             try {
-                var res = jobService.cancel(id, req.expectedVersion());
+                Long expected = req == null ? null : req.expectedVersion();
+                var res = jobService.cancel(id, expected);
                 if (res.isPresent()) {
                     return ResponseEntity.ok(res.get());
                 }
@@ -240,31 +247,10 @@ public class GovernanceController {
                     if (parts.length > 1) {
                         try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}
                     }
-                    Map<String,Object> resp = new java.util.HashMap<>();
-                    resp.put("error", "version_mismatch");
-                    resp.put("jobId", id);
-                    resp.put("currentVersion", current);
-                    return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
-                }
-                throw ex;
-            }
-            if (jobService.get(id).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse("job_not_found", id));
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse("cannot_cancel", id));
-        }
-
-        @PostMapping("/jobs/{id}/retry")
-        public ResponseEntity<?> retryJob(@PathVariable("id") String id, @Valid @RequestBody com.cosmic.governance.api.dto.JobTransitionRequest req) {
-            try {
-                var result = jobService.retry(id, req.expectedVersion());
-                if (result.isPresent()) return ResponseEntity.ok(result.get());
-            } catch (IllegalStateException ex) {
-                if (ex.getMessage().startsWith("version_mismatch")) {
-                    long current = -1;
-                    String[] parts = ex.getMessage().split(":");
-                    if (parts.length > 1) {
-                        try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}
+                    // if the current job is already canceled, treat cancel as idempotent and return OK
+                    var optCur = jobService.get(id);
+                    if (optCur.isPresent() && "CANCELED".equalsIgnoreCase(optCur.get().status())) {
+                        return ResponseEntity.ok(optCur.get());
                     }
                     Map<String,Object> resp = new java.util.HashMap<>();
                     resp.put("error", "version_mismatch");
@@ -274,9 +260,42 @@ public class GovernanceController {
                 }
                 throw ex;
             }
-            if (jobService.get(id).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse("job_not_found", id));
+            var opt = jobService.get(id);
+            if (opt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse("job_not_found", id, null));
             }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse("cannot_retry", id));
+            var current = opt.get();
+            // make cancel idempotent: if already canceled, return OK with current state
+            if ("CANCELED".equalsIgnoreCase(current.status())) {
+                return ResponseEntity.ok(current);
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse("cannot_cancel", id, null));
         }
+
+        @PostMapping("/jobs/{id}/retry")
+        public ResponseEntity<?> retryJob(@PathVariable("id") String id, @RequestBody(required = false) com.cosmic.governance.api.dto.JobTransitionRequest req) {
+                try {
+                    Long expected = req == null ? null : req.expectedVersion();
+                    var result = jobService.retry(id, expected);
+                    if (result.isPresent()) return ResponseEntity.ok(result.get());
+                } catch (IllegalStateException ex) {
+                    if (ex.getMessage().startsWith("version_mismatch")) {
+                        long current = -1;
+                        String[] parts = ex.getMessage().split(":");
+                        if (parts.length > 1) {
+                            try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}
+                        }
+                        Map<String,Object> resp = new java.util.HashMap<>();
+                        resp.put("error", "version_mismatch");
+                        resp.put("jobId", id);
+                        resp.put("currentVersion", current);
+                        return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
+                    }
+                    throw ex;
+                }
+                if (jobService.get(id).isEmpty()) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse("job_not_found", id, null));
+                }
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse("cannot_retry", id, null));
+            }
 }
