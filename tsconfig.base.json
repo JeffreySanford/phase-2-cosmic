@@ -3,8 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "ui-theme": ["libs/ui-theme/src/index.ts"],
-      "ui-visualization": ["libs/ui-visualization/src/index.ts"]
+      "ui-theme": ["libs/ui-theme/src/index.ts"]
     },
     "rootDir": "./",
     "sourceMap": true,

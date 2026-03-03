@@ -7,7 +7,6 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 import org.awaitility.Awaitility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,7 +32,6 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
 
 @SpringBootTest(properties = {"spring.main.allow-bean-definition-overriding=true"})
-@Disabled("Disabled locally: relies on Docker/Testcontainers or host Kafka. Re-enable in CI.")
 public class KafkaIngestListenerIntegrationTest {
 
     // If USE_HOST_KAFKA=true, tests will use host Kafka (e.g., localhost:9092).
