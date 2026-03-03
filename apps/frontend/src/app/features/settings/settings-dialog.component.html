@@ -1,0 +1,92 @@
+<section class="settings-dialog">
+  <header class="dialog-header">
+    <h2>Operator Settings</h2>
+    <p>Personal preferences and application defaults for your console session.</p>
+  </header>
+
+  <form [formGroup]="form" class="settings-form">
+    <h3>Profile</h3>
+    <div class="row two">
+      <mat-form-field appearance="outline">
+        <mat-label>Display name</mat-label>
+        <input matInput formControlName="displayName" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email" />
+      </mat-form-field>
+    </div>
+    <div class="row two">
+      <mat-form-field appearance="outline">
+        <mat-label>Timezone</mat-label>
+        <input matInput formControlName="timezone" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Language</mat-label>
+        <input matInput formControlName="language" />
+      </mat-form-field>
+    </div>
+
+    <h3>Appearance & Interaction</h3>
+    <div class="row two">
+      <mat-form-field appearance="outline">
+        <mat-label>Theme mode</mat-label>
+        <mat-select formControlName="themeMode">
+          <mat-option value="system">System</mat-option>
+          <mat-option value="light">Light</mat-option>
+          <mat-option value="dark">Dark</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Accent color</mat-label>
+        <input matInput formControlName="accentColor" />
+      </mat-form-field>
+    </div>
+    <div class="row toggles">
+      <mat-slide-toggle formControlName="reduceMotion">Reduce motion</mat-slide-toggle>
+      <mat-slide-toggle formControlName="compactDensity">Compact density</mat-slide-toggle>
+    </div>
+
+    <h3>Application</h3>
+    <div class="row two">
+      <mat-form-field appearance="outline">
+        <mat-label>Default route</mat-label>
+        <mat-select formControlName="defaultLandingRoute">
+          <mat-option value="/landing">Landing</mat-option>
+          <mat-option value="/dashboard">Dashboard</mat-option>
+          <mat-option value="/telemetry">Telemetry</mat-option>
+          <mat-option value="/jobs">Jobs</mat-option>
+          <mat-option value="/visualizations">Visualizations</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Auto refresh (seconds)</mat-label>
+        <input matInput type="number" formControlName="autoRefreshSeconds" />
+      </mat-form-field>
+    </div>
+    <div class="row two">
+      <mat-form-field appearance="outline">
+        <mat-label>Telemetry window (seconds)</mat-label>
+        <input matInput type="number" formControlName="telemetryWindowSeconds" />
+      </mat-form-field>
+      <span></span>
+    </div>
+    <div class="row toggles">
+      <mat-slide-toggle formControlName="showModelingDisclaimers">Show modeling disclaimers</mat-slide-toggle>
+      <mat-slide-toggle formControlName="showAdvancedDiagnostics">Show advanced diagnostics</mat-slide-toggle>
+    </div>
+
+    <h3>Notifications</h3>
+    <div class="row toggles">
+      <mat-slide-toggle formControlName="inAppToasts">In-app toasts</mat-slide-toggle>
+      <mat-slide-toggle formControlName="warnOnHighLoad">Warn on high load profile</mat-slide-toggle>
+    </div>
+  </form>
+
+  <footer class="dialog-actions">
+    <button mat-stroked-button type="button" (click)="resetDefaults()">Reset</button>
+    <span class="spacer"></span>
+    <button mat-stroked-button type="button" (click)="close()">Cancel</button>
+    <button mat-flat-button color="primary" type="button" (click)="save()">Save</button>
+  </footer>
+</section>

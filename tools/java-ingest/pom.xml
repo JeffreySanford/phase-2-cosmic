@@ -11,7 +11,7 @@
     <groupId>com.cosmic</groupId>
     <artifactId>phase-2-parent</artifactId>
     <version>0.1.0</version>
-    <relativePath>../pom-parent.xml</relativePath>
+    <relativePath>../../pom-parent.xml</relativePath>
   </parent>
   <properties>
     <java.version>17</java.version>

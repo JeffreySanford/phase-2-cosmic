@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-syntax, @typescript-eslint/no-explicit-any, no-await-in-loop, @typescript-eslint/no-unused-vars, no-empty */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-empty */
 import 'zone.js/node';
 import { platformServer } from '@angular/platform-server';
 import { AppModule } from './app/app.module';

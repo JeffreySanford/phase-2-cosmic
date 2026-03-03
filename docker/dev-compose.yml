@@ -86,8 +86,9 @@ services:
     healthcheck:
       test:
         - "CMD"
-        - "curl"
-        - "-f"
+        - "wget"
+        - "--spider"
+        - "--quiet"
         - "http://localhost:9090/-/ready"
       interval: 10s
       timeout: 5s
@@ -124,6 +125,7 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
     restart: unless-stopped
 
   alertmanager:
@@ -238,4 +240,6 @@ volumes:
   pnpm-store:
     driver: local
   grafana-storage:
+    driver: local
+  loki-data:
     driver: local
