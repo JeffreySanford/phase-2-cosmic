@@ -2,9 +2,9 @@
 
 Alignment anchors
 
-- Frontend UX source of truth: [../../FRONTEND_UI.md](../../FRONTEND_UI.md)
-- Execution backlog: [../../../TODO.md](../../../TODO.md)
-- Delivery plan: [../../../ROADMAP.md](../../../ROADMAP.md)
+- Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
+- Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
+- Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
 
 The Settings page centralizes application configuration and developer-facing toggles. It provides safe controls for non-destructive runtime settings, links to configuration files, and export/import capabilities.
 

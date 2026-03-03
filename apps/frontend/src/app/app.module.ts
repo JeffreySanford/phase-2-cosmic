@@ -29,6 +29,7 @@ import { EnvironmentComponent } from './base/environment/environment.component';
 import { LandingComponent } from './features/landing/landing.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { TopologyComponent } from './features/topology/topology.component';
+import { TopologyInfoDialogComponent } from './features/topology/topology-info-dialog.component';
 import { DiagnosticsComponent } from './features/diagnostics/diagnostics.component';
 import { TelemetryComponent } from './features/telemetry/telemetry.component';
 import { PromqlCardComponent } from './shared/promql-card/promql-card.component';
@@ -56,6 +57,7 @@ import { ProvenancePanelModule } from './shared/provenance-panel/provenance-pane
     LandingComponent,
     DashboardComponent,
     TopologyComponent,
+    TopologyInfoDialogComponent,
     DiagnosticsComponent,
     TelemetryComponent,
     PromqlCardComponent,

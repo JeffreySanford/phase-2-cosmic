@@ -1,9 +1,9 @@
 # Topology — Phase 2 Cosmic
 
 Alignment anchors
-- Frontend UX source of truth: [../../FRONTEND_UI.md](../../FRONTEND_UI.md)
-- Execution backlog: [../../../TODO.md](../../../TODO.md)
-- Delivery plan: [../../../ROADMAP.md](../../../ROADMAP.md)
+- Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
+- Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
+- Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
 
 
 This document contains higher-fidelity topology diagrams (containers + components) and a security-boundary variant for the local development stack.
@@ -131,6 +131,7 @@ The Topology page visualizes the system and network topology: nodes, services, a
 ## Purpose
 
 - Show an interactive map of services and hosts, their relationships, and basic health indicators.
+- Must include messaging fabric nodes for `Kafka`, `RabbitMQ`, and `Pulsar` (not Kafka-only) when corresponding backends are enabled.
 
 ## Primary features
 
@@ -143,6 +144,10 @@ The Topology page visualizes the system and network topology: nodes, services, a
 
 - Topology metadata is expected from application APIs or a topology index. Telemetry metrics can be joined to nodes via labels (e.g. `instance` or `job`).
 - Use Prometheus to surface node-level metrics and the SSR diagnostics endpoints for associated artifacts.
+- Required broker metrics:
+  - Kafka: consumer lag, broker availability
+  - RabbitMQ: queue depth, ack/nack rate
+  - Pulsar: backlog, publish/dispatch rate
 
 ## Frontend topology UI
 
@@ -162,6 +167,11 @@ http://localhost:4200/topology
 ```
 
 The page provides a `Refresh` button to re-query `/api/topology` and re-render. Node clicks currently log node details to the browser console; the component can be extended to show a details panel or integrate Prometheus metrics per-node.
+
+## Implementation note (2026-03-03)
+
+- Current frontend mock topology includes Kafka but does not yet include RabbitMQ/Pulsar nodes.
+- Required next iteration: add RabbitMQ and Pulsar nodes/edges in both API-driven topology payloads and mock fallback topology.
 
 ## UX and performance
 

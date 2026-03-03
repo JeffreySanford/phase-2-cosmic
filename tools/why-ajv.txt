@@ -1,0 +1,1704 @@
+      0 [main] bash 24697! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      1 [main] sh 24700 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+    960 [main] sh 24700 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   1878 [main] sh 24700 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   2901 [main] sh 24700 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24701! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sed 24701 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24699 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+    652 [main] sh 24699 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   1130 [main] sh 24699 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24698! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24702! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24703! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] cygpath 24703 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+Legend: production dependency, optional only, dev only
+
+phase-2-cosmic@0.1.0 C:\repos\phase-2-cosmic (PRIVATE)
+
+devDependencies:
+@angular-devkit/build-angular 18.2.21
+├─┬ @angular-devkit/architect 0.1802.21
+│ └─┬ @angular-devkit/core 18.2.21
+│   ├── ajv 8.17.1
+│   └─┬ ajv-formats 3.0.1
+│     └── ajv 8.17.1 peer
+├─┬ @angular-devkit/build-webpack 0.1802.21
+│ ├─┬ @angular-devkit/architect 0.1802.21
+│ │ └─┬ @angular-devkit/core 18.2.21
+│ │   ├── ajv 8.17.1
+│ │   └─┬ ajv-formats 3.0.1
+│ │     └── ajv 8.17.1 peer
+│ ├─┬ webpack 5.94.0 peer
+│ │ ├─┬ schema-utils 3.3.0
+│ │ │ ├── ajv 6.14.0
+│ │ │ └─┬ ajv-keywords 3.5.2
+│ │ │   └── ajv 6.14.0 peer
+│ │ └─┬ terser-webpack-plugin 5.3.16
+│ │   └─┬ schema-utils 4.3.3
+│ │     ├── ajv 8.18.0
+│ │     ├─┬ ajv-formats 2.1.1
+│ │     │ └── ajv 8.18.0 peer
+│ │     └─┬ ajv-keywords 5.1.0
+│ │       └── ajv 8.18.0 peer
+│ └─┬ webpack-dev-server 5.2.2 peer
+│   ├─┬ schema-utils 4.3.3
+│   │ ├── ajv 8.18.0
+│   │ ├─┬ ajv-formats 2.1.1
+│   │ │ └── ajv 8.18.0 peer
+│   │ └─┬ ajv-keywords 5.1.0
+│   │   └── ajv 8.18.0 peer
+│   ├─┬ webpack 5.105.3 peer
+│   │ ├─┬ schema-utils 4.3.3
+│   │ │ ├── ajv 8.18.0
+│   │ │ ├─┬ ajv-formats 2.1.1
+│   │ │ │ └── ajv 8.18.0 peer
+│   │ │ └─┬ ajv-keywords 5.1.0
+│   │ │   └── ajv 8.18.0 peer
+│   │ └─┬ terser-webpack-plugin 5.3.16
+│   │   └─┬ schema-utils 4.3.3
+│   │     ├── ajv 8.18.0
+│   │     ├─┬ ajv-formats 2.1.1
+│   │     │ └── ajv 8.18.0 peer
+│   │     └─┬ ajv-keywords 5.1.0
+│   │       └── ajv 8.18.0 peer
+│   └─┬ webpack-dev-middleware 7.4.5
+│     ├─┬ schema-utils 4.3.3
+│     │ ├── ajv 8.18.0
+│     │ ├─┬ ajv-formats 2.1.1
+│     │ │ └── ajv 8.18.0 peer
+│     │ └─┬ ajv-keywords 5.1.0
+│     │   └── ajv 8.18.0 peer
+│     └─┬ webpack 5.105.3 peer
+│       ├─┬ schema-utils 4.3.3
+│       │ ├── ajv 8.18.0
+│       │ ├─┬ ajv-formats 2.1.1
+│       │ │ └── ajv 8.18.0 peer
+│       │ └─┬ ajv-keywords 5.1.0
+│       │   └── ajv 8.18.0 peer
+│       └─┬ terser-webpack-plugin 5.3.16
+│         └─┬ schema-utils 4.3.3
+│           ├── ajv 8.18.0
+│           ├─┬ ajv-formats 2.1.1
+│           │ └── ajv 8.18.0 peer
+│           └─┬ ajv-keywords 5.1.0
+│             └── ajv 8.18.0 peer
+├─┬ @angular-devkit/core 18.2.21
+│ ├── ajv 8.17.1
+│ └─┬ ajv-formats 3.0.1
+│   └── ajv 8.17.1 peer
+├─┬ @angular/build 18.2.21
+│ └─┬ @angular-devkit/architect 0.1802.21
+│   └─┬ @angular-devkit/core 18.2.21
+│     ├── ajv 8.17.1
+│     └─┬ ajv-formats 3.0.1
+│       └── ajv 8.17.1 peer
+├─┬ @ngtools/webpack 18.2.21
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ babel-loader 9.1.3
+│ ├─┬ schema-utils 4.3.3
+│ │ ├── ajv 8.18.0
+│ │ ├─┬ ajv-formats 2.1.1
+│ │ │ └── ajv 8.18.0 peer
+│ │ └─┬ ajv-keywords 5.1.0
+│ │   └── ajv 8.18.0 peer
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ copy-webpack-plugin 12.0.2
+│ ├─┬ schema-utils 4.3.3
+│ │ ├── ajv 8.18.0
+│ │ ├─┬ ajv-formats 2.1.1
+│ │ │ └── ajv 8.18.0 peer
+│ │ └─┬ ajv-keywords 5.1.0
+│ │   └── ajv 8.18.0 peer
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ css-loader 7.1.2
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ less-loader 12.2.0
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ license-webpack-plugin 4.0.2
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ mini-css-extract-plugin 2.9.0
+│ ├─┬ schema-utils 4.3.3
+│ │ ├── ajv 8.18.0
+│ │ ├─┬ ajv-formats 2.1.1
+│ │ │ └── ajv 8.18.0 peer
+│ │ └─┬ ajv-keywords 5.1.0
+│ │   └── ajv 8.18.0 peer
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ postcss-loader 8.1.1
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ sass-loader 16.0.0
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ source-map-loader 5.0.0
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ webpack 5.94.0
+│ ├─┬ schema-utils 3.3.0
+│ │ ├── ajv 6.14.0
+│ │ └─┬ ajv-keywords 3.5.2
+│ │   └── ajv 6.14.0 peer
+│ └─┬ terser-webpack-plugin 5.3.16
+│   └─┬ schema-utils 4.3.3
+│     ├── ajv 8.18.0
+│     ├─┬ ajv-formats 2.1.1
+│     │ └── ajv 8.18.0 peer
+│     └─┬ ajv-keywords 5.1.0
+│       └── ajv 8.18.0 peer
+├─┬ webpack-dev-middleware 7.4.2
+│ ├─┬ schema-utils 4.3.3
+│ │ ├── ajv 8.18.0
+│ │ ├─┬ ajv-formats 2.1.1
+│ │ │ └── ajv 8.18.0 peer
+│ │ └─┬ ajv-keywords 5.1.0
+│ │   └── ajv 8.18.0 peer
+│ └─┬ webpack 5.94.0 peer
+│   ├─┬ schema-utils 3.3.0
+│   │ ├── ajv 6.14.0
+│   │ └─┬ ajv-keywords 3.5.2
+│   │   └── ajv 6.14.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └─┬ schema-utils 4.3.3
+│       ├── ajv 8.18.0
+│       ├─┬ ajv-formats 2.1.1
+│       │ └── ajv 8.18.0 peer
+│       └─┬ ajv-keywords 5.1.0
+│         └── ajv 8.18.0 peer
+├─┬ webpack-dev-server 5.2.2
+│ ├─┬ schema-utils 4.3.3
+│ │ ├── ajv 8.18.0
+│ │ ├─┬ ajv-formats 2.1.1
+│ │ │ └── ajv 8.18.0 peer
+│ │ └─┬ ajv-keywords 5.1.0
+│ │   └── ajv 8.18.0 peer
+│ ├─┬ webpack 5.105.3 peer
+│ │ ├─┬ schema-utils 4.3.3
+│ │ │ ├── ajv 8.18.0
+│ │ │ ├─┬ ajv-formats 2.1.1
+│ │ │ │ └── ajv 8.18.0 peer
+│ │ │ └─┬ ajv-keywords 5.1.0
+│ │ │   └── ajv 8.18.0 peer
+│ │ └─┬ terser-webpack-plugin 5.3.16
+│ │   └─┬ schema-utils 4.3.3
+│ │     ├── ajv 8.18.0
+│ │     ├─┬ ajv-formats 2.1.1
+│ │     │ └── ajv 8.18.0 peer
+│ │     └─┬ ajv-keywords 5.1.0
+│ │       └── ajv 8.18.0 peer
+│ └─┬ webpack-dev-middleware 7.4.5
+│   ├─┬ schema-utils 4.3.3
+│   │ ├── ajv 8.18.0
+│   │ ├─┬ ajv-formats 2.1.1
+│   │ │ └── ajv 8.18.0 peer
+│   │ └─┬ ajv-keywords 5.1.0
+│   │   └── ajv 8.18.0 peer
+│   └─┬ webpack 5.105.3 peer
+│     ├─┬ schema-utils 4.3.3
+│     │ ├── ajv 8.18.0
+│     │ ├─┬ ajv-formats 2.1.1
+│     │ │ └── ajv 8.18.0 peer
+│     │ └─┬ ajv-keywords 5.1.0
+│     │   └── ajv 8.18.0 peer
+│     └─┬ terser-webpack-plugin 5.3.16
+│       └─┬ schema-utils 4.3.3
+│         ├── ajv 8.18.0
+│         ├─┬ ajv-formats 2.1.1
+│         │ └── ajv 8.18.0 peer
+│         └─┬ ajv-keywords 5.1.0
+│           └── ajv 8.18.0 peer
+└─┬ webpack-subresource-integrity 5.1.0
+  └─┬ webpack 5.94.0 peer
+    ├─┬ schema-utils 3.3.0
+    │ ├── ajv 6.14.0
+    │ └─┬ ajv-keywords 3.5.2
+    │   └── ajv 6.14.0 peer
+    └─┬ terser-webpack-plugin 5.3.16
+      └─┬ schema-utils 4.3.3
+        ├── ajv 8.18.0
+        ├─┬ ajv-formats 2.1.1
+        │ └── ajv 8.18.0 peer
+        └─┬ ajv-keywords 5.1.0
+          └── ajv 8.18.0 peer
+@angular-devkit/core 18.2.21
+├── ajv 8.17.1
+└─┬ ajv-formats 3.0.1
+  └── ajv 8.17.1 peer
+@angular-devkit/schematics 18.2.21
+└─┬ @angular-devkit/core 18.2.21
+  ├── ajv 8.17.1
+  └─┬ ajv-formats 3.0.1
+    └── ajv 8.17.1 peer
+@angular-eslint/eslint-plugin-template 21.2.0
+├─┬ @angular-eslint/template-parser 21.2.0 peer
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @angular-eslint/utils 21.2.0
+│ ├─┬ @typescript-eslint/utils 8.56.1 peer
+│ │ └─┬ eslint 9.39.3 peer
+│ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │   │ └── ajv 6.14.0
+│ │   └── ajv 6.14.0
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @typescript-eslint/utils 8.56.1 peer
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+└─┬ eslint 9.39.3 peer
+  ├─┬ @eslint/eslintrc 3.3.4
+  │ └── ajv 6.14.0
+  └── ajv 6.14.0
+@angular-eslint/template-parser 21.2.0
+└─┬ eslint 9.39.3 peer
+  ├─┬ @eslint/eslintrc 3.3.4
+  │ └── ajv 6.14.0
+  └── ajv 6.14.0
+@angular/cli 18.2.21
+├─┬ @angular-devkit/architect 0.1802.21
+│ └─┬ @angular-devkit/core 18.2.21
+│   ├── ajv 8.17.1
+│   └─┬ ajv-formats 3.0.1
+│     └── ajv 8.17.1 peer
+├─┬ @angular-devkit/core 18.2.21
+│ ├── ajv 8.17.1
+│ └─┬ ajv-formats 3.0.1
+│   └── ajv 8.17.1 peer
+├─┬ @angular-devkit/schematics 18.2.21
+│ └─┬ @angular-devkit/core 18.2.21
+│   ├── ajv 8.17.1
+│   └─┬ ajv-formats 3.0.1
+│     └── ajv 8.17.1 peer
+└─┬ @schematics/angular 18.2.21
+  ├─┬ @angular-devkit/core 18.2.21
+  │ ├── ajv 8.17.1
+  │ └─┬ ajv-formats 3.0.1
+  │   └── ajv 8.17.1 peer
+  └─┬ @angular-devkit/schematics 18.2.21
+    └─┬ @angular-devkit/core 18.2.21
+      ├── ajv 8.17.1
+      └─┬ ajv-formats 3.0.1
+        └── ajv 8.17.1 peer
+@apidevtools/swagger-parser 12.1.0
+├── ajv 8.18.0
+└─┬ ajv-draft-04 1.0.0
+  └── ajv 8.18.0 peer
+@nrwl/angular 19.8.4
+└─┬ @nx/angular 19.8.4
+  ├─┬ @angular-devkit/build-angular 18.2.21 peer
+  │ ├─┬ @angular-devkit/architect 0.1802.21
+  │ │ └─┬ @angular-devkit/core 18.2.21
+  │ │   ├── ajv 8.17.1
+  │ │   └─┬ ajv-formats 3.0.1
+  │ │     └── ajv 8.17.1 peer
+  │ ├─┬ @angular-devkit/build-webpack 0.1802.21
+  │ │ ├─┬ @angular-devkit/architect 0.1802.21
+  │ │ │ └─┬ @angular-devkit/core 18.2.21
+  │ │ │   ├── ajv 8.17.1
+  │ │ │   └─┬ ajv-formats 3.0.1
+  │ │ │     └── ajv 8.17.1 peer
+  │ │ ├─┬ webpack 5.94.0 peer
+  │ │ │ ├─┬ schema-utils 3.3.0
+  │ │ │ │ ├── ajv 6.14.0
+  │ │ │ │ └─┬ ajv-keywords 3.5.2
+  │ │ │ │   └── ajv 6.14.0 peer
+  │ │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │ │   └─┬ schema-utils 4.3.3
+  │ │ │     ├── ajv 8.18.0
+  │ │ │     ├─┬ ajv-formats 2.1.1
+  │ │ │     │ └── ajv 8.18.0 peer
+  │ │ │     └─┬ ajv-keywords 5.1.0
+  │ │ │       └── ajv 8.18.0 peer
+  │ │ └─┬ webpack-dev-server 5.2.2 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   ├─┬ webpack 5.105.3 peer
+  │ │   │ ├─┬ schema-utils 4.3.3
+  │ │   │ │ ├── ajv 8.18.0
+  │ │   │ │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ │ └── ajv 8.18.0 peer
+  │ │   │ │ └─┬ ajv-keywords 5.1.0
+  │ │   │ │   └── ajv 8.18.0 peer
+  │ │   │ └─┬ terser-webpack-plugin 5.3.16
+  │ │   │   └─┬ schema-utils 4.3.3
+  │ │   │     ├── ajv 8.18.0
+  │ │   │     ├─┬ ajv-formats 2.1.1
+  │ │   │     │ └── ajv 8.18.0 peer
+  │ │   │     └─┬ ajv-keywords 5.1.0
+  │ │   │       └── ajv 8.18.0 peer
+  │ │   └─┬ webpack-dev-middleware 7.4.5
+  │ │     ├─┬ schema-utils 4.3.3
+  │ │     │ ├── ajv 8.18.0
+  │ │     │ ├─┬ ajv-formats 2.1.1
+  │ │     │ │ └── ajv 8.18.0 peer
+  │ │     │ └─┬ ajv-keywords 5.1.0
+  │ │     │   └── ajv 8.18.0 peer
+  │ │     └─┬ webpack 5.105.3 peer
+  │ │       ├─┬ schema-utils 4.3.3
+  │ │       │ ├── ajv 8.18.0
+  │ │       │ ├─┬ ajv-formats 2.1.1
+  │ │       │ │ └── ajv 8.18.0 peer
+  │ │       │ └─┬ ajv-keywords 5.1.0
+  │ │       │   └── ajv 8.18.0 peer
+  │ │       └─┬ terser-webpack-plugin 5.3.16
+  │ │         └─┬ schema-utils 4.3.3
+  │ │           ├── ajv 8.18.0
+  │ │           ├─┬ ajv-formats 2.1.1
+  │ │           │ └── ajv 8.18.0 peer
+  │ │           └─┬ ajv-keywords 5.1.0
+  │ │             └── ajv 8.18.0 peer
+  │ ├─┬ @angular-devkit/core 18.2.21
+  │ │ ├── ajv 8.17.1
+  │ │ └─┬ ajv-formats 3.0.1
+  │ │   └── ajv 8.17.1 peer
+  │ ├─┬ @angular/build 18.2.21
+  │ │ └─┬ @angular-devkit/architect 0.1802.21
+  │ │   └─┬ @angular-devkit/core 18.2.21
+  │ │     ├── ajv 8.17.1
+  │ │     └─┬ ajv-formats 3.0.1
+  │ │       └── ajv 8.17.1 peer
+  │ ├─┬ @ngtools/webpack 18.2.21
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ babel-loader 9.1.3
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ copy-webpack-plugin 12.0.2
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ css-loader 7.1.2
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ less-loader 12.2.0
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ license-webpack-plugin 4.0.2
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ mini-css-extract-plugin 2.9.0
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ postcss-loader 8.1.1
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ sass-loader 16.0.0
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ source-map-loader 5.0.0
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ webpack 5.94.0
+  │ │ ├─┬ schema-utils 3.3.0
+  │ │ │ ├── ajv 6.14.0
+  │ │ │ └─┬ ajv-keywords 3.5.2
+  │ │ │   └── ajv 6.14.0 peer
+  │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │   └─┬ schema-utils 4.3.3
+  │ │     ├── ajv 8.18.0
+  │ │     ├─┬ ajv-formats 2.1.1
+  │ │     │ └── ajv 8.18.0 peer
+  │ │     └─┬ ajv-keywords 5.1.0
+  │ │       └── ajv 8.18.0 peer
+  │ ├─┬ webpack-dev-middleware 7.4.2
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   ├─┬ schema-utils 3.3.0
+  │ │   │ ├── ajv 6.14.0
+  │ │   │ └─┬ ajv-keywords 3.5.2
+  │ │   │   └── ajv 6.14.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ webpack-dev-server 5.2.2
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ ├─┬ webpack 5.105.3 peer
+  │ │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ │ ├── ajv 8.18.0
+  │ │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │ │   └── ajv 8.18.0 peer
+  │ │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │ │   └─┬ schema-utils 4.3.3
+  │ │ │     ├── ajv 8.18.0
+  │ │ │     ├─┬ ajv-formats 2.1.1
+  │ │ │     │ └── ajv 8.18.0 peer
+  │ │ │     └─┬ ajv-keywords 5.1.0
+  │ │ │       └── ajv 8.18.0 peer
+  │ │ └─┬ webpack-dev-middleware 7.4.5
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ webpack 5.105.3 peer
+  │ │     ├─┬ schema-utils 4.3.3
+  │ │     │ ├── ajv 8.18.0
+  │ │     │ ├─┬ ajv-formats 2.1.1
+  │ │     │ │ └── ajv 8.18.0 peer
+  │ │     │ └─┬ ajv-keywords 5.1.0
+  │ │     │   └── ajv 8.18.0 peer
+  │ │     └─┬ terser-webpack-plugin 5.3.16
+  │ │       └─┬ schema-utils 4.3.3
+  │ │         ├── ajv 8.18.0
+  │ │         ├─┬ ajv-formats 2.1.1
+  │ │         │ └── ajv 8.18.0 peer
+  │ │         └─┬ ajv-keywords 5.1.0
+  │ │           └── ajv 8.18.0 peer
+  │ └─┬ webpack-subresource-integrity 5.1.0
+  │   └─┬ webpack 5.94.0 peer
+  │     ├─┬ schema-utils 3.3.0
+  │     │ ├── ajv 6.14.0
+  │     │ └─┬ ajv-keywords 3.5.2
+  │     │   └── ajv 6.14.0 peer
+  │     └─┬ terser-webpack-plugin 5.3.16
+  │       └─┬ schema-utils 4.3.3
+  │         ├── ajv 8.18.0
+  │         ├─┬ ajv-formats 2.1.1
+  │         │ └── ajv 8.18.0 peer
+  │         └─┬ ajv-keywords 5.1.0
+  │           └── ajv 8.18.0 peer
+  ├─┬ @angular-devkit/core 18.2.21 peer
+  │ ├── ajv 8.17.1
+  │ └─┬ ajv-formats 3.0.1
+  │   └── ajv 8.17.1 peer
+  ├─┬ @angular-devkit/schematics 18.2.21 peer
+  │ └─┬ @angular-devkit/core 18.2.21
+  │   ├── ajv 8.17.1
+  │   └─┬ ajv-formats 3.0.1
+  │     └── ajv 8.17.1 peer
+  ├─┬ @module-federation/enhanced 0.6.16
+  │ └─┬ webpack 5.105.3 peer
+  │   ├─┬ schema-utils 4.3.3
+  │   │ ├── ajv 8.18.0
+  │   │ ├─┬ ajv-formats 2.1.1
+  │   │ │ └── ajv 8.18.0 peer
+  │   │ └─┬ ajv-keywords 5.1.0
+  │   │   └── ajv 8.18.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ @nx/eslint 19.8.4
+  │ └─┬ eslint 9.39.3 peer
+  │   ├─┬ @eslint/eslintrc 3.3.4
+  │   │ └── ajv 6.14.0
+  │   └── ajv 6.14.0
+  ├─┬ @nx/webpack 19.8.4
+  │ ├─┬ @module-federation/enhanced 0.6.16
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├── ajv 8.18.0
+  │ ├─┬ babel-loader 9.2.1
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ copy-webpack-plugin 10.2.4
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ css-loader 6.11.0
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ css-minimizer-webpack-plugin 5.0.1
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ fork-ts-checker-webpack-plugin 7.2.13
+  │ │ ├─┬ schema-utils 3.3.0
+  │ │ │ ├── ajv 6.14.0
+  │ │ │ └─┬ ajv-keywords 3.5.2
+  │ │ │   └── ajv 6.14.0 peer
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ less-loader 11.1.0
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ license-webpack-plugin 4.0.2
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ mini-css-extract-plugin 2.4.7
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ postcss-loader 6.2.1
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ sass-loader 12.6.0
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ source-map-loader 5.0.0
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ style-loader 3.3.4
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ stylus-loader 7.1.3
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ terser-webpack-plugin 5.3.16
+  │ │ └─┬ schema-utils 4.3.3
+  │ │   ├── ajv 8.18.0
+  │ │   ├─┬ ajv-formats 2.1.1
+  │ │   │ └── ajv 8.18.0 peer
+  │ │   └─┬ ajv-keywords 5.1.0
+  │ │     └── ajv 8.18.0 peer
+  │ ├─┬ ts-loader 9.5.4
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └─┬ schema-utils 4.3.3
+  │ │       ├── ajv 8.18.0
+  │ │       ├─┬ ajv-formats 2.1.1
+  │ │       │ └── ajv 8.18.0 peer
+  │ │       └─┬ ajv-keywords 5.1.0
+  │ │         └── ajv 8.18.0 peer
+  │ ├─┬ webpack 5.105.3
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │   └─┬ schema-utils 4.3.3
+  │ │     ├── ajv 8.18.0
+  │ │     ├─┬ ajv-formats 2.1.1
+  │ │     │ └── ajv 8.18.0 peer
+  │ │     └─┬ ajv-keywords 5.1.0
+  │ │       └── ajv 8.18.0 peer
+  │ ├─┬ webpack-dev-server 5.2.3
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ ├─┬ webpack 5.105.3 peer
+  │ │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ │ ├── ajv 8.18.0
+  │ │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │ │   └── ajv 8.18.0 peer
+  │ │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │ │   └─┬ schema-utils 4.3.3
+  │ │ │     ├── ajv 8.18.0
+  │ │ │     ├─┬ ajv-formats 2.1.1
+  │ │ │     │ └── ajv 8.18.0 peer
+  │ │ │     └─┬ ajv-keywords 5.1.0
+  │ │ │       └── ajv 8.18.0 peer
+  │ │ └─┬ webpack-dev-middleware 7.4.5
+  │ │   ├─┬ schema-utils 4.3.3
+  │ │   │ ├── ajv 8.18.0
+  │ │   │ ├─┬ ajv-formats 2.1.1
+  │ │   │ │ └── ajv 8.18.0 peer
+  │ │   │ └─┬ ajv-keywords 5.1.0
+  │ │   │   └── ajv 8.18.0 peer
+  │ │   └─┬ webpack 5.105.3 peer
+  │ │     ├─┬ schema-utils 4.3.3
+  │ │     │ ├── ajv 8.18.0
+  │ │     │ ├─┬ ajv-formats 2.1.1
+  │ │     │ │ └── ajv 8.18.0 peer
+  │ │     │ └─┬ ajv-keywords 5.1.0
+  │ │     │   └── ajv 8.18.0 peer
+  │ │     └─┬ terser-webpack-plugin 5.3.16
+  │ │       └─┬ schema-utils 4.3.3
+  │ │         ├── ajv 8.18.0
+  │ │         ├─┬ ajv-formats 2.1.1
+  │ │         │ └── ajv 8.18.0 peer
+  │ │         └─┬ ajv-keywords 5.1.0
+  │ │           └── ajv 8.18.0 peer
+  │ └─┬ webpack-subresource-integrity 5.1.0
+  │   └─┬ webpack 5.105.3 peer
+  │     ├─┬ schema-utils 4.3.3
+  │     │ ├── ajv 8.18.0
+  │     │ ├─┬ ajv-formats 2.1.1
+  │     │ │ └── ajv 8.18.0 peer
+  │     │ └─┬ ajv-keywords 5.1.0
+  │     │   └── ajv 8.18.0 peer
+  │     └─┬ terser-webpack-plugin 5.3.16
+  │       └─┬ schema-utils 4.3.3
+  │         ├── ajv 8.18.0
+  │         ├─┬ ajv-formats 2.1.1
+  │         │ └── ajv 8.18.0 peer
+  │         └─┬ ajv-keywords 5.1.0
+  │           └── ajv 8.18.0 peer
+  ├─┬ @schematics/angular 18.2.21 peer
+  │ ├─┬ @angular-devkit/core 18.2.21
+  │ │ ├── ajv 8.17.1
+  │ │ └─┬ ajv-formats 3.0.1
+  │ │   └── ajv 8.17.1 peer
+  │ └─┬ @angular-devkit/schematics 18.2.21
+  │   └─┬ @angular-devkit/core 18.2.21
+  │     ├── ajv 8.17.1
+  │     └─┬ ajv-formats 3.0.1
+  │       └── ajv 8.17.1 peer
+  ├─┬ @typescript-eslint/type-utils 8.56.1
+  │ ├─┬ @typescript-eslint/utils 8.56.1
+  │ │ └─┬ eslint 9.39.3 peer
+  │ │   ├─┬ @eslint/eslintrc 3.3.4
+  │ │   │ └── ajv 6.14.0
+  │ │   └── ajv 6.14.0
+  │ └─┬ eslint 9.39.3 peer
+  │   ├─┬ @eslint/eslintrc 3.3.4
+  │   │ └── ajv 6.14.0
+  │   └── ajv 6.14.0
+  └─┬ webpack 5.105.3
+    ├─┬ schema-utils 4.3.3
+    │ ├── ajv 8.18.0
+    │ ├─┬ ajv-formats 2.1.1
+    │ │ └── ajv 8.18.0 peer
+    │ └─┬ ajv-keywords 5.1.0
+    │   └── ajv 8.18.0 peer
+    └─┬ terser-webpack-plugin 5.3.16
+      └─┬ schema-utils 4.3.3
+        ├── ajv 8.18.0
+        ├─┬ ajv-formats 2.1.1
+        │ └── ajv 8.18.0 peer
+        └─┬ ajv-keywords 5.1.0
+          └── ajv 8.18.0 peer
+@nx/cypress 19.8.4
+└─┬ @nx/eslint 19.8.4
+  └─┬ eslint 9.39.3 peer
+    ├─┬ @eslint/eslintrc 3.3.4
+    │ └── ajv 6.14.0
+    └── ajv 6.14.0
+@nx/eslint 19.8.4
+└─┬ eslint 9.39.3 peer
+  ├─┬ @eslint/eslintrc 3.3.4
+  │ └── ajv 6.14.0
+  └── ajv 6.14.0
+@nx/eslint-plugin 19.8.4
+├─┬ @eslint/compat 1.4.1
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @typescript-eslint/parser 8.56.1 peer
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @typescript-eslint/type-utils 8.56.1
+│ ├─┬ @typescript-eslint/utils 8.56.1
+│ │ └─┬ eslint 9.39.3 peer
+│ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │   │ └── ajv 6.14.0
+│ │   └── ajv 6.14.0
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @typescript-eslint/utils 8.56.1
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+└─┬ eslint-config-prettier 9.1.2 peer
+  └─┬ eslint 9.39.3 peer
+    ├─┬ @eslint/eslintrc 3.3.4
+    │ └── ajv 6.14.0
+    └── ajv 6.14.0
+@schematics/angular 18.2.21
+├─┬ @angular-devkit/core 18.2.21
+│ ├── ajv 8.17.1
+│ └─┬ ajv-formats 3.0.1
+│   └── ajv 8.17.1 peer
+└─┬ @angular-devkit/schematics 18.2.21
+  └─┬ @angular-devkit/core 18.2.21
+    ├── ajv 8.17.1
+    └─┬ ajv-formats 3.0.1
+      └── ajv 8.17.1 peer
+@typescript-eslint/utils 8.56.1
+├─┬ @eslint-community/eslint-utils 4.9.1
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+└─┬ eslint 9.39.3 peer
+  ├─┬ @eslint/eslintrc 3.3.4
+  │ └── ajv 6.14.0
+  └── ajv 6.14.0
+ajv 8.18.0
+ajv-formats 3.0.1
+└── ajv 8.18.0 peer
+angular-eslint 18.4.3
+├─┬ @angular-devkit/core 18.2.21
+│ ├── ajv 8.17.1
+│ └─┬ ajv-formats 3.0.1
+│   └── ajv 8.17.1 peer
+├─┬ @angular-devkit/schematics 18.2.21
+│ └─┬ @angular-devkit/core 18.2.21
+│   ├── ajv 8.17.1
+│   └─┬ ajv-formats 3.0.1
+│     └── ajv 8.17.1 peer
+├─┬ @angular-eslint/builder 18.4.3
+│ ├─┬ @angular-devkit/architect 0.1802.21
+│ │ └─┬ @angular-devkit/core 18.2.21
+│ │   ├── ajv 8.17.1
+│ │   └─┬ ajv-formats 3.0.1
+│ │     └── ajv 8.17.1 peer
+│ ├─┬ @angular-devkit/core 18.2.21
+│ │ ├── ajv 8.17.1
+│ │ └─┬ ajv-formats 3.0.1
+│ │   └── ajv 8.17.1 peer
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @angular-eslint/eslint-plugin 18.4.3
+│ ├─┬ @angular-eslint/utils 18.4.3
+│ │ ├─┬ @typescript-eslint/utils 8.56.1 peer
+│ │ │ └─┬ eslint 9.39.3 peer
+│ │ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │ │   │ └── ajv 6.14.0
+│ │ │   └── ajv 6.14.0
+│ │ └─┬ eslint 9.39.3 peer
+│ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │   │ └── ajv 6.14.0
+│ │   └── ajv 6.14.0
+│ ├─┬ @typescript-eslint/utils 8.56.1 peer
+│ │ └─┬ eslint 9.39.3 peer
+│ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │   │ └── ajv 6.14.0
+│ │   └── ajv 6.14.0
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @angular-eslint/eslint-plugin-template 18.4.3
+│ ├─┬ @angular-eslint/utils 18.4.3
+│ │ ├─┬ @typescript-eslint/utils 8.56.1 peer
+│ │ │ └─┬ eslint 9.39.3 peer
+│ │ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │ │   │ └── ajv 6.14.0
+│ │ │   └── ajv 6.14.0
+│ │ └─┬ eslint 9.39.3 peer
+│ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │   │ └── ajv 6.14.0
+│ │   └── ajv 6.14.0
+│ ├─┬ @typescript-eslint/utils 8.56.1 peer
+│ │ └─┬ eslint 9.39.3 peer
+│ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │   │ └── ajv 6.14.0
+│ │   └── ajv 6.14.0
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @angular-eslint/schematics 18.4.3
+│ ├─┬ @angular-devkit/core 18.2.21
+│ │ ├── ajv 8.17.1
+│ │ └─┬ ajv-formats 3.0.1
+│ │   └── ajv 8.17.1 peer
+│ ├─┬ @angular-devkit/schematics 18.2.21
+│ │ └─┬ @angular-devkit/core 18.2.21
+│ │   ├── ajv 8.17.1
+│ │   └─┬ ajv-formats 3.0.1
+│ │     └── ajv 8.17.1 peer
+│ ├─┬ @angular-eslint/eslint-plugin 18.4.3
+│ │ ├─┬ @angular-eslint/utils 18.4.3
+│ │ │ ├─┬ @typescript-eslint/utils 8.56.1 peer
+│ │ │ │ └─┬ eslint 9.39.3 peer
+│ │ │ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │ │ │   │ └── ajv 6.14.0
+│ │ │ │   └── ajv 6.14.0
+│ │ │ └─┬ eslint 9.39.3 peer
+│ │ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │ │   │ └── ajv 6.14.0
+│ │ │   └── ajv 6.14.0
+│ │ ├─┬ @typescript-eslint/utils 8.56.1 peer
+│ │ │ └─┬ eslint 9.39.3 peer
+│ │ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │ │   │ └── ajv 6.14.0
+│ │ │   └── ajv 6.14.0
+│ │ └─┬ eslint 9.39.3 peer
+│ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │   │ └── ajv 6.14.0
+│ │   └── ajv 6.14.0
+│ └─┬ @angular-eslint/eslint-plugin-template 18.4.3
+│   ├─┬ @angular-eslint/utils 18.4.3
+│   │ ├─┬ @typescript-eslint/utils 8.56.1 peer
+│   │ │ └─┬ eslint 9.39.3 peer
+│   │ │   ├─┬ @eslint/eslintrc 3.3.4
+│   │ │   │ └── ajv 6.14.0
+│   │ │   └── ajv 6.14.0
+│   │ └─┬ eslint 9.39.3 peer
+│   │   ├─┬ @eslint/eslintrc 3.3.4
+│   │   │ └── ajv 6.14.0
+│   │   └── ajv 6.14.0
+│   ├─┬ @typescript-eslint/utils 8.56.1 peer
+│   │ └─┬ eslint 9.39.3 peer
+│   │   ├─┬ @eslint/eslintrc 3.3.4
+│   │   │ └── ajv 6.14.0
+│   │   └── ajv 6.14.0
+│   └─┬ eslint 9.39.3 peer
+│     ├─┬ @eslint/eslintrc 3.3.4
+│     │ └── ajv 6.14.0
+│     └── ajv 6.14.0
+├─┬ @angular-eslint/template-parser 18.4.3
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @typescript-eslint/utils 8.56.1
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ eslint 9.39.3 peer
+│ ├─┬ @eslint/eslintrc 3.3.4
+│ │ └── ajv 6.14.0
+│ └── ajv 6.14.0
+└─┬ typescript-eslint 8.56.1 peer
+  ├─┬ @typescript-eslint/eslint-plugin 8.56.1
+  │ ├─┬ @typescript-eslint/parser 8.56.1 peer
+  │ │ └─┬ eslint 9.39.3 peer
+  │ │   ├─┬ @eslint/eslintrc 3.3.4
+  │ │   │ └── ajv 6.14.0
+  │ │   └── ajv 6.14.0
+  │ ├─┬ @typescript-eslint/type-utils 8.56.1
+  │ │ ├─┬ @typescript-eslint/utils 8.56.1
+  │ │ │ └─┬ eslint 9.39.3 peer
+  │ │ │   ├─┬ @eslint/eslintrc 3.3.4
+  │ │ │   │ └── ajv 6.14.0
+  │ │ │   └── ajv 6.14.0
+  │ │ └─┬ eslint 9.39.3 peer
+  │ │   ├─┬ @eslint/eslintrc 3.3.4
+  │ │   │ └── ajv 6.14.0
+  │ │   └── ajv 6.14.0
+  │ ├─┬ @typescript-eslint/utils 8.56.1
+  │ │ └─┬ eslint 9.39.3 peer
+  │ │   ├─┬ @eslint/eslintrc 3.3.4
+  │ │   │ └── ajv 6.14.0
+  │ │   └── ajv 6.14.0
+  │ └─┬ eslint 9.39.3 peer
+  │   ├─┬ @eslint/eslintrc 3.3.4
+  │   │ └── ajv 6.14.0
+  │   └── ajv 6.14.0
+  ├─┬ @typescript-eslint/parser 8.56.1
+  │ └─┬ eslint 9.39.3 peer
+  │   ├─┬ @eslint/eslintrc 3.3.4
+  │   │ └── ajv 6.14.0
+  │   └── ajv 6.14.0
+  ├─┬ @typescript-eslint/utils 8.56.1
+  │ └─┬ eslint 9.39.3 peer
+  │   ├─┬ @eslint/eslintrc 3.3.4
+  │   │ └── ajv 6.14.0
+  │   └── ajv 6.14.0
+  └─┬ eslint 9.39.3 peer
+    ├─┬ @eslint/eslintrc 3.3.4
+    │ └── ajv 6.14.0
+    └── ajv 6.14.0
+eslint 9.39.3
+├─┬ @eslint/eslintrc 3.3.4
+│ └── ajv 6.14.0
+└── ajv 6.14.0
+eslint-config-prettier 9.1.2
+└─┬ eslint 9.39.3 peer
+  ├─┬ @eslint/eslintrc 3.3.4
+  │ └── ajv 6.14.0
+  └── ajv 6.14.0
+eslint-plugin-cypress 3.6.0
+└─┬ eslint 9.39.3 peer
+  ├─┬ @eslint/eslintrc 3.3.4
+  │ └── ajv 6.14.0
+  └── ajv 6.14.0
+jest-preset-angular 14.1.1
+└─┬ @angular-devkit/build-angular 18.2.21 peer
+  ├─┬ @angular-devkit/architect 0.1802.21
+  │ └─┬ @angular-devkit/core 18.2.21
+  │   ├── ajv 8.17.1
+  │   └─┬ ajv-formats 3.0.1
+  │     └── ajv 8.17.1 peer
+  ├─┬ @angular-devkit/build-webpack 0.1802.21
+  │ ├─┬ @angular-devkit/architect 0.1802.21
+  │ │ └─┬ @angular-devkit/core 18.2.21
+  │ │   ├── ajv 8.17.1
+  │ │   └─┬ ajv-formats 3.0.1
+  │ │     └── ajv 8.17.1 peer
+  │ ├─┬ webpack 5.94.0 peer
+  │ │ ├─┬ schema-utils 3.3.0
+  │ │ │ ├── ajv 6.14.0
+  │ │ │ └─┬ ajv-keywords 3.5.2
+  │ │ │   └── ajv 6.14.0 peer
+  │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │   └─┬ schema-utils 4.3.3
+  │ │     ├── ajv 8.18.0
+  │ │     ├─┬ ajv-formats 2.1.1
+  │ │     │ └── ajv 8.18.0 peer
+  │ │     └─┬ ajv-keywords 5.1.0
+  │ │       └── ajv 8.18.0 peer
+  │ └─┬ webpack-dev-server 5.2.2 peer
+  │   ├─┬ schema-utils 4.3.3
+  │   │ ├── ajv 8.18.0
+  │   │ ├─┬ ajv-formats 2.1.1
+  │   │ │ └── ajv 8.18.0 peer
+  │   │ └─┬ ajv-keywords 5.1.0
+  │   │   └── ajv 8.18.0 peer
+  │   ├─┬ webpack 5.105.3 peer
+  │   │ ├─┬ schema-utils 4.3.3
+  │   │ │ ├── ajv 8.18.0
+  │   │ │ ├─┬ ajv-formats 2.1.1
+  │   │ │ │ └── ajv 8.18.0 peer
+  │   │ │ └─┬ ajv-keywords 5.1.0
+  │   │ │   └── ajv 8.18.0 peer
+  │   │ └─┬ terser-webpack-plugin 5.3.16
+  │   │   └─┬ schema-utils 4.3.3
+  │   │     ├── ajv 8.18.0
+  │   │     ├─┬ ajv-formats 2.1.1
+  │   │     │ └── ajv 8.18.0 peer
+  │   │     └─┬ ajv-keywords 5.1.0
+  │   │       └── ajv 8.18.0 peer
+  │   └─┬ webpack-dev-middleware 7.4.5
+  │     ├─┬ schema-utils 4.3.3
+  │     │ ├── ajv 8.18.0
+  │     │ ├─┬ ajv-formats 2.1.1
+  │     │ │ └── ajv 8.18.0 peer
+  │     │ └─┬ ajv-keywords 5.1.0
+  │     │   └── ajv 8.18.0 peer
+  │     └─┬ webpack 5.105.3 peer
+  │       ├─┬ schema-utils 4.3.3
+  │       │ ├── ajv 8.18.0
+  │       │ ├─┬ ajv-formats 2.1.1
+  │       │ │ └── ajv 8.18.0 peer
+  │       │ └─┬ ajv-keywords 5.1.0
+  │       │   └── ajv 8.18.0 peer
+  │       └─┬ terser-webpack-plugin 5.3.16
+  │         └─┬ schema-utils 4.3.3
+  │           ├── ajv 8.18.0
+  │           ├─┬ ajv-formats 2.1.1
+  │           │ └── ajv 8.18.0 peer
+  │           └─┬ ajv-keywords 5.1.0
+  │             └── ajv 8.18.0 peer
+  ├─┬ @angular-devkit/core 18.2.21
+  │ ├── ajv 8.17.1
+  │ └─┬ ajv-formats 3.0.1
+  │   └── ajv 8.17.1 peer
+  ├─┬ @angular/build 18.2.21
+  │ └─┬ @angular-devkit/architect 0.1802.21
+  │   └─┬ @angular-devkit/core 18.2.21
+  │     ├── ajv 8.17.1
+  │     └─┬ ajv-formats 3.0.1
+  │       └── ajv 8.17.1 peer
+  ├─┬ @ngtools/webpack 18.2.21
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ babel-loader 9.1.3
+  │ ├─┬ schema-utils 4.3.3
+  │ │ ├── ajv 8.18.0
+  │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ └── ajv 8.18.0 peer
+  │ │ └─┬ ajv-keywords 5.1.0
+  │ │   └── ajv 8.18.0 peer
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ copy-webpack-plugin 12.0.2
+  │ ├─┬ schema-utils 4.3.3
+  │ │ ├── ajv 8.18.0
+  │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ └── ajv 8.18.0 peer
+  │ │ └─┬ ajv-keywords 5.1.0
+  │ │   └── ajv 8.18.0 peer
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ css-loader 7.1.2
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ less-loader 12.2.0
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ license-webpack-plugin 4.0.2
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ mini-css-extract-plugin 2.9.0
+  │ ├─┬ schema-utils 4.3.3
+  │ │ ├── ajv 8.18.0
+  │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ └── ajv 8.18.0 peer
+  │ │ └─┬ ajv-keywords 5.1.0
+  │ │   └── ajv 8.18.0 peer
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ postcss-loader 8.1.1
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ sass-loader 16.0.0
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ source-map-loader 5.0.0
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ webpack 5.94.0
+  │ ├─┬ schema-utils 3.3.0
+  │ │ ├── ajv 6.14.0
+  │ │ └─┬ ajv-keywords 3.5.2
+  │ │   └── ajv 6.14.0 peer
+  │ └─┬ terser-webpack-plugin 5.3.16
+  │   └─┬ schema-utils 4.3.3
+  │     ├── ajv 8.18.0
+  │     ├─┬ ajv-formats 2.1.1
+  │     │ └── ajv 8.18.0 peer
+  │     └─┬ ajv-keywords 5.1.0
+  │       └── ajv 8.18.0 peer
+  ├─┬ webpack-dev-middleware 7.4.2
+  │ ├─┬ schema-utils 4.3.3
+  │ │ ├── ajv 8.18.0
+  │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ └── ajv 8.18.0 peer
+  │ │ └─┬ ajv-keywords 5.1.0
+  │ │   └── ajv 8.18.0 peer
+  │ └─┬ webpack 5.94.0 peer
+  │   ├─┬ schema-utils 3.3.0
+  │   │ ├── ajv 6.14.0
+  │   │ └─┬ ajv-keywords 3.5.2
+  │   │   └── ajv 6.14.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └─┬ schema-utils 4.3.3
+  │       ├── ajv 8.18.0
+  │       ├─┬ ajv-formats 2.1.1
+  │       │ └── ajv 8.18.0 peer
+  │       └─┬ ajv-keywords 5.1.0
+  │         └── ajv 8.18.0 peer
+  ├─┬ webpack-dev-server 5.2.2
+  │ ├─┬ schema-utils 4.3.3
+  │ │ ├── ajv 8.18.0
+  │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ └── ajv 8.18.0 peer
+  │ │ └─┬ ajv-keywords 5.1.0
+  │ │   └── ajv 8.18.0 peer
+  │ ├─┬ webpack 5.105.3 peer
+  │ │ ├─┬ schema-utils 4.3.3
+  │ │ │ ├── ajv 8.18.0
+  │ │ │ ├─┬ ajv-formats 2.1.1
+  │ │ │ │ └── ajv 8.18.0 peer
+  │ │ │ └─┬ ajv-keywords 5.1.0
+  │ │ │   └── ajv 8.18.0 peer
+  │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │   └─┬ schema-utils 4.3.3
+  │ │     ├── ajv 8.18.0
+  │ │     ├─┬ ajv-formats 2.1.1
+  │ │     │ └── ajv 8.18.0 peer
+  │ │     └─┬ ajv-keywords 5.1.0
+  │ │       └── ajv 8.18.0 peer
+  │ └─┬ webpack-dev-middleware 7.4.5
+  │   ├─┬ schema-utils 4.3.3
+  │   │ ├── ajv 8.18.0
+  │   │ ├─┬ ajv-formats 2.1.1
+  │   │ │ └── ajv 8.18.0 peer
+  │   │ └─┬ ajv-keywords 5.1.0
+  │   │   └── ajv 8.18.0 peer
+  │   └─┬ webpack 5.105.3 peer
+  │     ├─┬ schema-utils 4.3.3
+  │     │ ├── ajv 8.18.0
+  │     │ ├─┬ ajv-formats 2.1.1
+  │     │ │ └── ajv 8.18.0 peer
+  │     │ └─┬ ajv-keywords 5.1.0
+  │     │   └── ajv 8.18.0 peer
+  │     └─┬ terser-webpack-plugin 5.3.16
+  │       └─┬ schema-utils 4.3.3
+  │         ├── ajv 8.18.0
+  │         ├─┬ ajv-formats 2.1.1
+  │         │ └── ajv 8.18.0 peer
+  │         └─┬ ajv-keywords 5.1.0
+  │           └── ajv 8.18.0 peer
+  └─┬ webpack-subresource-integrity 5.1.0
+    └─┬ webpack 5.94.0 peer
+      ├─┬ schema-utils 3.3.0
+      │ ├── ajv 6.14.0
+      │ └─┬ ajv-keywords 3.5.2
+      │   └── ajv 6.14.0 peer
+      └─┬ terser-webpack-plugin 5.3.16
+        └─┬ schema-utils 4.3.3
+          ├── ajv 8.18.0
+          ├─┬ ajv-formats 2.1.1
+          │ └── ajv 8.18.0 peer
+          └─┬ ajv-keywords 5.1.0
+            └── ajv 8.18.0 peer
+typescript-eslint 8.56.1
+├─┬ @typescript-eslint/eslint-plugin 8.56.1
+│ ├─┬ @typescript-eslint/parser 8.56.1 peer
+│ │ └─┬ eslint 9.39.3 peer
+│ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │   │ └── ajv 6.14.0
+│ │   └── ajv 6.14.0
+│ ├─┬ @typescript-eslint/type-utils 8.56.1
+│ │ ├─┬ @typescript-eslint/utils 8.56.1
+│ │ │ └─┬ eslint 9.39.3 peer
+│ │ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │ │   │ └── ajv 6.14.0
+│ │ │   └── ajv 6.14.0
+│ │ └─┬ eslint 9.39.3 peer
+│ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │   │ └── ajv 6.14.0
+│ │   └── ajv 6.14.0
+│ ├─┬ @typescript-eslint/utils 8.56.1
+│ │ └─┬ eslint 9.39.3 peer
+│ │   ├─┬ @eslint/eslintrc 3.3.4
+│ │   │ └── ajv 6.14.0
+│ │   └── ajv 6.14.0
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @typescript-eslint/parser 8.56.1
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+├─┬ @typescript-eslint/utils 8.56.1
+│ └─┬ eslint 9.39.3 peer
+│   ├─┬ @eslint/eslintrc 3.3.4
+│   │ └── ajv 6.14.0
+│   └── ajv 6.14.0
+└─┬ eslint 9.39.3 peer
+  ├─┬ @eslint/eslintrc 3.3.4
+  │ └── ajv 6.14.0
+  └── ajv 6.14.0
+      0 [main] sh 24697! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.

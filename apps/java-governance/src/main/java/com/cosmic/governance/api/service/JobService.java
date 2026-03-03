@@ -169,6 +169,18 @@ public class JobService {
                     JobRecord rec = marshaller.toJobRecord(o);
                     if (rec == null) continue;
                     if (rec.getState() == JobState.QUEUED) {
+                        // skip jobs explicitly marked as deferred (pre-seeded samples)
+                        Map<String, Object> paramsObjCheck = rec.getParameters() == null ? Map.<String, Object>of() : rec.getParameters();
+                        boolean deferred = false;
+                        if (paramsObjCheck.containsKey("deferred")) {
+                            Object dv = paramsObjCheck.get("deferred");
+                            if (dv instanceof Boolean) deferred = (Boolean) dv;
+                            else deferred = "true".equalsIgnoreCase(String.valueOf(dv));
+                        }
+                        if (deferred) {
+                            log.info("Skipping deferred queued job {} (awaiting release)", rec.getJobId());
+                            continue;
+                        }
                         String executorName = "simulator";
                         var paramsObj = rec.getParameters() == null ? Map.<String, Object>of() : rec.getParameters();
                         if (paramsObj.containsKey("executor")) executorName = String.valueOf(paramsObj.get("executor"));
@@ -189,6 +201,47 @@ public class JobService {
         } catch (Exception ex) {
             log.error("Queued job dispatch scan failed", ex);
         }
+    }
+
+    /**
+     * Release queued sample jobs that were marked deferred by removing the deferred flag.
+     * Returns number of jobs released.
+     */
+    public int releaseDeferredJobs() {
+        int released = 0;
+        try {
+            var keys = keys(KEY_PREFIX + "*");
+            if (keys == null) return 0;
+            for (String k : keys) {
+                if (k == null || k.chars().filter(ch -> ch == ':').count() != 1) continue;
+                try {
+                    Object o = getValue(k);
+                    JobRecord rec = marshaller.toJobRecord(o);
+                    if (rec == null) continue;
+                    if (rec.getState() == JobState.QUEUED) {
+                        Map<String, Object> params = rec.getParameters() == null ? Map.of() : rec.getParameters();
+                        if (params.containsKey("deferred")) {
+                            boolean deferred = false;
+                            Object dv = params.get("deferred");
+                            if (dv instanceof Boolean) deferred = (Boolean) dv;
+                            else deferred = "true".equalsIgnoreCase(String.valueOf(dv));
+                            if (deferred) {
+                                var newParams = new HashMap<String, Object>(params);
+                                newParams.remove("deferred");
+                                rec.setParameters(newParams);
+                                rec.setUpdatedAt(Instant.now().toString());
+                                rec.setVersion(rec.getVersion() + 1);
+                                setValue(k, rec);
+                                released++;
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        } catch (Exception ex) {
+            log.error("Failed to release deferred jobs", ex);
+        }
+        return released;
     }
 
     @PreDestroy
@@ -387,6 +440,20 @@ public class JobService {
         rec.setVersion(rec.getVersion() + 1);
         redisTemplate.opsForValue().set(key, rec);
         return Optional.of(toResponse(rec));
+    }
+
+    /**
+     * Delete a job record from the backing store. Returns true if the job existed and was removed.
+     */
+    public boolean deleteJob(String jobId) {
+        String key = KEY_PREFIX + jobId;
+        try {
+            if (redisTemplate != null) {
+                Boolean removed = redisTemplate.delete(key);
+                return removed != null && removed;
+            }
+        } catch (Throwable ignored) {}
+        return inMemoryStore.remove(key) != null;
     }
 
     private boolean isValidTransition(JobState from, JobState to) {

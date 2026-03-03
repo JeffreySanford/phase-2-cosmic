@@ -37,8 +37,13 @@ export class JobsService {
 
   constructor(private http: HttpClient) {}
 
-  list(): Observable<JobStatus[]> {
-    return this.http.get<JobStatus[]>(this.base);
+  list(workflow?: string, state?: string, page?: number, size?: number): Observable<JobStatus[]> {
+    const params: Record<string, string> = {};
+    if (workflow) params['workflow'] = workflow;
+    if (state) params['state'] = state;
+    if (page !== undefined) params['page'] = String(page);
+    if (size !== undefined) params['size'] = String(size);
+    return this.http.get<JobStatus[]>(this.base, { params });
   }
 
   // Polling hot observable for the job list.  Subscribers share a single
@@ -140,7 +145,15 @@ export class JobsService {
     return this.http.post<unknown>(`/api/v1/admin/dispatch`, { intervalSeconds: seconds });
   }
 
+  releaseDeferred(): Observable<{ released: number }> {
+    return this.http.post<{ released: number }>(`/api/v1/admin/release-deferred`, {});
+  }
+
   validate(type: string, payload: Record<string, unknown>): Observable<unknown> {
     return this.http.post<unknown>(`${this.base}/validate`, { type, payload });
+  }
+
+  deleteJob(id: string): Observable<unknown> {
+    return this.http.delete(`${this.base}/${id}`);
   }
 }

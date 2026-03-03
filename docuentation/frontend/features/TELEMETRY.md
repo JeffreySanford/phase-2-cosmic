@@ -2,9 +2,9 @@
 
 Alignment anchors
 
-- Frontend UX source of truth: [../../FRONTEND_UI.md](../../FRONTEND_UI.md)
-- Execution backlog: [../../../TODO.md](../../../TODO.md)
-- Delivery plan: [../../../ROADMAP.md](../../../ROADMAP.md)
+- Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
+- Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
+- Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
 
 This document explains how Prometheus metrics are proxied to the frontend and how the telemetry visuals are wired (line chart, histogram, radial gauge). It also documents the endpoints and developer workflow for capturing telemetry screenshots and logs.
 

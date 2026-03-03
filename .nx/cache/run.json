@@ -1,18 +1,18 @@
 {
   "run": {
-    "command": "nx run frontend-e2e:e2e",
-    "startTime": "2026-03-03T05:27:44.729Z",
-    "endTime": "2026-03-03T05:28:10.790Z",
+    "command": "nx test frontend --skip-nx-cache --watch=false",
+    "startTime": "2026-03-03T20:24:14.279Z",
+    "endTime": "2026-03-03T20:24:21.674Z",
     "inner": false
   },
   "tasks": [
     {
-      "taskId": "frontend-e2e:e2e",
-      "target": "e2e",
-      "projectName": "frontend-e2e",
-      "hash": "14841296676057862650",
-      "startTime": "2026-03-03T05:27:44.771Z",
-      "endTime": "2026-03-03T05:28:10.776Z",
+      "taskId": "frontend:test",
+      "target": "test",
+      "projectName": "frontend",
+      "hash": "13490415491114417619",
+      "startTime": "2026-03-03T20:24:14.287Z",
+      "endTime": "2026-03-03T20:24:21.671Z",
       "params": "",
       "cacheStatus": "cache-miss",
       "status": 0

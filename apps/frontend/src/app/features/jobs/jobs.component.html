@@ -5,8 +5,33 @@
     <div class="toolbar">
       <button mat-raised-button color="primary" (click)="openSubmit()">New Job</button>
       <button mat-stroked-button (click)="reload()">Refresh</button>
+      <button mat-stroked-button color="accent" (click)="addFiveJobs()">Add five jobs</button>
+      <button mat-stroked-button color="warn" (click)="releaseDeferred()">Release deferred samples</button>
+      <button mat-stroked-button color="primary" (click)="toggleFilter()">Filter</button>
       <span class="spacer"></span>
-      <div *ngIf="loading">Loading…</div>
+      <div *ngIf="loading" class="loading-inline">
+        <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+      </div>
+    </div>
+
+    <div *ngIf="filterVisible" class="filter-panel">
+      <h4>Filter Jobs</h4>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <label>Workflow:</label>
+        <input type="text" [(ngModel)]="filterWorkflow" placeholder="e.g. import" />
+        <label>State:</label>
+        <select [(ngModel)]="filterState">
+          <option [ngValue]="null">(any)</option>
+          <option value="QUEUED">QUEUED</option>
+          <option value="RUNNING">RUNNING</option>
+          <option value="COMPLETED">COMPLETED</option>
+          <option value="FAILED">FAILED</option>
+          <option value="CANCELED">CANCELED</option>
+          <option value="TIMED_OUT">TIMED_OUT</option>
+        </select>
+        <button mat-stroked-button (click)="applyFilter()">Apply</button>
+        <button mat-button (click)="clearFilter()">Clear</button>
+      </div>
     </div>
 
     <div class="list">
@@ -22,7 +47,7 @@
             <td>{{ j.createdAt | date:'short' }}</td>
             <td>{{ j.updatedAt | date:'short' }}</td>
             <td>
-              <button mat-button (click)="view(j)">View</button>
+              <button mat-stroked-button (click)="view(j)">View</button>
               <mat-menu #m="matMenu">
                 <button mat-menu-item (click)="transition(j,'QUEUED')">Queue</button>
                 <button mat-menu-item (click)="transition(j,'RUNNING')">Run</button>
@@ -53,6 +78,11 @@
       <div>Created: {{ selectedJob.createdAt | date:'medium' }}</div>
       <div>Updated: {{ selectedJob.updatedAt | date:'medium' }}</div>
       <pre class="payload">{{ selectedJob.parameters | json }}</pre>
+
+      <div style="margin-top:8px;">
+        <button mat-stroked-button (click)="fetchLogs(selectedJob.jobId)">Refresh Logs</button>
+        <button mat-stroked-button color="warn" *ngIf="selectedJob.status === 'COMPLETED'" (click)="removeViewed()">Remove</button>
+      </div>
 
       <div class="logs">
         <h4>Logs</h4>

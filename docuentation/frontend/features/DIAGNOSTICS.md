@@ -2,9 +2,9 @@
 
 Alignment anchors
 
-- Frontend UX source of truth: [../../FRONTEND_UI.md](../../FRONTEND_UI.md)
-- Execution backlog: [../../../TODO.md](../../../TODO.md)
-- Delivery plan: [../../../ROADMAP.md](../../../ROADMAP.md)
+- Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
+- Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
+- Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
 
 This document describes the diagnostics that run inside the `data-generator` container image, where their artifacts land, and how to use them for troubleshooting or capacity planning.
 

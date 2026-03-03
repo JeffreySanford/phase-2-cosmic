@@ -40,13 +40,14 @@ public class KafkaIngestListener {
             Set<ConstraintViolation<JobSubmitRequest>> violations = validator.validate(req);
             if (!violations.isEmpty()) {
                 log.warn("Kafka message failed validation: {}", violations);
-                return;
+                throw new IllegalArgumentException("Kafka message validation failed: " + violations);
             }
 
             log.info("Received Kafka event for workflow={} datasetId={}", workflow, datasetId);
             jobService.submit(req);
         } catch (Exception ex) {
             log.warn("Failed to process Kafka message: {}", ex.toString());
+            throw new RuntimeException(ex);
         }
     }
 }

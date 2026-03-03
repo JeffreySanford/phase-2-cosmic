@@ -1,0 +1,47 @@
+      0 [main] bash 24704! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24707 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+    841 [main] sh 24707 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   1792 [main] sh 24707 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   2574 [main] sh 24707 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24708! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sed 24708 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24706 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+    685 [main] sh 24706 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   1299 [main] sh 24706 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24705! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24709! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24710! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] cygpath 24710 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+Legend: production dependency, optional only, dev only
+
+phase-2-cosmic@0.1.0 C:\repos\phase-2-cosmic (PRIVATE)
+
+devDependencies:
+@nrwl/angular 19.8.4
+└─┬ @nx/angular 19.8.4
+  ├─┬ @module-federation/enhanced 0.6.16
+  │ ├─┬ @module-federation/dts-plugin 0.6.16
+  │ │ └── koa 2.15.3
+  │ ├─┬ @module-federation/manifest 0.6.16
+  │ │ └─┬ @module-federation/dts-plugin 0.6.16
+  │ │   └── koa 2.15.3
+  │ └─┬ @module-federation/rspack 0.6.16
+  │   ├─┬ @module-federation/dts-plugin 0.6.16
+  │   │ └── koa 2.15.3
+  │   └─┬ @module-federation/manifest 0.6.16
+  │     └─┬ @module-federation/dts-plugin 0.6.16
+  │       └── koa 2.15.3
+  └─┬ @nx/webpack 19.8.4
+    └─┬ @module-federation/enhanced 0.6.16
+      ├─┬ @module-federation/dts-plugin 0.6.16
+      │ └── koa 2.15.3
+      ├─┬ @module-federation/manifest 0.6.16
+      │ └─┬ @module-federation/dts-plugin 0.6.16
+      │   └── koa 2.15.3
+      └─┬ @module-federation/rspack 0.6.16
+        ├─┬ @module-federation/dts-plugin 0.6.16
+        │ └── koa 2.15.3
+        └─┬ @module-federation/manifest 0.6.16
+          └─┬ @module-federation/dts-plugin 0.6.16
+            └── koa 2.15.3
+      0 [main] sh 24704! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.

@@ -111,7 +111,7 @@ Run these checks against docs/fixtures/UI labels used in the demo:
 
 ## Next Steps After Demo Pass
 
-1. Add `docuentation/NGVLA_REFERENCES.md` and use it as the canonical citation target for demo/domain checks.
+1. Add `docuentation/ngvla/NGVLA_REFERENCES.md` and use it as the canonical citation target for demo/domain checks.
 2. Add NGVLA array fixtures (`main`, `long-baseline`, `sba`) and include them in demo seed data.
 3. Validate API/domain fields for `arraySegment`, `antennaClass`, and `frequencyBandGHz`.
 4. Add regression tests that fail on NGVLA constant drift.

@@ -1,0 +1,66 @@
+import { Component, Inject } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+
+export interface TopologyNodeDialogData {
+  type: 'node';
+  id: string;
+  label?: string;
+  group?: string;
+  description?: string;
+}
+
+export interface TopologyLinkStats {
+  throughput?: number | string; // MB/s or human-readable
+  throughputPct?: string; // e.g. "82%"
+  latencyMs?: number;
+  errorRate?: number | string; // percentage or fraction or string
+}
+
+export interface TopologyLinkDialogData {
+  type: 'link';
+  source: string;
+  target: string;
+  value?: number;
+  stats?: TopologyLinkStats;
+}
+
+export type TopologyInfoDialogData = TopologyNodeDialogData | TopologyLinkDialogData;
+
+@Component({
+  selector: 'app-topology-info-dialog',
+  templateUrl: './topology-info-dialog.component.html',
+})
+export class TopologyInfoDialogComponent {
+  constructor(
+    public dialogRef: MatDialogRef<TopologyInfoDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: TopologyInfoDialogData,
+  ) {}
+
+  close(): void {
+    this.dialogRef.close();
+  }
+
+  private parsePct(s: string | undefined): number | undefined {
+    if (!s) return undefined;
+    const n = Number(s.replace('%', '').trim());
+    return Number.isFinite(n) ? n : undefined;
+  }
+
+  isCritical(): boolean {
+    if (this.data.type !== 'link') return false;
+    const p = this.parsePct(this.data.stats?.throughputPct);
+    return p !== undefined && p >= 95;
+  }
+
+  isHighUtil(): boolean {
+    if (this.data.type !== 'link') return false;
+    const p = this.parsePct(this.data.stats?.throughputPct);
+    return p !== undefined && p >= 75 && p < 95;
+  }
+
+  isNormalUtil(): boolean {
+    if (this.data.type !== 'link') return false;
+    const p = this.parsePct(this.data.stats?.throughputPct);
+    return p !== undefined && p < 75;
+  }
+}

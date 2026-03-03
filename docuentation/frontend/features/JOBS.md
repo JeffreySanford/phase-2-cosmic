@@ -1,9 +1,9 @@
 # Jobs
 
 Alignment anchors
-- Frontend UX source of truth: [../../FRONTEND_UI.md](../../FRONTEND_UI.md)
-- Execution backlog: [../../../TODO.md](../../../TODO.md)
-- Delivery plan: [../../../ROADMAP.md](../../../ROADMAP.md)
+- Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
+- Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
+- Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
 
 Status: `in-progress` (route/page implemented in baseline form; UX/data contract hardening in progress)
 

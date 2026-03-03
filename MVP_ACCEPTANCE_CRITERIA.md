@@ -62,7 +62,7 @@ The MVP must encode and preserve these domain assumptions in docs, fixtures, and
 
 1. All functional and non-functional criteria above pass and are evidenced in demo notes.
 2. Demo checklist passes without undocumented manual workarounds.
-3. Mission linkage remains explicit: each accepted MVP capability maps to at least one mission outcome in `docuentation/NGVLA_MISSION_ALIGNMENT.md`.
+3. Mission linkage remains explicit: each accepted MVP capability maps to at least one mission outcome in `docuentation/ngvla/NGVLA_MISSION_ALIGNMENT.md`.
 4. Deferred post-MVP items (CI hardening, broader security/compliance, production deployment) remain documented in roadmap/backlog.
 
 ## Sources (NGVLA web research)
@@ -78,7 +78,7 @@ All NGVLA values above are treated as reference-design inputs for platform model
 
 ## Post-MVP Next Steps
 
-1. Add `docuentation/NGVLA_REFERENCES.md` as the canonical source map for accepted NGVLA facts.
+1. Add `docuentation/ngvla/NGVLA_REFERENCES.md` as the canonical source map for accepted NGVLA facts.
 2. Add NGVLA array fixtures for `main`, `long-baseline`, and `sba` entities used by local demos.
 3. Extend API/domain contracts to carry `arraySegment`, `antennaClass`, and `frequencyBandGHz` metadata.
 4. Add tests that fail on drift from approved NGVLA constants used in docs/contracts/fixtures.

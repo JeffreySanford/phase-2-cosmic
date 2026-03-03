@@ -1,0 +1,25 @@
+      0 [main] bash 24711! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24714 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+    936 [main] sh 24714 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   1716 [main] sh 24714 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   2507 [main] sh 24714 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24715! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sed 24715 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24713 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+    470 [main] sh 24713 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+    849 [main] sh 24713 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24712! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24716! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24717! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] cygpath 24717 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+Legend: production dependency, optional only, dev only
+
+phase-2-cosmic@0.1.0 C:\repos\phase-2-cosmic (PRIVATE)
+
+devDependencies:
+@nestjs/core 11.1.14
+└─┬ @nestjs/platform-express 11.1.14 peer
+  └── multer 2.0.2
+@nestjs/platform-express 11.1.14
+└── multer 2.0.2
+      0 [main] sh 24711! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.

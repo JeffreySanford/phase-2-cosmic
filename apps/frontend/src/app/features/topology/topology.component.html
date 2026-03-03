@@ -8,6 +8,34 @@
     <h1>Topology</h1>
     <div class="actions">
       <button (click)="refresh()">Refresh</button>
+      <div class="mode-toggle" style="display:inline-flex; align-items:center; margin-left:12px;">
+      <button (click)="setMode('live')" [class.active]="showMode === 'live'">Live</button>
+      <button (click)="setMode('max')" [class.active]="showMode === 'max'" style="margin-left:6px;">Max</button>
+        <div class="mode-value" style="margin-left:8px; font-size:0.9rem;">
+          <span *ngIf="showMode === 'live'">Total: {{ aggCurrentMBps }} MB/s</span>
+          <span *ngIf="showMode === 'max'">Total: {{ aggMaxMBps }} MB/s</span>
+        </div>
+        <button title="Topology settings" (click)="toggleSettings()" style="margin-left:12px;">⚙️</button>
+      </div>
+    </div>
+
+    <div *ngIf="showSettings" style="padding:12px; border:1px solid #e5e7eb; margin-top:8px; background:#fff;">
+      <label style="display:block; font-weight:600; margin-bottom:6px;">Default per-channel capacity (MB/s)</label>
+      <input type="number" [(ngModel)]="defaultPerChannelMBps" style="width:160px;" />
+      <div style="margin-top:8px;">
+        <label style="display:block; font-weight:600; margin-bottom:6px;">Live poll interval (seconds)</label>
+        <input type="number" [(ngModel)]="pollIntervalSec" style="width:120px;" min="1" />
+      </div>
+      <div style="margin-top:8px;">
+        <label style="display:block; font-weight:600; margin-bottom:6px;">Sensitivity (% change)</label>
+        <input type="number" [(ngModel)]="sensitivityPct" style="width:120px;" min="0" max="100" />
+      </div>
+      <label style="display:block; font-weight:600; margin:8px 0 6px;">Per-link overrides (JSON map: "source->target": MB/s)</label>
+      <textarea [(ngModel)]="settingsJson" rows="6" style="width:100%; font-family: monospace;"></textarea>
+      <div style="margin-top:8px; text-align:right;">
+        <button (click)="saveSettings()">Save</button>
+        <button (click)="showSettings=false" style="margin-left:8px;">Cancel</button>
+      </div>
     </div>
   </div>
 

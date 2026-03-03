@@ -17,6 +17,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -93,6 +94,13 @@ public class GovernanceController {
         return jobService.get(id)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse("job_not_found", id, null)));
+    }
+
+    @DeleteMapping("/jobs/{id}")
+    public ResponseEntity<?> deleteJob(@PathVariable("id") String id) {
+        boolean deleted = jobService.deleteJob(id);
+        if (deleted) return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse("job_not_found", id, null));
     }
 
             @GetMapping("/jobs")
@@ -175,6 +183,12 @@ public class GovernanceController {
             } catch (Exception ex) {
                 return ResponseEntity.badRequest().body(Map.of("error","invalid_intervalSeconds"));
             }
+        }
+
+        @PostMapping("/admin/release-deferred")
+        public ResponseEntity<?> releaseDeferredSamples() {
+            int released = jobService.releaseDeferredJobs();
+            return ResponseEntity.ok(Map.of("released", released));
         }
 
             @PostMapping("/datasets")

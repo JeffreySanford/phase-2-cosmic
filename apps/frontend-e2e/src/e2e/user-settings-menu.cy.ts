@@ -5,7 +5,8 @@ describe('user settings menu', () => {
     cy.get('app-header .user-btn').click();
     cy.contains('.user-menu-item', 'Settings').click();
     cy.contains('h2', 'Operator Settings').should('be.visible');
-    cy.contains('button', 'Save').scrollIntoView().should('be.visible');
+    cy.contains('button', 'Save').scrollIntoView();
+    cy.contains('button', 'Save').should('be.visible');
   });
 
   it('keeps visualizations entry in user menu', () => {

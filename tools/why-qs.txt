@@ -1,0 +1,99 @@
+      0 [main] bash 24718! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24721 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+    865 [main] sh 24721 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   1626 [main] sh 24721 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   2548 [main] sh 24721 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      1 [main] sh 24722! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sed 24722 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24720 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+    956 [main] sh 24720 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   1382 [main] sh 24720 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24719! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24723! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24724! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] cygpath 24724 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+Legend: production dependency, optional only, dev only
+
+phase-2-cosmic@0.1.0 C:\repos\phase-2-cosmic (PRIVATE)
+
+devDependencies:
+@angular-devkit/build-angular 18.2.21
+├─┬ @angular-devkit/build-webpack 0.1802.21
+│ └─┬ webpack-dev-server 5.2.2 peer
+│   └─┬ express 4.22.1
+│     ├─┬ body-parser 1.20.4
+│     │ └── qs 6.14.2
+│     └── qs 6.14.2
+└─┬ webpack-dev-server 5.2.2
+  └─┬ express 4.22.1
+    ├─┬ body-parser 1.20.4
+    │ └── qs 6.14.2
+    └── qs 6.14.2
+@nestjs/core 11.1.14
+└─┬ @nestjs/platform-express 11.1.14 peer
+  └─┬ express 5.2.1
+    ├─┬ body-parser 2.2.2
+    │ └── qs 6.15.0
+    └── qs 6.15.0
+@nestjs/platform-express 11.1.14
+└─┬ express 5.2.1
+  ├─┬ body-parser 2.2.2
+  │ └── qs 6.15.0
+  └── qs 6.15.0
+@nrwl/angular 19.8.4
+└─┬ @nx/angular 19.8.4
+  ├─┬ @angular-devkit/build-angular 18.2.21 peer
+  │ ├─┬ @angular-devkit/build-webpack 0.1802.21
+  │ │ └─┬ webpack-dev-server 5.2.2 peer
+  │ │   └─┬ express 4.22.1
+  │ │     ├─┬ body-parser 1.20.4
+  │ │     │ └── qs 6.14.2
+  │ │     └── qs 6.14.2
+  │ └─┬ webpack-dev-server 5.2.2
+  │   └─┬ express 4.22.1
+  │     ├─┬ body-parser 1.20.4
+  │     │ └── qs 6.14.2
+  │     └── qs 6.14.2
+  ├─┬ @nx/web 19.8.4
+  │ └─┬ http-server 14.1.1
+  │   └─┬ union 0.5.0
+  │     └── qs 6.15.0
+  └─┬ @nx/webpack 19.8.4
+    ├─┬ express 4.22.1
+    │ ├─┬ body-parser 1.20.4
+    │ │ └── qs 6.14.2
+    │ └── qs 6.14.2
+    └─┬ webpack-dev-server 5.2.3
+      └─┬ express 4.22.1
+        ├─┬ body-parser 1.20.4
+        │ └── qs 6.14.2
+        └── qs 6.14.2
+@nx/cypress 19.8.4
+└─┬ cypress 13.17.0 peer
+  └─┬ @cypress/request 3.0.10
+    └── qs 6.14.2
+@nx/web 19.8.4
+└─┬ http-server 14.1.1
+  └─┬ union 0.5.0
+    └── qs 6.15.0
+cypress 13.17.0
+└─┬ @cypress/request 3.0.10
+  └── qs 6.14.2
+express 4.18.3
+├─┬ body-parser 1.20.2
+│ └── qs 6.11.0
+└── qs 6.11.0
+jest-preset-angular 14.1.1
+└─┬ @angular-devkit/build-angular 18.2.21 peer
+  ├─┬ @angular-devkit/build-webpack 0.1802.21
+  │ └─┬ webpack-dev-server 5.2.2 peer
+  │   └─┬ express 4.22.1
+  │     ├─┬ body-parser 1.20.4
+  │     │ └── qs 6.14.2
+  │     └── qs 6.14.2
+  └─┬ webpack-dev-server 5.2.2
+    └─┬ express 4.22.1
+      ├─┬ body-parser 1.20.4
+      │ └── qs 6.14.2
+      └── qs 6.14.2
+      0 [main] sh 24718! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.

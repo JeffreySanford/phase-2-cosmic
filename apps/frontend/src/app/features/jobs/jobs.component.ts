@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { JobsService, JobStatus, JobSubmitRequest } from '../../services/jobs.service';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { interval, Subscription } from 'rxjs';
 import { startWith, switchMap } from 'rxjs/operators';
 import { JobsSubmitDialogComponent } from './jobs-submit-dialog.component';
@@ -14,6 +15,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   jobs: JobStatus[] = [];
   loading = false;
   error: string | null = null;
+  // filter UI
+  filterVisible = false;
+  filterWorkflow: string | null = null;
+  filterState: string | null = null;
   // scanner admin info
   scannerIntervalSeconds: number | null = null;
   scannedCount = 0;
@@ -25,7 +30,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   logs: string[] = [];
   artifacts: { name: string; url: string }[] = [];
 
-  constructor(private jobsSvc: JobsService, private dialog: MatDialog) {}
+  constructor(private jobsSvc: JobsService, private dialog: MatDialog, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     // subscribe to the shared hot list observable; it will poll automatically
@@ -93,6 +98,70 @@ export class JobsComponent implements OnInit, OnDestroy {
     });
   }
 
+  addFiveJobs() {
+    this.loading = true;
+    this.error = null;
+    this.snackBar.open('Submitting 5 sample jobs…', undefined, { duration: 3000 });
+    const submissions: Promise<unknown>[] = [];
+    for (let i = 1; i <= 5; i++) {
+      const req: JobSubmitRequest = {
+        workflow: 'import',
+        datasetId: `sample-ds-${Date.now()}-${i}`,
+        requestedBy: 'ui-sample',
+        parameters: this.generateComplexParameters(i),
+      };
+      const p = this.jobsSvc.submitJob(req).toPromise().then((created) => {
+        if (created && created.jobId) {
+          // fetch full job record and prepend
+          this.jobsSvc.get(created.jobId).subscribe((full) => (this.jobs = [full, ...this.jobs]));
+        }
+      }).catch((e) => (this.error = this.errMsg(e))).finally(() => void 0);
+      submissions.push(p);
+    }
+    Promise.allSettled(submissions).then((results: PromiseSettledResult<unknown>[]) => {
+      this.loading = false;
+      this.jobsSvc.invalidateList();
+      const ok = results.filter((r) => r.status === 'fulfilled').length;
+      const failed = results.length - ok;
+      this.snackBar.open(`Submitted ${ok} jobs${failed ? `, ${failed} failed` : ''}`, undefined, { duration: 4000 });
+    });
+  }
+
+  releaseDeferred() {
+    this.loading = true;
+    this.jobsSvc.releaseDeferred().subscribe(
+      (res) => {
+        this.loading = false;
+        this.snackBar.open(`Released ${res.released} deferred jobs`, undefined, { duration: 3000 });
+        this.jobsSvc.invalidateList();
+      },
+      (err) => {
+        this.loading = false;
+        this.snackBar.open(`Failed to release deferred jobs: ${this.errMsg(err)}`, undefined, { duration: 5000 });
+      }
+    );
+  }
+
+  private generateComplexParameters(index: number): Record<string, unknown> {
+    // emulate NGVLA-like complex job parameters: observation window, antennas, frequency selection, provenance flags
+    const now = new Date().toISOString();
+    return {
+      mission: 'ngvla-mvp',
+      observation: {
+        requestId: `sample-${now}-${index}`,
+        arraySegment: index % 3 === 0 ? 'SBA' : index % 3 === 1 ? 'Main' : 'Long Baseline',
+        antennaClass: index % 2 === 0 ? '18m' : '6m',
+        frequencyBandGHz: { low: 1.2, high: 50 + index },
+        startTime: now,
+        durationSeconds: 120 + index * 30,
+        pointing: { ra: 123.45 + index, dec: -23.45 + index },
+      },
+      provenance: { capture: true, includeRaw: false, lineageTag: `sample-${index}` },
+      priority: index <= 2 ? 'high' : 'normal',
+      runtimeHints: { executor: 'simulator' }
+    };
+  }
+
   
 
   view(job: JobStatus) {
@@ -109,6 +178,46 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.fetchLogs(job.jobId);
     this.fetchArtifacts(job.jobId);
     this.startLogPolling(job.jobId);
+  }
+
+  toggleFilter() {
+    this.filterVisible = !this.filterVisible;
+  }
+
+  applyFilter() {
+    this.loading = true;
+    this.jobsSvc.list(this.filterWorkflow ?? undefined, this.filterState ?? undefined).subscribe(
+      (list) => {
+        this.jobs = list || [];
+        this.loading = false;
+        this.filterVisible = false;
+      },
+      (e) => {
+        this.error = this.errMsg(e);
+        this.loading = false;
+      }
+    );
+  }
+
+  clearFilter() {
+    this.filterWorkflow = null;
+    this.filterState = null;
+    this.reload();
+    this.filterVisible = false;
+  }
+
+  removeViewed() {
+    if (!this.selectedJob) return;
+    const id = this.selectedJob.jobId;
+    this.jobsSvc.deleteJob(id).subscribe(
+      () => {
+        // remove from UI list and clear selected
+        this.jobs = this.jobs.filter((j) => j.jobId !== id);
+        this.selectedJob = null;
+        this.snackBar.open('Job removed', undefined, { duration: 2000 });
+      },
+      (e) => this.snackBar.open(`Failed to remove job: ${this.errMsg(e)}`, undefined, { duration: 4000 })
+    );
   }
 
   loadDispatchConfig() {

@@ -1,0 +1,43 @@
+<h2 mat-dialog-title *ngIf="data.type === 'node'">{{ data.label || data.id }}</h2>
+<h2 mat-dialog-title *ngIf="data.type === 'link'">Connection: {{ data.source }} → {{ data.target }}</h2>
+<mat-dialog-content>
+  <div *ngIf="data.type === 'node'">
+    <p><strong>Group:</strong> {{ data.group }}</p>
+    <p><strong>Description:</strong></p>
+    <p>{{ data.description }}</p>
+  </div>
+  <div *ngIf="data.type === 'link'">
+    <p><strong>Value:</strong> {{ data.value }}</p>
+    <p><strong>Summary stats:</strong></p>
+    <ul>
+      <li *ngIf="data.stats?.throughput">Observed throughput: {{ data.stats?.throughput }}</li>
+      <li *ngIf="data.stats?.throughputPct">Utilization: {{ data.stats?.throughputPct }}</li>
+      <li *ngIf="data.stats?.latencyMs">Latency: {{ data.stats?.latencyMs }} ms</li>
+      <li *ngIf="data.stats?.errorRate">Error rate: {{ data.stats?.errorRate }}</li>
+    </ul>
+    <p><strong>What this represents</strong></p>
+    <p>This connection is a logical representation of data flow between two system components (for example: an array data generator to Kafka, or a processing service to object storage). The <em>Observed throughput</em> shows a sampled current rate and the parenthetical maximum capacity (theoretical), derived from assumed per-channel bandwidth.</p>
+    <p><strong>Detection and remediation</strong></p>
+    <ul>
+      <li *ngIf="isCritical()">
+        <strong style="color:#b91c1c">Critical:</strong> This link is near or at maximum capacity. Consider adding parallel links, increasing interface capacity, or re-architecting data routing.
+      </li>
+      <li *ngIf="isHighUtil()">
+        <strong style="color:#92400e">High utilization:</strong> Monitor closely and plan capacity uplift or backpressure controls.
+      </li>
+      <li *ngIf="isNormalUtil()">
+        Normal operating range.
+      </li>
+    </ul>
+    <p><strong>How to get accurate values</strong></p>
+    <ol>
+      <li>Expose per-interface or topic throughput in Prometheus (node exporter, application metrics, or exporter that reads NIC counters).</li>
+      <li>Collect Kafka topic/partition throughput and consumer lag via JMX exporter or Kafka exporter.</li>
+      <li>Collect MinIO/S3 transfer metrics and storage ingress/egress counters for storage links.</li>
+      <li>Aggregate these metrics in the backend and present live + historical views here (preferred for accurate decisioning).</li>
+    </ol>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Close</button>
+</mat-dialog-actions>

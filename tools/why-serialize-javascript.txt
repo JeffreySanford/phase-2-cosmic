@@ -1,0 +1,329 @@
+      0 [main] bash 24690! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24693 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   1068 [main] sh 24693 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   1884 [main] sh 24693 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   2844 [main] sh 24693 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24694! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sed 24694 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24692 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+    544 [main] sh 24692 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+   1023 [main] sh 24692 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24691! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24695! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] sh 24696! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+      0 [main] cygpath 24696 fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.
+Legend: production dependency, optional only, dev only
+
+phase-2-cosmic@0.1.0 C:\repos\phase-2-cosmic (PRIVATE)
+
+devDependencies:
+@angular-devkit/build-angular 18.2.21
+├─┬ @angular-devkit/build-webpack 0.1802.21
+│ ├─┬ webpack 5.94.0 peer
+│ │ └─┬ terser-webpack-plugin 5.3.16
+│ │   └── serialize-javascript 6.0.2
+│ └─┬ webpack-dev-server 5.2.2 peer
+│   ├─┬ webpack 5.105.3 peer
+│   │ └─┬ terser-webpack-plugin 5.3.16
+│   │   └── serialize-javascript 6.0.2
+│   └─┬ webpack-dev-middleware 7.4.5
+│     └─┬ webpack 5.105.3 peer
+│       └─┬ terser-webpack-plugin 5.3.16
+│         └── serialize-javascript 6.0.2
+├─┬ @ngtools/webpack 18.2.21
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ babel-loader 9.1.3
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ copy-webpack-plugin 12.0.2
+│ ├── serialize-javascript 6.0.2
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ css-loader 7.1.2
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ less-loader 12.2.0
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ license-webpack-plugin 4.0.2
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ mini-css-extract-plugin 2.9.0
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ postcss-loader 8.1.1
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ sass-loader 16.0.0
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ source-map-loader 5.0.0
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ webpack 5.94.0
+│ └─┬ terser-webpack-plugin 5.3.16
+│   └── serialize-javascript 6.0.2
+├─┬ webpack-dev-middleware 7.4.2
+│ └─┬ webpack 5.94.0 peer
+│   └─┬ terser-webpack-plugin 5.3.16
+│     └── serialize-javascript 6.0.2
+├─┬ webpack-dev-server 5.2.2
+│ ├─┬ webpack 5.105.3 peer
+│ │ └─┬ terser-webpack-plugin 5.3.16
+│ │   └── serialize-javascript 6.0.2
+│ └─┬ webpack-dev-middleware 7.4.5
+│   └─┬ webpack 5.105.3 peer
+│     └─┬ terser-webpack-plugin 5.3.16
+│       └── serialize-javascript 6.0.2
+└─┬ webpack-subresource-integrity 5.1.0
+  └─┬ webpack 5.94.0 peer
+    └─┬ terser-webpack-plugin 5.3.16
+      └── serialize-javascript 6.0.2
+@nrwl/angular 19.8.4
+└─┬ @nx/angular 19.8.4
+  ├─┬ @angular-devkit/build-angular 18.2.21 peer
+  │ ├─┬ @angular-devkit/build-webpack 0.1802.21
+  │ │ ├─┬ webpack 5.94.0 peer
+  │ │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │ │   └── serialize-javascript 6.0.2
+  │ │ └─┬ webpack-dev-server 5.2.2 peer
+  │ │   ├─┬ webpack 5.105.3 peer
+  │ │   │ └─┬ terser-webpack-plugin 5.3.16
+  │ │   │   └── serialize-javascript 6.0.2
+  │ │   └─┬ webpack-dev-middleware 7.4.5
+  │ │     └─┬ webpack 5.105.3 peer
+  │ │       └─┬ terser-webpack-plugin 5.3.16
+  │ │         └── serialize-javascript 6.0.2
+  │ ├─┬ @ngtools/webpack 18.2.21
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ babel-loader 9.1.3
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ copy-webpack-plugin 12.0.2
+  │ │ ├── serialize-javascript 6.0.2
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ css-loader 7.1.2
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ less-loader 12.2.0
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ license-webpack-plugin 4.0.2
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ mini-css-extract-plugin 2.9.0
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ postcss-loader 8.1.1
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ sass-loader 16.0.0
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ source-map-loader 5.0.0
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ webpack 5.94.0
+  │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │   └── serialize-javascript 6.0.2
+  │ ├─┬ webpack-dev-middleware 7.4.2
+  │ │ └─┬ webpack 5.94.0 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ webpack-dev-server 5.2.2
+  │ │ ├─┬ webpack 5.105.3 peer
+  │ │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │ │   └── serialize-javascript 6.0.2
+  │ │ └─┬ webpack-dev-middleware 7.4.5
+  │ │   └─┬ webpack 5.105.3 peer
+  │ │     └─┬ terser-webpack-plugin 5.3.16
+  │ │       └── serialize-javascript 6.0.2
+  │ └─┬ webpack-subresource-integrity 5.1.0
+  │   └─┬ webpack 5.94.0 peer
+  │     └─┬ terser-webpack-plugin 5.3.16
+  │       └── serialize-javascript 6.0.2
+  ├─┬ @module-federation/enhanced 0.6.16
+  │ └─┬ webpack 5.105.3 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ @nx/webpack 19.8.4
+  │ ├─┬ @module-federation/enhanced 0.6.16
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ babel-loader 9.2.1
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ copy-webpack-plugin 10.2.4
+  │ │ ├── serialize-javascript 6.0.2
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ css-loader 6.11.0
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ css-minimizer-webpack-plugin 5.0.1
+  │ │ ├── serialize-javascript 6.0.2
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ fork-ts-checker-webpack-plugin 7.2.13
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ less-loader 11.1.0
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ license-webpack-plugin 4.0.2
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ mini-css-extract-plugin 2.4.7
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ postcss-loader 6.2.1
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ sass-loader 12.6.0
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ source-map-loader 5.0.0
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ style-loader 3.3.4
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ stylus-loader 7.1.3
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ terser-webpack-plugin 5.3.16
+  │ │ └── serialize-javascript 6.0.2
+  │ ├─┬ ts-loader 9.5.4
+  │ │ └─┬ webpack 5.105.3 peer
+  │ │   └─┬ terser-webpack-plugin 5.3.16
+  │ │     └── serialize-javascript 6.0.2
+  │ ├─┬ webpack 5.105.3
+  │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │   └── serialize-javascript 6.0.2
+  │ ├─┬ webpack-dev-server 5.2.3
+  │ │ ├─┬ webpack 5.105.3 peer
+  │ │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │ │   └── serialize-javascript 6.0.2
+  │ │ └─┬ webpack-dev-middleware 7.4.5
+  │ │   └─┬ webpack 5.105.3 peer
+  │ │     └─┬ terser-webpack-plugin 5.3.16
+  │ │       └── serialize-javascript 6.0.2
+  │ └─┬ webpack-subresource-integrity 5.1.0
+  │   └─┬ webpack 5.105.3 peer
+  │     └─┬ terser-webpack-plugin 5.3.16
+  │       └── serialize-javascript 6.0.2
+  └─┬ webpack 5.105.3
+    └─┬ terser-webpack-plugin 5.3.16
+      └── serialize-javascript 6.0.2
+jest-preset-angular 14.1.1
+└─┬ @angular-devkit/build-angular 18.2.21 peer
+  ├─┬ @angular-devkit/build-webpack 0.1802.21
+  │ ├─┬ webpack 5.94.0 peer
+  │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │   └── serialize-javascript 6.0.2
+  │ └─┬ webpack-dev-server 5.2.2 peer
+  │   ├─┬ webpack 5.105.3 peer
+  │   │ └─┬ terser-webpack-plugin 5.3.16
+  │   │   └── serialize-javascript 6.0.2
+  │   └─┬ webpack-dev-middleware 7.4.5
+  │     └─┬ webpack 5.105.3 peer
+  │       └─┬ terser-webpack-plugin 5.3.16
+  │         └── serialize-javascript 6.0.2
+  ├─┬ @ngtools/webpack 18.2.21
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ babel-loader 9.1.3
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ copy-webpack-plugin 12.0.2
+  │ ├── serialize-javascript 6.0.2
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ css-loader 7.1.2
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ less-loader 12.2.0
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ license-webpack-plugin 4.0.2
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ mini-css-extract-plugin 2.9.0
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ postcss-loader 8.1.1
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ sass-loader 16.0.0
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ source-map-loader 5.0.0
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ webpack 5.94.0
+  │ └─┬ terser-webpack-plugin 5.3.16
+  │   └── serialize-javascript 6.0.2
+  ├─┬ webpack-dev-middleware 7.4.2
+  │ └─┬ webpack 5.94.0 peer
+  │   └─┬ terser-webpack-plugin 5.3.16
+  │     └── serialize-javascript 6.0.2
+  ├─┬ webpack-dev-server 5.2.2
+  │ ├─┬ webpack 5.105.3 peer
+  │ │ └─┬ terser-webpack-plugin 5.3.16
+  │ │   └── serialize-javascript 6.0.2
+  │ └─┬ webpack-dev-middleware 7.4.5
+  │   └─┬ webpack 5.105.3 peer
+  │     └─┬ terser-webpack-plugin 5.3.16
+  │       └── serialize-javascript 6.0.2
+  └─┬ webpack-subresource-integrity 5.1.0
+    └─┬ webpack 5.94.0 peer
+      └─┬ terser-webpack-plugin 5.3.16
+        └── serialize-javascript 6.0.2
+      1 [main] sh 24690! fhandler_console::pcon_hand_over_proc: Acquiring pcon_ho_mutex failed.

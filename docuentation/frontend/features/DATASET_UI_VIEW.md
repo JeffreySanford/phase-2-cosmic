@@ -1,9 +1,9 @@
 # Dataset UI View (Verbose Product Specification)
 
 Alignment anchors
-- Frontend UX source of truth: [../../FRONTEND_UI.md](../../FRONTEND_UI.md)
-- Execution backlog: [../../../TODO.md](../../../TODO.md)
-- Delivery plan: [../../../ROADMAP.md](../../../ROADMAP.md)
+- Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
+- Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
+- Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
 
 Status: `planned` (detailed UX and contract spec ready for implementation)
 
@@ -242,7 +242,7 @@ The Dataset UI view is considered successful when:
 
 ## 16. Related references
 
-- [DATASETS.md](DATASETS.md)
-- [JOBS.md](JOBS.md)
-- [PROFESSIONAL_CONSOLE_SPEC.md](../../PROFESSIONAL_CONSOLE_SPEC.md)
-- [FRONTEND_UI.md](../../FRONTEND_UI.md)
+- [DATASETS.md](/docuentation\frontend\features\DATASETS.md)
+- [JOBS.md](/docuentation\frontend\features\JOBS.md)
+- [PROFESSIONAL_CONSOLE_SPEC.md](/docuentation/architecture/PROFESSIONAL_CONSOLE_SPEC.md)
+- [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)

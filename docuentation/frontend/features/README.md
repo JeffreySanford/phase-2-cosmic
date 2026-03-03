@@ -2,30 +2,31 @@
 
 Alignment anchors
 
-- Frontend UX source of truth: [../../FRONTEND_UI.md](../../FRONTEND_UI.md)
-- Execution backlog: [../../../TODO.md](../../../TODO.md)
-- Delivery plan: [../../../ROADMAP.md](../../../ROADMAP.md)
+- Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
+- Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
+- Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
 
 This folder contains page-level frontend behavior specifications.
 
 Current feature specs:
 
-- [DASHBOARD.md](DASHBOARD.md)
-- [JOBS.md](JOBS.md)
-- [DATASETS.md](DATASETS.md)
-- [DATASET_UI_VIEW.md](DATASET_UI_VIEW.md)
-- [TELEMETRY.md](TELEMETRY.md)
-- [TOPOLOGY.md](TOPOLOGY.md)
-- [DIAGNOSTICS.md](DIAGNOSTICS.md)
-- [VISUALIZATION.md](VISUALIZATION.md)
-- [SETTINGS.md](SETTINGS.md)
+- [DASHBOARD.md](/docuentation\frontend\features\DASHBOARD.md)
+- [JOBS.md](/docuentation\frontend\features\JOBS.md)
+- [DATASETS.md](/docuentation\frontend\features\DATASETS.md)
+- [DATASET_UI_VIEW.md](/docuentation\frontend\features\DATASET_UI_VIEW.md)
+- [TELEMETRY.md](/docuentation\frontend\features\TELEMETRY.md)
+- [TOPOLOGY.md](/docuentation\frontend\features\TOPOLOGY.md)
+- [DIAGNOSTICS.md](/docuentation\frontend\features\DIAGNOSTICS.md)
+- [VISUALIZATION.md](/docuentation\frontend\features\VISUALIZATION.md)
+- [SETTINGS.md](/docuentation\frontend\features\SETTINGS.md)
+- [VIEWER.md](/docuentation\frontend\features\VIEWER.md)
 
 Implementation policy:
 
 - If page behavior here conflicts with higher-level docs, prioritize:
-  1. [FRONTEND_UI.md](../../FRONTEND_UI.md)
-  2. [../../../TODO.md](../../../TODO.md)
-  3. [../../../ROADMAP.md](../../../ROADMAP.md)
+  1. [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
+  2. [../../../TODO.md](/docuentation/planning/TODO.md)
+  3. [../../../ROADMAP.md](/ROADMAP.md)
 
 Global stress-profile policy (development):
 
@@ -41,4 +42,5 @@ Current data-source coverage (development):
 - `Jobs`: live governance API.
 - `Datasets`: live governance API.
 - `Topology`: API-first with mock fallback when `/api/topology` is unavailable.
+- `Viewer`: Aladin baseline with Mode B progressive-resolution strategy planned.
 - `Landing`, `Settings`, `Visualizations`: placeholder content at this stage.
