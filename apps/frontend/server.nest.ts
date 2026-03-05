@@ -542,7 +542,7 @@ export class AppController {
       { name: 'Redis', kind: 'tcp', url: (process.env['REDIS_URL'] || 'redis:6379').replace(/^redis:\/\//, ''), fallbackUrl: '127.0.0.1:6379', icon: 'memory' },
     ];
 
-    const results: Array<{ name: string; status: 'online' | 'degraded' | 'offline' | 'unknown'; details?: string; error?: string; latencyMs?: number; icon?: string }> = [];
+    const results: Array<{ name: string; status: 'healthy' | 'degraded' | 'offline' | 'unknown' | 'starting' | 'stopping' | 'maintenance'; details?: string; error?: string; latencyMs?: number; icon?: string }> = [];
 
     const checkTcp = (host: string, port: number, timeout = 3000): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
       new Promise((resolve) => {
@@ -600,7 +600,7 @@ export class AppController {
         }
         results.push({
           name: s.name,
-          status: result.ok ? 'online' : 'offline',
+          status: result.ok ? (result.latencyMs > 1000 ? 'degraded' : 'healthy') : 'offline',
           details: usedUrl,
           error: result.error,
           latencyMs: result.latencyMs,
@@ -691,7 +691,7 @@ export class AppController {
           if (fbResult.ok) { result = fbResult; usedUrl = service.fallbackUrl; }
         }
       }
-      res.json({ name: service.name, status: result.ok ? 'online' : 'offline', details: usedUrl, error: result.error, latencyMs: result.latencyMs, lastChecked: Date.now() });
+      res.json({ name: service.name, status: result.ok ? (result.latencyMs > 1000 ? 'degraded' : 'healthy') : 'offline', details: usedUrl, error: result.error, latencyMs: result.latencyMs, lastChecked: Date.now() });
     } catch (e: any) {
       res.status(500).json({ name: service.name, status: 'unknown', details: String(e) });
     }

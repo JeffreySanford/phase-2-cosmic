@@ -156,6 +156,101 @@ The current frontend Diagnostics page already has the right three tab groups, bu
 - Add thresholds so a tile can show warning or abnormal state, not only its color tone.
 - Revisit the current CPU query so it reflects the intended jobs or host/container scope rather than an overly broad aggregate.
 
+### Live tile chart findings
+
+The individual live-tile sparklines currently feel sporadic for structural reasons, not just because of the underlying metric data.
+
+- Each `app-promql-card` issues two independent requests on every refresh:
+  - `queryInstant()` for the headline value
+  - `queryRange()` for the sparkline
+- Those requests are not tied to the same sample timestamp, so the large value and the sparkline endpoint can disagree even when Prometheus is healthy.
+- In mock mode, the mismatch is larger because:
+  - `telemetryInstant()` returns a random point sample
+  - `telemetryRange()` returns a generic sine-wave-plus-noise series
+  - neither path is metric-specific
+- For counters like bytes and records, the card requests the raw metric for the line chart rather than a rate-derived series. That makes the tile compare a total-value sparkline against a headline value that users often interpret as throughput.
+- The CPU tile in Diagnostics uses `100 * sum(rate(process_cpu_seconds_total[1m]))` without the narrower job filter used elsewhere, so the metric scope is inconsistent between pages.
+- The sparkline rescales to its local min and max on every refresh. Small changes in range can make the line jump visually even when the underlying trend is stable.
+
+### Why `100%` mock mode does not peg CPU today
+
+The current `100%` setting should not be expected to peg the CPU in mock mode.
+
+- `LoadProfileService` changes polling cadence when the profile changes.
+- In live mode, the backend can also start runtime generator workers for higher profiles.
+- In mock mode, there is no real CPU stressor and no CPU model. The mock layer only scales synthetic values and shortens polling intervals.
+- `MockDataService` does not map profile level to realistic CPU saturation behavior. At `100%`, it still generates abstract synthetic numbers, not a capped CPU series approaching sustained saturation.
+
+This is why the CPU sparkline can look noisy or arbitrary instead of pinning near a stable upper bound.
+
+### GPU usage
+
+There is no current GPU utilization path in this frontend diagnostics flow.
+
+- No diagnostics tile queries a GPU metric.
+- No mock-data generator emits GPU-specific telemetry.
+- The diagnostics endpoints do not expose GPU presence, utilization, memory, or device health.
+
+If GPU awareness matters for workload planning, it needs to be added explicitly in both diagnostics collection and frontend presentation.
+
+### Recommended changes for live tile charts
+
+- Make each tile fetch one coherent payload per refresh cycle:
+  - one instant value
+  - one aligned recent series
+  - one shared `sampledAt`
+- Use metric-specific adapters instead of a generic card model:
+  - counters should show rate sparklines
+  - gauges should show gauge sparklines
+  - percentages should be capped and formatted as percentages
+- For bytes and records cards, use `rate()` or `increase()/window` for the sparkline so the line represents throughput rather than monotonically increasing totals.
+- For CPU, standardize on one query across Diagnostics and Telemetry. Prefer either:
+  - process-level CPU for scoped services, or
+  - host/container CPU metrics if the intent is true system load
+- For CPU percentage charts, clamp or validate the display range and show the expected denominator:
+  - per process
+  - per selected jobs
+  - per host
+  - per container
+- Stabilize the sparkline y-domain:
+  - use a rolling domain with hysteresis
+  - or pin percent metrics to `0..100`
+  - or expose a faint reference band so users can interpret scale changes
+- Add missing data states:
+  - `no samples`
+  - `stale`
+  - `mock`
+  - `query error`
+- Show the sparkline time window and step so users know whether they are seeing `5m / 15s`, `5m / 1s`, or another window.
+
+### Recommended changes for mock-mode realism
+
+- Replace the generic mock telemetry generator with metric-specific series behavior.
+- For CPU in mock mode:
+  - `10%` should sit in a low stable band
+  - `25%` should trend moderately higher
+  - `50%` should show sustained mid-load with occasional spikes
+  - `100%` should stay near a high saturation band with brief variance, not random oscillation
+- Ensure the instant value is derived from the latest point in the generated range series instead of being generated separately.
+- Add optional jitter profiles so mock mode can simulate:
+  - stable system
+  - saturated system
+  - bursty system
+  - flapping data source
+
+### Recommended GPU additions if needed
+
+- Extend diagnostics collection to report GPU presence and basic inventory when available.
+- Add optional GPU metrics tiles only when GPU hardware is detected.
+- Expose a lightweight diagnostics summary payload with fields such as:
+  - `gpu_present`
+  - `gpu_vendor`
+  - `gpu_model`
+  - `gpu_memory_total`
+  - `gpu_utilization_pct`
+
+Without that explicit work, the frontend is not utilizing GPU data at all.
+
 ### Improvements for broker system tiles
 
 - Sort by severity first so offline or degraded systems appear before healthy ones.
@@ -189,6 +284,8 @@ The current frontend Diagnostics page already has the right three tab groups, bu
 
 1. Introduce a shared diagnostics facade/store so all three tabs use one refresh model.
 2. Switch summary rendering to `GET /api/diagnostics/system-specs.json`.
-3. Extend `GET /api/diagnostics/docker-services` to return richer tile metadata and a real `degraded` state.
-4. Update tab labels and tiles to show freshness, severity, and change since last refresh.
-5. Reduce duplicate Prometheus traffic by consolidating overview-card queries.
+3. Rework `app-promql-card` so each tile uses one coherent metric model and aligned instant/range samples.
+4. Replace mock telemetry generation with metric-specific series, especially for CPU at `100%`.
+5. Extend `GET /api/diagnostics/docker-services` to return richer tile metadata and a real `degraded` state.
+6. Update tab labels and tiles to show freshness, severity, and change since last refresh.
+7. Reduce duplicate Prometheus traffic by consolidating overview-card queries.

@@ -85,23 +85,43 @@ export class VisualizationComponent implements OnInit, OnDestroy {
   fetchMetrics(){
     if (this.dataSource.mode === 'mock') {
       this.mock.visualizationMetrics().subscribe((resp) => {
-        const body = resp?.data || resp?.payload || resp;
+        const body = resp.data;
         if (!body) { if(!this.sparklineData.length) this.resetData(); return; }
-        if (body.throughput !== undefined) this.throughput = +body.throughput;
-        if (body.errorRate !== undefined) this.errorRate = +body.errorRate;
-        if (body.queueDepth !== undefined) this.queueDepth = +body.queueDepth;
-        if (Array.isArray(body.sparkline)) this.sparklineData = body.sparkline.map((p: any) => ({ t: +p.t, v: +p.v }));
-        if (Array.isArray(body.histogram)) this.histogramData = body.histogram.map((n: any) => +n);
-        if (Array.isArray(body.scatter)) this.scatterData = body.scatter.map((p: any) => ({ x: +p.x, y: +p.y }));
+        this.throughput = +body.throughput;
+        this.errorRate = +body.errorRate;
+        this.queueDepth = +body.queueDepth;
+        this.sparklineData = body.sparkline.map((p) => ({ t: +p.t, v: +p.v }));
+        this.histogramData = body.histogram.map((n) => +n);
+        this.scatterData = body.scatter.map((p) => ({ x: +p.x, y: +p.y }));
         this.recomputeAggregates();
       });
       return;
     }
 
-    this.http.get<any>('/api/v1/visualization/metrics').subscribe({
+    interface VisualizationResponse {
+      source?: string;
+      data?: {
+        throughput?: number;
+        errorRate?: number;
+        queueDepth?: number;
+        sparkline?: Array<{ t: number; v: number }>;
+        histogram?: number[];
+        scatter?: Array<{ x: number; y: number }>;
+      };
+      payload?: {
+        throughput?: number;
+        errorRate?: number;
+        queueDepth?: number;
+        sparkline?: Array<{ t: number; v: number }>;
+        histogram?: number[];
+        scatter?: Array<{ x: number; y: number }>;
+      };
+    }
+
+    this.http.get<VisualizationResponse>('/api/v1/visualization/metrics').subscribe({
       next: (resp) => {
         // service returns { source: 'prometheus'|'fallback', data: { ... } }
-        const body = resp?.data || resp?.payload || resp;
+        const body = resp?.data || resp?.payload;
         if (!body) { if(!this.sparklineData.length) this.resetData(); return; }
 
         // map expected fields
@@ -110,15 +130,15 @@ export class VisualizationComponent implements OnInit, OnDestroy {
         if (body.queueDepth !== undefined) this.queueDepth = +body.queueDepth;
 
         if (Array.isArray(body.sparkline)) {
-          this.sparklineData = body.sparkline.map((p: any) => ({ t: +p.t, v: +p.v }));
+          this.sparklineData = body.sparkline.map((p) => ({ t: +p.t, v: +p.v }));
         }
 
         if (Array.isArray(body.histogram)) {
-          this.histogramData = body.histogram.map((n: any) => +n);
+          this.histogramData = body.histogram.map((n) => +n);
         }
 
         if (Array.isArray(body.scatter)) {
-          this.scatterData = body.scatter.map((p: any) => ({ x: +p.x, y: +p.y }));
+          this.scatterData = body.scatter.map((p) => ({ x: +p.x, y: +p.y }));
         }
 
         // recompute aggregates if needed

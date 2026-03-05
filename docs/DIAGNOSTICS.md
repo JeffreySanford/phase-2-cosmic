@@ -59,7 +59,7 @@ Returns an array of service status objects:
 }]
 ```
 
-Status values: `online`, `offline`, `unknown`
+Status values: `healthy`, `degraded`, `offline`, `unknown`, `starting`, `stopping`, `maintenance`
 
 ### `GET /api/diagnostics/docker-services/:name`
 
@@ -106,11 +106,15 @@ Override default service URLs via environment variables:
 
 ## Styling
 
-Tiles use vibrant gradient backgrounds based on status:
+Tiles use traffic light colors based on status:
 
-- **Online**: Green gradient (`#4caf50` → `#2e7d32`)
+- **Healthy**: Green gradient (`#4caf50` → `#2e7d32`)
+- **Degraded**: Yellow/amber gradient (`#ffc107` → `#ff9800`) - black text
 - **Offline**: Red gradient (`#f44336` → `#c62828`)
 - **Unknown**: Gray gradient (`#607d8b` → `#455a64`)
+- **Starting**: Blue gradient (`#03a9f4` → `#0288d1`)
+- **Stopping**: Purple gradient (`#9c27b0` → `#7b1fa2`)
+- **Maintenance**: Brown gradient (`#795548` → `#5d4037`)
 
 Live signal cards use colorful tone classes:
 

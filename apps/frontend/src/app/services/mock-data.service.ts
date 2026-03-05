@@ -29,7 +29,7 @@ export class MockDataService {
   }
 
   // Visualization metrics: basic shape for visualization component
-  visualizationMetrics(): Observable<any> {
+  visualizationMetrics(): Observable<{ source: string; data: { throughput: number; errorRate: number; queueDepth: number; sparkline: Array<{ t: number; v: number }>; histogram: number[]; scatter: Array<{ x: number; y: number }> } }> {
     const s = this.scale();
     const now = Date.now();
     const sparkline = Array.from({ length: 40 }).map((_, i) => ({ t: now - (40 - i) * 1000, v: Math.round(rand(20, 80) * s * 10) / 10 }));
@@ -39,18 +39,31 @@ export class MockDataService {
     return of({ source: 'mock', data: { throughput, errorRate: +(Math.random() * 2).toFixed(2), queueDepth: Math.round(rand(0, 50) * s), sparkline, histogram, scatter } });
   }
 
-  // Telemetry mock: produce Prometheus-like range response
-  telemetryRange(metric: string, start: number, end: number, step: number): Observable<unknown> {
+  // Telemetry mock: produce Prometheus-like range response with realistic random walk data
+  telemetryRange(_metric: string, start: number, end: number, step: number): Observable<unknown> {
     const s = this.scale();
     const points: Array<[number, string]> = [];
+    // Generate random walk with trend and noise for more realistic charts
+    let value = rand(200, 800) * s;
+    const trend = rand(-2, 2) * s; // slight upward or downward trend
+    const volatility = rand(20, 80) * s;
+    
     for (let t = start; t <= end; t += step) {
-      const v = (Math.sin(t / 37) * 0.5 + 0.5) * (1000 * s) + rand(0, 50) * s;
-      points.push([t, String(Math.max(0, v))]);
+      // Random walk: previous value + trend + noise
+      value += trend + rand(-volatility, volatility);
+      // Occasional spikes/dips
+      if (Math.random() < 0.05) {
+        value += rand(-200, 200) * s;
+      }
+      // Keep within reasonable bounds
+      value = Math.max(50 * s, Math.min(2000 * s, value));
+      points.push([t, String(Math.round(value * 100) / 100)]);
     }
     return of({ data: { result: [{ metric: {}, values: points }] } });
   }
 
-  telemetryInstant(metric: string): Observable<number> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  telemetryInstant(_metric: string): Observable<number> {
     const s = this.scale();
     return of(Math.round(rand(0, 1024 * 10) * s));
   }
@@ -80,15 +93,16 @@ export class MockDataService {
   }
 
   // Mock system status object for SystemStatusService
-  mockSystemStatus(): Observable<any> {
+  mockSystemStatus(): Observable<{ health: 'healthy' | 'degraded' | 'offline'; lastCheck: Date; message: undefined; services: { governance: 'online' | 'offline'; streaming: 'online' | 'offline' } }> {
     const s = this.scale();
+    const health: 'healthy' | 'degraded' | 'offline' = s > 0.5 ? 'healthy' : s > 0.1 ? 'degraded' : 'offline';
     const status = {
-      health: s > 0.5 ? 'healthy' : s > 0.1 ? 'degraded' : 'offline',
+      health,
       lastCheck: new Date(),
-      message: undefined,
+      message: undefined as undefined,
       services: {
-        governance: 'online',
-        streaming: 'online'
+        governance: 'online' as const,
+        streaming: 'online' as const
       }
     };
     return of(status);
@@ -96,15 +110,17 @@ export class MockDataService {
 
   // Mock docker/broker services status for diagnostics view
   mockDockerServices(): Observable<Array<{ name: string; status: string; details?: string; error?: string; latencyMs?: number; icon?: string }>> {
+    const statuses: Array<'healthy' | 'degraded' | 'offline'> = ['healthy', 'healthy', 'healthy', 'healthy', 'degraded', 'offline'];
+    const pickStatus = () => statuses[Math.floor(Math.random() * statuses.length)];
     const services = [
-      { name: 'Prometheus', status: Math.random() > 0.15 ? 'online' : 'offline', details: 'http://127.0.0.1:9090', latencyMs: Math.round(Math.random() * 50 + 10), icon: 'monitoring' },
-      { name: 'Grafana', status: Math.random() > 0.15 ? 'online' : 'offline', details: 'http://127.0.0.1:3000', latencyMs: Math.round(Math.random() * 80 + 15), icon: 'dashboard' },
-      { name: 'Loki', status: Math.random() > 0.2 ? 'online' : 'offline', details: 'http://127.0.0.1:3100', latencyMs: Math.round(Math.random() * 60 + 20), icon: 'description' },
-      { name: 'Pulsar', status: Math.random() > 0.15 ? 'online' : 'offline', details: '127.0.0.1:6650', latencyMs: Math.round(Math.random() * 40 + 5), icon: 'cloud_queue' },
-      { name: 'Kafka', status: Math.random() > 0.2 ? 'online' : 'offline', details: '127.0.0.1:9092', latencyMs: Math.round(Math.random() * 35 + 8), icon: 'stream' },
-      { name: 'RabbitMQ', status: Math.random() > 0.25 ? 'online' : 'offline', details: '127.0.0.1:5672', latencyMs: Math.round(Math.random() * 45 + 12), icon: 'swap_horiz' },
-      { name: 'Alertmanager', status: Math.random() > 0.3 ? 'online' : 'offline', details: 'http://127.0.0.1:9093', latencyMs: Math.round(Math.random() * 55 + 18), icon: 'notifications' },
-      { name: 'Redis', status: Math.random() > 0.2 ? 'online' : 'offline', details: '127.0.0.1:6379', latencyMs: Math.round(Math.random() * 25 + 3), icon: 'memory' },
+      { name: 'Prometheus', status: pickStatus(), details: 'http://127.0.0.1:9090', latencyMs: Math.round(Math.random() * 50 + 10), icon: 'monitoring' },
+      { name: 'Grafana', status: pickStatus(), details: 'http://127.0.0.1:3000', latencyMs: Math.round(Math.random() * 80 + 15), icon: 'dashboard' },
+      { name: 'Loki', status: pickStatus(), details: 'http://127.0.0.1:3100', latencyMs: Math.round(Math.random() * 60 + 20), icon: 'description' },
+      { name: 'Pulsar', status: pickStatus(), details: '127.0.0.1:6650', latencyMs: Math.round(Math.random() * 40 + 5), icon: 'cloud_queue' },
+      { name: 'Kafka', status: pickStatus(), details: '127.0.0.1:9092', latencyMs: Math.round(Math.random() * 35 + 8), icon: 'stream' },
+      { name: 'RabbitMQ', status: pickStatus(), details: '127.0.0.1:5672', latencyMs: Math.round(Math.random() * 45 + 12), icon: 'swap_horiz' },
+      { name: 'Alertmanager', status: pickStatus(), details: 'http://127.0.0.1:9093', latencyMs: Math.round(Math.random() * 55 + 18), icon: 'notifications' },
+      { name: 'Redis', status: pickStatus(), details: '127.0.0.1:6379', latencyMs: Math.round(Math.random() * 25 + 3), icon: 'memory' },
     ];
     return of(services);
   }

@@ -42,9 +42,9 @@ describe('DiagnosticsComponent', () => {
         {
           provide: (await import('../../services/mock-data.service')).MockDataService,
           useValue: {
-            diagnosticsIndex: () => ({ subscribe: (fn: any) => fn({ path: '/tmp', files: [] }) }),
-            systemSpecsText: () => ({ subscribe: (fn: any) => fn('mock specs') }),
-            mockDockerServices: () => ({ subscribe: (fn: any) => fn([]) }),
+            diagnosticsIndex: () => ({ subscribe: (fn: (val: { path: string; files: string[] }) => void) => fn({ path: '/tmp', files: [] }) }),
+            systemSpecsText: () => ({ subscribe: (fn: (val: string) => void) => fn('mock specs') }),
+            mockDockerServices: () => ({ subscribe: (fn: (val: unknown[]) => void) => fn([]) }),
           },
         },
         {
