@@ -7,7 +7,7 @@
   justify-content: space-between;
   background: #0f172a;
   color: #fff;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
   position: fixed;
   top: 0;
   left: 0;
@@ -20,11 +20,11 @@
 }
 /* allow left section to shrink so right icon isn’t pushed off-screen */
 .app-header .left {
-  display:flex;
-  align-items:center;
-  gap:0.75rem;
-  flex:1 1 auto;
-  min-width:0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* right section should stay its intrinsic size */
@@ -34,8 +34,15 @@
   flex: 0 0 auto;
   min-width: 0;
 }
-.menu-btn { background:transparent; border:0; color:inherit; font-size:1.25rem; cursor:pointer; }
-.brand { font-weight:600; /* prevent long names from overflowing */
+.menu-btn {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+.brand {
+  font-weight: 600; /* prevent long names from overflowing */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -52,5 +59,6 @@
 
 .user-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.42), 0 0 14px rgba(14, 165, 233, 0.35);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.42),
+    0 0 14px rgba(14, 165, 233, 0.35);
 }

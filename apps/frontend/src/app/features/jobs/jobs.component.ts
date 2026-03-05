@@ -1,15 +1,19 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { JobsService, JobStatus, JobSubmitRequest } from '../../services/jobs.service';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { interval, Subscription } from 'rxjs';
-import { startWith, switchMap } from 'rxjs/operators';
-import { JobsSubmitDialogComponent } from './jobs-submit-dialog.component';
+import { Component, OnInit, OnDestroy } from "@angular/core";
+import {
+  JobsService,
+  JobStatus,
+  JobSubmitRequest,
+} from "../../services/jobs.service";
+import { MatDialog } from "@angular/material/dialog";
+import { MatSnackBar } from "@angular/material/snack-bar";
+import { interval, Subscription } from "rxjs";
+import { startWith, switchMap } from "rxjs/operators";
+import { JobsSubmitDialogComponent } from "./jobs-submit-dialog.component";
 
 @Component({
-  selector: 'app-jobs',
-  templateUrl: './jobs.component.html',
-  styleUrls: ['./jobs.component.scss'],
+  selector: "app-jobs",
+  templateUrl: "./jobs.component.html",
+  styleUrls: ["./jobs.component.scss"],
 })
 export class JobsComponent implements OnInit, OnDestroy {
   jobs: JobStatus[] = [];
@@ -30,7 +34,11 @@ export class JobsComponent implements OnInit, OnDestroy {
   logs: string[] = [];
   artifacts: { name: string; url: string }[] = [];
 
-  constructor(private jobsSvc: JobsService, private dialog: MatDialog, private snackBar: MatSnackBar) {}
+  constructor(
+    private jobsSvc: JobsService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
+  ) {}
 
   ngOnInit(): void {
     // subscribe to the shared hot list observable; it will poll automatically
@@ -63,8 +71,8 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   openSubmit() {
     const ref = this.dialog.open(JobsSubmitDialogComponent, {
-      width: '520px',
-      data: { workflow: 'import', parameters: {} },
+      width: "520px",
+      data: { workflow: "import", parameters: {} },
     });
 
     ref.afterClosed().subscribe((result) => {
@@ -72,9 +80,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       // build JobSubmitRequest from dialog result
       const req: JobSubmitRequest = {
         workflow: result.workflow,
-        datasetId: result.datasetId || 'ui',
+        datasetId: result.datasetId || "ui",
         parameters: result.parameters || {},
-        requestedBy: result.requestedBy || 'ui'
+        requestedBy: result.requestedBy || "ui",
       };
       // validate server-side and submit; after submit fetch full job status and prepend to list
       this.jobsSvc.validate(req.workflow, req.parameters ?? {}).subscribe(
@@ -87,7 +95,9 @@ export class JobsComponent implements OnInit, OnDestroy {
               if (created?.jobId) {
                 // optionally fetch the individual record and prepend to
                 // the list immediately
-                this.jobsSvc.get(created.jobId).subscribe((full) => (this.jobs = [full, ...this.jobs]));
+                this.jobsSvc
+                  .get(created.jobId)
+                  .subscribe((full) => (this.jobs = [full, ...this.jobs]));
               }
             },
             (e) => (this.error = this.errMsg(e))
@@ -101,30 +111,45 @@ export class JobsComponent implements OnInit, OnDestroy {
   addFiveJobs() {
     this.loading = true;
     this.error = null;
-    this.snackBar.open('Submitting 5 sample jobs…', undefined, { duration: 3000 });
+    this.snackBar.open("Submitting 5 sample jobs…", undefined, {
+      duration: 3000,
+    });
     const submissions: Promise<unknown>[] = [];
     for (let i = 1; i <= 5; i++) {
       const req: JobSubmitRequest = {
-        workflow: 'import',
+        workflow: "import",
         datasetId: `sample-ds-${Date.now()}-${i}`,
-        requestedBy: 'ui-sample',
+        requestedBy: "ui-sample",
         parameters: this.generateComplexParameters(i),
       };
-      const p = this.jobsSvc.submitJob(req).toPromise().then((created) => {
-        if (created && created.jobId) {
-          // fetch full job record and prepend
-          this.jobsSvc.get(created.jobId).subscribe((full) => (this.jobs = [full, ...this.jobs]));
-        }
-      }).catch((e) => (this.error = this.errMsg(e))).finally(() => void 0);
+      const p = this.jobsSvc
+        .submitJob(req)
+        .toPromise()
+        .then((created) => {
+          if (created && created.jobId) {
+            // fetch full job record and prepend
+            this.jobsSvc
+              .get(created.jobId)
+              .subscribe((full) => (this.jobs = [full, ...this.jobs]));
+          }
+        })
+        .catch((e) => (this.error = this.errMsg(e)))
+        .finally(() => void 0);
       submissions.push(p);
     }
-    Promise.allSettled(submissions).then((results: PromiseSettledResult<unknown>[]) => {
-      this.loading = false;
-      this.jobsSvc.invalidateList();
-      const ok = results.filter((r) => r.status === 'fulfilled').length;
-      const failed = results.length - ok;
-      this.snackBar.open(`Submitted ${ok} jobs${failed ? `, ${failed} failed` : ''}`, undefined, { duration: 4000 });
-    });
+    Promise.allSettled(submissions).then(
+      (results: PromiseSettledResult<unknown>[]) => {
+        this.loading = false;
+        this.jobsSvc.invalidateList();
+        const ok = results.filter((r) => r.status === "fulfilled").length;
+        const failed = results.length - ok;
+        this.snackBar.open(
+          `Submitted ${ok} jobs${failed ? `, ${failed} failed` : ""}`,
+          undefined,
+          { duration: 4000 }
+        );
+      }
+    );
   }
 
   releaseDeferred() {
@@ -132,12 +157,20 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.jobsSvc.releaseDeferred().subscribe(
       (res) => {
         this.loading = false;
-        this.snackBar.open(`Released ${res.released} deferred jobs`, undefined, { duration: 3000 });
+        this.snackBar.open(
+          `Released ${res.released} deferred jobs`,
+          undefined,
+          { duration: 3000 }
+        );
         this.jobsSvc.invalidateList();
       },
       (err) => {
         this.loading = false;
-        this.snackBar.open(`Failed to release deferred jobs: ${this.errMsg(err)}`, undefined, { duration: 5000 });
+        this.snackBar.open(
+          `Failed to release deferred jobs: ${this.errMsg(err)}`,
+          undefined,
+          { duration: 5000 }
+        );
       }
     );
   }
@@ -146,23 +179,26 @@ export class JobsComponent implements OnInit, OnDestroy {
     // emulate NGVLA-like complex job parameters: observation window, antennas, frequency selection, provenance flags
     const now = new Date().toISOString();
     return {
-      mission: 'ngvla-mvp',
+      mission: "ngvla-mvp",
       observation: {
         requestId: `sample-${now}-${index}`,
-        arraySegment: index % 3 === 0 ? 'SBA' : index % 3 === 1 ? 'Main' : 'Long Baseline',
-        antennaClass: index % 2 === 0 ? '18m' : '6m',
+        arraySegment:
+          index % 3 === 0 ? "SBA" : index % 3 === 1 ? "Main" : "Long Baseline",
+        antennaClass: index % 2 === 0 ? "18m" : "6m",
         frequencyBandGHz: { low: 1.2, high: 50 + index },
         startTime: now,
         durationSeconds: 120 + index * 30,
         pointing: { ra: 123.45 + index, dec: -23.45 + index },
       },
-      provenance: { capture: true, includeRaw: false, lineageTag: `sample-${index}` },
-      priority: index <= 2 ? 'high' : 'normal',
-      runtimeHints: { executor: 'simulator' }
+      provenance: {
+        capture: true,
+        includeRaw: false,
+        lineageTag: `sample-${index}`,
+      },
+      priority: index <= 2 ? "high" : "normal",
+      runtimeHints: { executor: "simulator" },
     };
   }
-
-  
 
   view(job: JobStatus) {
     this.selectedJob = job;
@@ -186,17 +222,19 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   applyFilter() {
     this.loading = true;
-    this.jobsSvc.list(this.filterWorkflow ?? undefined, this.filterState ?? undefined).subscribe(
-      (list) => {
-        this.jobs = list || [];
-        this.loading = false;
-        this.filterVisible = false;
-      },
-      (e) => {
-        this.error = this.errMsg(e);
-        this.loading = false;
-      }
-    );
+    this.jobsSvc
+      .list(this.filterWorkflow ?? undefined, this.filterState ?? undefined)
+      .subscribe(
+        (list) => {
+          this.jobs = list || [];
+          this.loading = false;
+          this.filterVisible = false;
+        },
+        (e) => {
+          this.error = this.errMsg(e);
+          this.loading = false;
+        }
+      );
   }
 
   clearFilter() {
@@ -214,9 +252,14 @@ export class JobsComponent implements OnInit, OnDestroy {
         // remove from UI list and clear selected
         this.jobs = this.jobs.filter((j) => j.jobId !== id);
         this.selectedJob = null;
-        this.snackBar.open('Job removed', undefined, { duration: 2000 });
+        this.snackBar.open("Job removed", undefined, { duration: 2000 });
       },
-      (e) => this.snackBar.open(`Failed to remove job: ${this.errMsg(e)}`, undefined, { duration: 4000 })
+      (e) =>
+        this.snackBar.open(
+          `Failed to remove job: ${this.errMsg(e)}`,
+          undefined,
+          { duration: 4000 }
+        )
     );
   }
 
@@ -232,7 +275,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   setScannerInterval() {
-    if (!this.scannerIntervalSeconds || this.scannerIntervalSeconds <= 0) return;
+    if (!this.scannerIntervalSeconds || this.scannerIntervalSeconds <= 0)
+      return;
     this.jobsSvc.setDispatchInterval(this.scannerIntervalSeconds).subscribe(
       () => this.loadDispatchConfig(),
       (e) => (this.error = this.errMsg(e))
@@ -240,19 +284,28 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   fetchLogs(id: string) {
-    this.jobsSvc.getLogs(id).subscribe((lines) => (this.logs = lines || []), (e) => (this.error = this.errMsg(e)));
+    this.jobsSvc.getLogs(id).subscribe(
+      (lines) => (this.logs = lines || []),
+      (e) => (this.error = this.errMsg(e))
+    );
   }
 
   fetchArtifacts(id: string) {
-    this.jobsSvc.artifacts(id).subscribe((a) => (this.artifacts = a || []), (e) => (this.error = this.errMsg(e)));
+    this.jobsSvc.artifacts(id).subscribe(
+      (a) => (this.artifacts = a || []),
+      (e) => (this.error = this.errMsg(e))
+    );
   }
 
   transition(job: JobStatus, next: string) {
     this.jobsSvc.transition(job.jobId, next).subscribe(
       (updated) => {
         if (!updated) return;
-        this.jobs = this.jobs.map((j) => (j.jobId === updated.jobId ? updated : j));
-        if (this.selectedJob && this.selectedJob.jobId === updated.jobId) this.selectedJob = updated;
+        this.jobs = this.jobs.map((j) =>
+          j.jobId === updated.jobId ? updated : j
+        );
+        if (this.selectedJob && this.selectedJob.jobId === updated.jobId)
+          this.selectedJob = updated;
       },
       (e) => (this.error = this.errMsg(e))
     );
@@ -263,7 +316,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   private errMsg(err: unknown): string {
-    if (err && typeof err === 'object' && 'message' in err) {
+    if (err && typeof err === "object" && "message" in err) {
       const m = (err as { message?: unknown }).message;
       return String(m ?? err);
     }
@@ -276,7 +329,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   startLogPolling(id: string) {
     this.logsSub?.unsubscribe();
     this.logsSub = interval(3000)
-      .pipe(startWith(0), switchMap(() => this.jobsSvc.getLogs(id)))
+      .pipe(
+        startWith(0),
+        switchMap(() => this.jobsSvc.getLogs(id))
+      )
       .subscribe((lines) => (this.logs = lines || []));
   }
 }

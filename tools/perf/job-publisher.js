@@ -2,31 +2,35 @@
 // Simple job publisher for load testing: POSTs jobs to governance API in a loop
 
 // Node 18+ has a global fetch; fall back to node-fetch if necessary
-const fetch = global.fetch || (await import('node-fetch')).default;
+const fetch = global.fetch || (await import("node-fetch")).default;
 
-const url = process.env.GOV_URL || 'http://localhost:8080/api/v1/jobs';
-const rate = parseInt(process.env.RATE || '10', 10); // messages per second
-const total = parseInt(process.env.TOTAL || '100', 10);
+const url = process.env.GOV_URL || "http://localhost:8080/api/v1/jobs";
+const rate = parseInt(process.env.RATE || "10", 10); // messages per second
+const total = parseInt(process.env.TOTAL || "100", 10);
 
 async function publish(i) {
   const body = {
-    workflow: 'perf-workflow',
-    datasetId: 'perf-' + i,
+    workflow: "perf-workflow",
+    datasetId: "perf-" + i,
     parameters: { iteration: i },
-    requestedBy: 'perf-script'
+    requestedBy: "perf-script",
   };
   try {
-    const res = await fetch(url, { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
+    const res = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+    });
     const txt = await res.text();
     console.log(i, res.status, txt);
   } catch (e) {
-    console.error('publish error', e.toString());
+    console.error("publish error", e.toString());
   }
 }
 
 (async () => {
   for (let i = 0; i < total; i++) {
     publish(i);
-    await new Promise(r => setTimeout(r, 1000 / rate));
+    await new Promise((r) => setTimeout(r, 1000 / rate));
   }
 })();

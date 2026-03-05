@@ -1,10 +1,10 @@
 # Provenance Model & Lineage
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../ROADMAP.md](/ROADMAP.md)
-
 
 This document defines provenance concepts and provides examples for constructing verifiable lineage graphs for SRDPs.
 
@@ -88,7 +88,7 @@ Each class requires different provenance granularity: raw visibilities need obje
 
 Use the production-rate target (approx. 7.5–8 GB/s) as a baseline for long-term planning. At 7.5 GB/s continuous ingest:
 
-- Annual raw ingest: ~7.5 GB/s * 31,536,000 s/yr ≈ 236 PB/year (decimal PB = 10^15 bytes).
+- Annual raw ingest: ~7.5 GB/s \* 31,536,000 s/yr ≈ 236 PB/year (decimal PB = 10^15 bytes).
 
 - 50-year raw accumulation (no deduplication, no tiering): ≈ 11.8 EB (exabytes).
 
@@ -102,9 +102,9 @@ Practical considerations that increase effective storage needs:
 
 Example sizing scenarios (rounded):
 
-- Conservative: store raw + one replica + essential intermediates = 236 PB * (1 + 1 + 0.5) ≈ 590 PB/year.
+- Conservative: store raw + one replica + essential intermediates = 236 PB \* (1 + 1 + 0.5) ≈ 590 PB/year.
 
-- Aggressive (long-term research retention): include full intermediate sets and ML artifacts = 236 PB * (1 + 2 + 1) ≈ 944 PB/year.
+- Aggressive (long-term research retention): include full intermediate sets and ML artifacts = 236 PB \* (1 + 2 + 1) ≈ 944 PB/year.
 
 Over 50 years these translate into multi-exabyte footprints; practical operations will rely on tiering, aggressive lifecycle policies, and archival anchors to control costs.
 

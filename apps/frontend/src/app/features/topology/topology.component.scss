@@ -1,39 +1,73 @@
-.view-container { padding: 1rem; width: 100%; height: 100%; }
+.view-container {
+  padding: 1rem;
+  width: 100%;
+  height: 100%;
+}
 
 .view-container {
-	padding: 12px 16px;
+  padding: 12px 16px;
 }
 
 .toolbar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .toolbar .actions button {
-	background: #2563eb;
-	color: white;
-	border: none;
-	padding: 6px 10px;
-	border-radius: 4px;
-	cursor: pointer;
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .topology-graph {
-	width: 100%;
-	height: 480px;
-	border: 1px solid #e5e7eb;
-	border-radius: 6px;
-	margin-top: 12px;
-	background: #ffffff;
-	overflow: hidden;
+  width: 100%;
+  height: 480px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-top: 12px;
+  background: #ffffff;
+  overflow: hidden;
 }
 
 .meta {
-	display: flex;
-	align-items: center;
-	gap: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.loading { color: #6b7280; }
-.error { color: #b91c1c }
+.loading {
+  color: #6b7280;
+}
+.error {
+  color: #b91c1c;
+}
+
+.source-chip {
+  margin: 0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.source-chip[data-source="live"] {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.source-chip[data-source="mock"] {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.source-chip[data-source="unavailable"] {
+  background: #fee2e2;
+  color: #991b1b;
+}

@@ -1,10 +1,10 @@
 # Topology — Phase 2 Cosmic
 
 Alignment anchors
+
 - Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
-
 
 This document contains higher-fidelity topology diagrams (containers + components) and a security-boundary variant for the local development stack.
 

@@ -23,9 +23,13 @@
 /* absolutely position the Aladin container so it always fills the root; avoids
    relying on cascaded flex sizing which can be fragile when parent sizes are
    uncertain. viewer-root is positioned relative above. */
-#aladin-lite, .aladin-container {
+#aladin-lite,
+.aladin-container {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   margin: 0.25em; /* gap from root edges */
 }
 

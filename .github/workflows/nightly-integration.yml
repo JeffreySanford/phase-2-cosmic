@@ -2,7 +2,7 @@ name: Nightly Integration
 
 on:
   schedule:
-    - cron: '0 3 * * *' # daily at 03:00 UTC
+    - cron: "0 3 * * *" # daily at 03:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Install pnpm
         run: npm install -g pnpm@8

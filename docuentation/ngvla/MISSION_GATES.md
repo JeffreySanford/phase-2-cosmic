@@ -1,6 +1,7 @@
 # Mission Gates
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../ROADMAP.md](/ROADMAP.md)
@@ -10,6 +11,7 @@ This document defines release readiness gates tied to ngVLA mission outcomes, no
 ## 1. Gate model
 
 A release candidate is mission-ready only if all gate groups pass:
+
 1. Mission Value Gates
 2. Contract and Quality Gates
 3. Reliability and Recovery Gates
@@ -32,12 +34,15 @@ flowchart LR
 ## 2. Mission Value Gates
 
 1. Operator situational awareness:
+
 - In a smoke scenario, an operator identifies unhealthy service and affected workflow from the UI within 30 seconds.
 
 2. Job lifecycle operability:
+
 - A user can submit a job, view transition state, and retrieve logs/artifacts from the UI without manual API calls.
 
 3. Dataset workflow continuity:
+
 - A user can create/list/read datasets and trace associated pipeline context at baseline fidelity.
 
 ## 3. Contract and Quality Gates
@@ -72,6 +77,7 @@ flowchart LR
 ## 7. Waiver policy
 
 Mission gate waivers are temporary and must include:
+
 1. documented risk
 2. mitigation owner
 3. expiration date

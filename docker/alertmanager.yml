@@ -3,11 +3,10 @@ global:
   resolve_timeout: 5m
 
 route:
-  receiver: 'null'
+  receiver: "null"
 
 receivers:
-  - name: 'null'
+  - name: "null"
 
 templates: []
-
 # Silence rules can be added here if desired

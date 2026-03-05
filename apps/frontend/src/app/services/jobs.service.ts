@@ -1,8 +1,14 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable, of, throwError, interval } from 'rxjs';
-import { map, catchError, shareReplay, startWith, switchMap } from 'rxjs/operators';
-import { Result } from './rx-utils';
+import { HttpClient } from "@angular/common/http";
+import { Injectable } from "@angular/core";
+import { Observable, of, throwError, interval } from "rxjs";
+import {
+  map,
+  catchError,
+  shareReplay,
+  startWith,
+  switchMap,
+} from "rxjs/operators";
+import { Result } from "./rx-utils";
 
 export interface JobStatus {
   jobId: string;
@@ -29,20 +35,24 @@ export interface JobSubmitResponse {
   queuedAt: string;
 }
 
-
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class JobsService {
-  private base = '/api/v1/jobs';
+  private base = "/api/v1/jobs";
   // single declaration; duplicate removed
 
   constructor(private http: HttpClient) {}
 
-  list(workflow?: string, state?: string, page?: number, size?: number): Observable<JobStatus[]> {
+  list(
+    workflow?: string,
+    state?: string,
+    page?: number,
+    size?: number
+  ): Observable<JobStatus[]> {
     const params: Record<string, string> = {};
-    if (workflow) params['workflow'] = workflow;
-    if (state) params['state'] = state;
-    if (page !== undefined) params['page'] = String(page);
-    if (size !== undefined) params['size'] = String(size);
+    if (workflow) params["workflow"] = workflow;
+    if (state) params["state"] = state;
+    if (page !== undefined) params["page"] = String(page);
+    if (size !== undefined) params["size"] = String(size);
     return this.http.get<JobStatus[]>(this.base, { params });
   }
 
@@ -103,7 +113,10 @@ export class JobsService {
     return this.http.get<JobStatus>(`${this.base}/${id}`);
   }
 
-  submit(body: { type: string; payload?: Record<string, unknown> }): Observable<JobStatus> {
+  submit(body: {
+    type: string;
+    payload?: Record<string, unknown>;
+  }): Observable<JobStatus> {
     return this.http.post<JobStatus>(this.base, body);
   }
 
@@ -112,7 +125,9 @@ export class JobsService {
   }
 
   transition(id: string, nextState: string): Observable<JobStatus> {
-    return this.http.post<JobStatus>(`${this.base}/${id}/transition`, { state: nextState });
+    return this.http.post<JobStatus>(`${this.base}/${id}/transition`, {
+      state: nextState,
+    });
   }
 
   types(): Observable<string[]> {
@@ -130,26 +145,45 @@ export class JobsService {
         map((arr) =>
           (arr || []).map((a) => ({
             name: a.name,
-            url: a.url && typeof a.url === 'string' && a.url.startsWith('/') ? window.location.origin + a.url : a.url,
+            url:
+              a.url && typeof a.url === "string" && a.url.startsWith("/")
+                ? window.location.origin + a.url
+                : a.url,
           }))
         )
       );
   }
 
   // Dispatch scanner admin endpoints
-  getDispatchConfig(): Observable<{ intervalSeconds: number; scannedCount: number; dispatchedCount: number }> {
-    return this.http.get<{ intervalSeconds: number; scannedCount: number; dispatchedCount: number }>(`/api/v1/admin/dispatch`);
+  getDispatchConfig(): Observable<{
+    intervalSeconds: number;
+    scannedCount: number;
+    dispatchedCount: number;
+  }> {
+    return this.http.get<{
+      intervalSeconds: number;
+      scannedCount: number;
+      dispatchedCount: number;
+    }>(`/api/v1/admin/dispatch`);
   }
 
   setDispatchInterval(seconds: number): Observable<unknown> {
-    return this.http.post<unknown>(`/api/v1/admin/dispatch`, { intervalSeconds: seconds });
+    return this.http.post<unknown>(`/api/v1/admin/dispatch`, {
+      intervalSeconds: seconds,
+    });
   }
 
   releaseDeferred(): Observable<{ released: number }> {
-    return this.http.post<{ released: number }>(`/api/v1/admin/release-deferred`, {});
+    return this.http.post<{ released: number }>(
+      `/api/v1/admin/release-deferred`,
+      {}
+    );
   }
 
-  validate(type: string, payload: Record<string, unknown>): Observable<unknown> {
+  validate(
+    type: string,
+    payload: Record<string, unknown>
+  ): Observable<unknown> {
     return this.http.post<unknown>(`${this.base}/validate`, { type, payload });
   }
 

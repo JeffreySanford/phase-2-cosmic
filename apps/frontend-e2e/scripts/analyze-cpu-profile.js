@@ -1,8 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 function loadProfile(file) {
-  const raw = fs.readFileSync(file, 'utf8');
+  const raw = fs.readFileSync(file, "utf8");
   return JSON.parse(raw);
 }
 
@@ -16,9 +16,9 @@ function analyze(profile) {
   const idToName = new Map();
   for (const n of nodes) {
     const cf = n.callFrame || {};
-    const name = cf.functionName || '(anonymous)';
-    const url = cf.url || cf.scriptId || '';
-    const line = cf.lineNumber != null ? cf.lineNumber : '';
+    const name = cf.functionName || "(anonymous)";
+    const url = cf.url || cf.scriptId || "";
+    const line = cf.lineNumber != null ? cf.lineNumber : "";
     idToName.set(n.id, `${name} -- ${url}:${line}`);
   }
 
@@ -43,16 +43,26 @@ function analyze(profile) {
 
 (async () => {
   try {
-    const file = path.resolve(__dirname, '..', 'profile-output', 'cpu-profile.json');
+    const file = path.resolve(
+      __dirname,
+      "..",
+      "profile-output",
+      "cpu-profile.json"
+    );
     const profile = loadProfile(file);
     const result = analyze(profile);
-    const out = path.resolve(__dirname, '..', 'profile-output', 'cpu-analysis.json');
+    const out = path.resolve(
+      __dirname,
+      "..",
+      "profile-output",
+      "cpu-analysis.json"
+    );
     fs.writeFileSync(out, JSON.stringify(result, null, 2));
-    console.log('Analysis written to', out);
-    console.log('Top samples:');
+    console.log("Analysis written to", out);
+    console.log("Top samples:");
     console.table(result.top.slice(0, 20));
   } catch (err) {
-    console.error('Failed to analyze profile:', err);
+    console.error("Failed to analyze profile:", err);
     process.exit(1);
   }
 })();

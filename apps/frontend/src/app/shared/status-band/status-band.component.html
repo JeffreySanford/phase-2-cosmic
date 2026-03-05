@@ -8,8 +8,11 @@
       <span class="status-badge" [class.status-badge--offline]="status.services.governance === 'offline'">
         Governance
       </span>
-      <span class="status-badge" [class.status-badge--offline]="status.services.streaming === 'offline'">
-        Streaming
+      <span class="status-badge" [class.status-badge--offline]="status.services.telemetry === 'offline'">
+        Telemetry
+      </span>
+      <span class="status-badge" [class.status-badge--offline]="status.services.diagnostics === 'offline'">
+        Diagnostics
       </span>
     </div>
   </div>

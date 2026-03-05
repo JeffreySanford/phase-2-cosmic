@@ -1,15 +1,14 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
-import { SidebarService } from './base/sidebar/sidebar.service';
-
+import { Component } from "@angular/core";
+import { Router } from "@angular/router";
+import { SidebarService } from "./base/sidebar/sidebar.service";
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
+  selector: "app-root",
+  templateUrl: "./app.component.html",
+  styleUrls: ["./app.component.scss"],
 })
 export class AppComponent {
-  title = 'frontend';
+  title = "frontend";
   sidebarCollapsed = false;
 
   constructor(private router: Router, private sidebarService: SidebarService) {}
@@ -18,8 +17,6 @@ export class AppComponent {
     this.sidebarCollapsed = !this.sidebarCollapsed;
     this.sidebarService.setCollapsed(this.sidebarCollapsed);
   }
-
-  
 
   onNavigate(path: string) {
     this.router.navigate([path]);

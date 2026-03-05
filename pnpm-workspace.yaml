@@ -1,8 +1,8 @@
 ---
 onlyBuiltDependencies:
-  - '@nestjs/core'
-  - '@parcel/watcher'
-  - '@swc/core'
+  - "@nestjs/core"
+  - "@parcel/watcher"
+  - "@swc/core"
   - cypress
   - esbuild
   - lmdb

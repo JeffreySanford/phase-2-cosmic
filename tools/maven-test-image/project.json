@@ -15,9 +15,7 @@
     "push": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": [
-          "docker push phase2/maven-test:17"
-        ],
+        "commands": ["docker push phase2/maven-test:17"],
         "cwd": "./"
       }
     }

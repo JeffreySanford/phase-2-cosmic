@@ -31,7 +31,11 @@
         "min": 8.6,
         "max": 25.0
       },
-      "keyScience": ["HI extended emission", "diffuse ionized gas", "large-scale structure"]
+      "keyScience": [
+        "HI extended emission",
+        "diffuse ionized gas",
+        "large-scale structure"
+      ]
     },
     {
       "band": "Band 2",
@@ -43,7 +47,11 @@
         "min": 3.75,
         "max": 12.5
       },
-      "keyScience": ["Extended continuum emission", "OH masers", "large molecular clouds"]
+      "keyScience": [
+        "Extended continuum emission",
+        "OH masers",
+        "large molecular clouds"
+      ]
     },
     {
       "band": "Band 3",
@@ -55,7 +63,11 @@
         "min": 1.7,
         "max": 5.0
       },
-      "keyScience": ["NH₃ extended structures", "H₂O emission", "star-forming regions"]
+      "keyScience": [
+        "NH₃ extended structures",
+        "H₂O emission",
+        "star-forming regions"
+      ]
     },
     {
       "band": "Band 4",

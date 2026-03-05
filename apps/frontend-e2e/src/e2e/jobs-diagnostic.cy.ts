@@ -1,1 +1,1 @@
-import '../specs/jobs-diagnostic.spec'
+import "../specs/jobs-diagnostic.spec";

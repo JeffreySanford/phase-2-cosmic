@@ -196,7 +196,7 @@ Description: In-memory data store for caching and session management
 **Purpose:** Alert routing from Prometheus  
 **Port:** 9093  
 **Config:** alertmanager.yml  
-**Health Check:** /-/ready endpoint  
+**Health Check:** /-/ready endpoint
 
 ### Data Generator
 
@@ -306,7 +306,7 @@ docker compose -f docker/dev-compose.yml logs java-governance
 # Finds: "Cannot connect to Redis"
 
 # Test Redis
-./scripts/test-services.sh redis  
+./scripts/test-services.sh redis
 # Output: ✓ SUCCESS: redis is running
 
 # Restart java-governance now that dependencies are up

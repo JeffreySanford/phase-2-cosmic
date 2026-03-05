@@ -1,16 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // tsconfig-paths registration happens during bootstrap when necessary
-import { NestFactory } from '@nestjs/core';
-import '@angular/compiler';
+import { NestFactory } from "@nestjs/core";
+import "@angular/compiler";
 // explicit any usage in this bootstrap file is intentional (vite dev middleware, SSR bootstrap)
-import { Module, Controller, Get, Post, Req, Res, Injectable, All } from '@nestjs/common';
-import express from 'express';
-import { createServer as createViteServer } from 'vite';
-import { CommonEngine } from '@angular/ssr';
-import { join } from 'path';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
-import { Request, Response } from 'express';
-import { spawn, type ChildProcess } from 'child_process';
+import {
+  Module,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  Injectable,
+  All,
+} from "@nestjs/common";
+import express from "express";
+import { createServer as createViteServer } from "vite";
+import { CommonEngine } from "@angular/ssr";
+import { join } from "path";
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  readdirSync,
+} from "fs";
+import { Request, Response } from "express";
+import { spawn, type ChildProcess } from "child_process";
 
 type LoadProfilePct = 10 | 25 | 50 | 100;
 
@@ -22,10 +37,30 @@ type RuntimeProfileSpec = {
 };
 
 const PROFILE_MAP: Record<LoadProfilePct, RuntimeProfileSpec> = {
-  10: { workers: 0, ratePerWorker: 0, payloadSize: 512, note: 'baseline (no extra runtime workers)' },
-  25: { workers: 2, ratePerWorker: 500_000, payloadSize: 1024, note: 'low stress' },
-  50: { workers: 4, ratePerWorker: 1_500_000, payloadSize: 1024, note: 'medium stress' },
-  100: { workers: 8, ratePerWorker: 3_000_000, payloadSize: 2048, note: 'smoke stress (bounded)' },
+  10: {
+    workers: 0,
+    ratePerWorker: 0,
+    payloadSize: 512,
+    note: "baseline (no extra runtime workers)",
+  },
+  25: {
+    workers: 2,
+    ratePerWorker: 500_000,
+    payloadSize: 1024,
+    note: "low stress",
+  },
+  50: {
+    workers: 4,
+    ratePerWorker: 1_500_000,
+    payloadSize: 1024,
+    note: "medium stress",
+  },
+  100: {
+    workers: 8,
+    ratePerWorker: 3_000_000,
+    payloadSize: 2048,
+    note: "smoke stress (bounded)",
+  },
 };
 
 type WorkerState = {
@@ -49,17 +84,29 @@ class SsrService {
 
   constructor() {
     // initialize synchronously; further initialization happens in init()
-    const serverDistFolder = join(process.cwd(), 'dist', 'apps', 'frontend', 'server');
-    const browserDistFolder = join(process.cwd(), 'dist', 'apps', 'frontend', 'browser');
-    const indexServerHtml = join(serverDistFolder, 'index.server.html');
+    const serverDistFolder = join(
+      process.cwd(),
+      "dist",
+      "apps",
+      "frontend",
+      "server"
+    );
+    const browserDistFolder = join(
+      process.cwd(),
+      "dist",
+      "apps",
+      "frontend",
+      "browser"
+    );
+    const indexServerHtml = join(serverDistFolder, "index.server.html");
     const indexHtmlPath = existsSync(indexServerHtml)
       ? indexServerHtml
-      : join(process.cwd(), 'apps', 'frontend', 'src', 'index.html');
+      : join(process.cwd(), "apps", "frontend", "src", "index.html");
 
     this.options = {
       browserDistFolder,
       indexHtmlPath,
-      isDev: process.env['NODE_ENV'] !== 'production',
+      isDev: process.env["NODE_ENV"] !== "production",
       commonEngine: new CommonEngine(),
     } as SsrOptions;
   }
@@ -70,13 +117,13 @@ class SsrService {
 
   getPublicEnv() {
     const allowed = [
-      'NODE_ENV',
-      'PORT',
-      'FRONTEND_PORT',
-      'MINIO_ROOT_USER',
-      'PNPM_STORE_DIR',
-      'KAFKA_BROKER',
-      'RABBITMQ_URL',
+      "NODE_ENV",
+      "PORT",
+      "FRONTEND_PORT",
+      "MINIO_ROOT_USER",
+      "PNPM_STORE_DIR",
+      "KAFKA_BROKER",
+      "RABBITMQ_URL",
     ];
     const out: Record<string, string> = {};
     allowed.forEach((k) => {
@@ -86,7 +133,7 @@ class SsrService {
   }
 
   getSecrets() {
-    const secrets = ['MINIO_ROOT_PASSWORD'];
+    const secrets = ["MINIO_ROOT_PASSWORD"];
     const out: Record<string, string> = {};
     secrets.forEach((k) => {
       if (process.env[k] !== undefined) out[k] = process.env[k] as string;
@@ -111,46 +158,62 @@ class SsrService {
         })
         .then((html: string) => res.send(html))
         .catch((err: any) => {
-          console.error('SSR render error:', err);
-          res.status(500).send(`<pre>${(err && err.stack) || String(err)}</pre>`);
+          console.error("SSR render error:", err);
+          res
+            .status(500)
+            .send(`<pre>${(err && err.stack) || String(err)}</pre>`);
         });
     }
 
     try {
-      const indexHtmlRaw = readFileSync(join(process.cwd(), 'apps', 'frontend', 'src', 'index.html'), 'utf8');
-      let transformed = await viteServer.transformIndexHtml(req.originalUrl, indexHtmlRaw);
-      const tmpDir = join(process.cwd(), '.angular', 'dev_ssr');
+      const indexHtmlRaw = readFileSync(
+        join(process.cwd(), "apps", "frontend", "src", "index.html"),
+        "utf8"
+      );
+      let transformed = await viteServer.transformIndexHtml(
+        req.originalUrl,
+        indexHtmlRaw
+      );
+      const tmpDir = join(process.cwd(), ".angular", "dev_ssr");
       try {
         mkdirSync(tmpDir, { recursive: true });
       } catch {
         void 0;
       }
-      const tmpIndex = join(tmpDir, 'index.server.html');
+      const tmpIndex = join(tmpDir, "index.server.html");
       // Ensure the transformed index contains a doctype and an <app-root> element
       try {
         if (!/<!doctype/i.test(transformed)) {
-          transformed = '<!DOCTYPE html>\n' + transformed;
+          transformed = "<!DOCTYPE html>\n" + transformed;
         }
         if (!/<app-root\b/i.test(transformed)) {
-          transformed = transformed.replace(/<\/body>/i, '  <app-root></app-root>\n</body>');
+          transformed = transformed.replace(
+            /<\/body>/i,
+            "  <app-root></app-root>\n</body>"
+          );
         }
       } catch (e) {
-        console.warn('Failed to normalize transformed index for SSR:', e);
+        console.warn("Failed to normalize transformed index for SSR:", e);
       }
 
-      writeFileSync(tmpIndex, transformed, 'utf8');
+      writeFileSync(tmpIndex, transformed, "utf8");
 
-      const mod = await viteServer.ssrLoadModule('/apps/frontend/src/main.server.ts');
+      const mod = await viteServer.ssrLoadModule(
+        "/apps/frontend/src/main.server.ts"
+      );
       const bootstrapFn = (mod && (mod.default || mod.bootstrap)) as any;
       try {
         // Debug: log which index file and a small snippet so we can confirm the document
         try {
-          const tmpHtml = readFileSync(tmpIndex, 'utf8');
-          console.log('Dev SSR using documentFilePath:', tmpIndex);
-          console.log('Dev SSR document length:', tmpHtml.length);
-          console.log('Dev SSR document snippet:', tmpHtml.slice(0, 200).replace(/\n/g, ' '));
+          const tmpHtml = readFileSync(tmpIndex, "utf8");
+          console.log("Dev SSR using documentFilePath:", tmpIndex);
+          console.log("Dev SSR document length:", tmpHtml.length);
+          console.log(
+            "Dev SSR document snippet:",
+            tmpHtml.slice(0, 200).replace(/\n/g, " ")
+          );
         } catch (e) {
-          console.warn('Could not read tmpIndex for debug logging:', e);
+          console.warn("Could not read tmpIndex for debug logging:", e);
         }
 
         return commonEngine
@@ -163,17 +226,24 @@ class SsrService {
           })
           .then((html: string) => res.send(html))
           .catch((err: any) => {
-            console.error('Dev SSR render error:', err);
-            res.status(500).send(`<pre>${(err && err.stack) || String(err)}</pre>`);
+            console.error("Dev SSR render error:", err);
+            res
+              .status(500)
+              .send(`<pre>${(err && err.stack) || String(err)}</pre>`);
           });
       } catch (e) {
-        console.error('Dev SSR pipeline error before render:', e);
+        console.error("Dev SSR pipeline error before render:", e);
         res.status(500).send(`<pre>${String(e)}</pre>`);
       }
     } catch (e) {
-      console.error('Dev SSR pipeline error:', e);
-      res.setHeader('Content-Type', 'text/html');
-      res.send(readFileSync(join(process.cwd(), 'apps', 'frontend', 'src', 'index.html'), 'utf8'));
+      console.error("Dev SSR pipeline error:", e);
+      res.setHeader("Content-Type", "text/html");
+      res.send(
+        readFileSync(
+          join(process.cwd(), "apps", "frontend", "src", "index.html"),
+          "utf8"
+        )
+      );
     }
   }
 }
@@ -189,12 +259,15 @@ class RuntimeLoadProfileService {
     return {
       profilePct: this.profile,
       workers: this.workers.length,
-      mode: this.workers.length > 0 ? 'runtime-controlled' : 'baseline',
+      mode: this.workers.length > 0 ? "runtime-controlled" : "baseline",
       note: PROFILE_MAP[this.profile].note,
     };
   }
 
-  async setProfile(pct: LoadProfilePct, smokeSeconds?: number): Promise<Record<string, unknown>> {
+  async setProfile(
+    pct: LoadProfilePct,
+    smokeSeconds?: number
+  ): Promise<Record<string, unknown>> {
     this.clearSmokeTimer();
     await this.stopWorkers();
     this.profile = pct;
@@ -214,7 +287,7 @@ class RuntimeLoadProfileService {
     } catch (e) {
       for (const w of started) {
         try {
-          w.proc.kill('SIGTERM');
+          w.proc.kill("SIGTERM");
         } catch {
           void 0;
         }
@@ -225,9 +298,14 @@ class RuntimeLoadProfileService {
     }
 
     if (pct === 100) {
-      const seconds = Math.max(30, Number(smokeSeconds || this.defaultSmokeSeconds));
+      const seconds = Math.max(
+        30,
+        Number(smokeSeconds || this.defaultSmokeSeconds)
+      );
       this.smokeTimer = setTimeout(() => {
-        void this.setProfile(10).catch((err) => console.error('Auto-revert to 10% failed:', err));
+        void this.setProfile(10).catch((err) =>
+          console.error("Auto-revert to 10% failed:", err)
+        );
       }, seconds * 1000);
     }
 
@@ -247,10 +325,10 @@ class RuntimeLoadProfileService {
   }
 
   private resolveGeneratorExecutable(): string {
-    const isWin = process.platform === 'win32';
+    const isWin = process.platform === "win32";
     const candidate = isWin
-      ? join(process.cwd(), 'tools', 'data-generator', 'data-generator.exe')
-      : join(process.cwd(), 'tools', 'data-generator', 'data-generator-linux');
+      ? join(process.cwd(), "tools", "data-generator", "data-generator.exe")
+      : join(process.cwd(), "tools", "data-generator", "data-generator-linux");
     if (!existsSync(candidate)) {
       throw new Error(`data-generator executable not found at ${candidate}`);
     }
@@ -259,7 +337,7 @@ class RuntimeLoadProfileService {
 
   private spawnWorker(id: number, spec: RuntimeProfileSpec): WorkerState {
     const cmd = this.resolveGeneratorExecutable();
-    const logDir = join(process.cwd(), 'tools', 'data-generator', 'logs');
+    const logDir = join(process.cwd(), "tools", "data-generator", "logs");
     try {
       mkdirSync(logDir, { recursive: true });
     } catch {
@@ -269,25 +347,27 @@ class RuntimeLoadProfileService {
     const args = [
       `--rate=${spec.ratePerWorker}`,
       `--payload-size=${spec.payloadSize}`,
-      '--no-stdout',
+      "--no-stdout",
       `--sink=${sink}`,
-      '--audit-every=2000',
+      "--audit-every=2000",
     ];
 
     const proc = spawn(cmd, args, {
       cwd: process.cwd(),
-      stdio: ['ignore', 'ignore', 'pipe'],
+      stdio: ["ignore", "ignore", "pipe"],
       windowsHide: true,
     });
-    proc.stderr?.on('data', (chunk) => {
-      const msg = String(chunk || '').trim();
+    proc.stderr?.on("data", (chunk) => {
+      const msg = String(chunk || "").trim();
       if (msg) console.log(`[runtime-load worker-${id}] ${msg}`);
     });
-    proc.on('exit', (code, signal) => {
-      console.log(`[runtime-load worker-${id}] exited code=${code} signal=${signal}`);
+    proc.on("exit", (code, signal) => {
+      console.log(
+        `[runtime-load worker-${id}] exited code=${code} signal=${signal}`
+      );
       this.workers = this.workers.filter((w) => w.id !== id);
     });
-    proc.on('error', (err) => {
+    proc.on("error", (err) => {
       console.error(`[runtime-load worker-${id}] error`, err);
     });
     return { id, cmd, args, proc };
@@ -305,16 +385,16 @@ class RuntimeLoadProfileService {
               return;
             }
             const done = () => resolve();
-            w.proc.once('exit', done);
+            w.proc.once("exit", done);
             try {
-              w.proc.kill('SIGTERM');
+              w.proc.kill("SIGTERM");
             } catch {
               resolve();
             }
             setTimeout(() => {
               if (w.proc.exitCode === null) {
                 try {
-                  w.proc.kill('SIGKILL');
+                  w.proc.kill("SIGKILL");
                 } catch {
                   void 0;
                 }
@@ -329,20 +409,23 @@ class RuntimeLoadProfileService {
 
 @Controller()
 export class AppController {
-  constructor(private ssr: SsrService, private runtimeLoad: RuntimeLoadProfileService) {}
+  constructor(
+    private ssr: SsrService,
+    private runtimeLoad: RuntimeLoadProfileService
+  ) {}
 
   private buildBaseCandidates(baseUrl: string): string[] {
     const out = [baseUrl];
     try {
       const u = new URL(baseUrl);
-      if (u.hostname === 'localhost') {
+      if (u.hostname === "localhost") {
         const v4 = new URL(baseUrl);
-        v4.hostname = '127.0.0.1';
-        out.push(v4.toString().replace(/\/$/, ''));
-      } else if (u.hostname === '127.0.0.1') {
+        v4.hostname = "127.0.0.1";
+        out.push(v4.toString().replace(/\/$/, ""));
+      } else if (u.hostname === "127.0.0.1") {
         const local = new URL(baseUrl);
-        local.hostname = 'localhost';
-        out.push(local.toString().replace(/\/$/, ''));
+        local.hostname = "localhost";
+        out.push(local.toString().replace(/\/$/, ""));
       }
     } catch {
       // ignore malformed base URL and use original only
@@ -350,9 +433,13 @@ export class AppController {
     return Array.from(new Set(out));
   }
 
-  private async fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 7000): Promise<globalThis.Response> {
+  private async fetchWithTimeout(
+    url: string,
+    init: RequestInit,
+    timeoutMs = 7000
+  ): Promise<globalThis.Response> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort('timeout'), timeoutMs);
+    const timer = setTimeout(() => controller.abort("timeout"), timeoutMs);
     try {
       return await fetch(url, { ...init, signal: controller.signal });
     } finally {
@@ -360,7 +447,11 @@ export class AppController {
     }
   }
 
-  private async fetchWithFallback(urls: string[], init: RequestInit, timeoutMs = 7000): Promise<globalThis.Response> {
+  private async fetchWithFallback(
+    urls: string[],
+    init: RequestInit,
+    timeoutMs = 7000
+  ): Promise<globalThis.Response> {
     let lastError: unknown;
     for (const url of urls) {
       try {
@@ -369,22 +460,25 @@ export class AppController {
         lastError = e;
       }
     }
-    throw lastError ?? new Error('fetch_failed');
+    throw lastError ?? new Error("fetch_failed");
   }
 
-  @Get('/api/env')
+  @Get("/api/env")
   getEnv() {
     return this.ssr.getPublicEnv();
   }
 
-  @Get('/api/proxy/prometheus')
-  async proxyPrometheus(@Req() req: Request, @Res() res: Response): Promise<void> {
+  @Get("/api/proxy/prometheus")
+  async proxyPrometheus(
+    @Req() req: Request,
+    @Res() res: Response
+  ): Promise<void> {
     // Only allow Prometheus proxy in non-production/dev environments
-    if (process.env['NODE_ENV'] === 'production') {
-      res.status(403).json({ error: 'forbidden' });
+    if (process.env["NODE_ENV"] === "production") {
+      res.status(403).json({ error: "forbidden" });
       return;
     }
-    const prom = process.env['PROMETHEUS_URL'] || 'http://127.0.0.1:9090';
+    const prom = process.env["PROMETHEUS_URL"] || "http://127.0.0.1:9090";
     // Build search params robustly from req.query (arrays, numbers, etc.)
     const qp = new URLSearchParams();
     try {
@@ -397,80 +491,99 @@ export class AppController {
         }
       });
     } catch (e) {
-      console.error('Failed to build query params for Prometheus proxy:', e);
-      res.status(400).send({ error: 'invalid query params' });
+      console.error("Failed to build query params for Prometheus proxy:", e);
+      res.status(400).send({ error: "invalid query params" });
       return;
     }
 
-    const isRange = qp.has('start') || qp.has('end') || qp.has('step');
-    const path = isRange ? '/api/v1/query_range' : '/api/v1/query';
+    const isRange = qp.has("start") || qp.has("end") || qp.has("step");
+    const path = isRange ? "/api/v1/query_range" : "/api/v1/query";
     const baseCandidates = this.buildBaseCandidates(prom);
     const urls = baseCandidates.map((b) => `${b}${path}?${qp.toString()}`);
-    console.log('Proxying Prometheus request to', urls[0]);
+    console.log("Proxying Prometheus request to", urls[0]);
     try {
-      const r = await this.fetchWithFallback(urls, { method: 'GET' }, 7000);
+      const r = await this.fetchWithFallback(urls, { method: "GET" }, 7000);
       const body = await r.text();
-      const ct = r.headers.get('content-type') || 'application/json';
-      console.log('Prometheus responded', r.status, 'content-type=', ct, 'len=', body?.length ?? 0);
+      const ct = r.headers.get("content-type") || "application/json";
+      console.log(
+        "Prometheus responded",
+        r.status,
+        "content-type=",
+        ct,
+        "len=",
+        body?.length ?? 0
+      );
       res.status(r.status);
-      res.setHeader('content-type', ct);
+      res.setHeader("content-type", ct);
       // send the raw body (string) to the client
-      res.send(body ?? '');
+      res.send(body ?? "");
     } catch (e: any) {
-      console.error('Error proxying to Prometheus:', e);
+      console.error("Error proxying to Prometheus:", e);
       res.status(502).send({
-        error: 'prometheus_proxy_error',
+        error: "prometheus_proxy_error",
         message: String(e),
         targetsTried: urls,
       });
     }
   }
 
-  @Get('/api/diagnostics/system-specs')
+  @Get("/api/diagnostics/system-specs")
   getSystemSpecs(@Res() res: Response) {
-    if (process.env['NODE_ENV'] === 'production') {
-      res.status(404).json({ error: 'not_found' });
+    if (process.env["NODE_ENV"] === "production") {
+      res.status(404).json({ error: "not_found" });
       return;
     }
     try {
-      const specPath = join(process.cwd(), 'tools', 'data-generator', 'logs', 'system-specs.txt');
+      const specPath = join(
+        process.cwd(),
+        "tools",
+        "data-generator",
+        "logs",
+        "system-specs.txt"
+      );
       if (!existsSync(specPath)) {
-        res.status(404).json({ error: 'system-specs.txt not found' });
+        res.status(404).json({ error: "system-specs.txt not found" });
         return;
       }
-      const txt = readFileSync(specPath, 'utf8');
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      const txt = readFileSync(specPath, "utf8");
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
       res.send(txt);
     } catch (e: any) {
-      console.error('Error reading system-specs:', e);
+      console.error("Error reading system-specs:", e);
       res.status(500).json({ error: String(e) });
     }
   }
 
-  @Get('/api/diagnostics/system-specs.json')
+  @Get("/api/diagnostics/system-specs.json")
   getSystemSpecsJson(@Res() res: Response) {
-    if (process.env['NODE_ENV'] === 'production') {
-      res.status(404).json({ error: 'not_found' });
+    if (process.env["NODE_ENV"] === "production") {
+      res.status(404).json({ error: "not_found" });
       return;
     }
     try {
-      const specPath = join(process.cwd(), 'tools', 'data-generator', 'logs', 'system-specs.txt');
+      const specPath = join(
+        process.cwd(),
+        "tools",
+        "data-generator",
+        "logs",
+        "system-specs.txt"
+      );
       if (!existsSync(specPath)) {
-        res.status(404).json({ error: 'system-specs.txt not found' });
+        res.status(404).json({ error: "system-specs.txt not found" });
         return;
       }
-      const txt = readFileSync(specPath, 'utf8');
+      const txt = readFileSync(specPath, "utf8");
       // Simple heuristic parser: key: value or key = value lines
       const lines = txt.split(/\r?\n/);
       const parsed: Record<string, string> = {};
       const sections: Record<string, string[]> = {};
-      let currentSection = 'default';
+      let currentSection = "default";
       sections[currentSection] = [];
       for (const raw of lines) {
         const line = raw.trim();
         if (!line) {
           // blank line, keep as separator
-          sections[currentSection].push('');
+          sections[currentSection].push("");
           continue;
         }
         // detect section headers like [Section] or === Section ===
@@ -493,58 +606,137 @@ export class AppController {
       }
 
       const result = { parsed, sections, raw: txt };
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
       res.json(result);
     } catch (e: any) {
-      console.error('Error parsing system-specs to JSON:', e);
+      console.error("Error parsing system-specs to JSON:", e);
       res.status(500).json({ error: String(e) });
     }
   }
 
-  @Get('/api/diagnostics')
+  @Get("/api/diagnostics")
   getDiagnosticsIndex(@Res() res: Response) {
-    if (process.env['NODE_ENV'] === 'production') {
-      res.status(404).json({ error: 'not_found' });
+    if (process.env["NODE_ENV"] === "production") {
+      res.status(404).json({ error: "not_found" });
       return;
     }
     try {
-      const logDir = join(process.cwd(), 'tools', 'data-generator', 'logs');
+      const logDir = join(process.cwd(), "tools", "data-generator", "logs");
       if (!existsSync(logDir)) {
-        res.status(404).json({ error: 'diagnostics logs directory not found' });
+        res.status(404).json({ error: "diagnostics logs directory not found" });
         return;
       }
       const entries = readdirSync(logDir, { withFileTypes: true });
       const files = entries.filter((d) => d.isFile()).map((d) => d.name);
-      res.json({ path: logDir, files });
+      res.json({ path: "diagnostics logs", files });
     } catch (e: any) {
-      console.error('Error listing diagnostics files:', e);
+      console.error("Error listing diagnostics files:", e);
       res.status(500).json({ error: String(e) });
     }
   }
 
-  @Get('/api/diagnostics/docker-services')
+  @Get("/api/diagnostics/docker-services")
   async getDockerServices(@Res() res: Response) {
-    if (process.env['NODE_ENV'] === 'production') {
-      res.status(404).json({ error: 'not_found' });
+    if (process.env["NODE_ENV"] === "production") {
+      res.status(404).json({ error: "not_found" });
       return;
     }
-    const net = await import('net');
+    const net = await import("net");
 
     // Service definitions with localhost fallbacks for host-mode development
-    const services: Array<{ name: string; kind: 'tcp' | 'http'; url: string; fallbackUrl?: string; icon?: string }> = [
-      { name: 'Prometheus', kind: 'http', url: process.env['PROMETHEUS_URL'] || 'http://prometheus:9090/-/ready', fallbackUrl: 'http://127.0.0.1:9090/-/ready', icon: 'monitoring' },
-      { name: 'Grafana', kind: 'http', url: process.env['GRAFANA_URL'] || 'http://grafana:3000/api/health', fallbackUrl: 'http://127.0.0.1:3000/api/health', icon: 'dashboard' },
-      { name: 'Loki', kind: 'http', url: process.env['LOKI_URL'] || 'http://loki:3100/ready', fallbackUrl: 'http://127.0.0.1:3100/ready', icon: 'description' },
-      { name: 'Pulsar', kind: 'tcp', url: process.env['PULSAR_BROKER'] || 'pulsar:6650', fallbackUrl: '127.0.0.1:6650', icon: 'cloud_queue' },
-      { name: 'Kafka', kind: 'tcp', url: process.env['KAFKA_BROKER'] || 'broker:9092', fallbackUrl: '127.0.0.1:9092', icon: 'stream' },
-      { name: 'RabbitMQ', kind: 'tcp', url: (process.env['RABBITMQ_URL'] || 'rabbitmq:5672').replace(/^amqp:\/\//, ''), fallbackUrl: '127.0.0.1:5672', icon: 'swap_horiz' },
-      { name: 'Alertmanager', kind: 'http', url: process.env['ALERTMANAGER_URL'] || 'http://alertmanager:9093/-/ready', fallbackUrl: 'http://127.0.0.1:9093/-/ready', icon: 'notifications' },
-      { name: 'Redis', kind: 'tcp', url: (process.env['REDIS_URL'] || 'redis:6379').replace(/^redis:\/\//, ''), fallbackUrl: '127.0.0.1:6379', icon: 'memory' },
+    const services: Array<{
+      name: string;
+      kind: "tcp" | "http";
+      url: string;
+      fallbackUrl?: string;
+      icon?: string;
+    }> = [
+      {
+        name: "Prometheus",
+        kind: "http",
+        url: process.env["PROMETHEUS_URL"] || "http://prometheus:9090/-/ready",
+        fallbackUrl: "http://127.0.0.1:9090/-/ready",
+        icon: "monitoring",
+      },
+      {
+        name: "Grafana",
+        kind: "http",
+        url: process.env["GRAFANA_URL"] || "http://grafana:3000/api/health",
+        fallbackUrl: "http://127.0.0.1:3000/api/health",
+        icon: "dashboard",
+      },
+      {
+        name: "Loki",
+        kind: "http",
+        url: process.env["LOKI_URL"] || "http://loki:3100/ready",
+        fallbackUrl: "http://127.0.0.1:3100/ready",
+        icon: "description",
+      },
+      {
+        name: "Pulsar",
+        kind: "tcp",
+        url: process.env["PULSAR_BROKER"] || "pulsar:6650",
+        fallbackUrl: "127.0.0.1:6650",
+        icon: "cloud_queue",
+      },
+      {
+        name: "Kafka",
+        kind: "tcp",
+        url: process.env["KAFKA_BROKER"] || "broker:9092",
+        fallbackUrl: "127.0.0.1:9092",
+        icon: "stream",
+      },
+      {
+        name: "RabbitMQ",
+        kind: "tcp",
+        url: (process.env["RABBITMQ_URL"] || "rabbitmq:5672").replace(
+          /^amqp:\/\//,
+          ""
+        ),
+        fallbackUrl: "127.0.0.1:5672",
+        icon: "swap_horiz",
+      },
+      {
+        name: "Alertmanager",
+        kind: "http",
+        url:
+          process.env["ALERTMANAGER_URL"] || "http://alertmanager:9093/-/ready",
+        fallbackUrl: "http://127.0.0.1:9093/-/ready",
+        icon: "notifications",
+      },
+      {
+        name: "Redis",
+        kind: "tcp",
+        url: (process.env["REDIS_URL"] || "redis:6379").replace(
+          /^redis:\/\//,
+          ""
+        ),
+        fallbackUrl: "127.0.0.1:6379",
+        icon: "memory",
+      },
     ];
 
-    const results: Array<{ name: string; status: 'healthy' | 'degraded' | 'offline' | 'unknown' | 'starting' | 'stopping' | 'maintenance'; details?: string; error?: string; latencyMs?: number; icon?: string }> = [];
+    const results: Array<{
+      name: string;
+      status:
+        | "healthy"
+        | "degraded"
+        | "offline"
+        | "unknown"
+        | "starting"
+        | "stopping"
+        | "maintenance";
+      details?: string;
+      error?: string;
+      latencyMs?: number;
+      icon?: string;
+    }> = [];
 
-    const checkTcp = (host: string, port: number, timeout = 3000): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
+    const checkTcp = (
+      host: string,
+      port: number,
+      timeout = 3000
+    ): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
       new Promise((resolve) => {
         const start = Date.now();
         const sock = new net.Socket();
@@ -553,41 +745,65 @@ export class AppController {
           if (done) return;
           done = true;
           const latencyMs = Date.now() - start;
-          try { sock.destroy(); } catch { /* ignore destroy errors */ }
+          try {
+            sock.destroy();
+          } catch {
+            /* ignore destroy errors */
+          }
           resolve({ ok, latencyMs, error });
         };
-        sock.setTimeout(timeout, () => onDone(false, 'timeout'));
-        sock.once('error', (err) => onDone(false, err?.message || 'connection_error'));
+        sock.setTimeout(timeout, () => onDone(false, "timeout"));
+        sock.once("error", (err) =>
+          onDone(false, err?.message || "connection_error")
+        );
         sock.connect(port, host, () => onDone(true));
       });
 
-    const checkHttp = async (url: string, timeout = 3000): Promise<{ ok: boolean; latencyMs: number; error?: string }> => {
+    const checkHttp = async (
+      url: string,
+      timeout = 3000
+    ): Promise<{ ok: boolean; latencyMs: number; error?: string }> => {
       const start = Date.now();
       try {
-        const u = url.startsWith('http') ? url : `http://${url}`;
-        const r = await this.fetchWithTimeout(u, { method: 'GET' }, timeout);
+        const u = url.startsWith("http") ? url : `http://${url}`;
+        const r = await this.fetchWithTimeout(u, { method: "GET" }, timeout);
         return { ok: r.ok, latencyMs: Date.now() - start };
       } catch (e: any) {
-        return { ok: false, latencyMs: Date.now() - start, error: e?.message || 'fetch_error' };
+        return {
+          ok: false,
+          latencyMs: Date.now() - start,
+          error: e?.message || "fetch_error",
+        };
       }
     };
 
     for (const s of services) {
-      let result: { ok: boolean; latencyMs: number; error?: string } = { ok: false, latencyMs: 0, error: 'not_checked' };
+      let result: { ok: boolean; latencyMs: number; error?: string } = {
+        ok: false,
+        latencyMs: 0,
+        error: "not_checked",
+      };
       let usedUrl = s.url;
 
       try {
-        if (s.kind === 'tcp') {
-          const [hostPart, portPart] = s.url.split(':');
-          const host = hostPart || '127.0.0.1';
+        if (s.kind === "tcp") {
+          const [hostPart, portPart] = s.url.split(":");
+          const host = hostPart || "127.0.0.1";
           const port = Number(portPart) || 0;
           if (port > 0) {
             result = await checkTcp(host, port, 3000);
             // Try fallback if primary fails
             if (!result.ok && s.fallbackUrl) {
-              const [fbHost, fbPort] = s.fallbackUrl.split(':');
-              const fbResult = await checkTcp(fbHost || '127.0.0.1', Number(fbPort) || port, 3000);
-              if (fbResult.ok) { result = fbResult; usedUrl = s.fallbackUrl; }
+              const [fbHost, fbPort] = s.fallbackUrl.split(":");
+              const fbResult = await checkTcp(
+                fbHost || "127.0.0.1",
+                Number(fbPort) || port,
+                3000
+              );
+              if (fbResult.ok) {
+                result = fbResult;
+                usedUrl = s.fallbackUrl;
+              }
             }
           }
         } else {
@@ -595,52 +811,123 @@ export class AppController {
           // Try fallback if primary fails
           if (!result.ok && s.fallbackUrl) {
             const fbResult = await checkHttp(s.fallbackUrl, 3000);
-            if (fbResult.ok) { result = fbResult; usedUrl = s.fallbackUrl; }
+            if (fbResult.ok) {
+              result = fbResult;
+              usedUrl = s.fallbackUrl;
+            }
           }
         }
         results.push({
           name: s.name,
-          status: result.ok ? (result.latencyMs > 1000 ? 'degraded' : 'healthy') : 'offline',
+          status: result.ok
+            ? result.latencyMs > 1000
+              ? "degraded"
+              : "healthy"
+            : "offline",
           details: usedUrl,
           error: result.error,
           latencyMs: result.latencyMs,
           icon: s.icon,
         });
       } catch (e: any) {
-        results.push({ name: s.name, status: 'unknown', details: usedUrl, error: String(e), icon: s.icon });
+        results.push({
+          name: s.name,
+          status: "unknown",
+          details: usedUrl,
+          error: String(e),
+          icon: s.icon,
+        });
       }
     }
 
     res.json(results);
   }
 
-  @Get('/api/diagnostics/docker-services/:name')
+  @Get("/api/diagnostics/docker-services/:name")
   async getDockerServiceByName(@Res() res: Response, @Req() req: Request) {
-    const name = String(req.params?.['name'] || '');
+    const name = String(req.params?.["name"] || "");
     if (!name) {
-      res.status(400).json({ error: 'missing_name' });
+      res.status(400).json({ error: "missing_name" });
       return;
     }
     // Reuse list of services from the main handler
-    const services: Array<{ name: string; kind: 'tcp' | 'http'; url: string; fallbackUrl?: string }> = [
-      { name: 'Prometheus', kind: 'http', url: process.env['PROMETHEUS_URL'] || 'http://prometheus:9090/-/ready', fallbackUrl: 'http://127.0.0.1:9090/-/ready' },
-      { name: 'Grafana', kind: 'http', url: process.env['GRAFANA_URL'] || 'http://grafana:3000/api/health', fallbackUrl: 'http://127.0.0.1:3000/api/health' },
-      { name: 'Loki', kind: 'http', url: process.env['LOKI_URL'] || 'http://loki:3100/ready', fallbackUrl: 'http://127.0.0.1:3100/ready' },
-      { name: 'Pulsar', kind: 'tcp', url: process.env['PULSAR_BROKER'] || 'pulsar:6650', fallbackUrl: '127.0.0.1:6650' },
-      { name: 'Kafka', kind: 'tcp', url: process.env['KAFKA_BROKER'] || 'broker:9092', fallbackUrl: '127.0.0.1:9092' },
-      { name: 'RabbitMQ', kind: 'tcp', url: (process.env['RABBITMQ_URL'] || 'rabbitmq:5672').replace(/^amqp:\/\//, ''), fallbackUrl: '127.0.0.1:5672' },
-      { name: 'Alertmanager', kind: 'http', url: process.env['ALERTMANAGER_URL'] || 'http://alertmanager:9093/-/ready', fallbackUrl: 'http://127.0.0.1:9093/-/ready' },
-      { name: 'Redis', kind: 'tcp', url: (process.env['REDIS_URL'] || 'redis:6379').replace(/^redis:\/\//, ''), fallbackUrl: '127.0.0.1:6379' },
+    const services: Array<{
+      name: string;
+      kind: "tcp" | "http";
+      url: string;
+      fallbackUrl?: string;
+    }> = [
+      {
+        name: "Prometheus",
+        kind: "http",
+        url: process.env["PROMETHEUS_URL"] || "http://prometheus:9090/-/ready",
+        fallbackUrl: "http://127.0.0.1:9090/-/ready",
+      },
+      {
+        name: "Grafana",
+        kind: "http",
+        url: process.env["GRAFANA_URL"] || "http://grafana:3000/api/health",
+        fallbackUrl: "http://127.0.0.1:3000/api/health",
+      },
+      {
+        name: "Loki",
+        kind: "http",
+        url: process.env["LOKI_URL"] || "http://loki:3100/ready",
+        fallbackUrl: "http://127.0.0.1:3100/ready",
+      },
+      {
+        name: "Pulsar",
+        kind: "tcp",
+        url: process.env["PULSAR_BROKER"] || "pulsar:6650",
+        fallbackUrl: "127.0.0.1:6650",
+      },
+      {
+        name: "Kafka",
+        kind: "tcp",
+        url: process.env["KAFKA_BROKER"] || "broker:9092",
+        fallbackUrl: "127.0.0.1:9092",
+      },
+      {
+        name: "RabbitMQ",
+        kind: "tcp",
+        url: (process.env["RABBITMQ_URL"] || "rabbitmq:5672").replace(
+          /^amqp:\/\//,
+          ""
+        ),
+        fallbackUrl: "127.0.0.1:5672",
+      },
+      {
+        name: "Alertmanager",
+        kind: "http",
+        url:
+          process.env["ALERTMANAGER_URL"] || "http://alertmanager:9093/-/ready",
+        fallbackUrl: "http://127.0.0.1:9093/-/ready",
+      },
+      {
+        name: "Redis",
+        kind: "tcp",
+        url: (process.env["REDIS_URL"] || "redis:6379").replace(
+          /^redis:\/\//,
+          ""
+        ),
+        fallbackUrl: "127.0.0.1:6379",
+      },
     ];
 
-    const service = services.find((s) => s.name.toLowerCase() === name.toLowerCase());
+    const service = services.find(
+      (s) => s.name.toLowerCase() === name.toLowerCase()
+    );
     if (!service) {
-      res.status(404).json({ error: 'service_not_found', name });
+      res.status(404).json({ error: "service_not_found", name });
       return;
     }
 
-    const net = await import('net');
-    const checkTcp = (host: string, port: number, timeout = 3000): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
+    const net = await import("net");
+    const checkTcp = (
+      host: string,
+      port: number,
+      timeout = 3000
+    ): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
       new Promise((resolve) => {
         const start = Date.now();
         const sock = new net.Socket();
@@ -649,80 +936,133 @@ export class AppController {
           if (done) return;
           done = true;
           const latencyMs = Date.now() - start;
-          try { sock.destroy(); } catch { /* ignore destroy errors */ }
+          try {
+            sock.destroy();
+          } catch {
+            /* ignore destroy errors */
+          }
           resolve({ ok, latencyMs, error });
         };
-        sock.setTimeout(timeout, () => onDone(false, 'timeout'));
-        sock.once('error', (err) => onDone(false, err?.message || 'connection_error'));
+        sock.setTimeout(timeout, () => onDone(false, "timeout"));
+        sock.once("error", (err) =>
+          onDone(false, err?.message || "connection_error")
+        );
         sock.connect(port, host, () => onDone(true));
       });
 
-    const checkHttp = async (url: string, timeout = 3000): Promise<{ ok: boolean; latencyMs: number; error?: string }> => {
+    const checkHttp = async (
+      url: string,
+      timeout = 3000
+    ): Promise<{ ok: boolean; latencyMs: number; error?: string }> => {
       const start = Date.now();
       try {
-        const u = url.startsWith('http') ? url : `http://${url}`;
-        const r = await this.fetchWithTimeout(u, { method: 'GET' }, timeout);
+        const u = url.startsWith("http") ? url : `http://${url}`;
+        const r = await this.fetchWithTimeout(u, { method: "GET" }, timeout);
         return { ok: r.ok, latencyMs: Date.now() - start };
       } catch (e: any) {
-        return { ok: false, latencyMs: Date.now() - start, error: e?.message || 'fetch_error' };
+        return {
+          ok: false,
+          latencyMs: Date.now() - start,
+          error: e?.message || "fetch_error",
+        };
       }
     };
 
     try {
-      let result: { ok: boolean; latencyMs: number; error?: string } = { ok: false, latencyMs: 0, error: 'not_checked' };
+      let result: { ok: boolean; latencyMs: number; error?: string } = {
+        ok: false,
+        latencyMs: 0,
+        error: "not_checked",
+      };
       let usedUrl = service.url;
 
-      if (service.kind === 'tcp') {
-        const [hostPart, portPart] = service.url.split(':');
-        const host = hostPart || '127.0.0.1';
+      if (service.kind === "tcp") {
+        const [hostPart, portPart] = service.url.split(":");
+        const host = hostPart || "127.0.0.1";
         const port = Number(portPart) || 0;
         if (port > 0) {
           result = await checkTcp(host, port, 3000);
           if (!result.ok && service.fallbackUrl) {
-            const [fbHost, fbPort] = service.fallbackUrl.split(':');
-            const fbResult = await checkTcp(fbHost || '127.0.0.1', Number(fbPort) || port, 3000);
-            if (fbResult.ok) { result = fbResult; usedUrl = service.fallbackUrl; }
+            const [fbHost, fbPort] = service.fallbackUrl.split(":");
+            const fbResult = await checkTcp(
+              fbHost || "127.0.0.1",
+              Number(fbPort) || port,
+              3000
+            );
+            if (fbResult.ok) {
+              result = fbResult;
+              usedUrl = service.fallbackUrl;
+            }
           }
         }
       } else {
         result = await checkHttp(service.url, 3000);
         if (!result.ok && service.fallbackUrl) {
           const fbResult = await checkHttp(service.fallbackUrl, 3000);
-          if (fbResult.ok) { result = fbResult; usedUrl = service.fallbackUrl; }
+          if (fbResult.ok) {
+            result = fbResult;
+            usedUrl = service.fallbackUrl;
+          }
         }
       }
-      res.json({ name: service.name, status: result.ok ? (result.latencyMs > 1000 ? 'degraded' : 'healthy') : 'offline', details: usedUrl, error: result.error, latencyMs: result.latencyMs, lastChecked: Date.now() });
+      res.json({
+        name: service.name,
+        status: result.ok
+          ? result.latencyMs > 1000
+            ? "degraded"
+            : "healthy"
+          : "offline",
+        details: usedUrl,
+        error: result.error,
+        latencyMs: result.latencyMs,
+        lastChecked: Date.now(),
+      });
     } catch (e: any) {
-      res.status(500).json({ name: service.name, status: 'unknown', details: String(e) });
+      res
+        .status(500)
+        .json({ name: service.name, status: "unknown", details: String(e) });
     }
   }
 
-  @Get('/api/load-profile')
+  @Get("/api/load-profile")
   getLoadProfile() {
     return this.runtimeLoad.status();
   }
 
-  @Post('/api/load-profile')
-  async setLoadProfile(@Req() req: Request, @Res() res: Response): Promise<void> {
+  @Post("/api/load-profile")
+  async setLoadProfile(
+    @Req() req: Request,
+    @Res() res: Response
+  ): Promise<void> {
     try {
       const body = (req as any).body || {};
       const pctRaw = Number(body.profilePct);
-      const smokeSeconds = body.smokeSeconds !== undefined ? Number(body.smokeSeconds) : undefined;
+      const smokeSeconds =
+        body.smokeSeconds !== undefined ? Number(body.smokeSeconds) : undefined;
       if (![10, 25, 50, 100].includes(pctRaw)) {
-        res.status(400).json({ error: 'invalid_profile_pct' });
+        res.status(400).json({ error: "invalid_profile_pct" });
         return;
       }
-      const result = await this.runtimeLoad.setProfile(pctRaw as LoadProfilePct, smokeSeconds);
+      const result = await this.runtimeLoad.setProfile(
+        pctRaw as LoadProfilePct,
+        smokeSeconds
+      );
       res.status(200).json(result);
     } catch (e: any) {
-      console.error('Failed to set runtime load profile:', e);
-      res.status(500).json({ error: 'load_profile_failed', message: String(e) });
+      console.error("Failed to set runtime load profile:", e);
+      res
+        .status(500)
+        .json({ error: "load_profile_failed", message: String(e) });
     }
   }
 
-  @All('/api/v1/*path')
-  async proxyGovernance(@Req() req: Request, @Res() res: Response): Promise<void> {
-    const governanceBase = process.env['GOVERNANCE_API_URL'] || 'http://127.0.0.1:8082';
+  @All("/api/v1/*path")
+  async proxyGovernance(
+    @Req() req: Request,
+    @Res() res: Response
+  ): Promise<void> {
+    const governanceBase =
+      process.env["GOVERNANCE_API_URL"] || "http://127.0.0.1:8082";
     const baseCandidates = this.buildBaseCandidates(governanceBase);
     const targetUrls = baseCandidates.map((b) => `${b}${req.originalUrl}`);
     try {
@@ -730,7 +1070,8 @@ export class AppController {
       Object.entries(req.headers || {}).forEach(([k, v]) => {
         if (!v) return;
         const key = k.toLowerCase();
-        if (key === 'host' || key === 'content-length' || key === 'connection') return;
+        if (key === "host" || key === "content-length" || key === "connection")
+          return;
         if (Array.isArray(v)) {
           v.forEach((x) => headers.append(k, String(x)));
         } else {
@@ -738,40 +1079,46 @@ export class AppController {
         }
       });
 
-      const method = (req.method || 'GET').toUpperCase();
+      const method = (req.method || "GET").toUpperCase();
       let body: BodyInit | undefined;
-      if (method !== 'GET' && method !== 'HEAD') {
-        const hasBody = (req as any).body !== undefined && (req as any).body !== null;
+      if (method !== "GET" && method !== "HEAD") {
+        const hasBody =
+          (req as any).body !== undefined && (req as any).body !== null;
         if (hasBody) {
-          if (typeof (req as any).body === 'string') {
+          if (typeof (req as any).body === "string") {
             body = (req as any).body;
           } else {
             body = JSON.stringify((req as any).body);
-            if (!headers.has('content-type')) headers.set('content-type', 'application/json');
+            if (!headers.has("content-type"))
+              headers.set("content-type", "application/json");
           }
         }
       }
 
-      const upstream = await this.fetchWithFallback(targetUrls, { method, headers, body }, 7000);
+      const upstream = await this.fetchWithFallback(
+        targetUrls,
+        { method, headers, body },
+        7000
+      );
       const text = await upstream.text();
-      const ct = upstream.headers.get('content-type');
-      if (ct) res.setHeader('content-type', ct);
+      const ct = upstream.headers.get("content-type");
+      if (ct) res.setHeader("content-type", ct);
       res.status(upstream.status).send(text);
     } catch (e: any) {
-      console.error('Error proxying to governance API:', e);
+      console.error("Error proxying to governance API:", e);
       res.status(502).json({
-        error: 'governance_proxy_error',
+        error: "governance_proxy_error",
         message: String(e),
         targetsTried: targetUrls,
       });
     }
   }
 
-  @Get('/*path')
+  @Get("/*path")
   async handleAll(@Req() req: Request, @Res() res: Response) {
     // Guard against SSR swallowing unhandled API routes.
-    if (req.path && req.path.startsWith('/api/')) {
-      res.status(404).json({ error: 'api_route_not_found', path: req.path });
+    if (req.path && req.path.startsWith("/api/")) {
+      res.status(404).json({ error: "api_route_not_found", path: req.path });
       return;
     }
     // let SsrService handle SSR or static fallback
@@ -779,7 +1126,10 @@ export class AppController {
   }
 }
 
-@Module({ providers: [SsrService, RuntimeLoadProfileService], controllers: [AppController] })
+@Module({
+  providers: [SsrService, RuntimeLoadProfileService],
+  controllers: [AppController],
+})
 class AppModule {}
 
 async function bootstrap() {
@@ -787,40 +1137,50 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // static assets
-  const browserDistFolder = join(process.cwd(), 'dist', 'apps', 'frontend', 'browser');
+  const browserDistFolder = join(
+    process.cwd(),
+    "dist",
+    "apps",
+    "frontend",
+    "browser"
+  );
   const expressInstance = app.getHttpAdapter().getInstance();
   expressInstance.use(express.static(browserDistFolder));
 
   // If dev, create vite server and attach middlewares for SSR
-  if (process.env['NODE_ENV'] !== 'production') {
+  if (process.env["NODE_ENV"] !== "production") {
     try {
-      const vite = await createViteServer({ root: process.cwd(), logLevel: 'error', server: { middlewareMode: true as any } });
+      const vite = await createViteServer({
+        root: process.cwd(),
+        logLevel: "error",
+        server: { middlewareMode: true as any },
+      });
       // Ensure API routes are handled by Nest: skip vite middleware for /api/* to avoid proxy loops
       expressInstance.use((req: Request, res: Response, next: any) => {
-        if (req.path && req.path.startsWith('/api/')) return next();
+        if (req.path && req.path.startsWith("/api/")) return next();
         return vite.middlewares(req as any, res as any, next);
       });
       // initialize SsrService with vite instance
       const ssr = app.get(SsrService);
       await ssr.init(vite);
     } catch (e) {
-      console.warn('Could not start Vite dev server for Nest SSR:', e);
+      console.warn("Could not start Vite dev server for Nest SSR:", e);
     }
   }
 
-  const nestPort = process.env['PORT'] || process.env['FRONTEND_PORT'] || 3000;
+  const nestPort = process.env["PORT"] || process.env["FRONTEND_PORT"] || 3000;
   const runtimeLoad = app.get(RuntimeLoadProfileService);
   app.enableShutdownHooks();
   await app.listen(nestPort);
-  console.log('Nest SSR server listening on', nestPort);
+  console.log("Nest SSR server listening on", nestPort);
 
   const shutdown = async () => {
     await runtimeLoad.shutdown();
   };
-  process.on('SIGINT', () => {
+  process.on("SIGINT", () => {
     void shutdown();
   });
-  process.on('SIGTERM', () => {
+  process.on("SIGTERM", () => {
     void shutdown();
   });
 }

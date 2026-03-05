@@ -9,6 +9,7 @@ Related backlog: `TODO.md` `MG-5`
 Tiered storage and manifest governance are defined, but explicit disaster recovery policy (RPO/RTO), replication-lag thresholds, and restore-drill evidence are not yet first-class roadmap gates.
 
 Current platform risk:
+
 - unclear recovery objectives during major failure events
 - unverified restore ability for manifests/provenance/catalog records
 - insufficient evidence for institutional trust at scale
@@ -28,6 +29,7 @@ Current platform risk:
 ## Planned integration steps
 
 1. Policy definition
+
 - Define RPO/RTO targets for:
   - raw/cal/sci dataset tiers
   - catalog index
@@ -35,11 +37,13 @@ Current platform risk:
 - Define acceptable replication lag per tier.
 
 2. Replication and alerting integration
+
 - Add replication lag metrics and alert thresholds.
 - Add failure-state visibility in operator dashboards.
 - Document fallback and prioritization order during prolonged incidents.
 
 3. Restore drill workflow
+
 - Create periodic restore drill runbook.
 - Verify:
   - object availability
@@ -48,6 +52,7 @@ Current platform risk:
 - Capture drill artifacts for mission gate evidence.
 
 4. Testing and CI/SRE hooks
+
 - Integration tests for restore validation tooling.
 - Scheduled drill lane with archived outputs.
 - Failure criteria that trigger remediation backlog items.

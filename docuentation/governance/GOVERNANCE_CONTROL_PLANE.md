@@ -1,6 +1,7 @@
 # Governance & Orchestration Control Plane
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../ROADMAP.md](/ROADMAP.md)
@@ -10,6 +11,7 @@ The Governance Plane is the authoritative system of record for orchestration met
 ## 1. Scope and role
 
 Primary responsibilities:
+
 - accept and validate orchestration requests
 - track job lifecycle and state transitions
 - provide durable, queryable governance records
@@ -18,6 +20,7 @@ Primary responsibilities:
 ## 2. Current implementation status
 
 ### Implemented
+
 - Java Spring Boot service scaffold
 - API baseline:
   - `GET /api/v1/health`
@@ -27,11 +30,13 @@ Primary responsibilities:
 - OpenAPI contract and fixture validation path
 
 ### In progress
+
 - durable job store
 - complete lifecycle transitions and cancellation semantics
 - richer query APIs for frontend jobs and datasets surfaces
 
 ### Planned
+
 - authN/authZ enforcement
 - policy decision traceability
 - immutable audit streams and signatures
@@ -57,10 +62,12 @@ flowchart LR
 ## 4. API contract and frontend dependency
 
 The frontend `Jobs` page depends on:
+
 - `POST /api/v1/jobs`
 - `GET /api/v1/jobs/{id}`
 
 Required near-term API expansion:
+
 - `GET /api/v1/jobs` with filtering and pagination
 - `POST /api/v1/jobs/{id}/cancel`
 - dataset-oriented read APIs for `Datasets` frontend route
@@ -68,6 +75,7 @@ Required near-term API expansion:
 ## 5. Lifecycle semantics (target)
 
 Canonical states:
+
 - `QUEUED`
 - `RUNNING`
 - `COMPLETED`
@@ -76,6 +84,7 @@ Canonical states:
 - `TIMED_OUT`
 
 Requirements:
+
 - monotonic state progression
 - explicit transition timestamps
 - idempotent state updates
@@ -84,6 +93,7 @@ Requirements:
 ## 6. Reliability and integrity controls
 
 Minimum required controls:
+
 - request validation at API boundary
 - trace-id and request-id propagation
 - optimistic concurrency for updates
@@ -92,9 +102,11 @@ Minimum required controls:
 ## 7. Security posture
 
 Near-term:
+
 - environment-based protective mode and endpoint hardening
 
 Target:
+
 - token-based auth for user-facing calls
 - service-to-service trust controls
 - role-aware policy enforcement and auditable denials

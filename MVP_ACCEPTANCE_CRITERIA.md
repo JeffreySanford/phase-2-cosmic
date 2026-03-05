@@ -42,7 +42,7 @@ The MVP must encode and preserve these domain assumptions in docs, fixtures, and
    - Domain labels distinguish `Main`, `Long Baseline`, and `SBA` concepts where represented.
 7. Demo execution
    - `DEMO_CHECKLIST.md` runs end-to-end locally with observable pass/fail outcomes.  
-  *Note: the playground is now implemented and has been exercised successfully during development.*
+     _Note: the playground is now implemented and has been exercised successfully during development._
 
 ## Non-Functional Acceptance Criteria
 

@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 -->
+
 # TODO
 
 ## Status
@@ -10,6 +12,8 @@
 - Sprint execution underway for Testcontainers scaffold, provenance E2E, and CI gating.
 - Messaging-fabric expansion planned across Kafka, RabbitMQ, and Pulsar paths.
 - ngVLA data-architecture alignment and mission-oversight closure tracks are defined and queued.
+- Remaining frontend hardening is being folded into adjacent feature work rather
+  than run as a standalone pause. See `FRONTEND_HARDENING_TRACKER.md`.
 
 ## Next
 
@@ -102,3 +106,4 @@
   - `docuentation/ngvla/NGVLA_MISSION_ALIGNMENT.md`
   - `docuentation/ngvla/MISSION_TO_CAPABILITY_TRACE.md`
   - `docuentation/ngvla/MISSION_GATES.md`
+  <!-- markdownlint-enable MD013 -->

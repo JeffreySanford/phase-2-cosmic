@@ -1,8 +1,6 @@
-Testing scaffold and migration plan for governance integration tests
-=================================================================
+# Testing scaffold and migration plan for governance integration tests
 
-Goal
-----
+## Goal
 
 Provide a stable, maintainable integration test framework for `apps/java-governance` that:
 
@@ -11,19 +9,21 @@ Provide a stable, maintainable integration test framework for `apps/java-governa
 - Includes an end-to-end `provenance` test that exercises the full job lifecycle
 - Emits surefire reports for CI and local debugging
 
-Scaffold outline
-----------------
+## Scaffold outline
 
 1. Testcontainers base class (Java)
+
    - Create a reusable `TestcontainersConfig` that starts a Kafka container and a Redis container.
    - Provide helper methods to create topics, seed Redis, and wait for readiness.
 
 2. Lightweight integration tests
+
    - Replace existing large suites with focused tests:
      - `KafkaIngestListenerIntegrationTest` -> only verifies DLQ behavior for singular invalid message
      - `SimulatorLifecycleTest` -> verify state transitions using seeded Redis + mocked executors
 
 3. Provenance E2E test (new)
+
    - An integration test that:
      - Submits a job via the ingest API or producer
      - Waits for the job to be processed (observe Redis + DB entries)
@@ -34,8 +34,7 @@ Scaffold outline
    - Use host mappings carefully to avoid localhost resolution issues on Windows. Prefer Testcontainers' host-address features.
    - Make the full governance integration suite opt-in (use environment flag `SKIP_GOV_TESTS=0` to run).
 
-Next steps (implementation)
----------------------------
+## Next steps (implementation)
 
 1. Add `TestcontainersConfig.java` and `ProvenanceE2ETest.java` skeletons under `src/test/java/com/cosmic/governance/`.
 2. Update `pom.xml` (if needed) to add `testcontainers`, `testcontainers-kafka`, and `testcontainers-redis` dependencies in the `test` scope.
@@ -60,8 +59,7 @@ public abstract class TestcontainersConfig {
 }
 ```
 
-Provenance test steps
----------------------
+## Provenance test steps
 
 1. Start only Kafka and Redis via Testcontainers.
 2. Produce a well-formed ingest event to `phase2-events` (use AdminClient/Producer).

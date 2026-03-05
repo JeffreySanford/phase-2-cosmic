@@ -242,6 +242,7 @@ Use this checklist during each roadmap pass:
 The repository intentionally uses a hybrid approach for end-to-end tooling. Below is a concise, opinionated guide explaining why both live here, and how to choose which to use for a particular task.
 
 - **Cypress — Developer diagnostic & UI troubleshooting**
+
   - Best for: rapid, interactive debugging of single-page UI flows during development; time-travel debugging; easy request/response interception and stubbing.
   - Strengths: fast local runs, tight dev feedback loop, rich test runner UI, simple network interception (useful to capture `/api` traffic and write diagnostic artifacts).
   - Typical uses in this repo: ad-hoc diagnostics (jobs view capture), reproduction of UI issues reported by browser, and developer-focused optimistic smoke tests.

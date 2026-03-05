@@ -1,74 +1,94 @@
 :host {
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 0;
-	min-height: 0;
-	height: 100%;
-	overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .view-container {
-	padding: 1rem;
-	width: 100%;
-	flex: 1 1 0;
-	min-height: 0;
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
-	box-sizing: border-box;
+  padding: 1rem;
+  width: 100%;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .view-header {
-	flex-shrink: 0;
+  flex-shrink: 0;
 }
 
 .tabs-container {
-	flex: 1;
-	min-height: 0;
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
-	::ng-deep .mat-mdc-tab-body-wrapper {
-		flex: 1;
-		min-height: 0;
-		overflow: hidden;
-	}
+  ::ng-deep .mat-mdc-tab-body-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
 
-	::ng-deep .mat-mdc-tab-body {
-		overflow: hidden;
-	}
+  ::ng-deep .mat-mdc-tab-body {
+    overflow: hidden;
+  }
 
-	::ng-deep .mat-mdc-tab-body-content {
-		overflow: hidden;
-		height: 100%;
-	}
+  ::ng-deep .mat-mdc-tab-body-content {
+    overflow: hidden;
+    height: 100%;
+  }
 }
 
 .tab-content {
-	height: 100%;
-	overflow-y: auto;
-	overflow-x: hidden;
-	padding: 0.5rem;
-	box-sizing: border-box;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.5rem;
+  box-sizing: border-box;
 }
 
 .controls {
-	display: flex;
-	gap: 0.5rem;
-	align-items: center;
-	margin-bottom: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
-.lead { margin-bottom: 0.75rem; color: rgba(0,0,0,0.8); }
-.status { color: #555; }
-.error { color: #a00; }
-.muted { color: #666; font-size: 0.9rem; }
-.specs { background: #f7f7f7; padding: 1rem; border-radius: 4px; max-height: 50vh; overflow: auto; }
+.lead {
+  margin-bottom: 0.75rem;
+  color: rgba(0, 0, 0, 0.8);
+}
+.status {
+  color: #555;
+}
+.error {
+  color: #a00;
+}
+.muted {
+  color: #666;
+  font-size: 0.9rem;
+}
+.specs {
+  background: #f7f7f7;
+  padding: 1rem;
+  border-radius: 4px;
+  max-height: 50vh;
+  overflow: auto;
+}
 
-.download { margin-left: 0.5rem; }
+.download {
+  margin-left: 0.5rem;
+}
 
-.promql-section { margin-top: 1rem; }
+.promql-section {
+  margin-top: 1rem;
+}
 .promql-cards {
   display: flex;
   flex-wrap: wrap;
@@ -77,25 +97,25 @@
 }
 
 .files-section {
-	margin-top: 1rem;
+  margin-top: 1rem;
 }
 
 .files-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .count-select {
-	width: 120px;
+  width: 120px;
 }
 
 .recent-files {
-	margin: 0.5rem 0;
-	max-height: 240px;
-	overflow: auto;
-	padding-left: 1.25rem;
+  margin: 0.5rem 0;
+  max-height: 240px;
+  overflow: auto;
+  padding-left: 1.25rem;
 }
 
 .tiles-grid {
@@ -119,7 +139,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   }
 
   &.tile-healthy {
@@ -176,7 +196,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(4px);
 }
 .tile-body {
@@ -208,10 +228,10 @@
 }
 .last-updated {
   font-size: 0.85rem;
-  color: rgba(0,0,0,0.6);
+  color: rgba(0, 0, 0, 0.6);
 }
 .polling-interval {
   font-size: 0.8rem;
-  color: rgba(0,0,0,0.5);
+  color: rgba(0, 0, 0, 0.5);
   font-style: italic;
 }

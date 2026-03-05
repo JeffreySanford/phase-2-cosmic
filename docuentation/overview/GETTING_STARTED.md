@@ -1,10 +1,10 @@
 # Getting Started — Developer Quickstart
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../ROADMAP.md](/ROADMAP.md)
-
 
 This document is the canonical developer quickstart for the Phase 2 workspace. It explains how to bring up the local infrastructure and start the Angular frontend (dev + SSR) for development.
 

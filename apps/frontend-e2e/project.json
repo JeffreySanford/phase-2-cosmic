@@ -12,18 +12,24 @@
       "options": {
         "lintFilePatterns": ["apps/frontend-e2e/**/*.ts"]
       }
-    }
-    ,"e2e": {
+    },
+    "e2e": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/frontend-e2e",
         "command": "cypress run"
       },
       "cache": true,
-      "inputs": ["default","^default"],
-      "outputs": ["{workspaceRoot}/dist/cypress/apps/frontend-e2e/videos","{workspaceRoot}/dist/cypress/apps/frontend-e2e/screenshots"],
+      "inputs": ["default", "^default"],
+      "outputs": [
+        "{workspaceRoot}/dist/cypress/apps/frontend-e2e/videos",
+        "{workspaceRoot}/dist/cypress/apps/frontend-e2e/screenshots"
+      ],
       "parallelism": false,
-      "metadata": {"technologies": ["cypress"], "description": "Runs Cypress Tests"}
+      "metadata": {
+        "technologies": ["cypress"],
+        "description": "Runs Cypress Tests"
+      }
     },
     "e2e-ci": {
       "executor": "nx:run-commands",
@@ -38,9 +44,11 @@
         "{workspaceRoot}/dist/cypress/apps/frontend-e2e/screenshots"
       ],
       "parallelism": false,
-      "metadata": { "technologies": ["cypress"], "description": "Runs Cypress Tests in CI mode" }
-    }
-    ,
+      "metadata": {
+        "technologies": ["cypress"],
+        "description": "Runs Cypress Tests in CI mode"
+      }
+    },
     "playwright-ci": {
       "executor": "nx:run-commands",
       "options": {
@@ -48,10 +56,13 @@
         "command": "pnpm run playwright:install && pnpm run e2e:playwright"
       },
       "cache": true,
-      "inputs": ["default","^default"],
+      "inputs": ["default", "^default"],
       "outputs": ["{workspaceRoot}/playwright-report"],
       "parallelism": false,
-      "metadata": { "technologies": ["playwright"], "description": "Runs Playwright E2E tests in CI mode" }
+      "metadata": {
+        "technologies": ["playwright"],
+        "description": "Runs Playwright E2E tests in CI mode"
+      }
     }
   }
 }

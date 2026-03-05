@@ -1,6 +1,7 @@
 # Viewer
 
 Alignment anchors
+
 - Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
@@ -46,14 +47,17 @@ Provide sky/object visualization with progressive resolution behavior that suppo
 ## Test requirements
 
 Unit:
+
 - threshold and mode-priority logic
 - object-mapping selection
 
 Integration:
+
 - survey fallback under source failure
 - switch behavior under repeated zoom events
 
 E2E:
+
 - lower-left control changes behavior
 - zoom thresholds trigger expected survey changes in `Auto`
 - source-state labels reflect actual path

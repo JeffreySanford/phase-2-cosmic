@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Observable } from "rxjs";
 
 export interface AppEnv {
   NODE_ENV?: string;
@@ -12,11 +12,11 @@ export interface AppEnv {
   RABBITMQ_URL?: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class EnvironmentService {
   constructor(private http: HttpClient) {}
 
   load(): Observable<AppEnv> {
-    return this.http.get<AppEnv>('/api/env');
+    return this.http.get<AppEnv>("/api/env");
   }
 }

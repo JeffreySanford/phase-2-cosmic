@@ -9,6 +9,7 @@ Provide a reusable Angular component that initializes and hosts an Aladin Lite s
 ## Public API
 
 - Inputs
+
   - `survey?: string` — HiPS survey URL or identifier. Default: `https://healpix.ias.u-psud.fr/CDS_P_DSS2_color`.
   - `fov?: number` — Field of view in degrees. Default: `60`.
   - `target?: string` — Initial target (e.g. `M42`). Default: `"M42"`.
@@ -24,6 +25,7 @@ Provide a reusable Angular component that initializes and hosts an Aladin Lite s
 ## Lifecycle & Behavior
 
 - On `ngAfterViewInit`:
+
   - Create a container element via `Renderer2` (or use `@ViewChild` container) and ensure it's sized.
   - Attempt to load the Aladin runtime in this order when running on `localhost`:
     - `/assets/aladin.umd.min.js`

@@ -1,13 +1,13 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { UiThemeComponent } from './ui-theme.component';
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { UiThemeComponent } from "./ui-theme.component";
 
-describe('UiThemeComponent', () => {
+describe("UiThemeComponent", () => {
   let component: UiThemeComponent;
   let fixture: ComponentFixture<UiThemeComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [UiThemeComponent]
+      declarations: [UiThemeComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(UiThemeComponent);
@@ -15,7 +15,7 @@ describe('UiThemeComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

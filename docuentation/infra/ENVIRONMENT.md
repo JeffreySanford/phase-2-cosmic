@@ -1,10 +1,10 @@
 # Environment — .env policy and frontend-exposed variables
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../ROADMAP.md](/ROADMAP.md)
-
 
 This document describes the repository's approach to environment variables, secrets, and how the frontend obtains non-sensitive configuration at runtime.
 

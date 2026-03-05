@@ -45,9 +45,22 @@
         🟢 ngVLA Arrays | 🔵 Infrastructure | 🟡 Applications
       </span>
     </p>
+    <p class="source-chip" [attr.data-source]="topologySource">
+      Source: {{ topologySource === 'unavailable' ? 'live unavailable' : topologySource }}
+    </p>
     <div *ngIf="loading" class="loading">Loading topology…</div>
     <div *ngIf="lastError" class="error">{{ lastError }}</div>
   </div>
+
+  <app-page-state
+    *ngIf="!loading && !hasTopologyData && topologySource === 'unavailable'"
+    [config]="{
+      state: 'error',
+      icon: 'error',
+      message: 'Live topology data is unavailable. Switch to mock mode or retry when the topology API is online.',
+      action: { label: 'Retry', callback: refresh.bind(this) }
+    }">
+  </app-page-state>
 
   <div #graph class="topology-graph" aria-label="Topology graph"></div>
 </div>

@@ -1,6 +1,7 @@
 # RabbitMQ Messaging Plan (Phase 2)
 
 Alignment anchors
+
 - Frontend UX source of truth: [../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../../ROADMAP.md](/ROADMAP.md)
@@ -18,6 +19,7 @@ Alignment anchors
 - Include queue lifecycle policy for cleanup/expiry of inactive workflow queues.
 
 Related decision records:
+
 - [DECISIONS.md](/docuentation/architecture/DECISIONS.md) (`ADR-003`, `ADR-004`)
 
 ## Runtime behavior
@@ -29,16 +31,19 @@ Related decision records:
 ## Required tests
 
 Unit:
+
 - queue naming/routing-key generation
 - dynamic provisioning and cleanup policy logic
 - profile scaling behavior for command flow rates
 
 Integration:
+
 - publish command to RabbitMQ -> governance transition applied
 - mirror path verified in Kafka audit topic
 - broker restart/recovery behavior for in-flight commands
 
 E2E:
+
 - Topology view renders RabbitMQ node and queue-depth/ack metrics
 - Visualization view renders RabbitMQ queue depth, delivery/ack/nack, and consumer utilization
 - source-state labels shown correctly for RabbitMQ-backed cards

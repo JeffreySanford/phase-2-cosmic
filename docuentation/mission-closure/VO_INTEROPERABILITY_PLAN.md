@@ -9,6 +9,7 @@ Related backlog: `TODO.md` `MG-3`
 The platform currently plans ObsCore-aligned metadata fields, but service-level interoperability (query and access protocols) is not yet planned. Field alignment alone is insufficient for standards-based archive discovery and tool compatibility.
 
 Current platform risk:
+
 - archive discovery may remain custom-only
 - external astronomy tools cannot reliably query/access products
 - long-term community interoperability expectations are unmet
@@ -28,6 +29,7 @@ Current platform risk:
 ## Planned integration steps
 
 1. Standards scope definition
+
 - Keep ObsCore field mapping as baseline.
 - Add service compatibility planning for:
   - TAP/ADQL query interface
@@ -35,16 +37,19 @@ Current platform risk:
   - SODA-style data access patterns
 
 2. Contract integration
+
 - Add representative query/access examples to API docs and fixtures.
 - Define mapping from internal dataset model to standards response shapes.
 - Add compatibility/versioning notes for future extensions.
 
 3. Conformance validation
+
 - Build test scenarios for representative ADQL filters and dataset access.
 - Validate required metadata presence/type/range constraints.
 - Add CI conformance lane for interoperability checks.
 
 4. Operational guidance
+
 - Document supported query patterns and limitations.
 - Add runbook entries for compatibility regressions.
 

@@ -1,6 +1,7 @@
 # Operational Streaming Plane
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../ROADMAP.md](/ROADMAP.md)
@@ -10,6 +11,7 @@ The Operational Streaming Plane is responsible for low-latency telemetry handlin
 ## 1. Scope
 
 Core responsibilities:
+
 - ingest telemetry/events from generators and edge sources
 - apply lightweight validation and shaping
 - expose operational metrics for dashboards and alerting
@@ -18,15 +20,18 @@ Core responsibilities:
 ## 2. Status
 
 ### Implemented
+
 - local data-generator flow
 - Kafka-based ingest path in local environment
 - Prometheus/Grafana observability baseline
 
 ### In progress
+
 - durable curated-event handoff guarantees to governance plane
 - topic/schema governance and replay controls
 
 ### Planned
+
 - full go-processor service layer with hardened backpressure/degradation modes
 
 ## 3. Flow model
@@ -49,12 +54,14 @@ sequenceDiagram
 ## 4. Frontend dependencies
 
 Frontend pages depending on streaming-plane outputs:
+
 - `Overview`
 - `Telemetry`
 - `Topology`
 - portions of `Diagnostics`
 
 Required UX properties:
+
 - data freshness signaling
 - graceful stale-state behavior
 - clear distinction between missing data and healthy zero values
@@ -62,6 +69,7 @@ Required UX properties:
 ## 5. Reliability priorities
 
 Near-term priorities:
+
 1. idempotent handoff semantics toward governance APIs
 2. trace-id propagation across broker and API boundaries
 3. DLQ and replay runbook for failed processing flows

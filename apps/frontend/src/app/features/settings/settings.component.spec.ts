@@ -1,7 +1,7 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SettingsComponent } from './settings.component';
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { SettingsComponent } from "./settings.component";
 
-describe('SettingsComponent', () => {
+describe("SettingsComponent", () => {
   let component: SettingsComponent;
   let fixture: ComponentFixture<SettingsComponent>;
 
@@ -17,7 +17,7 @@ describe('SettingsComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

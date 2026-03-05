@@ -1,4 +1,4 @@
-declare module 'aladin-lite' {
+declare module "aladin-lite" {
   /**
    * Default export is an object with a handful of helper methods.  The
    * most commonly-used is `aladin()` which constructs a viewer instance.
@@ -14,9 +14,7 @@ declare module 'aladin-lite' {
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-declare module 'd3' {
+declare module "d3" {
   const d3: any;
   export = d3;
 }
-
-

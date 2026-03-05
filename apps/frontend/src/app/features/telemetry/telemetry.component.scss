@@ -23,8 +23,17 @@
   stroke-linecap: round;
 }
 
-.x-axis text, .y-axis text { font-size: 11px; fill: #444; }
-.x-axis path, .y-axis path, .x-axis line, .y-axis line { stroke: #ddd; }
+.x-axis text,
+.y-axis text {
+  font-size: 11px;
+  fill: #444;
+}
+.x-axis path,
+.y-axis path,
+.x-axis line,
+.y-axis line {
+  stroke: #ddd;
+}
 
 .hist {
   height: 140px;
@@ -42,8 +51,14 @@
   gap: 12px;
   margin-bottom: 6px;
 }
-.stat-card { flex: 1; text-align: center; }
-.stat-card .big { font-size: 1.5rem; font-weight: 600; }
+.stat-card {
+  flex: 1;
+  text-align: center;
+}
+.stat-card .big {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
 
 mat-tab-group {
   margin-top: 6px;

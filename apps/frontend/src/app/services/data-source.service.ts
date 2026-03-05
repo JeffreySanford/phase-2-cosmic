@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable } from "@angular/core";
+import { BehaviorSubject } from "rxjs";
 
-export type DataMode = 'live' | 'mock';
+export type DataMode = "live" | "mock";
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class DataSourceService {
-  private modeSubject = new BehaviorSubject<DataMode>('live');
+  private modeSubject = new BehaviorSubject<DataMode>("live");
   readonly mode$ = this.modeSubject.asObservable();
 
   setMode(m: DataMode) {

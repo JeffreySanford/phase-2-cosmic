@@ -1,19 +1,35 @@
-import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy } from '@angular/core';
-import { LoadProfilePct, LoadProfileService } from '../../services/load-profile.service';
-import { DataSourceService, DataMode } from '../../services/data-source.service';
-import { MatSlideToggleChange } from '@angular/material/slide-toggle';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  NgZone,
+  OnDestroy,
+} from "@angular/core";
+import {
+  LoadProfilePct,
+  LoadProfileService,
+} from "../../services/load-profile.service";
+import {
+  DataSourceService,
+  DataMode,
+} from "../../services/data-source.service";
+import { MatSlideToggleChange } from "@angular/material/slide-toggle";
 
 @Component({
-  selector: 'app-footer',
-  templateUrl: './footer.component.html',
-  styleUrls: ['./footer.component.scss'],
+  selector: "app-footer",
+  templateUrl: "./footer.component.html",
+  styleUrls: ["./footer.component.scss"],
 })
 export class FooterComponent implements AfterViewInit, OnDestroy {
-  readonly profileOptions: Array<{ value: LoadProfilePct; label: string; note: string }> = [
-    { value: 10, label: '10% (Default)', note: 'Normal development' },
-    { value: 25, label: '25%', note: 'Low stress profile' },
-    { value: 50, label: '50%', note: 'Medium stress profile' },
-    { value: 100, label: '100%', note: 'Smoke stress profile' },
+  readonly profileOptions: Array<{
+    value: LoadProfilePct;
+    label: string;
+    note: string;
+  }> = [
+    { value: 10, label: "10% (Default)", note: "Normal development" },
+    { value: 25, label: "25%", note: "Low stress profile" },
+    { value: 50, label: "50%", note: "Medium stress profile" },
+    { value: 100, label: "100%", note: "Smoke stress profile" },
   ];
 
   private resizeObserver?: ResizeObserver;
@@ -31,7 +47,7 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
   }
 
   onToggle(ev: MatSlideToggleChange) {
-    this.setMode(ev.checked ? 'mock' : 'live');
+    this.setMode(ev.checked ? "mock" : "live");
   }
 
   get mode$() {
@@ -40,25 +56,27 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.updateFooterHeightVar();
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 
-    window.addEventListener('resize', this.onWindowResize);
+    window.addEventListener("resize", this.onWindowResize);
     const footer = this.findFooterElement();
-    if (!footer || typeof ResizeObserver === 'undefined') {
+    if (!footer || typeof ResizeObserver === "undefined") {
       return;
     }
 
     this.zone.runOutsideAngular(() => {
-      this.resizeObserver = new ResizeObserver(() => this.updateFooterHeightVar());
+      this.resizeObserver = new ResizeObserver(() =>
+        this.updateFooterHeightVar()
+      );
       this.resizeObserver.observe(footer);
     });
   }
 
   ngOnDestroy(): void {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('resize', this.onWindowResize);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("resize", this.onWindowResize);
     }
     this.resizeObserver?.disconnect();
   }
@@ -67,20 +85,29 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
     return this.loadProfile.profile$;
   }
 
+  get loadProfileMode$() {
+    return this.loadProfile.mode$;
+  }
+
   setProfile(pct: LoadProfilePct): void {
     this.loadProfile.setProfile(pct);
   }
 
   private findFooterElement(): HTMLElement | null {
-    return this.el.nativeElement.querySelector('footer.app-footer');
+    return this.el.nativeElement.querySelector("footer.app-footer");
   }
 
   private updateFooterHeightVar(): void {
-    if (typeof document === 'undefined') {
+    if (typeof document === "undefined") {
       return;
     }
     const footer = this.findFooterElement();
-    const height = footer ? Math.ceil(footer.getBoundingClientRect().height) : 0;
-    document.documentElement.style.setProperty('--app-footer-height', `${height}px`);
+    const height = footer
+      ? Math.ceil(footer.getBoundingClientRect().height)
+      : 0;
+    document.documentElement.style.setProperty(
+      "--app-footer-height",
+      `${height}px`
+    );
   }
 }

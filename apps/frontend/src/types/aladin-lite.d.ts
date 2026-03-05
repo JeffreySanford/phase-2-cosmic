@@ -3,8 +3,8 @@
 // already provided in `apps/frontend/src/typings.d.ts` to avoid duplicate
 // declarations for the primary module name.
 
-declare module 'aladin-lite/dist/aladin.js' {
-  import aladinDefault from 'aladin-lite';
+declare module "aladin-lite/dist/aladin.js" {
+  import aladinDefault from "aladin-lite";
   // Re-export the default from the main module so consumers get the same shape.
   const _default: typeof aladinDefault;
   export default _default;

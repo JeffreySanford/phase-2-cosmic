@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 -->
+
 # ROADMAP
 
 ## Status
@@ -10,6 +12,8 @@
 - Foundation baseline established (frontend routes, governance API baseline, contracts, compose observability stack).
 - Phase 1, 1B, and 1C completion milestones are recorded.
 - Active roadmap execution is centered on Phase 2/2A/3/4 and PI-1 sprint sequencing.
+- Remaining frontend hardening is now carried inside adjacent roadmap work.
+  See `FRONTEND_HARDENING_TRACKER.md` for the carry-forward cleanup list.
 
 ## Next
 
@@ -85,3 +89,4 @@
   - Mission: `docuentation/ngvla/NGVLA_MISSION_ALIGNMENT.md`, `docuentation/ngvla/MISSION_TO_CAPABILITY_TRACE.md`, `docuentation/ngvla/MISSION_GATES.md`
   - Data architecture: `docuentation/data/DATA_ARCHITECTURE.md`, `docuentation/ngvla/NGVLA_DATA_ARCHITECT_RESEARCH.md`
   - Mission closure: `docuentation/mission-closure/*.md`
+  <!-- markdownlint-enable MD013 -->

@@ -1,10 +1,10 @@
 # Visualization
 
 Alignment anchors
+
 - Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
-
 
 This page documents the Visualizations area of the frontend where rich data visualizations and embeddable widgets live.
 
@@ -28,6 +28,7 @@ This page documents the Visualizations area of the frontend where rich data visu
 - Application APIs for pre-aggregated or topology-linked datasets.
 
 Required broker metrics coverage:
+
 - Kafka: topic lag, throughput, error/retry rate
 - RabbitMQ: queue depth, delivery/ack/nack rate, consumer utilization
 - Pulsar: backlog, publish rate, dispatch latency, subscription health

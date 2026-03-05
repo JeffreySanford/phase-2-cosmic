@@ -1,12 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { EnvironmentService, AppEnv } from './environment.service';
+import { Component, OnInit } from "@angular/core";
+import { EnvironmentService, AppEnv } from "./environment.service";
 
 @Component({
-  selector: 'app-environment',
-  templateUrl: './environment.component.html',
+  selector: "app-environment",
+  templateUrl: "./environment.component.html",
   styles: [
     `
-      .env { font-family: monospace; font-size: 0.9rem; }
+      .env {
+        font-family: monospace;
+        font-size: 0.9rem;
+      }
     `,
   ],
 })

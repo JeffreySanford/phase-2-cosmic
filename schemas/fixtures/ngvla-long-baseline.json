@@ -44,7 +44,11 @@
         "min": 0.26,
         "max": 0.43
       },
-      "keyScience": ["Ultra-high-resolution imaging", "AGN jets", "protoplanetary disks"],
+      "keyScience": [
+        "Ultra-high-resolution imaging",
+        "AGN jets",
+        "protoplanetary disks"
+      ],
       "note": "Primary high-frequency band for LBL operations"
     }
   ],

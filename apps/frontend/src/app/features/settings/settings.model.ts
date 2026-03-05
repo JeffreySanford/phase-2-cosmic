@@ -1,4 +1,4 @@
-export type ThemeMode = 'system' | 'light' | 'dark';
+export type ThemeMode = "system" | "light" | "dark";
 
 export interface UserSettings {
   profile: {
@@ -28,19 +28,19 @@ export interface UserSettings {
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   profile: {
-    displayName: 'Operator',
-    email: 'operator@local',
-    timezone: 'America/Chicago',
-    language: 'en-US',
+    displayName: "Operator",
+    email: "operator@local",
+    timezone: "America/Chicago",
+    language: "en-US",
   },
   preferences: {
-    themeMode: 'system',
-    accentColor: '#06b6d4',
+    themeMode: "system",
+    accentColor: "#06b6d4",
     reduceMotion: false,
     compactDensity: false,
   },
   application: {
-    defaultLandingRoute: '/landing',
+    defaultLandingRoute: "/landing",
     autoRefreshSeconds: 30,
     telemetryWindowSeconds: 300,
     showModelingDisclaimers: true,

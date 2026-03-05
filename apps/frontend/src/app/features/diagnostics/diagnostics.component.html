@@ -26,7 +26,7 @@
             <app-promql-card title="Generator Up" query='up{job="data-generator"}' tone="mint"></app-promql-card>
             <app-promql-card title="Records Rate" query='rate(generator_records_produced_total[1m])' tone="amber"></app-promql-card>
             <app-promql-card title="Targets Up" query='sum(up)' tone="blue"></app-promql-card>
-            <app-promql-card title="CPU Load" query='100 * sum(rate(process_cpu_seconds_total[1m]))' tone="rose"></app-promql-card>
+            <app-promql-card title="CPU Load" query='100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))' tone="rose"></app-promql-card>
           </div>
         </section>
       </div>
@@ -80,7 +80,7 @@
             <li *ngFor="let f of visibleFiles">{{ f }}</li>
           </ul>
           <p class="muted">Showing {{ visibleFiles.length }} of {{ sortedFiles.length }} files.</p>
-          <p class="muted">Stored path: {{ index.path }}</p>
+          <p class="muted">Storage location: {{ index.path }}</p>
         </section>
 
         <section *ngIf="systemSpecs">

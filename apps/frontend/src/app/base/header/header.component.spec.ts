@@ -1,12 +1,12 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDialog } from '@angular/material/dialog';
-import { RouterTestingModule } from '@angular/router/testing';
-import { HeaderComponent } from './header.component';
-import { SettingsDialogComponent } from '../../features/settings/settings-dialog.component';
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { MatButtonModule } from "@angular/material/button";
+import { MatMenuModule } from "@angular/material/menu";
+import { MatDialog } from "@angular/material/dialog";
+import { RouterTestingModule } from "@angular/router/testing";
+import { HeaderComponent } from "./header.component";
+import { SettingsDialogComponent } from "../../features/settings/settings-dialog.component";
 
-describe('HeaderComponent', () => {
+describe("HeaderComponent", () => {
   let component: HeaderComponent;
   let fixture: ComponentFixture<HeaderComponent>;
   let dialogOpenSpy: jest.Mock;
@@ -23,15 +23,15 @@ describe('HeaderComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 
-  it('should open settings dialog', () => {
+  it("should open settings dialog", () => {
     component.openSettingsModal();
     expect(dialogOpenSpy).toHaveBeenCalledWith(
       SettingsDialogComponent,
-      expect.objectContaining({ panelClass: 'settings-dialog-panel' })
+      expect.objectContaining({ panelClass: "settings-dialog-panel" })
     );
   });
 });

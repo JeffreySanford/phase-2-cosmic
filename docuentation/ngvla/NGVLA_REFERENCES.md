@@ -22,7 +22,7 @@ The Next Generation Very Large Array (ngVLA) is a transformational radio telesco
 
 1. **ngVLA Project Website**  
    <https://ngvla.nrao.edu/>  
-   *Official NRAO project homepage with design concepts, science goals, and technical updates*
+   _Official NRAO project homepage with design concepts, science goals, and technical updates_
 
 2. **ngVLA Science Book (2017)**  
    Murphy, E. (ed.) 2017, "Science with a Next Generation Very Large Array", ASP Conference Series, Vol. 517  
@@ -30,11 +30,11 @@ The Next Generation Very Large Array (ngVLA) is a transformational radio telesco
 
 3. **ngVLA Technical Memo Series**  
    <https://library.nrao.edu/ngvla.shtml>  
-   *Technical memos covering array configuration, receiver design, correlator specs, and operations concepts*
+   _Technical memos covering array configuration, receiver design, correlator specs, and operations concepts_
 
 4. **ngVLA Key Science Goals (2019 Community Review)**  
    <https://ngvla.nrao.edu/general/key-science-goals>  
-   *Includes: protoplanetary disk imaging, cosmic dawn observations, time domain/multi-messenger astrophysics, AGN physics*
+   _Includes: protoplanetary disk imaging, cosmic dawn observations, time domain/multi-messenger astrophysics, AGN physics_
 
 ---
 
@@ -209,6 +209,6 @@ Any updates to NGVLA facts in this document MUST:
 
 ## Document History
 
-| Date       | Version | Author         | Summary                           |
-|------------|---------|----------------|-----------------------------------|
-| 2026-03-02 | 1.0     | Copilot Agent  | Initial canonical reference doc   |
+| Date       | Version | Author        | Summary                         |
+| ---------- | ------- | ------------- | ------------------------------- |
+| 2026-03-02 | 1.0     | Copilot Agent | Initial canonical reference doc |

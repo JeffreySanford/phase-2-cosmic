@@ -3,7 +3,7 @@ name: Weekly Coverage
 on:
   schedule:
     # Every Monday at 08:00 UTC
-    - cron: '0 8 * * 1'
+    - cron: "0 8 * * 1"
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Enable corepack (pnpm)
         run: |

@@ -17,50 +17,86 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   }
 
   &.tone-cyan {
     background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
     color: #fff;
-    .profile { color: rgba(255,255,255,0.85); }
-    .meta { color: rgba(255,255,255,0.7); }
-    path { stroke: rgba(255,255,255,0.9); }
+    .profile {
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .meta {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    path {
+      stroke: rgba(255, 255, 255, 0.9);
+    }
   }
   &.tone-violet {
     background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
     color: #fff;
-    .profile { color: rgba(255,255,255,0.85); }
-    .meta { color: rgba(255,255,255,0.7); }
-    path { stroke: rgba(255,255,255,0.9); }
+    .profile {
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .meta {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    path {
+      stroke: rgba(255, 255, 255, 0.9);
+    }
   }
   &.tone-amber {
     background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
     color: #fff;
-    .profile { color: rgba(255,255,255,0.85); }
-    .meta { color: rgba(255,255,255,0.7); }
-    path { stroke: rgba(255,255,255,0.9); }
+    .profile {
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .meta {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    path {
+      stroke: rgba(255, 255, 255, 0.9);
+    }
   }
   &.tone-mint {
     background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
     color: #fff;
-    .profile { color: rgba(255,255,255,0.85); }
-    .meta { color: rgba(255,255,255,0.7); }
-    path { stroke: rgba(255,255,255,0.9); }
+    .profile {
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .meta {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    path {
+      stroke: rgba(255, 255, 255, 0.9);
+    }
   }
   &.tone-rose {
     background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
     color: #fff;
-    .profile { color: rgba(255,255,255,0.85); }
-    .meta { color: rgba(255,255,255,0.7); }
-    path { stroke: rgba(255,255,255,0.9); }
+    .profile {
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .meta {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    path {
+      stroke: rgba(255, 255, 255, 0.9);
+    }
   }
   &.tone-blue {
     background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
     color: #fff;
-    .profile { color: rgba(255,255,255,0.85); }
-    .meta { color: rgba(255,255,255,0.7); }
-    path { stroke: rgba(255,255,255,0.9); }
+    .profile {
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .meta {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    path {
+      stroke: rgba(255, 255, 255, 0.9);
+    }
   }
 }
 
@@ -90,5 +126,8 @@
 }
 .promql-card .actions {
   text-align: right;
-  button { color: inherit; opacity: 0.9; }
+  button {
+    color: inherit;
+    opacity: 0.9;
+  }
 }

@@ -168,10 +168,12 @@ chmod +x scripts/test-start-all-reset.sh
 When modifying `start-all-reset.sh`, ensure:
 
 1. **Each step has a description block** with:
+
    - Clear description of what the step does
    - Reference to the corresponding test command
 
 2. **Corresponding test exists** in `test-start-all-reset.sh` with:
+
    - `test_step_XX_name()` function
    - Detailed description of what it verifies
    - Proper error messages for failures

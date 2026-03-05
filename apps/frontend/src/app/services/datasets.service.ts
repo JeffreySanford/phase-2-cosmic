@@ -1,8 +1,8 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
-import { map, catchError, shareReplay } from 'rxjs/operators';
-import { Result } from './rx-utils';
+import { HttpClient } from "@angular/common/http";
+import { Injectable } from "@angular/core";
+import { Observable, of, throwError } from "rxjs";
+import { map, catchError, shareReplay } from "rxjs/operators";
+import { Result } from "./rx-utils";
 
 export interface Dataset {
   id: string;
@@ -30,9 +30,9 @@ export interface DatasetRequest {
   metadata?: Record<string, unknown>;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class DatasetsService {
-  private base = '/api/v1/datasets';
+  private base = "/api/v1/datasets";
   constructor(private http: HttpClient) {}
 
   list(): Observable<Dataset[]> {

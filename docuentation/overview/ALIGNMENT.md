@@ -1,11 +1,13 @@
 # Documentation Alignment Matrix (2026-03-02, Rev 4)
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
 - Delivery roadmap: [../ROADMAP.md](/ROADMAP.md)
 
 Purpose:
+
 - prevent docs/runtime/roadmap drift
 - keep implemented vs in-progress vs planned explicit
 - keep communication clear for mixed audiences (scientists to HR)
@@ -40,16 +42,16 @@ flowchart LR
 
 ## Root documentation status
 
-| Document group | Status | Alignment notes |
-|---|---|---|
-| Root docs entrypoint + grouped READMEs | needs-update | Root `README.md` is not present, but tooling/docs still reference it (`scripts/check-docs.sh`, TODO references). |
-| Mission docs (`NGVLA_MISSION_ALIGNMENT`, `MISSION_TO_CAPABILITY_TRACE`, `MISSION_GATES`, `DECISIONS`) | aligned | Canonical mission framing and gate model now exist. |
-| Core architecture docs (`ARCHITECTURE`, `OPERATIONAL_STREAMING_PLANE`, `GOVERNANCE_CONTROL_PLANE`) | aligned | Implemented/in-progress/planned framing matches repository status. |
-| Product and UX docs (`FRONTEND_UI`, `PROFESSIONAL_CONSOLE_SPEC`, `frontend/features/*`) | needs-update | Footer load profile exists, but machine-load control remains scaffolded (polling cadence only; no runtime generator control API). |
-| Contracts and API docs (`JAVA_GOVERNANCE_SPEC`, `API_CONTRACT_STATUS`) | aligned | Baseline endpoints and drift controls are documented and consistent. |
-| Trust and lineage docs (`DATA_TRUST_PLATFORM`, `PROVENANCE`, `storage/*`) | planned | Strategic direction is clear; several controls remain future-state. |
-| Environment/deployment/testing docs (`GETTING_STARTED`, `ENVIRONMENT`, `DEPLOYMENT`, testing docs) | aligned | Current commands and quality gates are represented. |
-| `docuentation/planning/TODO.md` (simulation harness) | aligned | Explicitly secondary to root `TODO.md`; remains useful as scoped runbook/backlog. |
+| Document group                                                                                        | Status       | Alignment notes                                                                                                                   |
+| ----------------------------------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Root docs entrypoint + grouped READMEs                                                                | needs-update | Root `README.md` is not present, but tooling/docs still reference it (`scripts/check-docs.sh`, TODO references).                  |
+| Mission docs (`NGVLA_MISSION_ALIGNMENT`, `MISSION_TO_CAPABILITY_TRACE`, `MISSION_GATES`, `DECISIONS`) | aligned      | Canonical mission framing and gate model now exist.                                                                               |
+| Core architecture docs (`ARCHITECTURE`, `OPERATIONAL_STREAMING_PLANE`, `GOVERNANCE_CONTROL_PLANE`)    | aligned      | Implemented/in-progress/planned framing matches repository status.                                                                |
+| Product and UX docs (`FRONTEND_UI`, `PROFESSIONAL_CONSOLE_SPEC`, `frontend/features/*`)               | needs-update | Footer load profile exists, but machine-load control remains scaffolded (polling cadence only; no runtime generator control API). |
+| Contracts and API docs (`JAVA_GOVERNANCE_SPEC`, `API_CONTRACT_STATUS`)                                | aligned      | Baseline endpoints and drift controls are documented and consistent.                                                              |
+| Trust and lineage docs (`DATA_TRUST_PLATFORM`, `PROVENANCE`, `storage/*`)                             | planned      | Strategic direction is clear; several controls remain future-state.                                                               |
+| Environment/deployment/testing docs (`GETTING_STARTED`, `ENVIRONMENT`, `DEPLOYMENT`, testing docs)    | aligned      | Current commands and quality gates are represented.                                                                               |
+| `docuentation/planning/TODO.md` (simulation harness)                                                  | aligned      | Explicitly secondary to root `TODO.md`; remains useful as scoped runbook/backlog.                                                 |
 
 ## Drift risks observed
 

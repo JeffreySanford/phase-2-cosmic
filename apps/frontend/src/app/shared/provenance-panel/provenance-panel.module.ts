@@ -1,7 +1,7 @@
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { ProvenancePanelComponent } from './provenance-panel.component';
+import { NgModule } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { RouterModule } from "@angular/router";
+import { ProvenancePanelComponent } from "./provenance-panel.component";
 
 @NgModule({
   declarations: [ProvenancePanelComponent],

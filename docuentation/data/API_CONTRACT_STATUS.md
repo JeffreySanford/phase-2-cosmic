@@ -85,6 +85,7 @@ App shell:
 **Completed decisions:**
 
 1. ✅ State transition contract:
+
    - **Decision**: Support both generic `/transition` AND explicit action endpoints (`/cancel`, `/retry`)
    - **Rationale**: Provides flexibility for UI-driven operations and automation
    - **Status**: Implemented in `GovernanceController.java`
@@ -97,6 +98,7 @@ App shell:
 **Pending decisions (Phase 2):**
 
 1. ✅ NGVLA domain model extensions: (COMPLETED in Phase 1C)
+
    - Added `NgvlaObservationParams` schema to OpenAPI governance.yaml with `arraySegment` (enum: Main/Long Baseline/SBA), `antennaClass` (18m/6m), `frequencyBandGHz` range
    - Created NGVLA array configuration fixtures: `ngvla-main-array.json`, `ngvla-long-baseline.json`, `ngvla-short-baseline.json`
    - Extended Dataset interface with provenance and ngvlaParams fields

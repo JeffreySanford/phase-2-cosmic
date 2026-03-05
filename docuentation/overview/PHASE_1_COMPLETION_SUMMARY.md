@@ -13,12 +13,14 @@ All Phase 1 deliverables have been successfully completed. The platform now has 
 **Primary Outcomes Achieved:**
 
 1. **Reproducible Science** ✅
+
    - Durable job lifecycle with Redis persistence
    - Dataset provenance linkage (workflow → jobId → sourceDatasetId)
    - NGVLA array configuration fixtures with canonical references
    - Drift-regression tests prevent silent constant modifications
 
 2. **Human Decision Speed** ✅
+
    - Complete job submit/monitor/cancel workflows in operator UI
    - Shared page-state UX primitives for clear system status
    - Global status/freshness band for data confidence
@@ -34,15 +36,15 @@ All Phase 1 deliverables have been successfully completed. The platform now has 
 
 ### Phase 1: Governance API Maturity ✅
 
-| Deliverable | Status | Evidence |
-| ------------- | -------- | ---------- |
-| Durable job manifest store | ✅ | Redis integration in `apps/java-governance` |
-| Job state machine | ✅ | `QUEUED → RUNNING → COMPLETED\|FAILED\|CANCELED\|TIMED_OUT` |
-| `/api/v1/jobs` pagination/filtering | ✅ | `GovernanceController.java` with query params |
-| Job cancellation endpoint | ✅ | `POST /api/v1/jobs/{id}/cancel` |
-| Job retry endpoint | ✅ | `POST /api/v1/jobs/{id}/retry` |
-| Request-id/trace-id propagation | ✅ | Headers added to all API responses |
-| Error model aligned with OpenAPI | ✅ | `ErrorResponse` schema + controller mapping |
+| Deliverable                         | Status | Evidence                                                    |
+| ----------------------------------- | ------ | ----------------------------------------------------------- |
+| Durable job manifest store          | ✅     | Redis integration in `apps/java-governance`                 |
+| Job state machine                   | ✅     | `QUEUED → RUNNING → COMPLETED\|FAILED\|CANCELED\|TIMED_OUT` |
+| `/api/v1/jobs` pagination/filtering | ✅     | `GovernanceController.java` with query params               |
+| Job cancellation endpoint           | ✅     | `POST /api/v1/jobs/{id}/cancel`                             |
+| Job retry endpoint                  | ✅     | `POST /api/v1/jobs/{id}/retry`                              |
+| Request-id/trace-id propagation     | ✅     | Headers added to all API responses                          |
+| Error model aligned with OpenAPI    | ✅     | `ErrorResponse` schema + controller mapping                 |
 
 **Exit Criteria Met:**
 
@@ -51,12 +53,12 @@ All Phase 1 deliverables have been successfully completed. The platform now has 
 
 ### Phase 1B: Frontend Orchestration Baseline ✅
 
-| Deliverable | Status | Evidence |
-| ------------- | -------- | ---------- |
-| Jobs route with submit/status flows | ✅ | `apps/frontend/src/app/features/jobs/` |
-| Shared page-state UX primitives | ✅ | `PageStateComponent`, `DataSourceLabelComponent` |
-| App-level status/freshness band | ✅ | `StatusBandComponent` in app shell |
-| Datasets route scaffold | ✅ | `apps/frontend/src/app/features/datasets/` |
+| Deliverable                         | Status | Evidence                                         |
+| ----------------------------------- | ------ | ------------------------------------------------ |
+| Jobs route with submit/status flows | ✅     | `apps/frontend/src/app/features/jobs/`           |
+| Shared page-state UX primitives     | ✅     | `PageStateComponent`, `DataSourceLabelComponent` |
+| App-level status/freshness band     | ✅     | `StatusBandComponent` in app shell               |
+| Datasets route scaffold             | ✅     | `apps/frontend/src/app/features/datasets/`       |
 
 **Exit Criteria Met:**
 
@@ -65,16 +67,16 @@ All Phase 1 deliverables have been successfully completed. The platform now has 
 
 ### Phase 1C: NGVLA Reference Fidelity and Demo Automation ✅
 
-| Deliverable | Status | Evidence |
-| ------------- | -------- | ---------- |
-| NGVLA canonical reference doc | ✅ | `docuentation/ngvla/NGVLA_REFERENCES.md` (215 lines) |
-| NGVLA array fixtures | ✅ | 3 fixtures: main, long-baseline, short-baseline |
-| Contract extensions | ✅ | `NgvlaObservationParams` in `openapi/governance.yaml` |
-| Drift-regression tests | ✅ | `apps/frontend/src/app/tests/ngvla-drift-regression.spec.ts` |
-| Demo verification automation | ✅ | Enhanced `scripts/demo-verify.sh` with color/pass/fail |
-| Topology normalization | ✅ | Updated `topology.component.ts` with array segments |
-| Modeling disclaimer banners | ✅ | `DisclaimerBannerComponent` (4 types) in all demo pages |
-| Datasets provenance panel | ✅ | `ProvenancePanelComponent` with workflow/jobId/ngvlaParams |
+| Deliverable                   | Status | Evidence                                                     |
+| ----------------------------- | ------ | ------------------------------------------------------------ |
+| NGVLA canonical reference doc | ✅     | `docuentation/ngvla/NGVLA_REFERENCES.md` (215 lines)         |
+| NGVLA array fixtures          | ✅     | 3 fixtures: main, long-baseline, short-baseline              |
+| Contract extensions           | ✅     | `NgvlaObservationParams` in `openapi/governance.yaml`        |
+| Drift-regression tests        | ✅     | `apps/frontend/src/app/tests/ngvla-drift-regression.spec.ts` |
+| Demo verification automation  | ✅     | Enhanced `scripts/demo-verify.sh` with color/pass/fail       |
+| Topology normalization        | ✅     | Updated `topology.component.ts` with array segments          |
+| Modeling disclaimer banners   | ✅     | `DisclaimerBannerComponent` (4 types) in all demo pages      |
+| Datasets provenance panel     | ✅     | `ProvenancePanelComponent` with workflow/jobId/ngvlaParams   |
 
 **Exit Criteria Met:**
 
@@ -96,6 +98,7 @@ All Phase 1 deliverables have been successfully completed. The platform now has 
 ### Frontend (Angular)
 
 1. **Shared Components** (8 new components):
+
    - `PageStateComponent` - loading/error/empty/stale states
    - `DataSourceLabelComponent` - live/fallback/mock/stale labels
    - `StatusBandComponent` - app-level status/freshness indicator
@@ -119,6 +122,7 @@ All Phase 1 deliverables have been successfully completed. The platform now has 
 ### Testing
 
 1. **apps/frontend/src/app/tests/ngvla-drift-regression.spec.ts**:
+
    - 15+ test cases validating NGVLA constants
    - Antenna counts: 214 (Main), 19 (LBL), 19 (SBA)
    - Baseline ranges: 26m-1005km, 1000km-8946km, 9m-330m
@@ -127,6 +131,7 @@ All Phase 1 deliverables have been successfully completed. The platform now has 
    - Canonical labels: "Main", "Long Baseline", "SBA"
 
 2. **Component Unit Tests** (Jest):
+
    - `disclaimer-banner.component.spec.ts` - 30+ test cases covering:
      - All 4 disclaimer types (modeling/demo/development/simulation)
      - Dismissible functionality and state management
@@ -240,16 +245,19 @@ All Phase 1 deliverables have been successfully completed. The platform now has 
 ## Next Steps (Phase 2)
 
 1. **Backend Java Integration**:
+
    - Generate Java DTOs from updated OpenAPI schema
    - Wire NgvlaObservationParams into job submission controller
    - Add validation for ngvlaParams fields
 
 2. **Streaming-to-Governance Integration**:
+
    - Kafka consumer path with idempotent ingest
    - Contract versioning for telemetry-to-governance events
    - Dead-letter and replay runbook
 
 3. **Contract Testing**:
+
    - Automated tests for jobs submit/list/get/transition/cancel
    - Automated tests for datasets create/list/get
    - Fixture compatibility checks across API versions
@@ -275,6 +283,6 @@ Phase 1 successfully established a durable governance control plane with NGVLA-s
 
 ---
 
-*Generated: March 1, 2026*  
-*Project: Cosmic Horizon - ngVLA Control Plane*  
-*Phase: 1 Complete*
+_Generated: March 1, 2026_  
+_Project: Cosmic Horizon - ngVLA Control Plane_  
+_Phase: 1 Complete_

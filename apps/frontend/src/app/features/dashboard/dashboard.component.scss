@@ -15,9 +15,16 @@
   --tone-violet: #6f7bff;
   --tone-amber: #f6ad55;
   --tone-rose: #ff5d8f;
-  background:
-    radial-gradient(1200px 400px at 10% -20%, rgba(11, 200, 255, 0.18), transparent 60%),
-    radial-gradient(900px 360px at 100% 0%, rgba(124, 82, 255, 0.2), transparent 60%),
+  background: radial-gradient(
+      1200px 400px at 10% -20%,
+      rgba(11, 200, 255, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 360px at 100% 0%,
+      rgba(124, 82, 255, 0.2),
+      transparent 60%
+    ),
     linear-gradient(135deg, var(--dash-bg-1), var(--dash-bg-2));
   border-radius: 16px;
   padding: 14px;
@@ -47,8 +54,14 @@
   padding: 14px;
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.22);
-  background: linear-gradient(120deg, rgba(6, 182, 212, 0.15), rgba(99, 102, 241, 0.16), rgba(16, 185, 129, 0.14));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 16px 30px rgba(2, 8, 23, 0.35);
+  background: linear-gradient(
+    120deg,
+    rgba(6, 182, 212, 0.15),
+    rgba(99, 102, 241, 0.16),
+    rgba(16, 185, 129, 0.14)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 16px 30px rgba(2, 8, 23, 0.35);
 }
 
 .header-meta {
@@ -71,7 +84,11 @@
   border: 1px solid rgba(148, 163, 184, 0.26);
   border-radius: 12px;
   padding: 12px;
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.72));
+  background: linear-gradient(
+    145deg,
+    rgba(15, 23, 42, 0.8),
+    rgba(30, 41, 59, 0.72)
+  );
   box-shadow: 0 10px 24px rgba(2, 8, 23, 0.28);
 }
 
@@ -102,24 +119,28 @@
 .kpi-card {
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.28);
-  background: linear-gradient(150deg, rgba(2, 6, 23, 0.8), rgba(30, 41, 59, 0.75));
+  background: linear-gradient(
+    150deg,
+    rgba(2, 6, 23, 0.8),
+    rgba(30, 41, 59, 0.75)
+  );
   padding: 10px 12px;
   min-height: 74px;
 }
 
-.kpi-card[data-tone='mint'] {
+.kpi-card[data-tone="mint"] {
   border-left: 4px solid var(--tone-mint);
 }
 
-.kpi-card[data-tone='violet'] {
+.kpi-card[data-tone="violet"] {
   border-left: 4px solid var(--tone-violet);
 }
 
-.kpi-card[data-tone='amber'] {
+.kpi-card[data-tone="amber"] {
   border-left: 4px solid var(--tone-amber);
 }
 
-.kpi-card[data-tone='rose'] {
+.kpi-card[data-tone="rose"] {
   border-left: 4px solid var(--tone-rose);
 }
 
@@ -148,7 +169,11 @@
   padding: 10px;
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.24);
-  background: linear-gradient(165deg, rgba(2, 6, 23, 0.62), rgba(30, 41, 59, 0.58));
+  background: linear-gradient(
+    165deg,
+    rgba(2, 6, 23, 0.62),
+    rgba(30, 41, 59, 0.58)
+  );
 }
 
 .pulse-glow {
@@ -182,11 +207,13 @@
   padding: 10px;
   display: grid;
   place-items: center;
-  box-shadow: 0 0 0 1px rgba(186, 230, 253, 0.34), 0 8px 24px rgba(14, 116, 144, 0.25);
+  box-shadow: 0 0 0 1px rgba(186, 230, 253, 0.34),
+    0 8px 24px rgba(14, 116, 144, 0.25);
 }
 
 .ring.warm {
-  box-shadow: 0 0 0 1px rgba(253, 230, 138, 0.4), 0 8px 24px rgba(202, 138, 4, 0.22);
+  box-shadow: 0 0 0 1px rgba(253, 230, 138, 0.4),
+    0 8px 24px rgba(202, 138, 4, 0.22);
 }
 
 .ring-core {
@@ -197,7 +224,11 @@
   place-items: center;
   font-size: 1.18rem;
   font-weight: 700;
-  background: radial-gradient(circle at 20% 20%, rgba(30, 41, 59, 0.8), rgba(2, 6, 23, 0.95));
+  background: radial-gradient(
+    circle at 20% 20%,
+    rgba(30, 41, 59, 0.8),
+    rgba(2, 6, 23, 0.95)
+  );
 }
 
 .barscape {
@@ -228,19 +259,19 @@
   animation: growIn 850ms ease both;
 }
 
-.barscape-row[data-tone='mint'] .barscape-fill {
+.barscape-row[data-tone="mint"] .barscape-fill {
   background: linear-gradient(90deg, #14b8a6, #22c55e);
 }
 
-.barscape-row[data-tone='violet'] .barscape-fill {
+.barscape-row[data-tone="violet"] .barscape-fill {
   background: linear-gradient(90deg, #4f46e5, #22d3ee);
 }
 
-.barscape-row[data-tone='amber'] .barscape-fill {
+.barscape-row[data-tone="amber"] .barscape-fill {
   background: linear-gradient(90deg, #f59e0b, #f97316);
 }
 
-.barscape-row[data-tone='rose'] .barscape-fill {
+.barscape-row[data-tone="rose"] .barscape-fill {
   background: linear-gradient(90deg, #f43f5e, #fb7185);
 }
 
@@ -254,8 +285,13 @@
   border: 1px solid rgba(148, 163, 184, 0.26);
   border-radius: 10px;
   padding: 10px;
-  background: linear-gradient(140deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.78));
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  background: linear-gradient(
+    140deg,
+    rgba(15, 23, 42, 0.85),
+    rgba(30, 41, 59, 0.78)
+  );
+  transition: transform 180ms ease, box-shadow 180ms ease,
+    border-color 180ms ease;
 }
 
 .tile:hover {
@@ -270,22 +306,23 @@
 
 .tile.link:hover {
   border-color: rgba(34, 211, 238, 0.55);
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.2), 0 10px 20px rgba(14, 116, 144, 0.24);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.2),
+    0 10px 20px rgba(14, 116, 144, 0.24);
 }
 
-.tile[data-tone='mint'] {
+.tile[data-tone="mint"] {
   border-left: 4px solid var(--tone-mint);
 }
 
-.tile[data-tone='violet'] {
+.tile[data-tone="violet"] {
   border-left: 4px solid var(--tone-violet);
 }
 
-.tile[data-tone='amber'] {
+.tile[data-tone="amber"] {
   border-left: 4px solid var(--tone-amber);
 }
 
-.tile[data-tone='rose'] {
+.tile[data-tone="rose"] {
   border-left: 4px solid var(--tone-rose);
 }
 
@@ -358,7 +395,11 @@
   border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 10px;
   padding: 10px;
-  background: linear-gradient(140deg, rgba(2, 6, 23, 0.75), rgba(30, 41, 59, 0.75));
+  background: linear-gradient(
+    140deg,
+    rgba(2, 6, 23, 0.75),
+    rgba(30, 41, 59, 0.75)
+  );
 }
 
 .panel-card p {
@@ -392,15 +433,15 @@
   color: #e2e8f0;
 }
 
-.alerts li[data-level='critical'] {
+.alerts li[data-level="critical"] {
   border-left-color: #f43f5e;
 }
 
-.alerts li[data-level='warning'] {
+.alerts li[data-level="warning"] {
   border-left-color: #f59e0b;
 }
 
-.alerts li[data-level='info'] {
+.alerts li[data-level="info"] {
   border-left-color: #22d3ee;
 }
 
@@ -425,7 +466,11 @@
   padding: 6px 10px;
   border: 1px solid rgba(147, 197, 253, 0.42);
   border-radius: 8px;
-  background: linear-gradient(130deg, rgba(30, 64, 175, 0.33), rgba(6, 182, 212, 0.24));
+  background: linear-gradient(
+    130deg,
+    rgba(30, 64, 175, 0.33),
+    rgba(6, 182, 212, 0.24)
+  );
   color: #dbeafe;
   transition: transform 150ms ease, box-shadow 150ms ease;
 }
@@ -454,10 +499,76 @@
 @keyframes pulseGlow {
   0%,
   100% {
-    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.2), 0 8px 24px rgba(34, 211, 238, 0.08);
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.2),
+      0 8px 24px rgba(34, 211, 238, 0.08);
   }
   50% {
-    box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.35), 0 12px 28px rgba(129, 140, 248, 0.18);
+    box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.35),
+      0 12px 28px rgba(129, 140, 248, 0.18);
+  }
+}
+
+/* Tab styling - improved contrast and active state */
+::ng-deep .dash-tabs .mat-mdc-tab-group {
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(3, 10, 24, 0.5);
+}
+
+::ng-deep .dash-tabs .mat-mdc-tab-header {
+  background: rgba(15, 23, 42, 0.6);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* Inactive tab labels - bright cyan for better contrast */
+::ng-deep .dash-tabs .mdc-tab__text-label {
+  color: #7dd3fc !important;
+  font-weight: 600;
+  font-size: 0.92rem;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* Active tab label - even brighter with glow */
+::ng-deep .dash-tabs .mdc-tab--active .mdc-tab__text-label {
+  color: #f0fdff !important;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.8),
+    0 0 24px rgba(34, 211, 238, 0.4);
+  animation: tabActivate 0.4s ease-out;
+}
+
+/* Tab indicator underline */
+::ng-deep .dash-tabs .mdc-tab-indicator__content--underline {
+  border-color: #22d3ee !important;
+  border-width: 3px !important;
+}
+
+/* Hover state for inactive tabs */
+::ng-deep .dash-tabs .mdc-tab:not(.mdc-tab--active):hover .mdc-tab__text-label {
+  color: #a5f3fc !important;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+}
+
+/* Tab ripple color */
+::ng-deep .dash-tabs .mat-mdc-tab .mat-ripple-element {
+  background-color: rgba(34, 211, 238, 0.15) !important;
+}
+
+/* Animation when tab becomes active */
+@keyframes tabActivate {
+  0% {
+    transform: scale(1);
+    text-shadow: none;
+  }
+  50% {
+    transform: scale(1.08);
+    text-shadow: 0 0 20px rgba(34, 211, 238, 1),
+      0 0 40px rgba(34, 211, 238, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 12px rgba(34, 211, 238, 0.8),
+      0 0 24px rgba(34, 211, 238, 0.4);
   }
 }
 

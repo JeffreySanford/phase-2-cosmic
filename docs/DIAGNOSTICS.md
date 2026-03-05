@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 -->
+
 # Diagnostics View
 
 This document describes the frontend Diagnostics view and the backend endpoints it relies on.
@@ -33,6 +35,8 @@ The diagnostics UI is at the `Diagnostics` feature in the frontend and uses a ta
 ### Files Tab
 
 - Recent diagnostic files and `system-specs.txt` content
+- The returned `path` value is a sanitized logical label (`diagnostics logs`),
+  not a host absolute filesystem path
 
 ## Backend Endpoints
 
@@ -40,26 +44,49 @@ The diagnostics UI is at the `Diagnostics` feature in the frontend and uses a ta
 
 Returns an index object: `{ path: string, files: string[] }`
 
+Example:
+
+```json
+{
+  "path": "diagnostics logs",
+  "files": ["system-specs.txt"]
+}
+```
+
 ### `GET /api/diagnostics/system-specs`
 
 Returns `system-specs.txt` as plain text
+
+### `GET /api/diagnostics/system-specs.json`
+
+Returns a structured payload derived from `system-specs.txt` for summary
+rendering and machine-readable diagnostics parsing.
 
 ### `GET /api/diagnostics/docker-services`
 
 Returns an array of service status objects:
 
 ```json
-[{
-  "name": "Prometheus",
-  "status": "online",
-  "details": "http://127.0.0.1:9090",
-  "latencyMs": 15,
-  "icon": "monitoring",
-  "error": null
-}]
+[
+  {
+    "name": "Prometheus",
+    "status": "online",
+    "details": "http://127.0.0.1:9090",
+    "latencyMs": 15,
+    "icon": "monitoring",
+    "error": null
+  }
+]
 ```
 
-Status values: `healthy`, `degraded`, `offline`, `unknown`, `starting`, `stopping`, `maintenance`
+Current list-endpoint status values: `online`, `offline`, `unknown`
+
+Notes:
+
+- The frontend styles a `degraded` state, but the list endpoint does not emit
+  it yet.
+- The single-service endpoint includes `lastChecked`; the list endpoint does
+  not yet expose that field.
 
 ### `GET /api/diagnostics/docker-services/:name`
 
@@ -106,15 +133,12 @@ Override default service URLs via environment variables:
 
 ## Styling
 
-Tiles use traffic light colors based on status:
+Tiles currently use the following gradients:
 
-- **Healthy**: Green gradient (`#4caf50` → `#2e7d32`)
-- **Degraded**: Yellow/amber gradient (`#ffc107` → `#ff9800`) - black text
+- **Online**: Green gradient (`#4caf50` → `#2e7d32`)
+- **Degraded**: Amber gradient (`#ff9800` → `#f57c00`)
 - **Offline**: Red gradient (`#f44336` → `#c62828`)
 - **Unknown**: Gray gradient (`#607d8b` → `#455a64`)
-- **Starting**: Blue gradient (`#03a9f4` → `#0288d1`)
-- **Stopping**: Purple gradient (`#9c27b0` → `#7b1fa2`)
-- **Maintenance**: Brown gradient (`#795548` → `#5d4037`)
 
 Live signal cards use colorful tone classes:
 
@@ -122,7 +146,10 @@ Live signal cards use colorful tone classes:
 
 ## Mock Mode
 
-When running in mock mode (`DataSourceService.mode === 'mock'`), the frontend uses `MockDataService.mockDockerServices()` which returns randomized sample data for development.
+When running in mock mode (`DataSourceService.mode === 'mock'`), the frontend
+uses `MockDataService.mockDockerServices()` and metric-specific mock telemetry
+series for development. The live tiles now derive their display values from
+the same mock range series used to render sparklines.
 
 ## Source Files
 
@@ -131,3 +158,4 @@ When running in mock mode (`DataSourceService.mode === 'mock'`), the frontend us
 - Mock Data: `apps/frontend/src/app/services/mock-data.service.ts`
 - Server Endpoints: `apps/frontend/server.nest.ts`
 - Tests: `apps/frontend/src/app/features/diagnostics/*.spec.ts`
+<!-- markdownlint-enable MD013 -->

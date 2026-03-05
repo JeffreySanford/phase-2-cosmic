@@ -1,15 +1,19 @@
-import { Component, OnInit } from '@angular/core';
-import { DatasetsService, Dataset, DatasetRequest } from '../../services/datasets.service';
+import { Component, OnInit } from "@angular/core";
+import {
+  DatasetsService,
+  Dataset,
+  DatasetRequest,
+} from "../../services/datasets.service";
 
 @Component({
-  selector: 'app-datasets',
-  templateUrl: './datasets.component.html',
-  styleUrls: []
+  selector: "app-datasets",
+  templateUrl: "./datasets.component.html",
+  styleUrls: [],
 })
 export class DatasetsComponent implements OnInit {
   datasets: Dataset[] = [];
-  name = '';
-  description = '';
+  name = "";
+  description = "";
   error: string | null = null;
 
   constructor(private ds: DatasetsService) {}
@@ -26,19 +30,22 @@ export class DatasetsComponent implements OnInit {
   }
 
   create() {
-    const req: DatasetRequest = { name: this.name, description: this.description };
+    const req: DatasetRequest = {
+      name: this.name,
+      description: this.description,
+    };
     this.ds.create(req).subscribe(
       (d) => {
         this.datasets = [d, ...this.datasets];
-        this.name = '';
-        this.description = '';
+        this.name = "";
+        this.description = "";
       },
       (e) => (this.error = this.errMsg(e))
     );
   }
 
   private errMsg(err: unknown): string {
-    if (err && typeof err === 'object' && 'message' in err) {
+    if (err && typeof err === "object" && "message" in err) {
       return String((err as { message?: unknown }).message ?? err);
     }
     return String(err);

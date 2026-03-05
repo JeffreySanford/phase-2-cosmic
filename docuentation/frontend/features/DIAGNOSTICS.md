@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 -->
+
 # Diagnostics
 
 Alignment anchors
@@ -97,6 +99,18 @@ flowchart LR
 
 - Add a JSON output mode for machine parsing, and a small summary parser that extracts CPU/memory/disk metrics into a single JSON file.
 - Add a diagnostics summary endpoint specifically for stress-profile planning (`cpu_cores`, `mem_total`, `net_iface`, optional `gpu_present`) to support automatic dev profile recommendations.
+
+## Implemented frontend changes (March 5, 2026)
+
+- Diagnostics no longer render a host absolute path from `/api/diagnostics`.
+- Live tiles now derive the displayed value from the same recent series used
+  to render the sparkline.
+- CPU tiles use the scoped jobs query
+  `process_cpu_seconds_total{job=~"data-generator|java-ingest"}`.
+- Mock telemetry is now metric-specific enough to keep `100%` CPU near a
+  saturated band instead of producing arbitrary oscillation.
+- A persistent shell status band now surfaces governance, telemetry, and
+  diagnostics reachability across the frontend.
 
 ## Frontend realtime diagnostics analysis
 
@@ -289,3 +303,4 @@ Without that explicit work, the frontend is not utilizing GPU data at all.
 5. Extend `GET /api/diagnostics/docker-services` to return richer tile metadata and a real `degraded` state.
 6. Update tab labels and tiles to show freshness, severity, and change since last refresh.
 7. Reduce duplicate Prometheus traffic by consolidating overview-card queries.
+<!-- markdownlint-enable MD013 -->

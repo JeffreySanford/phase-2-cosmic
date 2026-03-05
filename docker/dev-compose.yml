@@ -25,7 +25,7 @@ services:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       # Two listeners: internal Docker network (PLAINTEXT)
       # and a host-reachable listener (HOST). Names must match
       # the value in KAFKA_LISTENERS.
@@ -246,7 +246,7 @@ services:
       - "/bin/bash"
       - "-lc"
     command: "./scripts/docker-test-runner.sh"
-    restart: 'no'
+    restart: "no"
 
 networks:
   default:

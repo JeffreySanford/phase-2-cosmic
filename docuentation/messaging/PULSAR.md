@@ -1,6 +1,7 @@
 # Pulsar Messaging Plan (Phase 2)
 
 Alignment anchors
+
 - Frontend UX source of truth: [../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../../ROADMAP.md](/ROADMAP.md)
@@ -17,6 +18,7 @@ Alignment anchors
 - StreamNative distribution remains an evaluation path via explicit benchmark spike.
 
 Related decision records:
+
 - [DECISIONS.md](/docuentation/architecture/DECISIONS.md) (`ADR-003`, `ADR-004`)
 
 ## Expected local topology
@@ -34,24 +36,29 @@ Related decision records:
 ## Required tests
 
 Unit:
+
 - Pulsar bridge config parsing and topic mapping validation
 - profile scaling math for rate/size/fanout
 
 Integration:
+
 - Pulsar publish -> Kafka consume flow
 - restart/failure replay and DLQ checks
 
 E2E:
+
 - Topology view renders Pulsar node/link/health indicators
 - Visualization page renders Pulsar backlog/publish metrics with source-state labels
 
 ## Benchmark spike (Apache vs StreamNative)
 
 Run identical scenarios and compare:
+
 - throughput
 - backlog growth/recovery
 - memory/CPU footprint
 - startup and operational complexity
 
 Output artifact:
+
 - recommendation memo with go/no-go and migration impact.

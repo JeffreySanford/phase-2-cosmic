@@ -3,7 +3,13 @@
  * These states follow the mission outcome: Human decision speed.
  */
 
-export type PageState = 'loading' | 'empty' | 'stale' | 'error' | 'recovered' | 'ready';
+export type PageState =
+  | "loading"
+  | "empty"
+  | "stale"
+  | "error"
+  | "recovered"
+  | "ready";
 
 export interface PageStateConfig {
   state: PageState;
@@ -16,6 +22,6 @@ export interface PageStateConfig {
 }
 
 export interface DataSource {
-  label: 'live' | 'fallback' | 'mock' | 'stale';
+  label: "live" | "fallback" | "mock" | "stale";
   lastUpdated?: string;
 }

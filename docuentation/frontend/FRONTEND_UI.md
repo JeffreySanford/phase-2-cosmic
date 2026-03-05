@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 MD029 -->
+
 # Cosmic Horizon Frontend UI Specification (Phase 2)
 
 Alignment anchors
@@ -101,6 +103,10 @@ Current codebase status:
 
 - `Telemetry`, `Topology`, `Diagnostics`, and `Viewer` exist in baseline form.
 - `Jobs` and `Datasets` routes now exist in baseline scaffold form and are the highest-priority surfaces for professionalization.
+- As of March 5, 2026:
+  - the app shell now mounts a persistent status band
+  - live Topology no longer silently falls back to mock data on API failure
+  - Diagnostics no longer render host absolute paths
 
 ### IA map (visual)
 
@@ -379,9 +385,12 @@ Current development reality (March 2, 2026):
 
 - Data source mix is expected across pages:
   - `live`: Prometheus proxy and governance APIs where implemented
-  - `fallback`: topology fallback graph on API miss
+  - `fallback`: bounded per-widget fallback values where explicitly labeled
   - `mock/placeholder`: pages/components still in scaffold state
 - UI must label source type explicitly as pages are hardened.
+- Live routes must fail honestly:
+  - do not silently swap to mock topology or diagnostics content when live APIs fail
+  - prefer `stale`, `partial`, or `unavailable` states with retry actions
 
 ## 8. Visual design and professional quality bar
 
@@ -445,6 +454,7 @@ Requirements:
 - diagnostics routes/features disabled or guarded outside dev
 - no rendering of host absolute paths
 - clear banner when data source is mocked
+- live-mode failures must not silently render mock substitutes
 
 ## 12. Frontend-to-backend contract map
 
@@ -476,7 +486,9 @@ Phase A (immediate):
 
 1. Build `Jobs` page using current governance endpoints.
 2. Add global status band and stale-data indicators.
+   Status: baseline implemented in app shell; continue improving freshness and incident detail in adjacent work.
 3. Harden diagnostics/proxy visibility in UI for non-dev modes.
+   Status: path exposure fixed; continue environment gating and source-label improvements in adjacent work.
 
 Phase B:
 
@@ -507,3 +519,4 @@ The frontend is considered professionally ready when:
 3. Add app-level health/status bar in main shell.
 4. Update e2e coverage to include Jobs submission and status polling flow.
 5. Add global stress profile labeling (`scaffold` vs `runtime-controlled`) and source badges on all telemetry-facing pages.
+<!-- markdownlint-enable MD013 MD029 -->

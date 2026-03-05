@@ -1,37 +1,44 @@
 # TODO: Local Data-Rate Simulation Harness (Phase 2)
 
 ## Status
+
 - Focused planning backlog for local data-rate simulation harness work.
 - Root `TODO.md` and `ROADMAP.md` remain precedence when priorities conflict.
 
 ## Current
+
 - Scope is defined for a reproducible local ingest simulation harness tied to Phase 2 streaming/governance validation.
 - Baseline constraints documented for desktop approximation (Intel i9, 64 GB RAM, 10 GB GPU).
 
 ## Next
 
 ### Immediate
+
 - Pin runtime baselines: `Go 1.21` and `Java 21`.
 - Scaffold `tools/data-generator` with rate limiting, targets, and metrics endpoint.
 - Add `openapi/governance.yaml` validation flow with schema fixtures in CI.
 
 ### High
+
 - Implement generator modes: steady, burst, sampled; include low-rate `1 Mb/s` mode.
 - Stand up `docker/dev-compose.yml` profile for Kafka/Zookeeper/Prometheus and mock surfaces.
 - Add integration path to Governance API and schema-aligned event payloads.
 - Add lightweight PR smoke lane (`1 Mb/s`) and nightly stress lane.
 
 ### Medium
+
 - Add benchmark scripts and artifacts under `docuentation/benchmarks/`.
 - Build diagnostics/benchmark UI hooks and topology/traffic visualization integration.
 - Add TACC/CosmicAI local mock services with configurable latency/failure behavior.
 - Add Nx targets for `build:docker` and `run:dev` for generator/governance components.
 
 ### Low
+
 - Expand scaled testbed guidance for non-desktop environments.
 - Deepen long-duration soak/stress automation and reporting cadence.
 
 ## Backlog
+
 - Generator CLI and adapters:
   - `--rate`, `--duration`, `--parallelism`, `--payload-size`, `--mode`
   - targets: `kafka://topic`, `stdout`, `file://path`, `http://.../ingest`
@@ -55,9 +62,11 @@
   - aggregated coverage reporting across Node/Go/Java
 
 ## Completed
+
 - None recorded in this planning file yet.
 
 ## INSTRUCTIONS
+
 - Alignment anchors:
   - Frontend UX source of truth: `docuentation/frontend/FRONTEND_UI.md`
   - Canonical execution backlog: root `TODO.md`

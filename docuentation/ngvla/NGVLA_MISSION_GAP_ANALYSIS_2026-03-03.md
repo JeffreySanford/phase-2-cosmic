@@ -12,6 +12,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
 ## Gaps identified vs current planning
 
 1. Time/frequency synchronization quality is not yet explicit in data quality gates.
+
 - Why it matters:
   - Interferometry requires strict timestamp and timing-reference integrity.
 - Current state:
@@ -20,6 +21,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
   - explicit timing metadata fields, quality checks, and alert thresholds.
 
 2. RFI/EMC observability and mitigation loop is not explicit in runtime planning.
+
 - Why it matters:
   - RFI directly affects science product trust and ingest stability.
 - Current state:
@@ -28,6 +30,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
   - RFI event model, quality flags, and operator visualization surfaces.
 
 3. VO interoperability is only partially covered (ObsCore fields) but service endpoints are not planned.
+
 - Why it matters:
   - community archive access relies on standards-based discovery/access patterns.
 - Current state:
@@ -36,6 +39,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
   - TAP/ADQL + DataLink/SODA compatibility planning and contract tests.
 
 4. Commissioning/AIV-readiness data scenarios are not first-class test tracks.
+
 - Why it matters:
   - ngVLA project docs emphasize AIV/CSV and staged readiness.
 - Current state:
@@ -44,6 +48,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
   - commissioning scenario suite and acceptance gates.
 
 5. Archive continuity and disaster-recovery replication are not explicit for 240 PB path.
+
 - Why it matters:
   - mission continuity requires recoverable, durable archive posture.
 - Current state:
@@ -52,6 +57,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
   - cross-site replication policy, restore drills, and RPO/RTO gates.
 
 6. Low-latency transient/multi-messenger alert path is under-specified.
+
 - Why it matters:
   - ngVLA KSG5 and transient science benefit from low-latency event handling.
 - Current state:

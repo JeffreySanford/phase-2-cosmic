@@ -9,7 +9,7 @@ Alignment anchors
 This document defines the architecture as it exists today and the intended direction.  
 It is the canonical bridge between conceptual design and implementation reality.
 
-## 1. Architectural intent  *(implemented)*
+## 1. Architectural intent _(implemented)_
 
 Cosmic Horizon is a hybrid control platform composed of:
 
@@ -25,7 +25,7 @@ Cosmic Horizon is a hybrid control platform composed of:
 
 - operator-facing control-room UX for awareness, orchestration, and diagnostics
 
-## 2. Status model  *(implemented documentation of current/in-progress/planned)*
+## 2. Status model _(implemented documentation of current/in-progress/planned)_
 
 ### Implemented (baseline)
 
@@ -50,7 +50,7 @@ Cosmic Horizon is a hybrid control platform composed of:
 - External compute adapter integration (HPC/TACC/CosmicAI)
 - Production security and policy enforcement layers
 
-## 3. Current runtime topology  *(implemented)*
+## 3. Current runtime topology _(implemented)_
 
 > **Service naming note:** The Docker compose stacks use container names `java-governance` and `java-ingest` to reflect their filesystem locations; documentation and API references generally call them "governance service" and "ingest bridge" for readability. These names are now aligned in this document.
 
@@ -85,7 +85,7 @@ flowchart LR
   Kafka --> Ingest
 ```
 
-## 4. Target reference topology  *(planned)*
+## 4. Target reference topology _(planned)_
 
 ```mermaid
 flowchart LR
@@ -119,7 +119,7 @@ flowchart LR
   API --> HPC
 ```
 
-## 5. Frontend architecture implications  *(in progress)*
+## 5. Frontend architecture implications _(in progress)_
 
 The frontend must evolve to match control-plane maturity:
 
@@ -135,13 +135,13 @@ The frontend must evolve to match control-plane maturity:
 
 - every page must represent `loading`, `empty`, `stale`, `error`, and `recovered` states
 
-## 6. Architectural constraints  *(implemented)*
+## 6. Architectural constraints _(implemented)_
 
 - No architecture claims without runnable baseline or explicit planned status.
 - APIs and UI must stay contract-synchronized through OpenAPI + fixture validation.
 - Local dev and production assumptions must be explicitly separated.
 
-## 7. Decision checkpoints  *(implemented)*
+## 7. Decision checkpoints _(implemented)_
 
 Use these checkpoints when changing architecture:
 
@@ -150,7 +150,7 @@ Use these checkpoints when changing architecture:
 3. Does this improve operator decision speed in the frontend?
 4. Does this preserve HPC adapter pathway without overcommitting current scope?
 
-## 8. Related docs  *(implemented)*
+## 8. Related docs _(implemented)_
 
 - [OPERATIONAL_STREAMING_PLANE.md](/docuentation/infra/OPERATIONAL_STREAMING_PLANE.md)
 - [GOVERNANCE_CONTROL_PLANE.md](/docuentation/governance/GOVERNANCE_CONTROL_PLANE.md)

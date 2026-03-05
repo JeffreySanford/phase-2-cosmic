@@ -1,15 +1,15 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { VisualizationComponent } from './visualization.component';
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { HttpClientTestingModule } from "@angular/common/http/testing";
+import { VisualizationComponent } from "./visualization.component";
 
-describe('VisualizationComponent', () => {
+describe("VisualizationComponent", () => {
   let component: VisualizationComponent;
   let fixture: ComponentFixture<VisualizationComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      declarations: [VisualizationComponent]
+      declarations: [VisualizationComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(VisualizationComponent);
@@ -17,7 +17,7 @@ describe('VisualizationComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

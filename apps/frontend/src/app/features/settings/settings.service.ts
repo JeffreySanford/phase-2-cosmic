@@ -1,12 +1,14 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { DEFAULT_USER_SETTINGS, UserSettings } from './settings.model';
+import { Injectable } from "@angular/core";
+import { BehaviorSubject } from "rxjs";
+import { DEFAULT_USER_SETTINGS, UserSettings } from "./settings.model";
 
-const SETTINGS_KEY = 'cosmic.userSettings';
+const SETTINGS_KEY = "cosmic.userSettings";
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class SettingsService {
-  private readonly settingsSubject = new BehaviorSubject<UserSettings>(this.readInitial());
+  private readonly settingsSubject = new BehaviorSubject<UserSettings>(
+    this.readInitial()
+  );
   readonly settings$ = this.settingsSubject.asObservable();
 
   get current(): UserSettings {
@@ -19,13 +21,15 @@ export class SettingsService {
   }
 
   reset(): void {
-    const resetSettings: UserSettings = JSON.parse(JSON.stringify(DEFAULT_USER_SETTINGS));
+    const resetSettings: UserSettings = JSON.parse(
+      JSON.stringify(DEFAULT_USER_SETTINGS)
+    );
     this.settingsSubject.next(resetSettings);
     this.persist(resetSettings);
   }
 
   private readInitial(): UserSettings {
-    if (typeof localStorage === 'undefined') {
+    if (typeof localStorage === "undefined") {
       return JSON.parse(JSON.stringify(DEFAULT_USER_SETTINGS));
     }
     try {
@@ -35,10 +39,22 @@ export class SettingsService {
       }
       const parsed = JSON.parse(raw) as Partial<UserSettings>;
       return {
-        profile: { ...DEFAULT_USER_SETTINGS.profile, ...(parsed.profile || {}) },
-        preferences: { ...DEFAULT_USER_SETTINGS.preferences, ...(parsed.preferences || {}) },
-        application: { ...DEFAULT_USER_SETTINGS.application, ...(parsed.application || {}) },
-        notifications: { ...DEFAULT_USER_SETTINGS.notifications, ...(parsed.notifications || {}) },
+        profile: {
+          ...DEFAULT_USER_SETTINGS.profile,
+          ...(parsed.profile || {}),
+        },
+        preferences: {
+          ...DEFAULT_USER_SETTINGS.preferences,
+          ...(parsed.preferences || {}),
+        },
+        application: {
+          ...DEFAULT_USER_SETTINGS.application,
+          ...(parsed.application || {}),
+        },
+        notifications: {
+          ...DEFAULT_USER_SETTINGS.notifications,
+          ...(parsed.notifications || {}),
+        },
       };
     } catch {
       return JSON.parse(JSON.stringify(DEFAULT_USER_SETTINGS));
@@ -46,7 +62,7 @@ export class SettingsService {
   }
 
   private persist(settings: UserSettings): void {
-    if (typeof localStorage === 'undefined') {
+    if (typeof localStorage === "undefined") {
       return;
     }
     try {

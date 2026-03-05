@@ -1,10 +1,10 @@
 # Infrastructure Topology & Dev Compose (Phase 2)
 
 Alignment anchors
+
 - Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../ROADMAP.md](/ROADMAP.md)
-
 
 ## Overview
 

@@ -1,8 +1,15 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const ROOT = path.resolve(__dirname, '..');
-const EXCLUDE_DIRS = ['.git', 'node_modules', 'pnpm-store', 'pnpm-store', '.venv', '.pytest_cache'];
+const ROOT = path.resolve(__dirname, "..");
+const EXCLUDE_DIRS = [
+  ".git",
+  "node_modules",
+  "pnpm-store",
+  "pnpm-store",
+  ".venv",
+  ".pytest_cache",
+];
 
 function walk(dir) {
   const res = [];
@@ -25,17 +32,20 @@ function convertFlowSeqs(content) {
   let changed = false;
   const out = content.replace(regex, (match, prefix, items) => {
     // Split items on commas, ignoring simple empty entries
-    const parts = items.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    const parts = items
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
     if (parts.length <= 1) return match; // nothing to gain
     // Determine indentation (number of spaces at start of prefix)
     const m = prefix.match(/^(\s*)/);
-    const baseIndent = m ? m[1] : '';
+    const baseIndent = m ? m[1] : "";
     // Key (prefix) without trailing spaces
     const key = prefix.trimRight();
-    const indent = baseIndent + '  ';
-    const lines = parts.map(p => `${indent}- ${p}`);
+    const indent = baseIndent + "  ";
+    const lines = parts.map((p) => `${indent}- ${p}`);
     changed = true;
-    return `${key}\n${lines.join('\n')}`;
+    return `${key}\n${lines.join("\n")}`;
   });
   return { changed, out };
 }
@@ -45,15 +55,15 @@ function main() {
   let modified = 0;
   for (const f of files) {
     try {
-      const content = fs.readFileSync(f, 'utf8');
+      const content = fs.readFileSync(f, "utf8");
       const { changed, out } = convertFlowSeqs(content);
       if (changed) {
-        fs.writeFileSync(f, out, 'utf8');
+        fs.writeFileSync(f, out, "utf8");
         modified++;
-        console.log('Updated:', path.relative(ROOT, f));
+        console.log("Updated:", path.relative(ROOT, f));
       }
     } catch (e) {
-      console.error('Error processing', f, e.message);
+      console.error("Error processing", f, e.message);
     }
   }
   console.log(`Done. Files modified: ${modified}`);

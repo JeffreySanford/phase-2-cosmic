@@ -1,76 +1,86 @@
 /* You can add global styles to this file, and also import other style files */
 
 /* Angular Material theme */
-@use './styles/material-theme' as *;
+@use "./styles/material-theme" as *;
 
 /* Basic app defaults */
 body {
-	margin: 0;
-	font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 /* Keep overlays above routed content (menus/dialogs/tooltips/snackbars). */
 .cdk-overlay-container {
-	z-index: 12000 !important;
+  z-index: 12000 !important;
 }
 
 /* Position snackbars above footer without altering menu/dialog overlay wrappers. */
 .mat-mdc-snack-bar-container.app-snack {
-	margin-bottom: calc(var(--app-footer-height, 0px) + 8px);
+  margin-bottom: calc(var(--app-footer-height, 0px) + 8px);
 }
 
 /* Color-coded snack variants */
 .app-snack.mat-snack-bar-container {
-	border-radius: 6px;
+  border-radius: 6px;
 }
-.snack-success.mat-snack-bar-container { background: #2e7d32; color: #fff; }
-.snack-error.mat-snack-bar-container { background: #c62828; color: #fff; }
-.snack-info.mat-snack-bar-container { background: #1565c0; color: #fff; }
+.snack-success.mat-snack-bar-container {
+  background: #2e7d32;
+  color: #fff;
+}
+.snack-error.mat-snack-bar-container {
+  background: #c62828;
+  color: #fff;
+}
+.snack-info.mat-snack-bar-container {
+  background: #1565c0;
+  color: #fff;
+}
 
 /* Ensure app and main layout allow full-height flex children (viewer needs this) */
-html, body {
-	height: 100%;
+html,
+body {
+  height: 100%;
 }
 
 app-root {
-	display: flex;
-	flex-direction: column;
-	min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 /* ensure both the custom element wrapper and the <main> inside behave as full-height flex containers */
 app-mainstage,
 main.app-mainstage {
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 0;
-	min-height: 0;
-	/* the header spacing is applied as padding instead of a top margin
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  /* the header spacing is applied as padding instead of a top margin
 	   so that children can stretch to the very top of the stage without
 	   needing negative margins. keeps layout sane and avoids downstream
 	   hacks in feature components. */
-	padding-top: 56px;
-	margin-top: 0;
+  padding-top: 56px;
+  margin-top: 0;
 }
 
 /* make direct children of the main stage (route host elements) stretch to fill the stage */
 main.app-mainstage > *,
 app-mainstage > * {
-	/* Don't force every routed child to be a flex item here — some pages
+  /* Don't force every routed child to be a flex item here — some pages
 	   should size by their content. Individual components that need to
 	   stretch should declare `display:flex; flex:1 1 0;` on their host.
 	   Keep `min-height:0` so stretched children can shrink correctly. */
-	min-height: 0;
+  min-height: 0;
 }
 
 /* global safeguard: prevent any component from injecting a negative top margin
    on the viewer container. this overrides accidental hacks with !important.
    the E2E test also asserts this condition. */
 .viewer-root {
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 0;
-	min-height: 0;
-	margin-top: 0 !important;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  margin-top: 0 !important;
 }
 
 /* Footer load-profile menu styling (menu panel renders in CDK overlay container) */
@@ -78,165 +88,167 @@ app-mainstage > * {
 .mat-mdc-menu-panel.profile-menu-panel,
 .profile-menu-panel,
 .cdk-overlay-pane .profile-menu-panel {
-	--mat-menu-container-color: #0b1220;
-	--mdc-menu-container-color: #0b1220;
-	border: 1px solid #22c55e !important;
-	border-radius: 8px;
-	background: #0b1220 !important;
-	box-shadow:
-		0 0 0 1px rgba(34, 197, 94, 0.35),
-		0 8px 24px rgba(34, 197, 94, 0.25),
-		0 0 18px rgba(34, 197, 94, 0.25) !important;
+  --mat-menu-container-color: #0b1220;
+  --mdc-menu-container-color: #0b1220;
+  border: 1px solid #22c55e !important;
+  border-radius: 8px;
+  background: #0b1220 !important;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.35),
+    0 8px 24px rgba(34, 197, 94, 0.25), 0 0 18px rgba(34, 197, 94, 0.25) !important;
 }
 
 .profile-menu-overlay .mat-mdc-menu-content,
 .profile-menu-panel .mat-mdc-menu-content {
-	padding: 0.25rem;
-	background: transparent !important;
+  padding: 0.25rem;
+  background: transparent !important;
 }
 
 .profile-menu-item {
-	min-height: 48px;
-	margin: 0.18rem 0;
-	border: 1px solid rgba(34, 197, 94, 0.55);
-	border-radius: 6px;
-	background: linear-gradient(135deg, #86efac 0%, #4ade80 100%) !important;
-	padding-right: 0.6rem !important;
-	box-shadow:
-		0 0 0 1px rgba(34, 197, 94, 0.45),
-		0 0 14px rgba(34, 197, 94, 0.26);
+  min-height: 48px;
+  margin: 0.18rem 0;
+  border: 1px solid rgba(34, 197, 94, 0.55);
+  border-radius: 6px;
+  background: linear-gradient(135deg, #86efac 0%, #4ade80 100%) !important;
+  padding-right: 0.6rem !important;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.45),
+    0 0 14px rgba(34, 197, 94, 0.26);
 }
 
 .profile-menu-item .mdc-list-item__primary-text,
 .profile-menu-item .mat-mdc-menu-item-text {
-	color: #052e16 !important;
-	width: 100%;
+  color: #052e16 !important;
+  width: 100%;
 }
 
 .profile-menu-item .profile-option-content {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	width: 100%;
-	gap: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.6rem;
 }
 
 .profile-menu-item .profile-option-row {
-	display: flex;
-	flex-direction: column;
-	gap: 0.08rem;
-	min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
 }
 
 .profile-menu-item .profile-option-main {
-	font-size: 0.86rem;
-	font-weight: 600;
-	line-height: 1.1;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.1;
 }
 
 .profile-menu-item .profile-option-note {
-	font-size: 0.72rem;
-	color: #14532d;
-	line-height: 1.1;
+  font-size: 0.72rem;
+  color: #14532d;
+  line-height: 1.1;
 }
 
 .profile-menu-item .profile-option-check {
-	color: #052e16;
-	font-weight: 700;
-	font-size: 0.95rem;
-	flex: 0 0 auto;
-	margin-right: 0.4rem;
+  color: #052e16;
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex: 0 0 auto;
+  margin-right: 0.4rem;
 }
 
 .profile-menu-item:hover {
-	background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%) !important;
+  background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%) !important;
 }
 
 .profile-menu-item.selected {
-	background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%) !important;
-	box-shadow:
-		inset 0 0 0 1px rgba(5, 46, 22, 0.55),
-		0 0 16px rgba(34, 197, 94, 0.3);
-	animation: profile-glow-pulse 1.8s ease-in-out infinite;
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(5, 46, 22, 0.55),
+    0 0 16px rgba(34, 197, 94, 0.3);
+  animation: profile-glow-pulse 1.8s ease-in-out infinite;
 }
 
 @keyframes profile-glow-pulse {
-	0% {
-		box-shadow:
-			inset 0 0 0 1px rgba(5, 46, 22, 0.55),
-			0 0 10px rgba(34, 197, 94, 0.2);
-	}
-	50% {
-		box-shadow:
-			inset 0 0 0 1px rgba(5, 46, 22, 0.7),
-			0 0 18px rgba(34, 197, 94, 0.42);
-	}
-	100% {
-		box-shadow:
-			inset 0 0 0 1px rgba(5, 46, 22, 0.55),
-			0 0 10px rgba(34, 197, 94, 0.2);
-	}
+  0% {
+    box-shadow: inset 0 0 0 1px rgba(5, 46, 22, 0.55),
+      0 0 10px rgba(34, 197, 94, 0.2);
+  }
+  50% {
+    box-shadow: inset 0 0 0 1px rgba(5, 46, 22, 0.7),
+      0 0 18px rgba(34, 197, 94, 0.42);
+  }
+  100% {
+    box-shadow: inset 0 0 0 1px rgba(5, 46, 22, 0.55),
+      0 0 10px rgba(34, 197, 94, 0.2);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.profile-menu-item.selected {
-		animation: none !important;
-	}
+  .profile-menu-item.selected {
+    animation: none !important;
+  }
 }
 
 /* Header user menu (vibrant + high-contrast) */
 .user-menu-overlay .mat-mdc-menu-panel,
 .mat-mdc-menu-panel.user-menu-panel {
-	--mat-menu-container-color: #0b1220;
-	--mdc-menu-container-color: #0b1220;
-	border: 1px solid #06b6d4 !important;
-	border-radius: 10px;
-	background: linear-gradient(160deg, #0b1220 0%, #0f1a31 100%) !important;
-	box-shadow:
-		0 0 0 1px rgba(6, 182, 212, 0.42),
-		0 10px 28px rgba(8, 47, 73, 0.52);
+  --mat-menu-container-color: #0b1220;
+  --mdc-menu-container-color: #0b1220;
+  border: 1px solid #06b6d4 !important;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #0b1220 0%, #0f1a31 100%) !important;
+  box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.42),
+    0 10px 28px rgba(8, 47, 73, 0.52);
 }
 
 .user-menu-panel .mat-mdc-menu-content {
-	padding: 0.3rem;
+  padding: 0.3rem;
 }
 
 .user-menu-item {
-	border-radius: 8px;
-	margin: 0.15rem 0;
-	border: 1px solid rgba(6, 182, 212, 0.28);
-	color: #e2f8ff !important;
-	background: linear-gradient(135deg, rgba(8, 47, 73, 0.72), rgba(12, 74, 110, 0.88)) !important;
-	transition: transform 140ms ease, box-shadow 160ms ease, background 160ms ease;
+  border-radius: 8px;
+  margin: 0.15rem 0;
+  border: 1px solid rgba(6, 182, 212, 0.28);
+  color: #e2f8ff !important;
+  background: linear-gradient(
+    135deg,
+    rgba(8, 47, 73, 0.72),
+    rgba(12, 74, 110, 0.88)
+  ) !important;
+  transition: transform 140ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
 .user-menu-item:hover {
-	transform: translateX(3px);
-	background: linear-gradient(135deg, rgba(14, 116, 144, 0.9), rgba(2, 132, 199, 0.92)) !important;
-	box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.5), 0 0 14px rgba(14, 165, 233, 0.35);
+  transform: translateX(3px);
+  background: linear-gradient(
+    135deg,
+    rgba(14, 116, 144, 0.9),
+    rgba(2, 132, 199, 0.92)
+  ) !important;
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.5),
+    0 0 14px rgba(14, 165, 233, 0.35);
 }
 
 .user-menu-item .menu-item-content {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.65rem;
-	width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  width: 100%;
 }
 
 .user-menu-item .menu-label {
-	font-size: 0.88rem;
-	font-weight: 600;
-	color: #e2f8ff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #e2f8ff;
 }
 
 .user-menu-item .menu-meta {
-	font-size: 0.72rem;
-	color: #7dd3fc;
+  font-size: 0.72rem;
+  color: #7dd3fc;
 }
 
 /* Settings modal shell styling */
 .settings-dialog-panel .mat-mdc-dialog-surface {
-	background: transparent !important;
-	box-shadow: 0 0 0 1px rgba(103, 232, 249, 0.4), 0 18px 36px rgba(8, 47, 73, 0.56) !important;
+  background: transparent !important;
+  box-shadow: 0 0 0 1px rgba(103, 232, 249, 0.4),
+    0 18px 36px rgba(8, 47, 73, 0.56) !important;
 }

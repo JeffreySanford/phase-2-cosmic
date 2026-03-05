@@ -1,6 +1,7 @@
 # Datasets
 
 Alignment anchors
+
 - Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
@@ -26,6 +27,7 @@ The Datasets page provides discoverability and operational readiness visibility 
 ## Dataset table contract
 
 Minimum columns:
+
 - dataset id
 - source
 - size
@@ -34,6 +36,7 @@ Minimum columns:
 - related jobs count
 
 Filters:
+
 - status
 - source
 - date range
@@ -42,6 +45,7 @@ Filters:
 ## Dataset detail panel
 
 Sections:
+
 - Metadata summary
 - Readiness checks
 - Related jobs
@@ -49,12 +53,14 @@ Sections:
 - Artifact references
 
 Actions:
+
 - “Create job from this dataset” (prefills Jobs submit form)
 - “Open provenance view”
 
 ## UI state requirements
 
 Must render:
+
 - loading
 - empty
 - stale
@@ -65,24 +71,30 @@ Must render:
 ## Backend dependency (target)
 
 Implemented baseline APIs:
+
 - `GET /api/v1/datasets`
 - `POST /api/v1/datasets`
 - `GET /api/v1/datasets/{id}`
 
 Required next APIs:
+
 - `GET /api/v1/datasets/{id}/jobs`
 - `GET /api/v1/datasets/{id}/provenance`
 
 Near-term UX note:
+
 - current page is CRUD scaffold and must evolve to readiness/provenance-focused view before considered production-grade.
 
 ## Testing requirements
 
 Unit:
+
 - filter and table state logic
 
 Integration:
+
 - dataset list + detail retrieval
 
 E2E:
+
 - select dataset -> open detail -> navigate to jobs/provenance

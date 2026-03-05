@@ -13,12 +13,12 @@ paths:
       operationId: getHealth
       tags: [Health]
       responses:
-        '200':
+        "200":
           description: Service health
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
+                $ref: "#/components/schemas/HealthResponse"
   /api/v1/ingest:
     post:
       operationId: postIngest
@@ -28,14 +28,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IngestRequest'
+              $ref: "#/components/schemas/IngestRequest"
       responses:
-        '202':
+        "202":
           description: Ingest accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IngestResponse'
+                $ref: "#/components/schemas/IngestResponse"
   /api/v1/jobs:
     get:
       operationId: listJobs
@@ -70,20 +70,20 @@ paths:
             minimum: 1
             default: 50
       responses:
-        '200':
+        "200":
           description: List of jobs
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/JobStatusResponse'
-        '400':
+                  $ref: "#/components/schemas/JobStatusResponse"
+        "400":
           description: Invalid query parameter
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       operationId: submitJob
       tags: [Jobs]
@@ -92,20 +92,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobSubmitRequest'
+              $ref: "#/components/schemas/JobSubmitRequest"
       responses:
-        '202':
+        "202":
           description: Job accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobSubmitResponse'
-        '400':
+                $ref: "#/components/schemas/JobSubmitResponse"
+        "400":
           description: Invalid request or payload
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/jobs/{id}:
     get:
       operationId: getJobStatus
@@ -117,18 +117,18 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Job status
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobStatusResponse'
-        '404':
+                $ref: "#/components/schemas/JobStatusResponse"
+        "404":
           description: Job not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/jobs/{id}/transition:
     post:
       operationId: transitionJob
@@ -144,32 +144,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobTransitionRequest'
+              $ref: "#/components/schemas/JobTransitionRequest"
       responses:
-        '200':
+        "200":
           description: Job transitioned
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobStatusResponse'
-        '400':
+                $ref: "#/components/schemas/JobStatusResponse"
+        "400":
           description: Invalid transition request (bad state or semantics)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Job not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
           description: Version mismatch
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/jobs/{id}/cancel:
     post:
       operationId: cancelJob
@@ -185,32 +185,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobCancelRequest'
+              $ref: "#/components/schemas/JobCancelRequest"
       responses:
-        '200':
+        "200":
           description: Job canceled
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobStatusResponse'
-        '400':
+                $ref: "#/components/schemas/JobStatusResponse"
+        "400":
           description: Cannot cancel (invalid state or request)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Job not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
           description: Version mismatch
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/jobs/{id}/retry:
     post:
@@ -232,30 +232,30 @@ paths:
                 expectedVersion:
                   type: integer
       responses:
-        '200':
+        "200":
           description: Job retried (state reset to QUEUED)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobStatusResponse'
-        '400':
+                $ref: "#/components/schemas/JobStatusResponse"
+        "400":
           description: Cannot retry job in current state
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Job not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
           description: Version mismatch
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthResponse:
@@ -324,7 +324,7 @@ components:
           additionalProperties:
             type: string
         ngvlaParams:
-          $ref: '#/components/schemas/NgvlaObservationParams'
+          $ref: "#/components/schemas/NgvlaObservationParams"
         requestedBy:
           type: string
       additionalProperties: false

@@ -1,12 +1,14 @@
 .app-mainstage {
-    /* header spacing is provided globally in styles.scss so this component
+  /* header spacing is provided globally in styles.scss so this component
       should not add extra top spacing that doubles the header offset. */
   margin-bottom: calc(var(--app-footer-height, 48px) + 0.25rem);
   padding: 1rem;
   margin-left: 240px;
   transition: margin-left 200ms ease;
 }
-.app-mainstage.collapsed { margin-left: 64px; }
+.app-mainstage.collapsed {
+  margin-left: 64px;
+}
 
 /* The immediate content area for routed pages. Keep this a flex child
    so pages that need to stretch will follow the mainstage sizing and

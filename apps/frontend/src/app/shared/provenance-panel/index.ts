@@ -1,2 +1,2 @@
-export * from './provenance-panel.component';
-export * from './provenance-panel.module';
+export * from "./provenance-panel.component";
+export * from "./provenance-panel.module";

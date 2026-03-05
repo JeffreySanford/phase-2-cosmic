@@ -1,18 +1,30 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { PromqlCardComponent } from './promql-card.component';
-import { TelemetryService } from '../../services/telemetry.service';
-import { LoadProfileService } from '../../services/load-profile.service';
-import { of } from 'rxjs';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { PromqlCardComponent } from "./promql-card.component";
+import { TelemetryService } from "../../services/telemetry.service";
+import { LoadProfileService } from "../../services/load-profile.service";
+import { of } from "rxjs";
+import { MatCardModule } from "@angular/material/card";
+import { MatButtonModule } from "@angular/material/button";
 
-describe('PromqlCardComponent', () => {
+describe("PromqlCardComponent", () => {
   let component: PromqlCardComponent;
   let fixture: ComponentFixture<PromqlCardComponent>;
 
   const mockTelemetry = {
-    queryInstant: () => of(42),
-    queryRange: () => of({ data: { result: [{ values: [[1, '1'], [2, '2'], [3, '3']] }] } }),
+    queryRange: () =>
+      of({
+        data: {
+          result: [
+            {
+              values: [
+                [1, "1"],
+                [2, "2"],
+                [3, "3"],
+              ],
+            },
+          ],
+        },
+      }),
   } as unknown as TelemetryService;
 
   const mockLoadProfile = {
@@ -32,35 +44,44 @@ describe('PromqlCardComponent', () => {
 
     fixture = TestBed.createComponent(PromqlCardComponent);
     component = fixture.componentInstance;
-    component.query = 'up';
-    component.title = 'Test';
+    component.query = "up";
+    component.title = "Test";
     fixture.detectChanges();
   });
 
-  it('creates', () => {
+  it("creates", () => {
     expect(component).toBeTruthy();
   });
 
-  it('loads instant and range values on refresh', (done) => {
+  it("loads aligned value and sparkline data on refresh", (done) => {
     component.refresh();
     setTimeout(() => {
-      expect(component.currentValue).toBe(42);
+      expect(component.currentValue).toBe(3);
       expect(component.points.length).toBeGreaterThan(0);
+      expect(component.path).toContain("M");
       done();
     }, 50);
   });
 
-  it('has default tone of cyan', () => {
-    expect(component.tone).toBe('cyan');
+  it("formats percent metrics using a stable percent domain", () => {
+    component.query =
+      '100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))';
+    component.currentValue = 96.25;
+
+    expect(component.displayValue()).toBe("96.3%");
   });
 
-  it('accepts different tone values', () => {
-    component.tone = 'violet';
-    fixture.detectChanges();
-    expect(component.tone).toBe('violet');
+  it("has default tone of cyan", () => {
+    expect(component.tone).toBe("cyan");
+  });
 
-    component.tone = 'amber';
+  it("accepts different tone values", () => {
+    component.tone = "violet";
     fixture.detectChanges();
-    expect(component.tone).toBe('amber');
+    expect(component.tone).toBe("violet");
+
+    component.tone = "amber";
+    fixture.detectChanges();
+    expect(component.tone).toBe("amber");
   });
 });
