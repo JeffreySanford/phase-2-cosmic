@@ -204,6 +204,11 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+      - PROMETHEUS_ENDPOINT=prometheus:9090
+      - PROMETHEUS_BASEURL=http://prometheus:9090
+      - PROMETHEUS_BASE_URL=http://prometheus:9090
+      # Ensure JVM system property is set so Spring reads prometheus.baseUrl
+      - JAVA_TOOL_OPTIONS=-Dprometheus.baseUrl=http://prometheus:9090
     restart: unless-stopped
     healthcheck:
       test:

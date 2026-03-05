@@ -65,6 +65,8 @@ describe('LandingComponent', () => {
         { provide: DatasetsService, useClass: StubDatasetsService },
         { provide: TelemetryService, useClass: StubTelemetryService },
         { provide: HttpClient, useClass: StubHttpClient },
+        { provide: (await import('../../services/data-source.service')).DataSourceService, useValue: { mode: 'live' } },
+        { provide: (await import('../../services/mock-data.service')).MockDataService, useValue: { diagnosticsIndex: () => of({ path: '/tmp', files: ['system-specs.txt'] }) } },
       ],
     }).compileComponents();
   });

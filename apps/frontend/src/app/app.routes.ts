@@ -1,5 +1,4 @@
 import { Route } from '@angular/router';
-import { VisualizationComponent } from './features/visualization/visualization.component';
 import { ViewerComponent } from './features/viewer/viewer.component';
 import { LandingComponent } from './features/landing/landing.component';
 import { SettingsComponent } from './features/settings/settings.component';
@@ -14,7 +13,7 @@ export const appRoutes: Route[] = [
   { path: 'view', component: ViewerComponent },
   { path: 'landing', component: LandingComponent },
   { path: 'dashboard', component: DashboardComponent },
-  { path: 'visualizations', component: VisualizationComponent },
+  { path: 'visualizations', loadChildren: () => import('./features/visualization/visualization.module').then(m => m.VisualizationModule) },
   { path: 'topology', component: TopologyComponent },
   { path: 'diagnostics', component: DiagnosticsComponent },
   { path: 'telemetry', component: TelemetryComponent },

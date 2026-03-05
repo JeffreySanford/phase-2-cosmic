@@ -1,5 +1,7 @@
 import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy } from '@angular/core';
 import { LoadProfilePct, LoadProfileService } from '../../services/load-profile.service';
+import { DataSourceService, DataMode } from '../../services/data-source.service';
+import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 
 @Component({
   selector: 'app-footer',
@@ -20,8 +22,21 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
   constructor(
     private loadProfile: LoadProfileService,
     private readonly el: ElementRef<HTMLElement>,
-    private readonly zone: NgZone
+    private readonly zone: NgZone,
+    private readonly dataSource: DataSourceService
   ) {}
+
+  setMode(m: DataMode) {
+    this.dataSource.setMode(m);
+  }
+
+  onToggle(ev: MatSlideToggleChange) {
+    this.setMode(ev.checked ? 'mock' : 'live');
+  }
+
+  get mode$() {
+    return this.dataSource.mode$;
+  }
 
   ngAfterViewInit(): void {
     this.updateFooterHeightVar();
@@ -50,10 +65,6 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
 
   get profile$() {
     return this.loadProfile.profile$;
-  }
-
-  get mode$() {
-    return this.loadProfile.mode$;
   }
 
   setProfile(pct: LoadProfilePct): void {

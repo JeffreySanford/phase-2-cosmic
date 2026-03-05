@@ -15,12 +15,18 @@ public class TopologyMetricsService {
     private String prometheusBaseUrl;
 
     public Map<String, Object> getTopologyMetrics() {
-        // If Prometheus base URL configured, attempt a lightweight query (example query)
-        if (prometheusBaseUrl != null && !prometheusBaseUrl.isBlank()) {
+        // Determine Prometheus base URL from config or environment, then attempt a lightweight query
+        String base = prometheusBaseUrl;
+        if (base == null || base.isBlank()) {
+            base = System.getenv("PROMETHEUS_BASE_URL");
+            if (base == null || base.isBlank()) base = System.getenv("PROMETHEUS_BASEURL");
+            if (base == null || base.isBlank()) base = System.getenv("PROMETHEUS_ENDPOINT");
+        }
+        if (base != null && !base.isBlank()) {
             try {
                 // Example Prometheus instant query to get network throughput per link label
                 String q = "sum by (link) (rate(application_network_bytes_total[1m]))";
-                String url = prometheusBaseUrl + "/api/v1/query?query=" + java.net.URLEncoder.encode(q, java.nio.charset.StandardCharsets.UTF_8);
+                String url = base + "/api/v1/query?query=" + java.net.URLEncoder.encode(q, java.nio.charset.StandardCharsets.UTF_8);
                 ResponseEntity<Map> resp = rest.getForEntity(url, Map.class);
                 if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
                     // Return raw payload under key `prometheus` for the frontend to interpret

@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatButtonModule } from '@angular/material/button';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatMenuModule } from '@angular/material/menu';
 import { FooterComponent } from './footer.component';
 import { LoadProfileService } from '../../services/load-profile.service';
+import { DataSourceService } from '../../services/data-source.service';
 import { of } from 'rxjs';
 
 describe('FooterComponent', () => {
@@ -19,10 +20,18 @@ describe('FooterComponent', () => {
       setProfile: setProfileSpy,
     } as unknown as LoadProfileService;
 
+    const mockDataSource = {
+      mode$: of('live'),
+      setMode: jest.fn(),
+    } as unknown as DataSourceService;
+
     await TestBed.configureTestingModule({
       declarations: [FooterComponent],
-      imports: [MatButtonModule, MatMenuModule],
-      providers: [{ provide: LoadProfileService, useValue: mockLoadProfile }],
+      imports: [MatSlideToggleModule, MatMenuModule],
+      providers: [
+        { provide: LoadProfileService, useValue: mockLoadProfile },
+        { provide: DataSourceService, useValue: mockDataSource },
+      ],
     }).compileComponents();
     fixture = TestBed.createComponent(FooterComponent);
     component = fixture.componentInstance;
@@ -36,5 +45,11 @@ describe('FooterComponent', () => {
   it('should forward setProfile to service', () => {
     component.setProfile(25);
     expect(setProfileSpy).toHaveBeenCalledWith(25);
+  });
+
+  it('should set data mode when setMode called', () => {
+    const ds = TestBed.inject(DataSourceService) as unknown as { setMode: jest.Mock };
+    component.setMode('mock');
+    expect(ds.setMode).toHaveBeenCalledWith('mock');
   });
 });

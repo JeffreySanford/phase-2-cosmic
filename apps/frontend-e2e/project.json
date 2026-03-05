@@ -40,5 +40,18 @@
       "parallelism": false,
       "metadata": { "technologies": ["cypress"], "description": "Runs Cypress Tests in CI mode" }
     }
+    ,
+    "playwright-ci": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "./",
+        "command": "pnpm run playwright:install && pnpm run e2e:playwright"
+      },
+      "cache": true,
+      "inputs": ["default","^default"],
+      "outputs": ["{workspaceRoot}/playwright-report"],
+      "parallelism": false,
+      "metadata": { "technologies": ["playwright"], "description": "Runs Playwright E2E tests in CI mode" }
+    }
   }
 }

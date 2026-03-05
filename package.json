@@ -17,6 +17,8 @@
     "unit-test:coverage": "pnpm nx run-many --target=test --all --configuration=ci --codeCoverage --parallel=false",
     "e2e-smoke": "pnpm nx run frontend-e2e:e2e-ci",
     "quality:ci": "pnpm run lint && pnpm run format:check:changed && pnpm run unit-test && pnpm run openapi-validate && pnpm run e2e-smoke",
+    "playwright:install": "pnpm exec playwright install --with-deps",
+    "e2e:playwright": "pnpm exec playwright test --config=tools/playwright/playwright.config.ts --reporter=html",
     "coverage:check": "bash scripts/check-coverage.sh 90"
   },
   "devDependencies": {

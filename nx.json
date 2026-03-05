@@ -13,7 +13,8 @@
   },
   "projects": {
     "frontend": "apps/frontend/project.json",
-    "frontend-e2e": "apps/frontend-e2e/project.json"
+    "frontend-e2e": "apps/frontend-e2e/project.json",
+    "playwright-e2e": "tools/playwright"
   },
   "targetDefaults": {
     "@angular-devkit/build-angular:application": {

@@ -6,6 +6,8 @@ import { SidebarService } from '../../base/sidebar/sidebar.service';
 import { DatasetsService, Dataset } from '../../services/datasets.service';
 import { JobsService, JobStatus } from '../../services/jobs.service';
 import { TelemetryService } from '../../services/telemetry.service';
+import { DataSourceService } from '../../services/data-source.service';
+import { MockDataService } from '../../services/mock-data.service';
 
 interface StatCard {
   label: string;
@@ -96,7 +98,9 @@ export class LandingComponent implements OnInit, OnDestroy {
     private readonly jobsService: JobsService,
     private readonly datasetsService: DatasetsService,
     private readonly telemetryService: TelemetryService,
-    private readonly http: HttpClient
+    private readonly http: HttpClient,
+    private readonly dataSource: DataSourceService,
+    private readonly mock: MockDataService
   ) {
     this.sub.add(sidebar.collapsed$.subscribe((v) => (this.collapsed = v)));
   }
@@ -114,10 +118,9 @@ export class LandingComponent implements OnInit, OnDestroy {
 
     const jobs$ = this.probe<JobStatus[]>(this.jobsService.list(), []);
     const datasets$ = this.probe<Dataset[]>(this.datasetsService.list(), []);
-    const diagnostics$ = this.probe<DiagnosticsIndex | null>(
-      this.http.get<DiagnosticsIndex>('/api/diagnostics'),
-      null
-    );
+    const diagnostics$ = this.dataSource.mode === 'mock'
+      ? this.probe<DiagnosticsIndex | null>(this.mock.diagnosticsIndex() as unknown as Observable<DiagnosticsIndex>, null)
+      : this.probe<DiagnosticsIndex | null>(this.http.get<DiagnosticsIndex>('/api/diagnostics'), null);
     const up$ = this.probe<number>(this.telemetryService.queryInstant('sum(up)'), 0);
 
     this.sub.add(

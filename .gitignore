@@ -57,5 +57,8 @@ pnpm-store/
 # Specific known log folder for data generator
 tools/data-generator/logs/
 
+# Playwright report/artifacts
+playwright-report/
+
 # Ignore Nx workspace runtime data (local, not for VCS)
 .nx/workspace-data/

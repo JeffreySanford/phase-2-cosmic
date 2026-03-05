@@ -2,15 +2,25 @@
   <div class="content">
     <span class="brand">Phase-2 Cosmic</span>
     <span class="sep">|</span>
-    <span class="label">Load profile</span>
-    <ng-container *ngIf="profile$ | async as profile">
-      <button mat-stroked-button [matMenuTriggerFor]="profileMenu" class="profile-trigger">
-        {{ profile }}%
-      </button>
-    </ng-container>
+    <span class="label">Data</span>
+    <span class="toggle-label">Live</span>
+    <mat-slide-toggle class="data-toggle" [checked]="(mode$ | async) === 'mock'" (change)="onToggle($event)" color="accent">
+    </mat-slide-toggle>
+    <span class="toggle-label">Mock</span>
+
     <ng-container *ngIf="mode$ | async as mode">
       <span class="sep">|</span>
       <span class="label">Mode: {{ mode }}</span>
+    </ng-container>
+
+    <ng-container *ngIf="(mode$ | async) === 'mock'">
+      <span class="sep">|</span>
+      <span class="label">Load profile</span>
+      <ng-container *ngIf="profile$ | async as profile">
+        <button mat-stroked-button [matMenuTriggerFor]="profileMenu" class="profile-trigger">
+          {{ profile }}%
+        </button>
+      </ng-container>
     </ng-container>
   </div>
 </footer>

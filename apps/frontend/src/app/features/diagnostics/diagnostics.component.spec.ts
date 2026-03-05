@@ -26,6 +26,16 @@ describe('DiagnosticsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, MatButtonModule, MatFormFieldModule, MatSelectModule, NoopAnimationsModule],
       declarations: [DiagnosticsComponent, PromqlCardStubComponent, DisclaimerBannerStubComponent],
+      providers: [
+        // Prevent real MockDataService construction which would call LoadProfileService
+        {
+          provide: (await import('../../services/mock-data.service')).MockDataService,
+          useValue: {
+            diagnosticsIndex: () => ({ subscribe: (fn: any) => fn({ path: '/tmp', files: [] }) }),
+            systemSpecsText: () => ({ subscribe: (fn: any) => fn('mock specs') }),
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DiagnosticsComponent);

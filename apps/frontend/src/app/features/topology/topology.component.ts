@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function */
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { DataSourceService } from '../../services/data-source.service';
+import { MockDataService } from '../../services/mock-data.service';
 import { MatDialog } from '@angular/material/dialog';
 import { TopologyInfoDialogComponent, TopologyInfoDialogData } from './topology-info-dialog.component';
 // d3 is ESM; load dynamically at runtime to avoid Jest/node transform issues
@@ -99,7 +101,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
     utilPct?: number;
   }> = [];
 
-  constructor(private http: HttpClient, private dialog: MatDialog) {}
+  constructor(private http: HttpClient, private dialog: MatDialog, private dataSource: DataSourceService, private mock: MockDataService) {}
 
   private safeId(s: string): string {
     return 'path_' + s.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -177,6 +179,28 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   // Fetch metrics from backend Prometheus adapter at /api/metrics/topology
   // Expected shape: { "source->target": { currentMBps: number, maxMBps?: number } }
   private fetchMetrics() {
+    if (this.dataSource.mode === 'mock') {
+      const keys = (this.lastLinks ?? []).map((l) => this.getLinkKey(l));
+      this.mock.topologyMetricsForLinks(keys).subscribe((res) => {
+        let changed = false;
+        for (const ln of this.lastLinks ?? []) {
+          const key = this.getLinkKey(ln);
+          const m = res[key];
+          if (m) {
+            const stats = this.statsRef(ln)._stats ?? ({} as LinkStats);
+            stats.throughputMBpsCurrent = m.currentMBps;
+            if (m.maxMBps) stats.throughputMBpsMax = m.maxMBps;
+            stats.throughput = `${Math.round(stats.throughputMBpsCurrent ?? 0)} MB/s (max ${Math.round(stats.throughputMBpsMax ?? stats.throughputMBpsCurrent ?? 0)} MB/s)`;
+            stats.throughputPct = `${Math.round(((stats.throughputMBpsCurrent ?? 0) / Math.max(1, stats.throughputMBpsMax || stats.throughputMBpsCurrent || 1)) * 100)}%`;
+            this.statsRef(ln)._stats = stats;
+            changed = true;
+          }
+        }
+        if (changed) this.render(this.lastNodes, this.lastLinks, true);
+      });
+      return;
+    }
+
     this.http.get<Record<string, { currentMBps: number; maxMBps?: number }>>('/api/metrics/topology').subscribe(
       (res) => {
         let changed = false;
@@ -721,6 +745,12 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
     this.lastError = null;
     // try optional backend endpoint `/api/topology` if present; otherwise fall back to mock
     const api = '/api/topology';
+    if (this.dataSource.mode === 'mock' && !forceApi) {
+      this.render(this.mockNodes(), this.mockLinks());
+      this.loading = false;
+      return;
+    }
+
     if (forceApi) {
       this.http.get<{ nodes: TopoNode[]; links: TopoLink[] }>(api).subscribe(
         (res) => {

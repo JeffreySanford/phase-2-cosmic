@@ -20,7 +20,6 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppComponent } from './app.component';
 import { appRoutes } from './app.routes';
 import { UiThemeComponent } from 'ui-theme';
-import { VisualizationComponent } from './features/visualization/visualization.component';
 import { HeaderComponent } from './base/header/header.component';
 import { FooterComponent } from './base/footer/footer.component';
 import { SidebarComponent } from './base/sidebar/sidebar.component';
@@ -48,7 +47,6 @@ import { ProvenancePanelModule } from './shared/provenance-panel/provenance-pane
   declarations: [
     AppComponent,
     UiThemeComponent,
-    VisualizationComponent,
     HeaderComponent,
     FooterComponent,
     SidebarComponent,

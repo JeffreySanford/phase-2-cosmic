@@ -9,6 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Restore Playwright browser cache
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            playwright-browsers-${{ runner.os }}-
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -48,10 +56,29 @@ jobs:
       - name: E2E smoke
         run: pnpm run e2e-smoke
 
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Playwright E2E
+        run: pnpm run e2e:playwright
+
       - name: Upload Cypress artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-artifacts
           path: "dist/cypress || ''"
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: "playwright-report || ''"
+      - name: Save Playwright browser cache
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('**/package.json') }}
 

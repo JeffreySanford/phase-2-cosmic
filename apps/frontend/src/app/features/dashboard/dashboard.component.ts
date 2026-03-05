@@ -4,6 +4,8 @@ import { Observable, Subscription, forkJoin, of, timer } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { LoadProfilePct, LoadProfileService } from '../../services/load-profile.service';
 import { TelemetryService } from '../../services/telemetry.service';
+import { DataSourceService } from '../../services/data-source.service';
+import { MockDataService } from '../../services/mock-data.service';
 
 type SourceLabel = 'live' | 'fallback';
 
@@ -101,7 +103,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   constructor(
     private readonly telemetry: TelemetryService,
     private readonly loadProfile: LoadProfileService,
-    private readonly http: HttpClient
+    private readonly http: HttpClient,
+    private readonly dataSource: DataSourceService,
+    private readonly mock: MockDataService
   ) {}
 
   ngOnInit(): void {
@@ -135,7 +139,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const bytesRate$ = this.probe(this.telemetry.queryInstant('rate(generator_bytes_produced_total[1m])'), 0);
     const recordsRate$ = this.probe(this.telemetry.queryInstant('rate(generator_records_produced_total[1m])'), 0);
     const totalBytes$ = this.probe(this.telemetry.queryInstant('generator_bytes_produced_total'), 0);
-    const diagnostics$ = this.probe(this.http.get<DiagnosticsIndex>('/api/diagnostics'), { path: '', files: [] as string[] });
+    const diagnostics$ = this.dataSource.mode === 'mock'
+      ? this.probe(this.mock.diagnosticsIndex() as unknown as Observable<DiagnosticsIndex>, { path: '', files: [] as string[] })
+      : this.probe(this.http.get<DiagnosticsIndex>('/api/diagnostics'), { path: '', files: [] as string[] });
     const cpuRange$ = this.probe(this.telemetry.queryRange('100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))', Math.floor(Date.now() / 1000) - 300, Math.floor(Date.now() / 1000), 15), {} as unknown);
     const bytesRange$ = this.probe(this.telemetry.queryRange('rate(generator_bytes_produced_total[1m])', Math.floor(Date.now() / 1000) - 300, Math.floor(Date.now() / 1000), 15), {} as unknown);
     const targetsRange$ = this.probe(this.telemetry.queryRange('sum(up)', Math.floor(Date.now() / 1000) - 300, Math.floor(Date.now() / 1000), 15), {} as unknown);

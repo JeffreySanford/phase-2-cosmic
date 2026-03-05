@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, interval, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { catchError, tap } from 'rxjs/operators';
+import { DataSourceService } from './data-source.service';
+import { MockDataService } from './mock-data.service';
 
 export interface SystemStatus {
   health: 'healthy' | 'degraded' | 'offline';
@@ -36,7 +38,7 @@ export class SystemStatusService {
 
   public status$: Observable<SystemStatus> = this.statusSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private dataSource: DataSourceService, private mock: MockDataService) {
     // Check health every 30 seconds
     interval(30000).subscribe(() => this.checkHealth());
     // Initial check
@@ -44,6 +46,19 @@ export class SystemStatusService {
   }
 
   private checkHealth(): void {
+    if (this.dataSource.mode === 'mock') {
+      this.mock.mockSystemStatus().subscribe((s) => {
+        const newStatus: SystemStatus = {
+          health: s.health,
+          lastCheck: new Date(s.lastCheck || Date.now()),
+          message: s.message,
+          services: s.services || { governance: 'online', streaming: 'online' }
+        };
+        this.statusSubject.next(newStatus);
+      });
+      return;
+    }
+
     this.http.get('/api/v1/health', { observe: 'response' }).pipe(
       tap(response => {
         const newStatus: SystemStatus = {

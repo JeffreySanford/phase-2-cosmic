@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { DataSourceService } from '../../services/data-source.service';
+import { MockDataService } from '../../services/mock-data.service';
 
 interface DiagnosticsIndex {
   path: string;
@@ -20,7 +22,7 @@ export class DiagnosticsComponent implements OnInit {
   readonly fileCountOptions: number[] = [5, 10, 25, 50, 100, -1];
   sortedFiles: string[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private dataSource: DataSourceService, private mock: MockDataService) {}
 
   ngOnInit(): void {
     this.fetchIndex();
@@ -29,6 +31,14 @@ export class DiagnosticsComponent implements OnInit {
   fetchIndex() {
     this.loading = true;
     this.error = null;
+    if (this.dataSource.mode === 'mock') {
+      this.mock.diagnosticsIndex().subscribe((res) => {
+        this.index = res as DiagnosticsIndex;
+        this.sortedFiles = this.sortFilesByRecency(this.index?.files || []);
+        this.loading = false;
+      });
+      return;
+    }
     this.http.get<DiagnosticsIndex>('/api/diagnostics').subscribe(
       (res) => {
         this.index = res;
@@ -45,6 +55,13 @@ export class DiagnosticsComponent implements OnInit {
   viewSystemSpecs() {
     this.loading = true;
     this.systemSpecs = null;
+    if (this.dataSource.mode === 'mock') {
+      this.mock.systemSpecsText().subscribe((txt) => {
+        this.systemSpecs = txt;
+        this.loading = false;
+      });
+      return;
+    }
     this.http.get('/api/diagnostics/system-specs', { responseType: 'text' }).subscribe(
       (txt) => {
         this.systemSpecs = txt;

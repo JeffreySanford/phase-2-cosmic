@@ -52,6 +52,27 @@
   background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%) !important;
 }
 
+.data-toggle {
+  --thumb-size: 18px;
+}
+
+.data-toggle .mat-slide-toggle-thumb {
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  background: #0f1724;
+  box-shadow: none;
+}
+
+.data-toggle.mat-checked .mat-slide-toggle-thumb {
+  background: linear-gradient(135deg, #86efac 0%, #4ade80 100%);
+  box-shadow: 0 0 10px rgba(74,222,128,0.55);
+}
+
+.toggle-label {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
 @keyframes trigger-glow-pulse {
   0% {
     box-shadow:
