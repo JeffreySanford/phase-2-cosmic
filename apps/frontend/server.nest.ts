@@ -328,7 +328,7 @@ class RuntimeLoadProfileService {
 }
 
 @Controller()
-class AppController {
+export class AppController {
   constructor(private ssr: SsrService, private runtimeLoad: RuntimeLoadProfileService) {}
 
   private buildBaseCandidates(baseUrl: string): string[] {
@@ -519,6 +519,181 @@ class AppController {
     } catch (e: any) {
       console.error('Error listing diagnostics files:', e);
       res.status(500).json({ error: String(e) });
+    }
+  }
+
+  @Get('/api/diagnostics/docker-services')
+  async getDockerServices(@Res() res: Response) {
+    if (process.env['NODE_ENV'] === 'production') {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
+    const net = await import('net');
+
+    // Service definitions with localhost fallbacks for host-mode development
+    const services: Array<{ name: string; kind: 'tcp' | 'http'; url: string; fallbackUrl?: string; icon?: string }> = [
+      { name: 'Prometheus', kind: 'http', url: process.env['PROMETHEUS_URL'] || 'http://prometheus:9090/-/ready', fallbackUrl: 'http://127.0.0.1:9090/-/ready', icon: 'monitoring' },
+      { name: 'Grafana', kind: 'http', url: process.env['GRAFANA_URL'] || 'http://grafana:3000/api/health', fallbackUrl: 'http://127.0.0.1:3000/api/health', icon: 'dashboard' },
+      { name: 'Loki', kind: 'http', url: process.env['LOKI_URL'] || 'http://loki:3100/ready', fallbackUrl: 'http://127.0.0.1:3100/ready', icon: 'description' },
+      { name: 'Pulsar', kind: 'tcp', url: process.env['PULSAR_BROKER'] || 'pulsar:6650', fallbackUrl: '127.0.0.1:6650', icon: 'cloud_queue' },
+      { name: 'Kafka', kind: 'tcp', url: process.env['KAFKA_BROKER'] || 'broker:9092', fallbackUrl: '127.0.0.1:9092', icon: 'stream' },
+      { name: 'RabbitMQ', kind: 'tcp', url: (process.env['RABBITMQ_URL'] || 'rabbitmq:5672').replace(/^amqp:\/\//, ''), fallbackUrl: '127.0.0.1:5672', icon: 'swap_horiz' },
+      { name: 'Alertmanager', kind: 'http', url: process.env['ALERTMANAGER_URL'] || 'http://alertmanager:9093/-/ready', fallbackUrl: 'http://127.0.0.1:9093/-/ready', icon: 'notifications' },
+      { name: 'Redis', kind: 'tcp', url: (process.env['REDIS_URL'] || 'redis:6379').replace(/^redis:\/\//, ''), fallbackUrl: '127.0.0.1:6379', icon: 'memory' },
+    ];
+
+    const results: Array<{ name: string; status: 'online' | 'degraded' | 'offline' | 'unknown'; details?: string; error?: string; latencyMs?: number; icon?: string }> = [];
+
+    const checkTcp = (host: string, port: number, timeout = 3000): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
+      new Promise((resolve) => {
+        const start = Date.now();
+        const sock = new net.Socket();
+        let done = false;
+        const onDone = (ok: boolean, error?: string) => {
+          if (done) return;
+          done = true;
+          const latencyMs = Date.now() - start;
+          try { sock.destroy(); } catch { /* ignore destroy errors */ }
+          resolve({ ok, latencyMs, error });
+        };
+        sock.setTimeout(timeout, () => onDone(false, 'timeout'));
+        sock.once('error', (err) => onDone(false, err?.message || 'connection_error'));
+        sock.connect(port, host, () => onDone(true));
+      });
+
+    const checkHttp = async (url: string, timeout = 3000): Promise<{ ok: boolean; latencyMs: number; error?: string }> => {
+      const start = Date.now();
+      try {
+        const u = url.startsWith('http') ? url : `http://${url}`;
+        const r = await this.fetchWithTimeout(u, { method: 'GET' }, timeout);
+        return { ok: r.ok, latencyMs: Date.now() - start };
+      } catch (e: any) {
+        return { ok: false, latencyMs: Date.now() - start, error: e?.message || 'fetch_error' };
+      }
+    };
+
+    for (const s of services) {
+      let result: { ok: boolean; latencyMs: number; error?: string } = { ok: false, latencyMs: 0, error: 'not_checked' };
+      let usedUrl = s.url;
+
+      try {
+        if (s.kind === 'tcp') {
+          const [hostPart, portPart] = s.url.split(':');
+          const host = hostPart || '127.0.0.1';
+          const port = Number(portPart) || 0;
+          if (port > 0) {
+            result = await checkTcp(host, port, 3000);
+            // Try fallback if primary fails
+            if (!result.ok && s.fallbackUrl) {
+              const [fbHost, fbPort] = s.fallbackUrl.split(':');
+              const fbResult = await checkTcp(fbHost || '127.0.0.1', Number(fbPort) || port, 3000);
+              if (fbResult.ok) { result = fbResult; usedUrl = s.fallbackUrl; }
+            }
+          }
+        } else {
+          result = await checkHttp(s.url, 3000);
+          // Try fallback if primary fails
+          if (!result.ok && s.fallbackUrl) {
+            const fbResult = await checkHttp(s.fallbackUrl, 3000);
+            if (fbResult.ok) { result = fbResult; usedUrl = s.fallbackUrl; }
+          }
+        }
+        results.push({
+          name: s.name,
+          status: result.ok ? 'online' : 'offline',
+          details: usedUrl,
+          error: result.error,
+          latencyMs: result.latencyMs,
+          icon: s.icon,
+        });
+      } catch (e: any) {
+        results.push({ name: s.name, status: 'unknown', details: usedUrl, error: String(e), icon: s.icon });
+      }
+    }
+
+    res.json(results);
+  }
+
+  @Get('/api/diagnostics/docker-services/:name')
+  async getDockerServiceByName(@Res() res: Response, @Req() req: Request) {
+    const name = String(req.params?.['name'] || '');
+    if (!name) {
+      res.status(400).json({ error: 'missing_name' });
+      return;
+    }
+    // Reuse list of services from the main handler
+    const services: Array<{ name: string; kind: 'tcp' | 'http'; url: string; fallbackUrl?: string }> = [
+      { name: 'Prometheus', kind: 'http', url: process.env['PROMETHEUS_URL'] || 'http://prometheus:9090/-/ready', fallbackUrl: 'http://127.0.0.1:9090/-/ready' },
+      { name: 'Grafana', kind: 'http', url: process.env['GRAFANA_URL'] || 'http://grafana:3000/api/health', fallbackUrl: 'http://127.0.0.1:3000/api/health' },
+      { name: 'Loki', kind: 'http', url: process.env['LOKI_URL'] || 'http://loki:3100/ready', fallbackUrl: 'http://127.0.0.1:3100/ready' },
+      { name: 'Pulsar', kind: 'tcp', url: process.env['PULSAR_BROKER'] || 'pulsar:6650', fallbackUrl: '127.0.0.1:6650' },
+      { name: 'Kafka', kind: 'tcp', url: process.env['KAFKA_BROKER'] || 'broker:9092', fallbackUrl: '127.0.0.1:9092' },
+      { name: 'RabbitMQ', kind: 'tcp', url: (process.env['RABBITMQ_URL'] || 'rabbitmq:5672').replace(/^amqp:\/\//, ''), fallbackUrl: '127.0.0.1:5672' },
+      { name: 'Alertmanager', kind: 'http', url: process.env['ALERTMANAGER_URL'] || 'http://alertmanager:9093/-/ready', fallbackUrl: 'http://127.0.0.1:9093/-/ready' },
+      { name: 'Redis', kind: 'tcp', url: (process.env['REDIS_URL'] || 'redis:6379').replace(/^redis:\/\//, ''), fallbackUrl: '127.0.0.1:6379' },
+    ];
+
+    const service = services.find((s) => s.name.toLowerCase() === name.toLowerCase());
+    if (!service) {
+      res.status(404).json({ error: 'service_not_found', name });
+      return;
+    }
+
+    const net = await import('net');
+    const checkTcp = (host: string, port: number, timeout = 3000): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
+      new Promise((resolve) => {
+        const start = Date.now();
+        const sock = new net.Socket();
+        let done = false;
+        const onDone = (ok: boolean, error?: string) => {
+          if (done) return;
+          done = true;
+          const latencyMs = Date.now() - start;
+          try { sock.destroy(); } catch { /* ignore destroy errors */ }
+          resolve({ ok, latencyMs, error });
+        };
+        sock.setTimeout(timeout, () => onDone(false, 'timeout'));
+        sock.once('error', (err) => onDone(false, err?.message || 'connection_error'));
+        sock.connect(port, host, () => onDone(true));
+      });
+
+    const checkHttp = async (url: string, timeout = 3000): Promise<{ ok: boolean; latencyMs: number; error?: string }> => {
+      const start = Date.now();
+      try {
+        const u = url.startsWith('http') ? url : `http://${url}`;
+        const r = await this.fetchWithTimeout(u, { method: 'GET' }, timeout);
+        return { ok: r.ok, latencyMs: Date.now() - start };
+      } catch (e: any) {
+        return { ok: false, latencyMs: Date.now() - start, error: e?.message || 'fetch_error' };
+      }
+    };
+
+    try {
+      let result: { ok: boolean; latencyMs: number; error?: string } = { ok: false, latencyMs: 0, error: 'not_checked' };
+      let usedUrl = service.url;
+
+      if (service.kind === 'tcp') {
+        const [hostPart, portPart] = service.url.split(':');
+        const host = hostPart || '127.0.0.1';
+        const port = Number(portPart) || 0;
+        if (port > 0) {
+          result = await checkTcp(host, port, 3000);
+          if (!result.ok && service.fallbackUrl) {
+            const [fbHost, fbPort] = service.fallbackUrl.split(':');
+            const fbResult = await checkTcp(fbHost || '127.0.0.1', Number(fbPort) || port, 3000);
+            if (fbResult.ok) { result = fbResult; usedUrl = service.fallbackUrl; }
+          }
+        }
+      } else {
+        result = await checkHttp(service.url, 3000);
+        if (!result.ok && service.fallbackUrl) {
+          const fbResult = await checkHttp(service.fallbackUrl, 3000);
+          if (fbResult.ok) { result = fbResult; usedUrl = service.fallbackUrl; }
+        }
+      }
+      res.json({ name: service.name, status: result.ok ? 'online' : 'offline', details: usedUrl, error: result.error, latencyMs: result.latencyMs, lastChecked: Date.now() });
+    } catch (e: any) {
+      res.status(500).json({ name: service.name, status: 'unknown', details: String(e) });
     }
   }
 

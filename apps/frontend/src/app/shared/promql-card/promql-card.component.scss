@@ -1,6 +1,94 @@
-.promql-card { width: 160px; display: inline-block; margin: 0.5rem; }
-.promql-card .profile { font-size: 0.72rem; color: #4caf50; margin-bottom: 0.15rem; }
-.promql-card .value { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
-.promql-card .meta { color: #666; font-size: 0.75rem; word-break: break-all; margin-top: 0.25rem; }
-.promql-card .spark { width: 120px; height: 30px; display: block; margin: 0.5rem 0; }
-.promql-card .actions { text-align: right; }
+.promql-card {
+  width: 180px;
+  display: inline-block;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  mat-card-title {
+    padding: 1rem 1rem 0 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  mat-card-content {
+    padding: 0.5rem 1rem 1rem 1rem;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+
+  &.tone-cyan {
+    background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+    color: #fff;
+    .profile { color: rgba(255,255,255,0.85); }
+    .meta { color: rgba(255,255,255,0.7); }
+    path { stroke: rgba(255,255,255,0.9); }
+  }
+  &.tone-violet {
+    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    color: #fff;
+    .profile { color: rgba(255,255,255,0.85); }
+    .meta { color: rgba(255,255,255,0.7); }
+    path { stroke: rgba(255,255,255,0.9); }
+  }
+  &.tone-amber {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: #fff;
+    .profile { color: rgba(255,255,255,0.85); }
+    .meta { color: rgba(255,255,255,0.7); }
+    path { stroke: rgba(255,255,255,0.9); }
+  }
+  &.tone-mint {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    color: #fff;
+    .profile { color: rgba(255,255,255,0.85); }
+    .meta { color: rgba(255,255,255,0.7); }
+    path { stroke: rgba(255,255,255,0.9); }
+  }
+  &.tone-rose {
+    background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+    color: #fff;
+    .profile { color: rgba(255,255,255,0.85); }
+    .meta { color: rgba(255,255,255,0.7); }
+    path { stroke: rgba(255,255,255,0.9); }
+  }
+  &.tone-blue {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    color: #fff;
+    .profile { color: rgba(255,255,255,0.85); }
+    .meta { color: rgba(255,255,255,0.7); }
+    path { stroke: rgba(255,255,255,0.9); }
+  }
+}
+
+.promql-card .profile {
+  font-size: 0.72rem;
+  font-weight: 500;
+  margin-bottom: 0.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.promql-card .value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+.promql-card .meta {
+  font-size: 0.7rem;
+  word-break: break-all;
+  margin-top: 0.25rem;
+  opacity: 0.8;
+}
+.promql-card .spark {
+  width: 140px;
+  height: 32px;
+  display: block;
+  margin: 0.5rem 0;
+}
+.promql-card .actions {
+  text-align: right;
+  button { color: inherit; opacity: 0.9; }
+}

@@ -14,6 +14,7 @@ type PrometheusRangeResponseLocal = { data?: { result?: { values?: Array<[number
 export class PromqlCardComponent implements OnInit, OnDestroy {
   @Input() query = '';
   @Input() title = '';
+  @Input() tone: 'cyan' | 'violet' | 'amber' | 'mint' | 'rose' | 'blue' = 'cyan';
 
   currentValue = 0;
   points: number[] = [];

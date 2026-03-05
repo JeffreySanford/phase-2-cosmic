@@ -49,4 +49,18 @@ describe('PromqlCardComponent', () => {
       done();
     }, 50);
   });
+
+  it('has default tone of cyan', () => {
+    expect(component.tone).toBe('cyan');
+  });
+
+  it('accepts different tone values', () => {
+    component.tone = 'violet';
+    fixture.detectChanges();
+    expect(component.tone).toBe('violet');
+
+    component.tone = 'amber';
+    fixture.detectChanges();
+    expect(component.tone).toBe('amber');
+  });
 });

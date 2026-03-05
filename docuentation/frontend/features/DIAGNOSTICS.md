@@ -97,3 +97,98 @@ flowchart LR
 
 - Add a JSON output mode for machine parsing, and a small summary parser that extracts CPU/memory/disk metrics into a single JSON file.
 - Add a diagnostics summary endpoint specifically for stress-profile planning (`cpu_cores`, `mem_total`, `net_iface`, optional `gpu_present`) to support automatic dev profile recommendations.
+
+## Frontend realtime diagnostics analysis
+
+The current frontend Diagnostics page already has the right three tab groups, but the realtime behavior is uneven and the tabs do not yet act like one coordinated operational surface.
+
+### Current implementation observations
+
+- The `Overview` tab renders six live Prometheus cards.
+- Each card polls independently and performs both an instant query and a range query on every cycle.
+- The `Broker Systems` tab is the only tab with explicit auto-refresh controls.
+- The `Broker Systems` polling only refreshes docker-service tiles, not the diagnostics file index or `system-specs` content.
+- The `Files` tab is mostly manual: users must refresh the index explicitly and must separately load `system-specs.txt`.
+- The UI styles support `degraded` tiles, but the list endpoint currently returns `online`, `offline`, or `unknown`.
+- The backend already exposes `GET /api/diagnostics/system-specs.json`, but the current view still treats raw text as the primary file detail.
+
+### Problems to address
+
+- Realtime data is fragmented by tab, so freshness is inconsistent across the page.
+- Prometheus polling is more expensive than necessary because each tile owns its own refresh cycle.
+- Tabs do not show whether their contents are live, stale, mock, or manually loaded.
+- Broker tiles are visually strong but weak as decision tools because they lack age, severity ordering, fallback context, and short history.
+- The Files tab shows evidence, but it does not summarize what changed or why the artifacts matter.
+
+### Improvements for tab groups
+
+- Move to a page-level diagnostics view model that combines:
+  - live overview metrics
+  - broker-service health
+  - diagnostics artifact index
+  - parsed `system-specs.json` summary
+- Poll once per load-profile cadence and fan the results into all tabs, instead of having each overview card fetch independently.
+- Add shared page metadata:
+  - `lastUpdated`
+  - `refreshing`
+  - `stale`
+  - `source` (`live` or `mock`)
+  - `error`
+- Add summary badges on tab labels, for example:
+  - `Overview (live)`
+  - `Broker Systems (2 offline)`
+  - `Files (3 new)`
+- Keep the active tab in route query params so refreshes and deep links preserve context.
+- Lazy-load only heavy detail views:
+  - keep summary data hot
+  - load raw `system-specs.txt` only when the Files tab is active
+
+### Improvements for overview tiles
+
+- Replace per-card polling with shared observables or a diagnostics facade/store.
+- Add trend and delta indicators so operators can see whether a value is climbing, flat, or falling.
+- Add `updated x seconds ago` to every tile.
+- Normalize units and display formats:
+  - bytes/sec
+  - records/sec
+  - percent
+  - target count
+- Add thresholds so a tile can show warning or abnormal state, not only its color tone.
+- Revisit the current CPU query so it reflects the intended jobs or host/container scope rather than an overly broad aggregate.
+
+### Improvements for broker system tiles
+
+- Sort by severity first so offline or degraded systems appear before healthy ones.
+- Group tiles by role:
+  - observability
+  - messaging
+  - state/cache
+- Extend the backend list endpoint to include:
+  - `lastChecked`
+  - `usedFallback`
+  - `degraded`
+  - optional recent probe history
+- Mark a service as `degraded` when fallback succeeds, latency is above threshold, or readiness is partial.
+- Show whether the tile is using its primary endpoint or a localhost fallback.
+- Preserve error type detail, especially timeout vs DNS vs connection refusal.
+
+### Improvements for the Files tab
+
+- Use `GET /api/diagnostics/system-specs.json` as the primary summary source.
+- Add summary tiles above the file list:
+  - total artifacts
+  - latest artifact age
+  - `system-specs.txt` present/missing
+  - `fio` log count
+  - `iperf3` log count
+- Parse timestamped filenames into relative age and absolute time.
+- Highlight newly arrived artifacts since the last refresh.
+- Keep raw `system-specs.txt` in an expandable detail section instead of making it the first-level view.
+
+### Recommended implementation sequence
+
+1. Introduce a shared diagnostics facade/store so all three tabs use one refresh model.
+2. Switch summary rendering to `GET /api/diagnostics/system-specs.json`.
+3. Extend `GET /api/diagnostics/docker-services` to return richer tile metadata and a real `degraded` state.
+4. Update tab labels and tiles to show freshness, severity, and change since last refresh.
+5. Reduce duplicate Prometheus traffic by consolidating overview-card queries.

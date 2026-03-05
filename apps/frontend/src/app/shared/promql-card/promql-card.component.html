@@ -1,10 +1,10 @@
-<mat-card class="promql-card">
+<mat-card class="promql-card" [ngClass]="'tone-' + tone">
   <mat-card-title>{{ title }}</mat-card-title>
   <mat-card-content>
     <div class="profile">Load {{ profilePct }}%</div>
     <div class="value">{{ currentValue | number:'1.0-2' }}</div>
-    <svg *ngIf="path" class="spark" viewBox="0 0 120 30" preserveAspectRatio="none">
-      <path [attr.d]="path" stroke="#3f51b5" fill="none" stroke-width="1.5" />
+    <svg *ngIf="path" class="spark" viewBox="0 0 140 32" preserveAspectRatio="none">
+      <path [attr.d]="path" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
     <div class="meta">{{ query }}</div>
     <div class="actions">

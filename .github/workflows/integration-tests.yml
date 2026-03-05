@@ -1,0 +1,70 @@
+name: Integration Tests
+
+on:
+  push:
+    paths:
+      - 'apps/java-governance/**'
+      - 'docker/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'apps/java-governance/**'
+      - 'docker/**'
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    env:
+      KAFKA_HOST_PORT: 9094
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache Maven local repository
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/settings.xml
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Start Kafka & Zookeeper (dev-compose)
+        run: |
+          set -euo pipefail
+          KAFKA_HOST_PORT=${{ env.KAFKA_HOST_PORT }} docker compose -f docker/dev-compose.yml up -d zookeeper kafka
+
+      - name: Wait for Kafka readiness
+        run: |
+          echo "Waiting for Kafka on localhost:${{ env.KAFKA_HOST_PORT }}"
+          # Try TCP connect up to 60 times (120s)
+          for _ in $(seq 1 60); do
+            if timeout 1 bash -c "cat < /dev/tcp/localhost/${{ env.KAFKA_HOST_PORT }}" 2>/dev/null; then
+              echo "Kafka is accepting connections"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Timed out waiting for Kafka"
+          docker compose -f docker/dev-compose.yml logs kafka || true
+          exit 1
+
+      - name: Run integration tests
+        env:
+          USE_HOST_KAFKA: 'true'
+          HOST_KAFKA_BOOTSTRAP: "localhost:${{ env.KAFKA_HOST_PORT }}"
+          MAVEN_OPTS: -Xmx2g
+        run: |
+          mvn -f apps/java-governance/pom.xml clean verify -Pintegration-tests -DskipTests=false -B -V
+
+      - name: Tear down compose
+        if: always()
+        run: docker compose -f docker/dev-compose.yml down

@@ -1,11 +1,24 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DataSourceService } from '../../services/data-source.service';
 import { MockDataService } from '../../services/mock-data.service';
+import { LoadProfileService } from '../../services/load-profile.service';
+import { Subscription } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { interval } from 'rxjs';
 
 interface DiagnosticsIndex {
   path: string;
   files: string[];
+}
+
+interface DockerServiceStatus {
+  name: string;
+  status: 'online' | 'degraded' | 'offline' | 'unknown';
+  details?: string;
+  error?: string;
+  latencyMs?: number;
+  icon?: string;
 }
 
 @Component({
@@ -13,19 +26,61 @@ interface DiagnosticsIndex {
   templateUrl: './diagnostics.component.html',
   styleUrls: ['./diagnostics.component.scss'],
 })
-export class DiagnosticsComponent implements OnInit {
+export class DiagnosticsComponent implements OnInit, OnDestroy {
   index: DiagnosticsIndex | null = null;
   loading = false;
   error: string | null = null;
   systemSpecs: string | null = null;
+  dockerServices: DockerServiceStatus[] = [];
   visibleFileCount = 5;
   readonly fileCountOptions: number[] = [5, 10, 25, 50, 100, -1];
   sortedFiles: string[] = [];
+  autoRefresh = true;
+  lastUpdated: Date | null = null;
+  currentPollingMs = 5000;
+  private pollSubscription?: Subscription;
+  private pollingMsSubscription?: Subscription;
 
-  constructor(private http: HttpClient, private dataSource: DataSourceService, private mock: MockDataService) {}
+  constructor(
+    private http: HttpClient,
+    private dataSource: DataSourceService,
+    private mock: MockDataService,
+    private loadProfile: LoadProfileService
+  ) {}
 
   ngOnInit(): void {
     this.fetchIndex();
+    this.fetchDockerServices();
+    this.startPolling();
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling();
+    this.pollingMsSubscription?.unsubscribe();
+  }
+
+  startPolling(): void {
+    if (this.pollSubscription) return;
+    // Subscribe to pollingMs$ and restart interval when it changes
+    this.pollSubscription = this.loadProfile.pollingMs$.pipe(
+      switchMap((ms) => {
+        this.currentPollingMs = ms;
+        return interval(ms);
+      })
+    ).subscribe(() => {
+      if (this.autoRefresh) {
+        this.fetchDockerServices(true); // silent refresh
+      }
+    });
+  }
+
+  stopPolling(): void {
+    this.pollSubscription?.unsubscribe();
+    this.pollSubscription = undefined;
+  }
+
+  toggleAutoRefresh(): void {
+    this.autoRefresh = !this.autoRefresh;
   }
 
   fetchIndex() {
@@ -70,6 +125,34 @@ export class DiagnosticsComponent implements OnInit {
       (err) => {
         this.error = String(err?.message || err);
         this.loading = false;
+      }
+    );
+  }
+
+  fetchDockerServices(silent = false) {
+    if (!silent) {
+      this.loading = true;
+      this.error = null;
+    }
+    if (this.dataSource.mode === 'mock') {
+      this.mock.mockDockerServices().subscribe((res) => {
+        this.dockerServices = res as DockerServiceStatus[];
+        this.lastUpdated = new Date();
+        if (!silent) this.loading = false;
+      });
+      return;
+    }
+    this.http.get<DockerServiceStatus[]>('/api/diagnostics/docker-services').subscribe(
+      (res) => {
+        this.dockerServices = res;
+        this.lastUpdated = new Date();
+        if (!silent) this.loading = false;
+      },
+      (err) => {
+        if (!silent) {
+          this.error = String(err?.message || err);
+          this.loading = false;
+        }
       }
     );
   }
