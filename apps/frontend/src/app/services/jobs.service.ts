@@ -158,6 +158,10 @@ export class JobsService {
   }
 
   // Dispatch scanner admin endpoints
+
+  publicSources(): Observable<Array<{name:string,url:string}>> {
+    return this.http.get<Array<{name:string,url:string}>>('/api/v1/public-sources');
+  }
   getDispatchConfig(): Observable<{
     intervalSeconds: number;
     scannedCount: number;

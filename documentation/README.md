@@ -27,6 +27,8 @@ Files:
 - [ENVIRONMENT.md](/docuentation/infra/ENVIRONMENT.md) — environment files, secrets policy and dev `.env` guidance
 
 - [ARCHITECTURE.md](/docuentation/architecture/ARCHITECTURE.md) — overall hybrid control plane architecture with mermaid diagrams
+- [EXECUTION_LAYER_API_SKETCH.md](/docuentation/architecture/EXECUTION_LAYER_API_SKETCH.md) — minimal execution-layer API evolved from the original remote-compute gateway idea
+- [EVENT_ENVELOPE_AND_BROKER_ROLES.md](/docuentation/messaging/EVENT_ENVELOPE_AND_BROKER_ROLES.md) — canonical event envelope and RabbitMQ/Kafka/Pulsar role partitioning
 
 - [OPERATIONAL_STREAMING_PLANE.md](/docuentation/infra/OPERATIONAL_STREAMING_PLANE.md) — Go-based streaming plane design and flows
 
@@ -53,13 +55,15 @@ Files:
 
 - [TESTING_REQUIREMENTS.md](/docuentation/testing/TESTING_REQUIREMENTS.md) — CI, coverage and runbook
 - [TESTING_FRAMEWORK_ARCHITECTURE.md](/docuentation/testing/TESTING_FRAMEWORK_ARCHITECTURE.md) — verbose testing architecture with Mermaid diagrams
+- [TRIDENT_EXECUTION_TEST_MATRIX.md](/docuentation/testing/TRIDENT_EXECUTION_TEST_MATRIX.md) — execution-layer validation matrix for Trident-style planning, apply, and backend orchestration
+- [EXECUTION_LAYER_THREAT_MODEL.md](/docuentation/security/EXECUTION_LAYER_THREAT_MODEL.md) — security and safety risks for hardware-adjacent execution orchestration
 
 - [TODO.md](/docuentation/planning/TODO.md) — simulation harness and implementation backlog
 
 Grouped folders (new):
 
 - `messaging/` — messaging integration and connectors
-  - includes `PULSAR.md` and `RABBITMQ.md` implementation plans
+  - includes `MESSAGING_INTEGRATION.md`, `EVENT_ENVELOPE_AND_BROKER_ROLES.md`, `PULSAR.md`, and `RABBITMQ.md`
 - `mission-closure/` — detailed closure plans for timing integrity, RFI/EMC loop, VO interoperability, commissioning/AIV, archive DR, and transient alert latency
 
 - `governance/` — governance-related docs
@@ -71,5 +75,9 @@ Grouped folders (new):
 - `generators/` — data generators and simulation runbooks
 
 - `provenance/` — provenance and lineage docs
+
+- `trident/` — ngVLA Trident research notes and execution-layer integration planning
+
+- `security/` — threat models and security controls for execution-layer and operator-facing workflows
 
 Use these documents as a starting point for detailed design, security review, and implementation planning.

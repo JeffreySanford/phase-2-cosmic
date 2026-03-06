@@ -61,6 +61,11 @@
           <app-pulsar-status [status]="pulsarStatus"></app-pulsar-status>
         </div>
       </div>
+      <div class="metrics-summary" *ngIf="timingDriftNs !== undefined || rfiEventRate !== undefined">
+        <h3>Timing / RFI Metrics</h3>
+        <p *ngIf="timingDriftNs !== undefined">Timing drift: {{ timingDriftNs }} ns</p>
+        <p *ngIf="rfiEventRate !== undefined">RFI event rate: {{ rfiEventRate }} /s</p>
+      </div>
     </mat-tab>
 
     <mat-tab label="Files">

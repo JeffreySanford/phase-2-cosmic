@@ -150,7 +150,10 @@ Rationale:
 - [JAVA_GOVERNANCE_SPEC.md](/docuentation/governance/JAVA_GOVERNANCE_SPEC.md)
 - [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
 - [TESTING_FRAMEWORK_ARCHITECTURE.md](/docuentation/testing/TESTING_FRAMEWORK_ARCHITECTURE.md)
+- [TRIDENT_EXECUTION_TEST_MATRIX.md](/docuentation/testing/TRIDENT_EXECUTION_TEST_MATRIX.md)
+- [EXECUTION_LAYER_THREAT_MODEL.md](/docuentation/security/EXECUTION_LAYER_THREAT_MODEL.md)
 - [MESSAGING_INTEGRATION.md](/docuentation/messaging/MESSAGING_INTEGRATION.md)
+- [EVENT_ENVELOPE_AND_BROKER_ROLES.md](/docuentation/messaging/EVENT_ENVELOPE_AND_BROKER_ROLES.md)
 - [messaging/PULSAR.md](/docuentation/messaging/PULSAR.md)
 - [messaging/RABBITMQ.md](/docuentation/messaging/RABBITMQ.md)
 
@@ -180,3 +183,18 @@ CI policy:
 
 - Messaging PRs must pass unit + integration + e2e lanes.
 - Scheduled stress lane must archive broker metrics and auto-revert proof artifacts.
+
+## 12. Execution-layer validation policy (required)
+
+This section is mandatory for execution-layer and Trident-inspired orchestration work.
+
+Required coverage:
+
+- contract validation for schedule-block, spectral, and apply payloads
+- allocation tests for capacity fit, rejection, and degraded fallback
+- idempotency and replay tests for side-effecting apply paths
+- provenance assertions for successful apply and backend-start flows
+
+Reference matrix:
+
+- [TRIDENT_EXECUTION_TEST_MATRIX.md](/docuentation/testing/TRIDENT_EXECUTION_TEST_MATRIX.md)

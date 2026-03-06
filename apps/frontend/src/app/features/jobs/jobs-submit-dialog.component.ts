@@ -10,6 +10,8 @@ export interface JobsSubmitData {
 @Component({
   selector: "app-jobs-submit-dialog",
   templateUrl: "./jobs-submit-dialog.component.html",
+  styleUrls: ["./jobs-submit-dialog.component.scss"],
+  standalone: false
 })
 export class JobsSubmitDialogComponent implements OnInit {
   workflow = "import";
@@ -49,6 +51,8 @@ export class JobsSubmitDialogComponent implements OnInit {
     scheduler: ["cron"],
   };
 
+  public publicSources: Array<{name:string,url:string}> = [];
+
   constructor(
     public dialogRef: MatDialogRef<JobsSubmitDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: JobsSubmitData,
@@ -74,6 +78,12 @@ export class JobsSubmitDialogComponent implements OnInit {
         if (!this.payloadText && this.workflow !== "custom")
           this.generateSample();
       }
+    );
+
+    // load public-data registry for help/dropdowns
+    this.jobsSvc.publicSources().subscribe(
+      (arr) => (this.publicSources = arr),
+      () => (this.publicSources = [])
     );
   }
 

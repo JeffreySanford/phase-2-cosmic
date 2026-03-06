@@ -50,6 +50,9 @@ public class TopologyMetricsService {
         Map<String,Object> out = new HashMap<>();
         out.put("source", "fallback");
         out.put("links", fallback);
+        // include mission‑closure metric placeholders
+        out.put("timing_drift_ns", 0);
+        out.put("rfi_event_rate", 0);
         return out;
     }
 
@@ -59,3 +62,4 @@ public class TopologyMetricsService {
         e.printStackTrace();
     }
 }
+

@@ -34,6 +34,7 @@ Primary responsibilities:
 - durable job store
 - complete lifecycle transitions and cancellation semantics
 - richer query APIs for frontend jobs and datasets surfaces
+- execution-plan validation and apply semantics for hardware-adjacent orchestration
 
 ### Planned
 
@@ -71,6 +72,7 @@ Required near-term API expansion:
 - `GET /api/v1/jobs` with filtering and pagination
 - `POST /api/v1/jobs/{id}/cancel`
 - dataset-oriented read APIs for `Datasets` frontend route
+- execution-layer endpoints for plan validation, apply, and event history
 
 ## 5. Lifecycle semantics (target)
 
@@ -120,6 +122,8 @@ Target:
 ## 9. Related docs
 
 - [JAVA_GOVERNANCE_SPEC.md](/docuentation/governance/JAVA_GOVERNANCE_SPEC.md)
+- [EXECUTION_LAYER_API_SKETCH.md](/docuentation/architecture/EXECUTION_LAYER_API_SKETCH.md)
 - [PROVENANCE.md](/docuentation/provenance/PROVENANCE.md)
 - [DATA_TRUST_PLATFORM.md](/docuentation/data/DATA_TRUST_PLATFORM.md)
+- [EXECUTION_LAYER_THREAT_MODEL.md](/docuentation/security/EXECUTION_LAYER_THREAT_MODEL.md)
 - [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)

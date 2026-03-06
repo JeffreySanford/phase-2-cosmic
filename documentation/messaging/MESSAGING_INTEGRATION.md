@@ -6,6 +6,7 @@ Alignment anchors
 - Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../ROADMAP.md](/ROADMAP.md)
 - Detailed broker plans: [messaging/PULSAR.md](/docuentation/messaging/PULSAR.md), [messaging/RABBITMQ.md](/docuentation/messaging/RABBITMQ.md)
+- Event envelope baseline: [EVENT_ENVELOPE_AND_BROKER_ROLES.md](/docuentation/messaging/EVENT_ENVELOPE_AND_BROKER_ROLES.md)
 
 ## Overview
 
@@ -52,6 +53,12 @@ Implementation decisions (locked 2026-03-03):
   - Short-lived command messages, job dispatch, and RPC between UI/operators and the Governance API.
 
   - Mirror critical control events into Kafka for audit/ETL when required.
+
+Execution-layer alignment:
+
+- RabbitMQ remains the low-latency path for apply/ack loops and operator-triggered control actions.
+- Kafka remains the durable baseline for replayable execution history and provenance.
+- Pulsar remains bounded to federated or hybrid delivery cases instead of becoming a second general-purpose audit log.
 
 ## Integration Patterns
 

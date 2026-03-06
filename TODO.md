@@ -56,6 +56,11 @@ pie title TODO Status (March 2026)
   - Operator/science impact: verifies end-to-end metadata capture, increasing trust in processing pipelines
   - Validation evidence: skeleton tests compile and run in CI; assertions against the in-memory audit log now included
 
+- (completed) Add backend `public-sources` API stub, service and controller tests, and documentation; openapi updated.
+  - Mission outcome: Human decision speed
+  - Operator/science impact: frontend components can consume a canonical list of external data sources without hard‑coding
+  - Validation evidence: `PublicDataServiceTest`, `GovernanceControllerTest` include coverage; `documentation/public-data` updated; e2e spec added to verify lineage/UI behavior
+
 ### NEXT
 
 - [DONE] Quarterly review/update of `docuentation/ngvla/NGVLA_REFERENCES.md` performed (baseline update). Fixture/tests adjusted.
@@ -65,22 +70,46 @@ pie title TODO Status (March 2026)
 
 ### High
 
-- Integrate Pulsar health/status component into Telemetry/Diagnostics frontend.
-- Topology/Visualization broker parity (Kafka + RabbitMQ + Pulsar).
-- ngVLA timing integrity and RFI/EMC observability tracks.
+- Topology/Visualization broker parity (Kafka + RabbitMQ + Pulsar). **(completed)**
+  - All three brokers included in topology API and rendered equally with consistent descriptions.
+- ngVLA timing integrity and RFI/EMC observability tracks. *(schema extended, basic audits & UI metrics implemented; quality‑gate enforcement added with unit, controller and e2e tests; Prometheus counter `etl_quality_gate_failures_total` added and audit events published to control plane for persistence)*
 
 ### Medium
 
+- [NEXT] Trident gateway/execution-layer domain model and event contract baseline (`SchedulingBlock`, `ExecutionBlock`, `SubarrayConfiguration`, `SpectralConfiguration`, `FspAllocationPlan`, `BackendProductPlan`).
+  - Mission outcome: Compute-to-archive efficiency
+  - Operator/science impact: observation intent can be translated into deterministic configuration payloads instead of ad hoc job parameters
+  - Validation evidence: versioned schema/contracts plus integration tests for valid and invalid mode-routing requests
+- [NEXT] Canonical execution event envelope and broker role partitioning across RabbitMQ, Kafka, and Pulsar.
+  - Mission outcome: Institutional trust and audit
+  - Operator/science impact: execution events can be traced, replayed, and deduplicated consistently across control, audit, and federated delivery paths
+  - Validation evidence: shared schema definitions plus integration tests for correlation ID propagation, idempotency, and audit mirroring
+- [NEXT] Gateway-side simulated Trident allocator service for three-trident / finite-FSP capacity planning.
+  - Mission outcome: Observatory continuity
+  - Operator/science impact: scheduling conflicts and over-allocation are detected before downstream processing is started
+  - Validation evidence: allocator unit tests cover subarray contention, incompatible spectral plans, and fallback/error states
+- [NEXT] Gateway-driven downstream mode-aware backend orchestration for correlation, VLBI, pulsar timing, and pulsar search products.
+  - Mission outcome: Compute-to-archive efficiency
+  - Operator/science impact: each observation mode launches the correct backend processing path and archive handoff workflow
+  - Validation evidence: end-to-end tests assert mode-specific backend job templates and provenance links
+- [NEXT] Execution-layer API and security baseline for plan validation, apply semantics, replay protection, and operator override audit.
+  - Mission outcome: Institutional trust and audit
+  - Operator/science impact: operator-facing execution actions become explicit, reviewable, and protected against duplicate or unauthorized apply paths
+  - Validation evidence: API contract updates, negative-path authorization tests, replay/idempotency tests, and provenance assertions for apply flows
+- [NEXT] Restore Cypress runtime/cache health and re-enable deterministic frontend e2e verification for datasets/provenance flows.
+  - Mission outcome: Observatory continuity
+  - Operator/science impact: operator journeys can be verified in CI and local smoke runs without Cypress cache/runtime failures blocking release confidence
+  - Validation evidence: `frontend-e2e` runs cleanly after cache/runtime remediation; `datasets-provenance.cy.ts` passes and is folded into the smoke path
 - Job manifest lineage endpoint (`/jobs/{id}/lineage`) to complement existing attach/retrieve API.
 - Frontend Jobs page: display lineage metadata and allow submission payloads to include lineage. **(completed)**
   - Mission outcome: Institutional trust and audit
   - Operator/science impact: traceability across job chains in UI
   - Validation evidence: new unit tests, dialog/component tests, and frontend e2e covering lineage field; lineage editor stub and submission dialog integrated
 - Dataset catalog filtering and ObsCore-like interoperability metadata fields.
-- Public-data source registry for curated external datasets and reference feeds (`data.gov`, `NSF`, `NIST`, `NRAO`, `VLA`).
+- Public-data source registry for curated external datasets and reference feeds (`data.gov`, `NSF`, `NIST`, `NRAO`, `VLA`). **(backend API stub + docs + tests added)**
   - Mission outcome: Reproducible science
   - Operator/science impact: operators can distinguish authoritative external sources from internal/generated records during ingest and review
-  - Validation evidence: source registry schema + seed fixtures + integration tests against documented public endpoints
+  - Validation evidence: GET `/api/v1/public-sources` returns a hard‑coded list; controller and service unit tests validate schema; openapi spec and documentation updated; frontend-e2e exercise added to ensure job lineage and public sources are visible in UI
 - UI source-attribution treatment for externally sourced records, images, and metadata panels.
   - Mission outcome: Institutional trust and audit
   - Operator/science impact: every externally sourced data card/view can expose an authoritative citation URL in small text without obscuring the primary workflow
@@ -107,12 +136,26 @@ pie title TODO Status (March 2026)
 - Integration tests with Kafka/Testcontainers for ingest flow.
 - Backward-compatibility checks when `openapi/governance.yaml` changes.
 - `apps/frontend` coverage expansion for jobs/datasets/error states and DTO mapping tests.
+- `apps/frontend` coverage expansion for environment service/component behavior and adjacent operator-shell error states.
 - `apps/frontend-e2e` target hygiene and key operator journeys.
-- `apps/java-governance` negative-path tests and Redis durability/restart recovery tests.
+- `apps/frontend-e2e` Cypress runtime/cache remediation for local and CI stability; add `datasets-provenance` into smoke coverage after cache repair.
+- `apps/java-governance` negative-path tests for RabbitMQ and Pulsar status endpoints plus Redis durability/restart recovery tests.
+- `apps/java-governance` job service/controller edge-case tests for manifest, lineage, and retry/cancel flows.
 - `tools/java-ingest` initial test suite, surefire/failsafe reports, JaCoCo publication.
 - `tools/data-generator` Go unit/integration tests and broker failure-path checks.
 - Compose smoke and failure-injection scripts (broker/Redis restart resilience).
 - ngVLA data-architecture DA-1..DA-11 delivery track.
+- Trident gateway integration track:
+  - schedule-block and execution-block control-plane entities
+  - subarray/spectral configuration contract definitions
+  - gateway-side Trident routing and FSP allocation simulator
+  - downstream CBE / VLBI / pulsar backend job orchestration
+  - provenance for applied Trident-target configuration plans and execution timestamps
+- Execution-layer alignment track:
+  - canonical event envelope and broker role ownership
+  - execution API contract for capabilities, plan creation, validation, apply, and event history
+  - execution-layer threat model and operator override controls
+  - broken-link and cross-reference normalization for the documentation system
 - Messaging fabric MF-1..MF-6 and required MF-TEST matrix.
 - Mission oversights MG-1..MG-6 closure track.
 - Viewer Mode B VB-1..VB-4 implementation and go/no-go decision spike.

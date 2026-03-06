@@ -20,12 +20,15 @@ class JobServiceLineageTest {
 
     RedisMarshaller marshaller;
     JobService service;
+    AuditService auditService;
+    io.micrometer.core.instrument.MeterRegistry registry;
 
     @BeforeEach
     void setup() {
         marshaller = new RedisMarshaller(new ObjectMapper());
-        AuditService auditService = Mockito.mock(AuditService.class);
-        service = new JobService(null, new ObjectMapper(), null, marshaller, auditService);
+        auditService = Mockito.mock(AuditService.class);
+        registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        service = new JobService(null, new ObjectMapper(), null, marshaller, auditService, registry);
     }
 
     @Test
@@ -34,8 +37,8 @@ class JobServiceLineageTest {
         JobSubmitRequest request = new JobSubmitRequest(
             "test-workflow",
             "test-dataset",
-            Map.of("parentJobId", "parent-123"),
             Map.of("param1", "value1"),
+            Map.of("parentJobId", "parent-123"),
             null,
             "test-user"
         );
@@ -66,7 +69,7 @@ class JobServiceLineageTest {
         // Verify version was incremented
         Optional<JobStatusResponse> status = service.get(jobId);
         assertThat(status).isPresent();
-        assertThat(status.get().version()).isEqualTo(1); // Initial version 0, updated to 1
+        assertThat(status.get().version()).isEqualTo(2); // initial version 0, submit sets 1 then update increments to 2
     }
 
     @Test
@@ -102,5 +105,51 @@ class JobServiceLineageTest {
         Optional<Map<String, Object>> updatedLineage = service.getLineage(jobId);
         assertThat(updatedLineage).isPresent();
         assertThat(updatedLineage.get()).isEmpty();
+    }
+
+    @Test
+    void sciTransitionFailsOnTimingBudget() {
+        JobSubmitRequest request = new JobSubmitRequest(
+            "sci-workflow",
+            "dataset1",
+            Map.of(),
+            Map.of(),
+            Map.of("processingLevel","SCI", "clockOffsetNs", 5000),
+            "user"
+        );
+        JobStatusResponse created = service.submit(request);
+        String jobId = created.jobId();
+        // first move to RUNNING
+        Optional<JobStatusResponse> running = service.transition(jobId, JobState.RUNNING, null);
+        assertThat(running).isPresent();
+        // now attempt to complete should throw IllegalArgumentException
+        try {
+            service.transition(jobId, JobState.COMPLETED, null);
+            org.junit.jupiter.api.Assertions.fail("expected quality gate exception");
+        } catch (IllegalArgumentException ex) {
+            assertThat(ex.getMessage()).startsWith("quality_gate_failed");
+        }
+    }
+
+    @Test
+    void qualityGateFailureMetricsAndAuditPublished() {
+        JobSubmitRequest request = new JobSubmitRequest(
+            "sci-workflow",
+            "dataset1",
+            Map.of(),
+            Map.of(),
+            Map.of("processingLevel","SCI", "clockOffsetNs", 5000),
+            "user"
+        );
+        JobStatusResponse created = service.submit(request);
+        String jobId = created.jobId();
+        service.transition(jobId, JobState.RUNNING, null);
+        try {
+            service.transition(jobId, JobState.COMPLETED, null);
+        } catch (IllegalArgumentException ignored) {}
+        double cnt = registry.get("etl_quality_gate_failures_total").counter().count();
+        assertThat(cnt).isGreaterThanOrEqualTo(1.0);
+        Mockito.verify(auditService, Mockito.atLeastOnce()).publishControlEvent(
+            Mockito.eq("audit"), Mockito.anyMap());
     }
 }

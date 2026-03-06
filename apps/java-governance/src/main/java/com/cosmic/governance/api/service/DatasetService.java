@@ -58,11 +58,13 @@ public class DatasetService {
             } catch (Exception ignored) {
                 o = inMemoryStore.get(KEY_PREFIX + id);
             }
+            if (o == null) {
+                o = inMemoryStore.get(KEY_PREFIX + id);
+            }
         } else {
             o = inMemoryStore.get(KEY_PREFIX + id);
         }
-        if (o instanceof DatasetRecord) return Optional.of(toResponse((DatasetRecord) o));
-        return Optional.empty();
+        return toResponseObject(o);
     }
 
     public List<DatasetResponse> listAll() {
@@ -85,13 +87,37 @@ public class DatasetService {
             });
         }
         return stream
-                .filter(DatasetRecord.class::isInstance)
-                .map(DatasetRecord.class::cast)
-                .map(this::toResponse)
+                .map(this::toResponseObject)
+                .flatMap(Optional::stream)
                 .collect(Collectors.toList());
     }
 
     private DatasetResponse toResponse(DatasetRecord r) {
         return new DatasetResponse(r.getId(), r.getName(), r.getDescription(), r.getCreatedAt(), r.getMetadata(), r.getManifest());
+    }
+
+    private Optional<DatasetResponse> toResponseObject(Object o) {
+        if (o instanceof DatasetRecord r) {
+            return Optional.of(toResponse(r));
+        }
+        if (o instanceof Map<?, ?> m) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metadata = m.get("metadata") instanceof Map<?, ?> mm
+                    ? (Map<String, Object>) mm
+                    : Map.of();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> manifest = m.get("manifest") instanceof Map<?, ?> mm
+                    ? (Map<String, Object>) mm
+                    : null;
+            return Optional.of(new DatasetResponse(
+                    (String) m.get("id"),
+                    (String) m.get("name"),
+                    (String) m.get("description"),
+                    (String) m.get("createdAt"),
+                    metadata,
+                    manifest
+            ));
+        }
+        return Optional.empty();
     }
 }

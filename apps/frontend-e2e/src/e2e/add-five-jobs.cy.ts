@@ -22,7 +22,10 @@ describe("Add five jobs and processing", () => {
     cy.get("mat-dialog-container input[placeholder=\"optional dataset id\"]").type("e2e-ds-1");
     cy.get("mat-dialog-container input[placeholder=\"your name or id\"]").type("tester");
     // clear pre-filled sample params and type our own JSON
-    cy.get("mat-dialog-container textarea").clear().type('{"example": true}', { parseSpecialCharSequences: false });
+    cy.get("mat-dialog-container textarea").clear();
+    cy.get("mat-dialog-container textarea").type('{"example": true}', {
+      parseSpecialCharSequences: false,
+    });
     cy.get("mat-dialog-container").contains("button", "Submit").click();
     cy.wait("@submitJob").its("request.body").should((body) => {
       expect(body.workflow).to.equal("diagnostics");
@@ -53,9 +56,9 @@ describe("Add five jobs and processing", () => {
     );
 
     // wait up to 30s for a completed job row to appear
-    cy.get("table tbody tr", { timeout: 30000 })
-      .contains("COMPLETED")
-      .should("exist");
+    cy.contains("table tbody tr", "COMPLETED", { timeout: 30000 }).should(
+      "exist"
+    );
 
     // click View on the completed row to open detail panel
     cy.contains("table tbody tr", "COMPLETED").contains("button", "View").click();

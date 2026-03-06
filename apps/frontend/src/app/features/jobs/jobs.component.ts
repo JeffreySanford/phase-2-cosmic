@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from "@angular/core";
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   JobsService,
   JobStatus,
@@ -9,6 +10,12 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 import { interval, Subject, Subscription } from "rxjs";
 import { startWith, switchMap, takeUntil } from "rxjs/operators";
 import { JobsSubmitDialogComponent } from "./jobs-submit-dialog.component";
+
+type ErrorDetail = { ruleId?: string };
+type ErrorBody = {
+  error?: string;
+  details?: ErrorDetail[];
+};
 
 @Component({
   selector: "app-jobs",
@@ -224,12 +231,13 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   saveLineage() {
-    if (!this.selectedJob) return;
-    this.jobsSvc.updateLineage(this.selectedJob.jobId, this.selectedJob.lineage || {}).subscribe(
+    const selectedJob = this.selectedJob;
+    if (!selectedJob) return;
+    this.jobsSvc.updateLineage(selectedJob.jobId, selectedJob.lineage || {}).subscribe(
       () => {
         this.snackBar.open('Lineage saved successfully', undefined, { duration: 2000 });
         // Invalidate cache to ensure fresh data on next poll
-        this.jobsSvc.invalidateJob(this.selectedJob!.jobId);
+        this.jobsSvc.invalidateJob(selectedJob.jobId);
       },
       (error) => {
         this.snackBar.open('Failed to save lineage: ' + error.message, undefined, { duration: 3000 });
@@ -340,6 +348,19 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   private errMsg(err: unknown): string {
+    // special case for HTTP errors so we can show structured details
+    if (err instanceof HttpErrorResponse) {
+      const body = err.error as ErrorBody | null;
+      if (body && typeof body === 'object') {
+        const code = body.error || err.statusText || 'error';
+        if (Array.isArray(body.details) && body.details.length > 0) {
+          const rules = body.details.map((detail) => detail.ruleId || JSON.stringify(detail));
+          return `${code}: ${rules.join(', ')}`;
+        }
+        return String(code);
+      }
+      return `${err.status} ${err.statusText}`;
+    }
     if (err && typeof err === "object" && "message" in err) {
       const m = (err as { message?: unknown }).message;
       return String(m ?? err);

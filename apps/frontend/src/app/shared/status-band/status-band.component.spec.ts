@@ -99,7 +99,7 @@ describe("StatusBandComponent", () => {
         diagnostics: "online",
       },
     };
-    component.updateTimestampDisplay();
+    component["updateTimestampDisplay"]();
     expect(component.timestampDisplay).toMatch(/30s ago/);
   });
 });

@@ -63,4 +63,12 @@
   </app-page-state>
 
   <div #graph class="topology-graph" aria-label="Topology graph"></div>
+  <div class="mission-metrics">
+    <p *ngIf="timingDriftNs !== undefined">
+      Timing drift: {{ timingDriftNs }} ns
+    </p>
+    <p *ngIf="rfiEventRate !== undefined">
+      RFI event rate: {{ rfiEventRate }} /s
+    </p>
+  </div>
 </div>

@@ -46,6 +46,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } finally {
             MDC.remove("requestId");
+            MDC.remove("traceId");
         }
     }
 }

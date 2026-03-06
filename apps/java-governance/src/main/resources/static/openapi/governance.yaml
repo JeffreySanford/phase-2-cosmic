@@ -294,6 +294,86 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  # dataset endpoints
+  /api/v1/datasets:
+    get:
+      operationId: listDatasets
+      tags: [Datasets]
+      responses:
+        "200":
+          description: List of datasets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DatasetResponse"
+    post:
+      operationId: createDataset
+      tags: [Datasets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatasetRequest"
+      responses:
+        "201":
+          description: Dataset created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/datasets/{id}:
+    get:
+      operationId: getDataset
+      tags: [Datasets]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dataset details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetResponse"
+        "404":
+          description: Dataset not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/public-sources:
+    get:
+      operationId: listPublicSources
+      tags: [Public]
+      responses:
+        "200":
+          description: Curated list of public data sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    url:
+                      type: string
+                  required: [name, url]
 components:
   schemas:
     HealthResponse:

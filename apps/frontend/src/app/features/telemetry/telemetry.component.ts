@@ -790,7 +790,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
           partitions: status.partitions || 0
         };
       },
-      (err) => {
+      () => {
         // Keep previous status or set to 0 on error
         this.pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
       }
@@ -808,7 +808,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
           error: status.error
         };
       },
-      (err) => {
+      () => {
         // Set to disconnected on error
         this.rabbitMQStatus = {
           status: 'error',

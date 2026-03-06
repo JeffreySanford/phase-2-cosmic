@@ -7,6 +7,7 @@ import com.cosmic.governance.api.dto.JobSubmitRequest;
 import com.cosmic.governance.api.dto.JobSubmitResponse;
 import com.cosmic.governance.api.service.JobService;
 import com.cosmic.governance.api.service.DatasetService;
+import com.cosmic.governance.api.service.PublicDataService;
 import com.cosmic.governance.api.dto.DatasetRequest;
 import com.cosmic.governance.api.dto.DatasetResponse;
 import jakarta.validation.Valid;
@@ -38,15 +39,18 @@ public class GovernanceController {
     private final JobService jobService;
     private final com.cosmic.governance.api.service.SchemaService schemaService;
     private final DatasetService datasetService;
+    private final PublicDataService publicDataService;
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${pulsar.admin.url:http://localhost:8085}")
     private String pulsarAdminUrl;
 
-    public GovernanceController(JobService jobService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService, RabbitTemplate rabbitTemplate) {
+    public GovernanceController(JobService jobService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService,
+                                 PublicDataService publicDataService, RabbitTemplate rabbitTemplate) {
         this.jobService = jobService;
         this.schemaService = schemaService;
         this.datasetService = datasetService;
+        this.publicDataService = publicDataService;
         this.rabbitTemplate = rabbitTemplate;
     }
 
@@ -273,6 +277,11 @@ public class GovernanceController {
                         .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","dataset_not_found","id",id)));
             }
 
+            @GetMapping("/public-sources")
+            public ResponseEntity<?> publicSources() {
+                return ResponseEntity.ok(publicDataService.getSources());
+            }
+
         @PostMapping("/jobs/{id}/transition")
         public ResponseEntity<?> transitionJob(@PathVariable("id") String id, @Valid @RequestBody com.cosmic.governance.api.dto.JobTransitionRequest req) {
         // attempt transition; handle missing job, invalid transition, or version mismatch
@@ -281,6 +290,16 @@ public class GovernanceController {
             if (result.isPresent()) {
                 return ResponseEntity.ok(result.get());
             }
+        } catch (IllegalArgumentException ex) {
+            if (ex.getMessage().startsWith("quality_gate_failed")) {
+                String[] parts = ex.getMessage().split(":");
+                String rule = parts.length > 1 ? parts[1] : "unknown";
+                Map<String,Object> resp = new java.util.HashMap<>();
+                resp.put("error", "etl_quality_gate_failed");
+                resp.put("details", java.util.List.of(java.util.Map.of("ruleId", rule)));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resp);
+            }
+            throw ex; // let other IllegalArgumentExceptions surface
         } catch (IllegalStateException ex) {
             if (ex.getMessage().startsWith("version_mismatch")) {
                 long current = -1;

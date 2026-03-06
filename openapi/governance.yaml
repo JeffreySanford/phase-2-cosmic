@@ -153,11 +153,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/JobStatusResponse"
         "400":
-          description: Invalid transition request (bad state or semantics)
+          description: Invalid transition request (bad state, semantics, or quality gate failure)
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                qualityGate:
+                  summary: timing or RFI rule violation
+                  value:
+                    error: etl_quality_gate_failed
+                    details:
+                      - ruleId: DQ-TIM-001
         "404":
           description: Job not found
           content:
@@ -355,6 +362,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/public-sources:
+    get:
+      operationId: listPublicSources
+      tags: [Public]
+      responses:
+        "200":
+          description: Curated list of public data sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    url:
+                      type: string
+                  required: [name, url]
 components:
   schemas:
     HealthResponse:
@@ -410,13 +437,37 @@ components:
       type: object
       description: >-
         Opaque job or dataset manifest payload. Typically contains
-        job identifiers and version metadata.
+        job identifiers and version metadata.  Additional fields may
+        include timing and quality metadata for ngVLA mission closure
+        such as `timeRef`, `clockOffsetNs`, `timeSyncQuality`,
+        `timingWindowStart`/`timingWindowEnd`, or `rfiFlags` for
+        contamination/EMC observability.
       properties:
         job:
           type: string
         version:
           type: integer
           minimum: 1
+        # examples of nonrequired mission‑closure fields
+        timeRef:
+          type: string
+          description: "Reference time standard (e.g. UTC(TAI), GPS)"
+        clockOffsetNs:
+          type: integer
+          description: "Measured offset of local clock in nanoseconds"
+        timeSyncQuality:
+          type: string
+          description: "Quality flag or state of time synchronization"
+        timingWindowStart:
+          type: string
+          format: date-time
+        timingWindowEnd:
+          type: string
+          format: date-time
+        rfiFlags:
+          type: object
+          description: "Optional RFI/EMC quality flags or event metadata"
+          additionalProperties: true
       additionalProperties: true
 
     JobSubmitRequest:

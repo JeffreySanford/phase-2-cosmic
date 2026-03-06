@@ -269,6 +269,7 @@ Operational notes (applies to both):
 Location
 
 - `apps/frontend-e2e/src/specs/jobs-diagnostic.spec.ts` — non-invasive diagnostic that:
+- `apps/frontend-e2e/src/specs/jobs-lineage.spec.ts` — verifies job submission with lineage and UI display
   - Intercepts `**/api/v1/jobs**` network requests (works whether the frontend proxies `/api` to a backend or calls a backend host directly).
   - Visits the Jobs route (`/jobs`) and writes a snapshot of the rendered HTML to `logs/jobs-page-<timestamp>.html` so maintainers can quickly see redirect/login pages or client-side errors.
   - If a jobs API call occurs, the test records request/response details to `logs/jobs-diagnostic-<timestamp>.log` (URL, headers, status, body, durations) and fails the test when the API returns non-2xx responses.

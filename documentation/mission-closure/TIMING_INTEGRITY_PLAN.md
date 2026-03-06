@@ -37,13 +37,13 @@ Current platform risk:
   - `timingWindowStart`/`timingWindowEnd`
 - Update schema validation rules and examples.
 
-2. Quality gate enforcement
+1. Quality gate enforcement
 
-- Add `DQ-TIM-*` rules to `DATA_QUALITY_STANDARDS.md`.
-- Enforce maximum allowed drift/offset per processing level.
-- Block SCI promotion on timing-budget violation with `etl_quality_gate_failed`.
+- Add `DQ-TIM-*` rules to `DATA_QUALITY_STANDARDS.md`. *(completed)*
+- Enforce maximum allowed drift/offset per processing level. *(implemented in `JobService.transition`)*
+- Block SCI promotion on timing-budget violation with `etl_quality_gate_failed`. *(unit and controller tests added)*
 
-3. Runtime observability
+1. Runtime observability
 
 - Emit timing metrics:
   - `timing_drift_ns`
@@ -51,7 +51,7 @@ Current platform risk:
   - `timing_sync_quality_state`
 - Surface in Topology/Visualization views with source-state labels.
 
-4. Testing
+1. Testing
 
 - Unit tests for drift-budget calculations and schema validation.
 - Integration tests for gate rejection on budget breach.

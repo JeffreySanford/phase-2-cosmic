@@ -90,6 +90,16 @@ type LinkStats = {
   throughputMBpsMax?: number;
   throughputPctNumeric?: number;
 };
+
+type TopologyMetricPoint = {
+  currentMBps: number;
+  maxMBps?: number;
+};
+
+type TopologyMetricsResponse = Record<string, TopologyMetricPoint> & {
+  timing_drift_ns?: number;
+  rfi_event_rate?: number;
+};
 @Component({
   selector: "app-topology",
   templateUrl: "./topology.component.html",
@@ -109,6 +119,9 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   public showMode: "live" | "max" = "live";
   public aggCurrentMBps = 0;
   public aggMaxMBps = 0;
+  // mission‑closure metrics
+  public timingDriftNs?: number;
+  public rfiEventRate?: number;
   // Configurable capacity settings
   public showSettings = false;
   public defaultPerChannelMBps = 1250; // default per-channel capacity (MB/s)
@@ -164,8 +177,8 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
         this.defaultPerChannelMBps = Number(d) || this.defaultPerChannelMBps;
       const j = localStorage.getItem("topology.perLinkCapacity");
       if (j) this.perLinkCapacity = JSON.parse(j) as Record<string, number>;
-    } catch (_e) {
-      void 0;
+    } catch {
+      return;
     }
   }
 
@@ -240,8 +253,8 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
         "topology.defaultPerChannelMBps",
         String(this.defaultPerChannelMBps)
       );
-    } catch (_e) {
-      void 0;
+    } catch {
+      return;
     }
     this.showSettings = false;
     // re-render to pick up changed capacities
@@ -253,7 +266,8 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   private fetchMetrics() {
     if (this.dataSource.mode === "mock") {
       const keys = (this.lastLinks ?? []).map((l) => this.getLinkKey(l));
-      this.mock.topologyMetricsForLinks(keys).subscribe((res) => {
+      this.mock.topologyMetricsForLinks(keys).subscribe((res: TopologyMetricsResponse) => {
+        this.captureMissionMetrics(res);
         let changed = false;
         for (const ln of this.lastLinks ?? []) {
           const key = this.getLinkKey(ln);
@@ -285,11 +299,12 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
     }
 
     this.http
-      .get<Record<string, { currentMBps: number; maxMBps?: number }>>(
+      .get<TopologyMetricsResponse>(
         "/api/metrics/topology"
       )
       .subscribe(
         (res) => {
+          this.captureMissionMetrics(res);
           let changed = false;
           for (const ln of this.lastLinks ?? []) {
             const key = this.getLinkKey(ln);
@@ -711,12 +726,13 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
 
   private pollMetricsAndAnimate() {
     this.http
-      .get<Record<string, { currentMBps: number; maxMBps?: number }>>(
+      .get<TopologyMetricsResponse>(
         "/api/metrics/topology"
       )
       .subscribe(
         (res) => {
           this.lastError = null;
+          this.captureMissionMetrics(res);
           for (const ln of this.lastLinks ?? []) {
             const key = this.getLinkKey(ln);
             const prev = this.statsRef(ln)._stats;
@@ -771,8 +787,8 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
                     if (animEl) animEl.setAttribute("dur", `${durSec}s`);
                   }
                 }
-              } catch (_e) {
-                void _e;
+              } catch {
+                return;
               }
               if (pctChange >= this.sensitivityPct) {
                 this.animatePulse(key, prevVal, m.currentMBps || 0);
@@ -836,12 +852,21 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
         try {
           line.setAttribute("stroke", original || "#bdbdbd");
           line.setAttribute("stroke-width", "1");
-        } catch (_e) {
-          void _e;
+        } catch {
+          return;
         }
       };
-    } catch (e) {
-      void e;
+    } catch {
+      return;
+    }
+  }
+
+  private captureMissionMetrics(res: TopologyMetricsResponse): void {
+    if (typeof res.timing_drift_ns === "number") {
+      this.timingDriftNs = res.timing_drift_ns;
+    }
+    if (typeof res.rfi_event_rate === "number") {
+      this.rfiEventRate = res.rfi_event_rate;
     }
   }
 
@@ -888,6 +913,10 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
         return `${label} — Angular frontend (SPA) responsible for operator UI, visualization, and user interactions.`;
       case "kafka":
         return `${label} — Apache Kafka message broker for streaming ingest and pipeline handoff (topics, partitions, retention).`;
+      case "pulsar":
+        return `${label} — Apache Pulsar message broker for streaming ingest and pipeline handoff (topics, partitions, retention).`;
+      case "rabbitmq":
+        return `${label} — RabbitMQ message broker for control plane messaging and job coordination.`;
       case "minio":
         return `${label} — MinIO S3-compatible object store used for storing raw, calibrated, and science products in dev environments.`;
       case "prom":

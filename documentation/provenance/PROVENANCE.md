@@ -136,6 +136,8 @@ The governance API emits structured audit entries for every job submission and s
 - `GET /api/v1/jobs/{id}/audit` returns the textual audit log entries for a job
 - `GET /api/v1/jobs/{id}/lineage` returns any stored lineage metadata (parent/ancestor identifiers) associated with a job, supporting traceability across workflows
 
+  Audit entries also capture quality‑gate violations (timing budget or RFI rule failures) before a job may transition to COMPLETED; these events are surfaced as error logs and are included in the provenance record so downstream systems can explain blocked promotions.  A Prometheus counter `etl_quality_gate_failures_total` is incremented for each violation, and the same messages are published to the control‑plane audit stream (via `AuditService`) ensuring they persist across service restarts or can be mirrored to RabbitMQ/Kafka for long‑term retention.
+
   The platform UI reflects provenance metadata stored on datasets: metadata keys are flattened into the dataset model so the provenance panel can display workflow, job identifiers, ngVLA parameters, and arbitrary processing parameters such as the submitted manifest.  A front‑end e2e test now verifies that a dataset created via the API containing a manifest appears correctly in the panel.
 
 - Retention & deletion: record lifecycle transitions, TTLs, legal holds, and an immutable deletion record when objects are destroyed.

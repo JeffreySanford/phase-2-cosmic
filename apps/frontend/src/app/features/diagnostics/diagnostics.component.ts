@@ -27,6 +27,9 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   currentPollingMs = 5000;
   pulsarStatus: PulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
   rabbitMQStatus: RabbitMQStatus = { status: 'unknown', connection: 'unknown' };
+  // mission closure metrics
+  timingDriftNs?: number;
+  rfiEventRate?: number;
   private pollSubscription?: Subscription;
   private pollingMsSubscription?: Subscription;
 
@@ -42,6 +45,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     this.fetchDockerServices();
     this.fetchPulsarStatus();
     this.fetchRabbitMQStatus();
+    this.fetchTimingMetrics();
     this.startPolling();
   }
 
@@ -76,6 +80,27 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
 
   toggleAutoRefresh(): void {
     this.autoRefresh = !this.autoRefresh;
+  }
+
+  private fetchTimingMetrics() {
+    if (this.dataSource.mode === "mock") {
+      this.timingDriftNs = 0;
+      this.rfiEventRate = 0;
+      return;
+    }
+    this.http
+      .get<{ timing_drift_ns?: number; rfi_event_rate?: number }>(
+        "/api/metrics/topology"
+      )
+      .subscribe(
+        (res) => {
+          this.timingDriftNs = res.timing_drift_ns;
+          this.rfiEventRate = res.rfi_event_rate;
+        },
+        () => {
+          // ignore errors; diagnostics already shows other failures
+        }
+      );
   }
 
   fetchIndex() {

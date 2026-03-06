@@ -6,6 +6,7 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { of } from 'rxjs';
 import { MatDialogModule } from '@angular/material/dialog';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -16,6 +17,10 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 class StubJobsService {
   types() {
     return of([]);
+  }
+
+  publicSources() {
+    return of([{ name: 'NRAO TAP', url: 'https://example.org/tap' }]);
   }
 }
 
@@ -32,6 +37,7 @@ describe('JobsSubmitDialogComponent', () => {
       declarations: [JobsSubmitDialogComponent, JobsLineageEditorComponent],
       imports: [
         FormsModule,
+        HttpClientTestingModule,
         MatDialogModule,
         MatFormFieldModule,
         MatSelectModule,
@@ -56,6 +62,13 @@ describe('JobsSubmitDialogComponent', () => {
 
   it('initializes with default workflow', () => {
     expect(component.workflow).toBe('import');
+  });
+
+  it('loads public sources and displays them', () => {
+    expect(component.publicSources.length).toBeGreaterThan(0);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('NRAO TAP');
   });
 
   it('parses lineage and parameters on submit', () => {

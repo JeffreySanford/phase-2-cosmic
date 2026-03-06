@@ -43,11 +43,13 @@ Cosmic Horizon is a hybrid control platform composed of:
 
 - Durable governance job storage and full lifecycle semantics
 - Frontend transition from telemetry-first demo to orchestration console
+- Execution-layer contract shape for schedule blocks, execution plans, and downstream backend startup
 
 ### Planned
 
 - End-to-end streaming-to-governance contract hardening
 - External compute adapter integration (HPC/TACC/CosmicAI)
+- Trident-inspired routing, FSP allocation, and backend fan-out simulation
 - Production security and policy enforcement layers
 
 ## 3. Current runtime topology _(implemented)_
@@ -137,6 +139,25 @@ The frontend must evolve to match control-plane maturity:
 1. Near-term pages:
 
 - `Overview`, `Jobs`, `Datasets`, `Topology`, `Telemetry`, `Diagnostics`, `Viewer`, `Settings`
+
+## 6. Execution-layer evolution _(in progress)_
+
+The next architectural step is an explicit execution layer between scheduling intent and downstream processing. In this repo that means:
+
+- typed execution plans instead of generic job submission
+- validated subarray and spectral configuration payloads
+- finite-capacity allocation against Trident-like execution targets
+- downstream backend product planning and provenance capture
+
+This is currently a documentation-first design track and not yet a complete runtime implementation.
+
+## 7. Related docs
+
+- [EXECUTION_LAYER_API_SKETCH.md](/docuentation/architecture/EXECUTION_LAYER_API_SKETCH.md)
+- [EVENT_ENVELOPE_AND_BROKER_ROLES.md](/docuentation/messaging/EVENT_ENVELOPE_AND_BROKER_ROLES.md)
+- [TRIDENT_INTEGRATION_RESEARCH_2026-03-06.md](/docuentation/trident/TRIDENT_INTEGRATION_RESEARCH_2026-03-06.md)
+- [TRIDENT_EXECUTION_TEST_MATRIX.md](/docuentation/testing/TRIDENT_EXECUTION_TEST_MATRIX.md)
+- [EXECUTION_LAYER_THREAT_MODEL.md](/docuentation/security/EXECUTION_LAYER_THREAT_MODEL.md)
 
 1. Critical missing surfaces:
 

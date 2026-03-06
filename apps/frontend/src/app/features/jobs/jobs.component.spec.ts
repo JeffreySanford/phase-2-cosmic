@@ -3,6 +3,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { JobsComponent } from './jobs.component';
 import { JobsService, JobStatus } from '../../services/jobs.service';
 import { of, EMPTY } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -20,26 +21,26 @@ class StubJobsService {
     // return minimal config object expected by component
     return of({ intervalSeconds: 0, scannedCount: 0 });
   }
-  watchJob(_id: string) {
+  watchJob() {
     return EMPTY;
   }
   invalidateList() {
-    console.log('invalidateList called');
+    return;
   }
   get(id: string) {
     return of({ jobId: id, workflow: 'x', status: 'QUEUED', lineage: { parentJobId: 'p' } } satisfies JobStatus);
   }
-  updateLineage(_id: string, _lineage: Record<string, unknown>) {
+  updateLineage() {
     return of(undefined);
   }
-  getLogs(_id: string) {
+  getLogs() {
     return of([] as string[]);
   }
-  artifacts(_id: string) {
+  artifacts() {
     return of([] as { name: string; url: string }[]);
   }
-  invalidateJob(_id: string) {
-    // stub: no-op
+  invalidateJob() {
+    return;
   }
 }
 
@@ -80,5 +81,16 @@ describe('JobsComponent', () => {
     component.saveLineage();
     expect(updateLineageSpy).toHaveBeenCalledWith('321', { parentJobId: 'orig' });
     expect(snackBarSpy).toHaveBeenCalledWith('Lineage saved successfully', undefined, { duration: 2000 });
+  });
+
+  it('formats quality gate error objects into a user message', () => {
+    const fakeError = new HttpErrorResponse({
+      status: 400,
+      statusText: 'Bad Request',
+      error: { error: 'etl_quality_gate_failed', details: [{ ruleId: 'DQ-TIM-001' }] }
+    });
+    const msg = component['errMsg'](fakeError);
+    expect(msg).toContain('etl_quality_gate_failed');
+    expect(msg).toContain('DQ-TIM-001');
   });
 });

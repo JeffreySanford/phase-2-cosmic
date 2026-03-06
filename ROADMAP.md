@@ -31,7 +31,7 @@ timeline
     section In Progress (PI-1 Sprint 2)
         Provenance E2E : Deterministic implementation with manifest verification
         Jobs UX : Lineage metadata display and parent reference submissions
-        Public Data : NRAO TAP metadata ingest planning
+        Public Data : NRAO TAP metadata ingest planning and public-sources registry API stub
 
     section Next (High Priority)
         Phase 2 : Streaming-to-governance integration with broker safety
@@ -49,7 +49,7 @@ timeline
 ### Immediate
 
 - Complete deterministic provenance E2E implementation (now includes manifest verification and HTTP audit endpoint).
-- Close deferred docs-validation items from NGVLA fidelity track.
+- Close deferred docs-validation items from NGVLA fidelity track. *(completed 2026‑03‑06 — all referenced docs reviewed and synchronized)*
 - Begin frontend Jobs UX enhancements: surface lineage metadata and allow job submissions with parent references.
 - Define public-data integration slice: NRAO TAP metadata ingest, viewer seed imagery, and source attribution fields.
 
@@ -63,8 +63,19 @@ timeline
 ### Medium
 
 - Phase 4 reliability/security hardening (backpressure, rate limiting, auth, audit, SLO dashboards).
+  - Mission outcome: Institutional trust and audit
+  - Operator/science impact: side-effecting execution actions are protected, replay-safe, and attributable to authenticated operators and services
+  - Validation evidence: negative-path auth tests, replay/idempotency coverage, and auditable apply/provenance traces
+- Phase 4A test reliability and coverage hardening for broker diagnostics, environment surfaces, job lifecycle edge cases, and Cypress runtime stability.
+  - Mission outcome: Observatory continuity
+  - Operator/science impact: release decisions are based on repeatable unit/e2e evidence across broker health, operator environment flows, and job lifecycle failure paths
+  - Validation evidence: RabbitMQ/Pulsar negative-path tests, environment component/service unit coverage, manifest/lineage/retry/cancel controller-service tests, and repaired Cypress smoke execution
 - Quarterly NGVLA reference reviews to refresh citations and trigger drift-test updates (first review Mar 2026 completed).
 - Phase 5 HPC adapter path and compute-orchestration contract alignment.
+- Phase 5A Trident gateway/execution-layer integration: schedule-block/execution-block control flow, subarray+spectral contracts, finite FSP allocation, and mode-aware backend startup around a Trident-like target.
+  - Mission outcome: Compute-to-archive efficiency
+  - Operator/science impact: operators can move from observation intent to validated gateway configuration plans without manual translation into backend target actions
+  - Validation evidence: contract tests for execution payloads plus integration tests for gateway-side allocation and backend fan-out flows
 - Phase 6 ngVLA data architecture delivery (manifest, lineage, catalog, RBAC, analytics).
 - Phase 6 external-source registry and enrichment pipeline for `data.gov`/`NSF`/`NIST` metadata where mission-relevant.
 
@@ -76,12 +87,25 @@ timeline
 ## Backlog
 
 - Phase 2: Kafka/RabbitMQ/Pulsar integration parity, contract versioning, DLQ/replay runbooks, full test matrix.
+- Phase 2B: canonical execution event envelope, broker-role ownership, and cross-broker trace/replay discipline for execution-layer flows.
+  - Mission outcome: Institutional trust and audit
+  - Operator/science impact: the control plane can follow one execution correlation chain across RabbitMQ, Kafka, and Pulsar without ambiguous ownership
+  - Validation evidence: shared event contracts, compatibility checks, and integration coverage for correlation propagation and audit mirroring
 - Phase 2A: timing/frequency metadata gates, RFI model, TAP/ADQL/DataLink/SODA conformance, commissioning scenarios, DR drills.
 - Phase 3: governance-integrated UI lifecycle flows, route-state fidelity, diagnostics hardening, stress-profile UX standardization, public-source citation rendering.
 - Phase 4: queue controls, authN/authZ enforcement, immutable audit strategy, load/failure resilience gates.
+- Phase 4A: Cypress cache/runtime remediation, frontend smoke-path restoration, broker-status negative-path coverage, environment-surface unit coverage, and job lifecycle edge-case tests.
+  - Mission outcome: Reproducible science
+  - Operator/science impact: frontend and governance regressions are caught before operator workflows are affected by flaky e2e infrastructure or untested failure paths
+  - Validation evidence: smoke e2e lane includes `datasets-provenance`, backend endpoint negative-path suites pass, and coverage reports show new environment/job-path assertions
 - Phase 5: external compute adapter contracts, async dispatch, provenance-linked compute outputs.
+- Phase 5A: Trident gateway integration with timed configuration application, resource-capacity checks, routing/allocation simulation, and backend product fan-out around an external or simulated Trident-like target.
+  - Mission outcome: Observatory continuity
+  - Operator/science impact: scheduling errors and incompatible backend setups are caught before run-time data loss paths are entered, without requiring a reimplementation of Trident internals
+  - Validation evidence: simulation runbook, gateway allocator failure-path coverage, and end-to-end status/provenance traces
 - Phase 6: canonical dataset manifest model, lineage chain APIs, dataset search/catalog, ETL quality validator, publication policy hooks, external-source registry/enrichment.
 - Ongoing tracks: testing coverage, documentation synchronization, messaging docs parity, quarterly performance benchmarks.
+- Ongoing tracks: execution-layer documentation alignment and broken-link normalization for canonical docs.
 
 ## Completed
 

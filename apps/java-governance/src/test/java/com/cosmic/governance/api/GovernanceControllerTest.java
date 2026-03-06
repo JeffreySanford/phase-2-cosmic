@@ -48,6 +48,29 @@ class GovernanceControllerTest extends AbstractRedisTest {
     }
 
     @Test
+    void auditEndpointReturnsEntries() throws Exception {
+        // create a job and then fetch its audit log via controller
+        String body = """
+                {
+                  "workflow": "audit-test",
+                  "datasetId": "DS-AUD",
+                  "parameters": {},
+                  "requestedBy": "t"
+                }
+                """;
+        String resp = mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isAccepted())
+                .andReturn().getResponse().getContentAsString();
+        String jobId = MAPPER.readTree(resp).get("jobId").asText();
+
+        // initial audit should contain at least the submission entry
+        mockMvc.perform(get("/api/v1/jobs/" + jobId + "/audit"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$[0]").value(org.hamcrest.Matchers.containsString(jobId)));
+    }
+
+    @Test
     void submitJobAndReadStatus() throws Exception {
         String body = """
                 {
@@ -299,6 +322,91 @@ class GovernanceControllerTest extends AbstractRedisTest {
                 .andExpect(jsonPath("$.error").value("invalid_transition"));
     }
 
+    @Test
+    void publicSourcesEndpointReturnsList() throws Exception {
+        mockMvc.perform(get("/api/v1/public-sources"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(org.hamcrest.Matchers.greaterThan(0)))
+                .andExpect(jsonPath("$[0].name").isString())
+                .andExpect(jsonPath("$[0].url").isString());
+    }
+
+    @Test
+    void createDatasetRejectsIncompleteManifest() throws Exception {
+        String body = """
+                {
+                  "name": "Dataset Invalid",
+                  "description": "missing version",
+                  "manifest": {
+                    "job": "job-1"
+                  }
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/datasets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void createDatasetAndFetchItRoundTripsManifestAndMetadata() throws Exception {
+        String body = """
+                {
+                  "name": "Dataset Valid",
+                  "description": "has manifest",
+                  "metadata": {
+                    "workflow": "spectral-line"
+                  },
+                  "manifest": {
+                    "job": "job-2",
+                    "version": 1
+                  }
+                }
+                """;
+
+        String response = mockMvc.perform(post("/api/v1/datasets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Dataset Valid"))
+                .andExpect(jsonPath("$.manifest.job").value("job-2"))
+                .andExpect(jsonPath("$.metadata.workflow").value("spectral-line"))
+                .andExpect(jsonPath("$.metadata.manifest.job").value("job-2"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String datasetId = MAPPER.readTree(response).get("id").asText();
+
+        mockMvc.perform(get("/api/v1/datasets/" + datasetId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(datasetId))
+                .andExpect(jsonPath("$.manifest.version").value(1))
+                .andExpect(jsonPath("$.metadata.workflow").value("spectral-line"));
+
+        mockMvc.perform(get("/api/v1/datasets"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id=='" + datasetId + "')].name").value(org.hamcrest.Matchers.contains("Dataset Valid")));
+    }
+
+    @Test
+    void sciTransitionQualityGateEnforced() throws Exception {
+        String body = "{\"workflow\":\"sci-wf\",\"datasetId\":\"ds2\",\"manifest\":{\"processingLevel\":\"SCI\",\"clockOffsetNs\":5000},\"parameters\":{},\"requestedBy\":\"u\"}";
+        String r = mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isAccepted())
+                .andReturn().getResponse().getContentAsString();
+        String jobId = MAPPER.readTree(r).get("jobId").asText();
+
+        // transition to running should succeed
+        mockMvc.perform(post("/api/v1/jobs/" + jobId + "/transition").contentType(MediaType.APPLICATION_JSON).content("{\"state\":\"RUNNING\"}"))
+                .andExpect(status().isOk());
+        // completing should fail due to timing rule
+        mockMvc.perform(post("/api/v1/jobs/" + jobId + "/transition").contentType(MediaType.APPLICATION_JSON).content("{\"state\":\"COMPLETED\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("etl_quality_gate_failed"))
+                .andExpect(jsonPath("$.details[0].ruleId").value("DQ-TIM-001"));
+    }
     @Test
     void pulsarStatusEndpointReturnsMockData() throws Exception {
         mockMvc.perform(get("/api/v1/pulsar/status"))

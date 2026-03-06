@@ -1,0 +1,29 @@
+/* styling for job submission dialog; keeps spacing consistent with other cards */
+:host {
+  display: block;
+}
+
+mat-form-field {
+  margin-bottom: 12px;
+}
+
+.error {
+  color: #b00020; /* match material error color */
+  margin-top: 8px;
+}
+
+.public-sources {
+  font-size: 0.9rem;
+  ul {
+    margin: 4px 0 0 16px;
+    padding: 0;
+    list-style: disc;
+  }
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}

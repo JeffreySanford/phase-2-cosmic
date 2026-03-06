@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { ComponentFixture, TestBed, fakeAsync, tick } from "@angular/core/testing";
 import {
   HttpClientTestingModule,
   HttpTestingController,
@@ -40,18 +40,31 @@ describe("TopologyComponent", () => {
     httpMock.verify();
   });
 
-  it("should create", () => {
+  it("should create", fakeAsync(() => {
     httpMock.expectOne("/api/topology").flush({ nodes: [], links: [] });
-    httpMock.expectOne("/api/metrics/topology").flush({});
+    const req1 = httpMock.expectOne("/api/metrics/topology");
+    req1.flush({ timing_drift_ns: 0, rfi_event_rate: 0 });
+    tick();
+    // stop live polling to avoid leftover timers
+    component["stopLivePoll"]();
+    fixture.detectChanges();
     expect(component).toBeTruthy();
-  });
+    expect(component.timingDriftNs).toBe(0);
+    expect(component.rfiEventRate).toBe(0);
+  }));
 
-  it("renders header text", () => {
+  it("renders header text and captures mission metrics", fakeAsync(() => {
     httpMock.expectOne("/api/topology").flush({ nodes: [], links: [] });
-    httpMock.expectOne("/api/metrics/topology").flush({});
+    const req1 = httpMock.expectOne("/api/metrics/topology");
+    req1.flush({ timing_drift_ns: 42, rfi_event_rate: 7 });
+    tick();
+    component["stopLivePoll"]();
+    fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector("h1")?.textContent).toContain("Topology");
-  });
+    expect(component.timingDriftNs).toBe(42);
+    expect(component.rfiEventRate).toBe(7);
+  }));
 
   it("shows an explicit unavailable state instead of falling back to mock in live mode", () => {
     httpMock

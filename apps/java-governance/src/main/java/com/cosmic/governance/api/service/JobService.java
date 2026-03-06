@@ -48,12 +48,19 @@ public class JobService {
     private void recordAudit(String msg) {
         auditLog.add(msg);
         log.info("Audit: {}", msg);
+        // also publish to AuditService so entries survive process restarts
+        try {
+            auditService.publishControlEvent("audit", Map.of("message", msg));
+        } catch (Exception e) {
+            log.warn("Failed to publish audit control event", e);
+        }
     }
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final RedisMarshaller marshaller;
     private final AuditService auditService;
+    private final io.micrometer.core.instrument.Counter qualityGateFailureCounter;
     // in-memory fallback store used when RedisTemplate is not available
     private final ConcurrentHashMap<String, Object> inMemoryStore = new ConcurrentHashMap<>();
 
@@ -64,7 +71,7 @@ public class JobService {
     private final AtomicLong scannedCount = new AtomicLong(0);
     private final AtomicLong dispatchedCount = new AtomicLong(0);
 
-    public JobService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, @Autowired List<JobExecutor> executors, RedisMarshaller marshaller, AuditService auditService) {
+    public JobService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, @Autowired List<JobExecutor> executors, RedisMarshaller marshaller, AuditService auditService, io.micrometer.core.instrument.MeterRegistry registry) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.marshaller = marshaller;
@@ -72,6 +79,7 @@ public class JobService {
         if (executors != null) {
             for (JobExecutor e : executors) executorMap.put(e.name(), e);
         }
+        this.qualityGateFailureCounter = registry.counter("etl_quality_gate_failures_total");
     }
 
     // Helper methods to abstract Redis vs in-memory store access
@@ -277,6 +285,19 @@ public class JobService {
             params.put("lineage", Map.copyOf(request.lineage()));
         }
         Map<String, Object> manifest = request.manifest() == null ? null : Map.copyOf(request.manifest());
+        // enforce simple timing/RFI rules and log if violations observed
+        if (manifest != null) {
+            Object offset = manifest.get("clockOffsetNs");
+            if (offset instanceof Number) {
+                long ns = ((Number) offset).longValue();
+                if (ns > 1000) { // example threshold
+                    recordAudit("timing_budget_violation job " + jobId + " offset=" + ns);
+                }
+            }
+            if (manifest.containsKey("rfiFlags")) {
+                recordAudit("rfi_flag job " + jobId + " " + manifest.get("rfiFlags").toString());
+            }
+        }
         JobRecord record = new JobRecord(
                 jobId,
                 request.workflow(),
@@ -320,13 +341,12 @@ public class JobService {
         // pick executor (explicit param 'executor' overrides; default to 'tacc' for ingest workflow)
         String executorName = "simulator";
 
-        // Publish job submitted event to control plane
-        Map<String, Object> eventDetails = Map.of(
-            "workflow", request.workflow(),
-            "datasetId", request.datasetId(),
-            "requestedBy", request.requestedBy(),
-            "executor", executorName
-        );
+        // Publish job submitted event to control plane (nulls are permitted)
+        Map<String, Object> eventDetails = new HashMap<>();
+        eventDetails.put("workflow", request.workflow());
+        if (request.datasetId() != null) eventDetails.put("datasetId", request.datasetId());
+        if (request.requestedBy() != null) eventDetails.put("requestedBy", request.requestedBy());
+        eventDetails.put("executor", executorName);
         auditService.publishJobEvent(jobId, "submitted", eventDetails);
         Map<String, Object> paramsObj = request.parameters() == null ? Map.<String, Object>of() : Map.copyOf(request.parameters());
         if (paramsObj.containsKey("executor")) executorName = String.valueOf(paramsObj.get("executor"));
@@ -427,7 +447,7 @@ public class JobService {
 
     public List<Map<String, String>> getArtifacts(String jobId) {
         String key = KEY_PREFIX + jobId + ":artifacts";
-        Object o = redisTemplate.opsForValue().get(key);
+        Object o = getValue(key);
         if (o instanceof Map) {
             // single artifact stored as map
             @SuppressWarnings("unchecked")
@@ -463,7 +483,7 @@ public class JobService {
      */
     public Optional<JobStatusResponse> retry(String jobId, Long expectedVersion) {
         String key = KEY_PREFIX + jobId;
-        Object o = redisTemplate.opsForValue().get(key);
+        Object o = getValue(key);
         if (o == null) return Optional.empty();
         JobRecord rec = marshaller.toJobRecord(o);
         if (rec == null) return Optional.empty();
@@ -477,7 +497,7 @@ public class JobService {
         rec.setState(JobState.QUEUED);
         rec.setUpdatedAt(Instant.now().toString());
         rec.setVersion(rec.getVersion() + 1);
-        redisTemplate.opsForValue().set(key, rec);
+        setValue(key, rec);
         log.info("Audit: job {} retried (version now {})", jobId, rec.getVersion());
         return Optional.of(toResponse(rec));
     }
@@ -526,7 +546,7 @@ public class JobService {
 
     public Optional<JobStatusResponse> transition(String jobId, JobState newState, Long expectedVersion) {
         String key = KEY_PREFIX + jobId;
-        Object o = redisTemplate.opsForValue().get(key);
+        Object o = getValue(key);
         if (o == null) return Optional.empty();
         JobRecord rec = marshaller.toJobRecord(o);
         if (rec == null) return Optional.empty();
@@ -538,18 +558,22 @@ public class JobService {
             log.warn("Invalid state transition attempted for {}: {} -> {}", jobId, current, newState);
             return Optional.empty();
         }
+        // enforce data-quality gates on promotion to terminal states
+        if (newState == JobState.COMPLETED) {
+            enforceQualityGate(rec);
+        }
+
         recordAudit("job " + jobId + " transitioning " + current + " -> " + newState);
         rec.setState(newState);
         rec.setUpdatedAt(Instant.now().toString());
         rec.setVersion(rec.getVersion() + 1);
-        redisTemplate.opsForValue().set(key, rec);
+        setValue(key, rec);
 
-        // Publish job transition event to control plane
-        Map<String, Object> eventDetails = Map.of(
-            "fromState", current.toString(),
-            "toState", newState.toString(),
-            "expectedVersion", expectedVersion != null ? expectedVersion : "none"
-        );
+        // Publish job transition event to control plane (expectedVersion may be null)
+        Map<String, Object> eventDetails = new HashMap<>();
+        eventDetails.put("fromState", current.toString());
+        eventDetails.put("toState", newState.toString());
+        eventDetails.put("expectedVersion", expectedVersion != null ? expectedVersion : "none");
         auditService.publishJobEvent(jobId, "transitioned", eventDetails);
 
         return Optional.of(toResponse(rec));
@@ -576,6 +600,37 @@ public class JobService {
             case RUNNING -> to == JobState.COMPLETED || to == JobState.FAILED || to == JobState.CANCELED || to == JobState.TIMED_OUT;
             case COMPLETED, FAILED, CANCELED, TIMED_OUT -> false;
         };
+    }
+
+    /**
+     * Inspect the manifest for any rules that would prevent promotion to COMPLETED.
+     * Throws IllegalArgumentException("quality_gate_failed:<ruleId>") if a rule is violated.
+     */
+    private void enforceQualityGate(JobRecord rec) {
+        Map<String,Object> manifest = rec.getManifest();
+        if (manifest == null) return;
+        Object lvl = manifest.get("processingLevel");
+        if (lvl != null && "SCI".equalsIgnoreCase(String.valueOf(lvl))) {
+            Object offset = manifest.get("clockOffsetNs");
+            if (offset instanceof Number) {
+                long ns = ((Number) offset).longValue();
+                if (ns > 1000) {
+                    // timing budget exceeded
+                    recordAudit("quality_gate_failed:DQ-TIM-001 job " + rec.getJobId());
+                    qualityGateFailureCounter.increment();
+                    throw new IllegalArgumentException("quality_gate_failed:DQ-TIM-001");
+                }
+            }
+            if (manifest.containsKey("rfiFlags")) {
+                // any non-empty RFI bitmap prevents SCI promotion for now
+                Object flags = manifest.get("rfiFlags");
+                if (flags != null && !flags.toString().isBlank()) {
+                    recordAudit("quality_gate_failed:DQ-RFI-001 job " + rec.getJobId());
+                    qualityGateFailureCounter.increment();
+                    throw new IllegalArgumentException("quality_gate_failed:DQ-RFI-001");
+                }
+            }
+        }
     }
 
     private JobStatusResponse toResponse(JobRecord record) {

@@ -16,6 +16,8 @@ describe('TelemetryService', () => {
   });
 
   afterEach(() => {
+    const loadProfileRequests = httpMock.match('/api/load-profile');
+    loadProfileRequests.forEach((request) => request.flush({}));
     httpMock.verify();
   });
 

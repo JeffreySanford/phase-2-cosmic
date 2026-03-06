@@ -24,6 +24,13 @@
     <textarea matInput rows="8" [(ngModel)]="payloadText"></textarea>
   </mat-form-field>
 
+  <div *ngIf="publicSources.length" style="margin:12px 0; font-size:0.9rem;">
+    <strong>Approved public sources:</strong>
+    <ul style="margin:4px 0 0 16px; padding:0; list-style:disc;">
+      <li *ngFor="let s of publicSources"><a [href]="s.url" target="_blank">{{ s.name }}</a></li>
+    </ul>
+  </div>
+
   <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
     <button mat-stroked-button (click)="generateSample()">Generate sample</button>
     <div *ngIf="workflow !== 'custom'" style="color:rgba(0,0,0,0.6)">Sample for selected type</div>
