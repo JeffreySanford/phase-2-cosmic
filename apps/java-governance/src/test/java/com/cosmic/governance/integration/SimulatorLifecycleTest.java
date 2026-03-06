@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.cosmic.governance.test.AbstractRedisTest;
 
@@ -31,6 +32,8 @@ public class SimulatorLifecycleTest extends AbstractRedisTest {
 
     @Test
     public void simulatorJobShouldPassThroughRunningState() throws Exception {
+        assumeTrue(isRedisAvailable(), "Redis unavailable for simulator lifecycle test");
+
         // submit a job and verify state transitions produced by the simulator executor
         JobSubmitRequest req = new JobSubmitRequest("foo", "ds", Map.of(), null, null, "tester");
         var resp = jobService.submit(req);
@@ -55,5 +58,14 @@ public class SimulatorLifecycleTest extends AbstractRedisTest {
         rec = marshaller.toJobRecord(redisTemplate.opsForValue().get(key));
         assertThat(rec).isNotNull();
         assertThat(rec.getState()).isEqualTo(JobState.COMPLETED);
+    }
+
+    private boolean isRedisAvailable() {
+        try {
+            String response = redisTemplate.getConnectionFactory().getConnection().ping();
+            return response != null;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 }

@@ -70,5 +70,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: surefire-reports-java-governance
+          name: surefire-reports-java-governance-${{ matrix.java }}
           path: apps/java-governance/target/surefire-reports
