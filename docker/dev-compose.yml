@@ -32,7 +32,8 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,HOST://0.0.0.0:9093
       # Advertise the broker on the Compose network and also on the host
       # (host.docker.internal) so host-clients and Testcontainers can reach it.
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092,HOST://localhost:${KAFKA_HOST_PORT:-9094}"
+      KAFKA_ADVERTISED_LISTENERS:
+        "PLAINTEXT://kafka:9092,HOST://localhost:${KAFKA_HOST_PORT:-9094}"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT"
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
