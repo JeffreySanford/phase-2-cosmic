@@ -12,6 +12,8 @@ Alignment anchors
 
 This document prescribes roles, integration patterns, connectors, and operational guidance for combining Apache Pulsar, Apache Kafka (Confluent-compatible), and RabbitMQ in Phase 2.
 
+The governance service now includes working ingest listeners (`KafkaIngestListener`, `RabbitIngestListener`, and `PulsarIngestListener`) that consume from the `phase2-events` stream on each broker with idempotency and DLQ forwarding. Integration tests verify each path.
+
 High-level recommendation
 
 - Pulsar: edge/ingest and geo-buffering at remote telescope sites; use Pulsar for local resiliency and tiered storage where links are intermittent.
@@ -31,6 +33,11 @@ Implementation decisions (locked 2026-03-03):
 - Local Pulsar baseline uses Apache Pulsar official distribution; StreamNative is tracked as an evaluation option for later parity testing.
 
 ## Roles & Responsibilities
+
+- **Broker event streaming**: the governance API exposes an SSE endpoint
+  (`/api/v1/broker-events`) that forwards control-plane/job lifecycle events
+  to subscribed front-end clients so dashboards and notifications can react
+  in real time.
 
 - Edge ingestion (Pulsar):
 

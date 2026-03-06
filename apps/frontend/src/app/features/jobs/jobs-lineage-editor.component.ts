@@ -1,29 +1,51 @@
-import { Component, Input, Output, EventEmitter, OnChanges } from "@angular/core";
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnChanges,
+} from "@angular/core";
 
-interface Entry { key: string; value: string; }
+interface Entry {
+  key: string;
+  value: string;
+}
 
 @Component({
   selector: "app-jobs-lineage-editor",
-    templateUrl: './jobs-lineage-editor.component.html',
+  templateUrl: "./jobs-lineage-editor.component.html",
   styles: [
     `
-      .lineage-list { width: 100%; font-family: monospace; }
-      .row { display: flex; gap: 8px; align-items: center; margin-bottom:4px; }
-      input { flex: 1; }
+      .lineage-list {
+        width: 100%;
+        font-family: monospace;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+      input {
+        flex: 1;
+      }
     `,
   ],
 })
 export class JobsLineageEditorComponent implements OnChanges {
   @Input() lineage: Record<string, unknown> | undefined;
-  @Output() lineageChange = new EventEmitter<Record<string, unknown> | undefined>();
+  @Output() lineageChange = new EventEmitter<
+    Record<string, unknown> | undefined
+  >();
 
   entries: Entry[] = [];
 
   ngOnChanges(): void {
     if (this.lineage) {
-      this.entries = Object.entries(this.lineage).map(
-        ([k, v]) => ({ key: k, value: String(v) })
-      );
+      this.entries = Object.entries(this.lineage).map(([k, v]) => ({
+        key: k,
+        value: String(v),
+      }));
     } else {
       this.entries = [];
     }

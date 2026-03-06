@@ -39,6 +39,7 @@ import { JobsComponent } from "./features/jobs/jobs.component";
 import { JobsSubmitDialogComponent } from "./features/jobs/jobs-submit-dialog.component";
 import { JobsLineageEditorComponent } from "./features/jobs/jobs-lineage-editor.component";
 import { DatasetsComponent } from "./features/datasets/datasets.component";
+import { JobEventsComponent } from "./features/job-events/job-events.component";
 import { PageStateModule } from "./shared/page-state/page-state.module";
 import { StatusBandModule } from "./shared/status-band/status-band.module";
 import { DisclaimerBannerModule } from "./shared/disclaimer-banner/disclaimer-banner.module";
@@ -67,6 +68,7 @@ import { ProvenancePanelModule } from "./shared/provenance-panel/provenance-pane
     JobsSubmitDialogComponent,
     JobsLineageEditorComponent,
     DatasetsComponent,
+    JobEventsComponent,
   ],
   imports: [
     BrowserModule,

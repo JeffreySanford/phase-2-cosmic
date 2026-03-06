@@ -540,12 +540,10 @@ export class AppController {
   }
 
   @Get("/api/metrics/topology")
-  async proxyTopologyMetrics(
-    @Res() res: Response
-  ): Promise<void> {
-    const targetUrls = this
-      .governanceBaseCandidates()
-      .map((b) => `${b}/api/v1/metrics/topology`);
+  async proxyTopologyMetrics(@Res() res: Response): Promise<void> {
+    const targetUrls = this.governanceBaseCandidates().map(
+      (b) => `${b}/api/v1/metrics/topology`
+    );
     try {
       const upstream = await this.fetchWithFallback(
         targetUrls,

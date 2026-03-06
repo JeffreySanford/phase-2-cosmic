@@ -1,17 +1,24 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { JobsComponent } from './jobs.component';
-import { JobsService, JobStatus } from '../../services/jobs.service';
-import { of, EMPTY } from 'rxjs';
-import { HttpErrorResponse } from '@angular/common/http';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { NO_ERRORS_SCHEMA } from "@angular/core";
+import { JobsComponent } from "./jobs.component";
+import { JobsService, JobStatus } from "../../services/jobs.service";
+import { of, EMPTY } from "rxjs";
+import { HttpErrorResponse } from "@angular/common/http";
+import { MatDialogModule } from "@angular/material/dialog";
+import { MatSnackBarModule } from "@angular/material/snack-bar";
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
+import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 
 class StubJobsService {
   list() {
-    return of([{ jobId: '1', workflow: 'x', status: 'QUEUED', lineage: { parentJobId: 'p' } } satisfies JobStatus]);
+    return of([
+      {
+        jobId: "1",
+        workflow: "x",
+        status: "QUEUED",
+        lineage: { parentJobId: "p" },
+      } satisfies JobStatus,
+    ]);
   }
   listHot() {
     // simple observable stub for hot list
@@ -28,7 +35,12 @@ class StubJobsService {
     return;
   }
   get(id: string) {
-    return of({ jobId: id, workflow: 'x', status: 'QUEUED', lineage: { parentJobId: 'p' } } satisfies JobStatus);
+    return of({
+      jobId: id,
+      workflow: "x",
+      status: "QUEUED",
+      lineage: { parentJobId: "p" },
+    } satisfies JobStatus);
   }
   updateLineage() {
     return of(undefined);
@@ -44,14 +56,20 @@ class StubJobsService {
   }
 }
 
-describe('JobsComponent', () => {
+describe("JobsComponent", () => {
   let component: JobsComponent;
   let fixture: ComponentFixture<JobsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [JobsComponent],
-      imports: [NoopAnimationsModule, MatDialogModule, MatSnackBarModule, FormsModule, ReactiveFormsModule],
+      imports: [
+        NoopAnimationsModule,
+        MatDialogModule,
+        MatSnackBarModule,
+        FormsModule,
+        ReactiveFormsModule,
+      ],
       providers: [{ provide: JobsService, useClass: StubJobsService }],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
@@ -63,34 +81,55 @@ describe('JobsComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should expose lineage data when a job is selected', () => {
-    const job: JobStatus = { jobId: '123', workflow: 'foo', status: 'QUEUED', lineage: { parentJobId: 'abc' } } as JobStatus;
+  it("should expose lineage data when a job is selected", () => {
+    const job: JobStatus = {
+      jobId: "123",
+      workflow: "foo",
+      status: "QUEUED",
+      lineage: { parentJobId: "abc" },
+    } as JobStatus;
     component.view(job);
     fixture.detectChanges();
-    expect(component.selectedJob?.jobId).toBe('123');
-    expect(component.selectedJob?.lineage?.['parentJobId']).toBe('abc');
+    expect(component.selectedJob?.jobId).toBe("123");
+    expect(component.selectedJob?.lineage?.["parentJobId"]).toBe("abc");
   });
 
-  it('allows editing lineage and saving', () => {
-    const job: JobStatus = { jobId: '321', workflow: 'bar', status: 'QUEUED', lineage: { parentJobId: 'orig' } } as JobStatus;
-    const updateLineageSpy = jest.spyOn(component['jobsSvc'], 'updateLineage').mockReturnValue(of(undefined));
-    const snackBarSpy = jest.spyOn(component['snackBar'], 'open');
+  it("allows editing lineage and saving", () => {
+    const job: JobStatus = {
+      jobId: "321",
+      workflow: "bar",
+      status: "QUEUED",
+      lineage: { parentJobId: "orig" },
+    } as JobStatus;
+    const updateLineageSpy = jest
+      .spyOn(component["jobsSvc"], "updateLineage")
+      .mockReturnValue(of(undefined));
+    const snackBarSpy = jest.spyOn(component["snackBar"], "open");
     component.view(job);
     fixture.detectChanges();
     component.selectedJob = job;
     component.saveLineage();
-    expect(updateLineageSpy).toHaveBeenCalledWith('321', { parentJobId: 'orig' });
-    expect(snackBarSpy).toHaveBeenCalledWith('Lineage saved successfully', undefined, { duration: 2000 });
+    expect(updateLineageSpy).toHaveBeenCalledWith("321", {
+      parentJobId: "orig",
+    });
+    expect(snackBarSpy).toHaveBeenCalledWith(
+      "Lineage saved successfully",
+      undefined,
+      { duration: 2000 }
+    );
   });
 
-  it('formats quality gate error objects into a user message', () => {
+  it("formats quality gate error objects into a user message", () => {
     const fakeError = new HttpErrorResponse({
       status: 400,
-      statusText: 'Bad Request',
-      error: { error: 'etl_quality_gate_failed', details: [{ ruleId: 'DQ-TIM-001' }] }
+      statusText: "Bad Request",
+      error: {
+        error: "etl_quality_gate_failed",
+        details: [{ ruleId: "DQ-TIM-001" }],
+      },
     });
-    const msg = component['errMsg'](fakeError);
-    expect(msg).toContain('etl_quality_gate_failed');
-    expect(msg).toContain('DQ-TIM-001');
+    const msg = component["errMsg"](fakeError);
+    expect(msg).toContain("etl_quality_gate_failed");
+    expect(msg).toContain("DQ-TIM-001");
   });
 });

@@ -90,16 +90,16 @@ This adapts the spirit of the original repo's remote-compute test matrix to the 
 
 ## Proposed Matrix Table
 
-| Area | Scenario | Expected Result | Evidence |
-| --- | --- | --- | --- |
-| Validation | invalid spectral zoom width | request rejected | API/integration test |
-| Allocation | spectral-line request fits capacity | FSP allocation planned | allocator test |
-| Allocation | request exceeds target FSP capacity | rejection before apply | allocator test |
-| Apply | duplicate apply command | no duplicate side effects | integration test |
-| Backend | correlation mode | measurement-set plan created | integration/e2e |
-| Backend | pulsar mode | pulsar product plan created | integration/e2e |
-| Provenance | successful apply | provenance record emitted | integration/e2e |
-| Replay | duplicated Kafka event | state unchanged after dedupe | integration test |
+| Area       | Scenario                            | Expected Result              | Evidence             |
+| ---------- | ----------------------------------- | ---------------------------- | -------------------- |
+| Validation | invalid spectral zoom width         | request rejected             | API/integration test |
+| Allocation | spectral-line request fits capacity | FSP allocation planned       | allocator test       |
+| Allocation | request exceeds target FSP capacity | rejection before apply       | allocator test       |
+| Apply      | duplicate apply command             | no duplicate side effects    | integration test     |
+| Backend    | correlation mode                    | measurement-set plan created | integration/e2e      |
+| Backend    | pulsar mode                         | pulsar product plan created  | integration/e2e      |
+| Provenance | successful apply                    | provenance record emitted    | integration/e2e      |
+| Replay     | duplicated Kafka event              | state unchanged after dedupe | integration test     |
 
 ## Source Provenance
 

@@ -159,8 +159,10 @@ export class JobsService {
 
   // Dispatch scanner admin endpoints
 
-  publicSources(): Observable<Array<{name:string,url:string}>> {
-    return this.http.get<Array<{name:string,url:string}>>('/api/v1/public-sources');
+  publicSources(): Observable<Array<{ name: string; url: string }>> {
+    return this.http.get<Array<{ name: string; url: string }>>(
+      "/api/v1/public-sources"
+    );
   }
   getDispatchConfig(): Observable<{
     intervalSeconds: number;
@@ -210,7 +212,10 @@ export class JobsService {
   /**
    * Update lineage metadata for a job. Mirrors backend `/jobs/{id}/lineage` PUT endpoint.
    */
-  updateLineage(id: string, lineage: Record<string, unknown>): Observable<unknown> {
+  updateLineage(
+    id: string,
+    lineage: Record<string, unknown>
+  ): Observable<unknown> {
     return this.http.put<unknown>(`${this.base}/${id}/lineage`, lineage);
   }
 }

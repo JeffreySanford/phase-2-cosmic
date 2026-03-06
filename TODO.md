@@ -52,27 +52,49 @@ pie title TODO Status (March 2026)
 ### NOW
 
 - (completed) Scaffold and implement Provenance E2E test suite including `TestcontainersConfig` and `ProvenanceE2ETest` (now verifies manifest values and audit endpoint).
+
   - Mission outcome: Observatory continuity
   - Operator/science impact: verifies end-to-end metadata capture, increasing trust in processing pipelines
   - Validation evidence: skeleton tests compile and run in CI; assertions against the in-memory audit log now included
 
 - (completed) Add backend `public-sources` API stub, service and controller tests, and documentation; openapi updated.
+
   - Mission outcome: Human decision speed
   - Operator/science impact: frontend components can consume a canonical list of external data sources without hard‑coding
   - Validation evidence: `PublicDataServiceTest`, `GovernanceControllerTest` include coverage; `documentation/public-data` updated; e2e spec added to verify lineage/UI behavior
 
+- **Kafka/RabbitMQ/Pulsar ingest paths completed.**
+  - Mission outcome: Institutional trust and audit; control plane accepts streaming job events from any broker with idempotency and DLQ safety.
+  - Evidence: listener classes and integration tests for all three brokers; placeholders removed; SSE events flowing to frontend.
+
 ### NEXT
 
 - [DONE] Quarterly review/update of `docuentation/ngvla/NGVLA_REFERENCES.md` performed (baseline update). Fixture/tests adjusted.
+
+- Phase 2 streaming-to-governance work:
+
+  - implement gateway consumers/producers for Kafka, RabbitMQ, and Pulsar **(completed)**
+  - ensure idempotent ingest with DLQ, replay, duplicate-delivery and interruption handling
+  - maintain shared, versioned contracts and parity tests across brokers
+  - draft operator runbooks for DLQ/replay and broker-interruption safety **(see `documentation/messaging/BROKER_SAFETY_RUNBOOK.md`)**
   - Mission outcome: Reproducible science
+
+- Frontend may now build features around live ingest events or job notifications without
+  waiting for further backend broker work; topology parity already complete.
   - Operator/science impact: ensures domain fidelity over PI cycles
-  - Validation evidence: release notes accompany each review, drift regression tests updated accordingly
+  - Validation evidence: integration tests for each broker now passing; runbook published
+  - Added `BrokerEventsService` SSE transport, `JobEventsComponent`, unit tests and new e2e spec verifying event receipt for both fake and real job lifecycles.
+  - Expanded contract/versioning tests on backend & frontend to guard JobTransitionRequest and event payload shapes; keep adding checks as schemas change.
 
 ### High
 
 - Topology/Visualization broker parity (Kafka + RabbitMQ + Pulsar). **(completed)**
   - All three brokers included in topology API and rendered equally with consistent descriptions.
-- ngVLA timing integrity and RFI/EMC observability tracks. *(schema extended, basic audits & UI metrics implemented; quality‑gate enforcement added with unit, controller and e2e tests; Prometheus counter `etl_quality_gate_failures_total` added and audit events published to control plane for persistence)*
+- ngVLA timing integrity and RFI/EMC observability tracks. _(schema extended, basic audits & UI metrics implemented; quality‑gate enforcement added with unit, controller and e2e tests; Prometheus counter `etl_quality_gate_failures_total` added and audit events published to control plane for persistence)_
+- [NEXT] VO interoperability service endpoint & contract tests; frontend link display; runbook stub. (MG‑3)
+- [NEXT] Commissioning/AIV scenario test profile scaffolding and acceptance gate logic. (MG‑4)
+- [NEXT] Archive DR replication tooling, restore‑drill tests, and policy documentation. (MG‑5)
+- [NEXT] Transient alert path SLO metrics, UI indicators, and replay controls. (MG‑6)
 
 ### Medium
 
@@ -157,7 +179,13 @@ pie title TODO Status (March 2026)
   - execution-layer threat model and operator override controls
   - broken-link and cross-reference normalization for the documentation system
 - Messaging fabric MF-1..MF-6 and required MF-TEST matrix.
-- Mission oversights MG-1..MG-6 closure track.
+- Mission oversights MG-1..MG-6 closure track:
+  - MG-1: Timing integrity metadata and quality gates
+  - MG-2: RFI/EMC event model, flags, and replay loop
+  - MG-3: VO interoperability endpoints and contract conformance
+  - MG-4: Commissioning/AIV readiness scenario suite
+  - MG-5: Archive DR replication policy and tooling
+  - MG-6: Transient/low-latency alert SLOs and operator UI
 - Viewer Mode B VB-1..VB-4 implementation and go/no-go decision spike.
 - Streaming and control-plane parity (go-processors, topic contracts, DLQ/replay tooling, trace correlation).
 - HPC adapter pathway (contracts, local mocks, async dispatch, provenance linkage).

@@ -17,7 +17,7 @@ class AuditServiceTest {
     @Test
     void mirrorAuditEventPublishesToAuditExchange() {
         RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
-        AuditService service = new AuditService(rabbitTemplate);
+        AuditService service = new AuditService(rabbitTemplate, true);
 
         service.mirrorAuditEvent("job completed");
 
@@ -39,7 +39,7 @@ class AuditServiceTest {
     @Test
     void publishJobEventWrapsJobDetailsInControlEvent() {
         RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
-        AuditService service = new AuditService(rabbitTemplate);
+        AuditService service = new AuditService(rabbitTemplate, true);
 
         service.publishJobEvent("job-1", "submitted", Map.of("workflow", "continuum"));
 

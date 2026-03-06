@@ -195,9 +195,9 @@ Any updates to NGVLA facts in this document MUST:
 2. Trigger updates to corresponding fixtures and domain model constants
 3. Pass regression tests for NGVLA fact drift (see [TESTING_REQUIREMENTS.md](/docuentation/testing/TESTING_REQUIREMENTS.md))
 
-> **Review cadence:** This reference document is reviewed quarterly (aligned with PI boundaries) by the NGVLA liaison to capture any official specification updates.  Any change must also trigger fixture/tests updates.
+> **Review cadence:** This reference document is reviewed quarterly (aligned with PI boundaries) by the NGVLA liaison to capture any official specification updates. Any change must also trigger fixture/tests updates.
 > **Last review:** March 2026 – verified array baseline range and published a minor increase (1,005 km → 1,005.001 km). Corresponding fixture and regression tests updated accordingly.
-**Approval authority**: Platform technical lead (or designated NGVLA liaison)
+> **Approval authority**: Platform technical lead (or designated NGVLA liaison)
 
 ---
 

@@ -5,7 +5,10 @@ import {
   fakeAsync,
   tick,
 } from "@angular/core/testing";
-import { HttpClientTestingModule, HttpTestingController } from "@angular/common/http/testing";
+import {
+  HttpClientTestingModule,
+  HttpTestingController,
+} from "@angular/common/http/testing";
 import { TelemetryComponent } from "./telemetry.component";
 import { PulsarStatusComponent } from "./pulsar-status/pulsar-status.component";
 import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.component";
@@ -36,12 +39,14 @@ describe("TelemetryComponent", () => {
     queryRangeRate: jest.fn(() => of({ data: { result: [{ values: [] }] } })),
     queryInstant: jest.fn(() => of(0)),
     queryRange: jest.fn(() => of({ data: { result: [{ values: [] }] } })),
-    getPulsarStatus: jest.fn(() => of({ brokers: 0, topics: 0, partitions: 0 })),
+    getPulsarStatus: jest.fn(() =>
+      of({ brokers: 0, topics: 0, partitions: 0 })
+    ),
   };
 
   beforeEach(async () => {
     const mockActivatedRoute = {
-      queryParamMap: new BehaviorSubject(new Map())
+      queryParamMap: new BehaviorSubject(new Map()),
     };
 
     await TestBed.configureTestingModule({
@@ -53,27 +58,31 @@ describe("TelemetryComponent", () => {
         MatButtonModule,
         MatTabsModule,
         MatIconModule,
-        NoopAnimationsModule
+        NoopAnimationsModule,
       ],
-      declarations: [TelemetryComponent, PulsarStatusComponent, RabbitMQStatusComponent],
+      declarations: [
+        TelemetryComponent,
+        PulsarStatusComponent,
+        RabbitMQStatusComponent,
+      ],
       providers: [
         {
           provide: TelemetryService,
-          useValue: telemetryServiceStub
+          useValue: telemetryServiceStub,
         },
         {
           provide: LoadProfileService,
           useValue: {
             pollingMs$: pollingMsSubject.asObservable(),
             profile$: new BehaviorSubject(10).asObservable(),
-            current: 10
-          }
+            current: 10,
+          },
         },
         {
           provide: ActivatedRoute,
-          useValue: mockActivatedRoute
-        }
-      ]
+          useValue: mockActivatedRoute,
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TelemetryComponent);
@@ -83,7 +92,9 @@ describe("TelemetryComponent", () => {
     const hooks = component as unknown as TelemetryComponentTestHooks;
     jest.spyOn(hooks, "loadD3").mockReturnValue(of({}));
     jest.spyOn(hooks, "initGauge").mockImplementation(() => undefined);
-    jest.spyOn(hooks, "ensureVizInitialized").mockImplementation(() => undefined);
+    jest
+      .spyOn(hooks, "ensureVizInitialized")
+      .mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -105,11 +116,14 @@ describe("TelemetryComponent", () => {
     pulsarReq.flush({
       brokers: 2,
       topics: 10,
-      partitions: 30
+      partitions: 30,
     });
-    httpMock
-      .expectOne("/api/v1/rabbitmq/status")
-      .flush({ status: "unknown", connection: "unknown", queues: {}, exchanges: {} });
+    httpMock.expectOne("/api/v1/rabbitmq/status").flush({
+      status: "unknown",
+      connection: "unknown",
+      queues: {},
+      exchanges: {},
+    });
 
     expect(component.pulsarStatus.brokers).toBe(2);
     expect(component.pulsarStatus.topics).toBe(10);
@@ -125,18 +139,20 @@ describe("TelemetryComponent", () => {
     tick(6000);
 
     // Expect Pulsar request first
-    httpMock.expectOne("/api/v1/pulsar/status").flush({ brokers: 1, topics: 1, partitions: 1 });
+    httpMock
+      .expectOne("/api/v1/pulsar/status")
+      .flush({ brokers: 1, topics: 1, partitions: 1 });
 
     const rabbitReq = httpMock.expectOne("/api/v1/rabbitmq/status");
     rabbitReq.flush({
-      status: 'connected',
-      connection: 'connected',
-      queues: { 'test-queue': {} },
-      exchanges: { 'test-exchange': {} }
+      status: "connected",
+      connection: "connected",
+      queues: { "test-queue": {} },
+      exchanges: { "test-exchange": {} },
     });
 
-    expect(component.rabbitMQStatus.status).toBe('connected');
-    expect(component.rabbitMQStatus.connection).toBe('connected');
+    expect(component.rabbitMQStatus.status).toBe("connected");
+    expect(component.rabbitMQStatus.connection).toBe("connected");
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
@@ -147,10 +163,13 @@ describe("TelemetryComponent", () => {
     tick(6000);
 
     const pulsarReq = httpMock.expectOne("/api/v1/pulsar/status");
-    pulsarReq.error(new ErrorEvent('network error'));
-    httpMock
-      .expectOne("/api/v1/rabbitmq/status")
-      .flush({ status: "unknown", connection: "unknown", queues: {}, exchanges: {} });
+    pulsarReq.error(new ErrorEvent("network error"));
+    httpMock.expectOne("/api/v1/rabbitmq/status").flush({
+      status: "unknown",
+      connection: "unknown",
+      queues: {},
+      exchanges: {},
+    });
 
     expect(component.pulsarStatus.brokers).toBe(0);
     expect(component.pulsarStatus.topics).toBe(0);
@@ -165,14 +184,16 @@ describe("TelemetryComponent", () => {
     tick(6000);
 
     // Handle Pulsar request
-    httpMock.expectOne("/api/v1/pulsar/status").flush({ brokers: 1, topics: 1, partitions: 1 });
+    httpMock
+      .expectOne("/api/v1/pulsar/status")
+      .flush({ brokers: 1, topics: 1, partitions: 1 });
 
     const rabbitReq = httpMock.expectOne("/api/v1/rabbitmq/status");
-    rabbitReq.error(new ErrorEvent('connection failed'));
+    rabbitReq.error(new ErrorEvent("connection failed"));
 
-    expect(component.rabbitMQStatus.status).toBe('error');
-    expect(component.rabbitMQStatus.connection).toBe('error');
-    expect(component.rabbitMQStatus.error).toBe('Connection failed');
+    expect(component.rabbitMQStatus.status).toBe("error");
+    expect(component.rabbitMQStatus.connection).toBe("error");
+    expect(component.rabbitMQStatus.error).toBe("Connection failed");
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));

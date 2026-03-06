@@ -26,7 +26,10 @@ describe("SnackService", () => {
 
     document.body.innerHTML = "<footer></footer>";
     jest
-      .spyOn(document.querySelector("footer") as HTMLElement, "getBoundingClientRect")
+      .spyOn(
+        document.querySelector("footer") as HTMLElement,
+        "getBoundingClientRect"
+      )
       .mockReturnValue({
         height: 42.2,
       } as DOMRect);

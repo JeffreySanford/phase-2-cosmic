@@ -91,10 +91,22 @@ export class TelemetryService {
     );
   }
 
-  getPulsarStatus(): Observable<{ brokers: number; topics: number; partitions: number; status: string; lastUpdated: string }> {
+  getPulsarStatus(): Observable<{
+    brokers: number;
+    topics: number;
+    partitions: number;
+    status: string;
+    lastUpdated: string;
+  }> {
     if (this.dataSource.mode === "mock") {
       return this.mock.getPulsarStatus();
     }
-    return this.http.get<{ brokers: number; topics: number; partitions: number; status: string; lastUpdated: string }>("/api/v1/pulsar/status");
+    return this.http.get<{
+      brokers: number;
+      topics: number;
+      partitions: number;
+      status: string;
+      lastUpdated: string;
+    }>("/api/v1/pulsar/status");
   }
 }

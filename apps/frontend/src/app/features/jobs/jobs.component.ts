@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from "@angular/core";
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from "@angular/common/http";
 import {
   JobsService,
   JobStatus,
@@ -233,16 +233,24 @@ export class JobsComponent implements OnInit, OnDestroy {
   saveLineage() {
     const selectedJob = this.selectedJob;
     if (!selectedJob) return;
-    this.jobsSvc.updateLineage(selectedJob.jobId, selectedJob.lineage || {}).subscribe(
-      () => {
-        this.snackBar.open('Lineage saved successfully', undefined, { duration: 2000 });
-        // Invalidate cache to ensure fresh data on next poll
-        this.jobsSvc.invalidateJob(selectedJob.jobId);
-      },
-      (error) => {
-        this.snackBar.open('Failed to save lineage: ' + error.message, undefined, { duration: 3000 });
-      }
-    );
+    this.jobsSvc
+      .updateLineage(selectedJob.jobId, selectedJob.lineage || {})
+      .subscribe(
+        () => {
+          this.snackBar.open("Lineage saved successfully", undefined, {
+            duration: 2000,
+          });
+          // Invalidate cache to ensure fresh data on next poll
+          this.jobsSvc.invalidateJob(selectedJob.jobId);
+        },
+        (error) => {
+          this.snackBar.open(
+            "Failed to save lineage: " + error.message,
+            undefined,
+            { duration: 3000 }
+          );
+        }
+      );
   }
 
   toggleFilter() {
@@ -351,11 +359,13 @@ export class JobsComponent implements OnInit, OnDestroy {
     // special case for HTTP errors so we can show structured details
     if (err instanceof HttpErrorResponse) {
       const body = err.error as ErrorBody | null;
-      if (body && typeof body === 'object') {
-        const code = body.error || err.statusText || 'error';
+      if (body && typeof body === "object") {
+        const code = body.error || err.statusText || "error";
         if (Array.isArray(body.details) && body.details.length > 0) {
-          const rules = body.details.map((detail) => detail.ruleId || JSON.stringify(detail));
-          return `${code}: ${rules.join(', ')}`;
+          const rules = body.details.map(
+            (detail) => detail.ruleId || JSON.stringify(detail)
+          );
+          return `${code}: ${rules.join(", ")}`;
         }
         return String(code);
       }

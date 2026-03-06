@@ -419,13 +419,19 @@ export class MockDataService {
     return (hash % 360) * (Math.PI / 180);
   }
 
-  getPulsarStatus(): Observable<{ brokers: number; topics: number; partitions: number; status: string; lastUpdated: string }> {
+  getPulsarStatus(): Observable<{
+    brokers: number;
+    topics: number;
+    partitions: number;
+    status: string;
+    lastUpdated: string;
+  }> {
     const status = {
       brokers: 1,
       topics: Math.floor(Math.random() * 10) + 5,
       partitions: Math.floor(Math.random() * 20) + 10,
       status: Math.random() > 0.1 ? "healthy" : "degraded",
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
     return of(status);
   }

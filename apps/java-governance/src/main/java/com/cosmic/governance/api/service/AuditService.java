@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -16,9 +17,14 @@ public class AuditService {
     private static final Logger log = LoggerFactory.getLogger(AuditService.class);
 
     private final RabbitTemplate rabbitTemplate;
+    private final boolean rabbitPublishingEnabled;
 
-    public AuditService(RabbitTemplate rabbitTemplate) {
+    public AuditService(
+        RabbitTemplate rabbitTemplate,
+        @Value("${governance.audit.rabbit.enabled:true}") boolean rabbitPublishingEnabled
+    ) {
         this.rabbitTemplate = rabbitTemplate;
+        this.rabbitPublishingEnabled = rabbitPublishingEnabled;
     }
 
     /**
@@ -26,6 +32,10 @@ public class AuditService {
      */
     @KafkaListener(topics = "cosmic-audit", groupId = "audit-mirror")
     public void mirrorAuditEvent(String message) {
+        if (!rabbitPublishingEnabled) {
+            log.debug("Skipping RabbitMQ audit mirror because governance.audit.rabbit.enabled=false");
+            return;
+        }
         try {
             log.debug("Mirroring audit event to RabbitMQ: {}", message);
 
@@ -53,6 +63,10 @@ public class AuditService {
      * Publishes control-plane events to RabbitMQ
      */
     public void publishControlEvent(String eventType, Map<String, Object> payload) {
+        if (!rabbitPublishingEnabled) {
+            log.debug("Skipping RabbitMQ control event {} because governance.audit.rabbit.enabled=false", eventType);
+            return;
+        }
         try {
             Map<String, Object> controlEvent = Map.of(
                 "source", "governance-api",

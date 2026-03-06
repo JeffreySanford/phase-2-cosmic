@@ -3,6 +3,6 @@
   "name": "Test Dataset",
   "description": "Created with manifest",
   "createdAt": "2026-03-05T00:00:00Z",
-  "metadata": {"foo":"bar","manifest":{"job":"demo1","version":1}},
-  "manifest": {"job":"demo1","version":1}
+  "metadata": { "foo": "bar", "manifest": { "job": "demo1", "version": 1 } },
+  "manifest": { "job": "demo1", "version": 1 }
 }

@@ -77,15 +77,13 @@ export class DatasetsService {
   create(req: DatasetRequest): Observable<Dataset> {
     // after creation the backend returns the raw dataset response; merge
     // any metadata fields so caller can immediately access provenance info.
-    return this.http
-      .post<Dataset>(this.base, req)
-      .pipe(
-        map((d) => {
-          if (d.metadata && typeof d.metadata === "object") {
-            return { ...d, ...d.metadata } as Dataset;
-          }
-          return d;
-        })
-      );
+    return this.http.post<Dataset>(this.base, req).pipe(
+      map((d) => {
+        if (d.metadata && typeof d.metadata === "object") {
+          return { ...d, ...d.metadata } as Dataset;
+        }
+        return d;
+      })
+    );
   }
 }

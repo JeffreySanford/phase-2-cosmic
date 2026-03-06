@@ -34,6 +34,14 @@ class GovernanceControllerTest extends AbstractRedisTest {
     }
 
     @Test
+    void voServicesEndpointReturnsUrls() throws Exception {
+        mockMvc.perform(get("/api/v1/vo/services"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tapUrl").isString())
+                .andExpect(jsonPath("$.dataLinkUrl").isString());
+    }
+
+    @Test
     void submitJobMissingWorkflowReturnsBadRequest() throws Exception {
         String invalid = "{\"datasetId\":\"foo\"}";
         mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(invalid))

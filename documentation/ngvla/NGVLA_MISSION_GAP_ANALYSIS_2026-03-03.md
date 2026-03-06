@@ -4,10 +4,10 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
 
 ## Source basis (reviewed 2026-03-03)
 
-- ngVLA main overview and mission framing: https://ngvla.nrao.edu/
-- ngVLA science page (community-driven key science goals): https://ngvla.nrao.edu/page/science
-- ngVLA FAQ (science-ready data and broad observatory posture): https://ngvla.nrao.edu/page/faq
-- ngVLA design documentation index (operations, timing, calibration, RFI/EMC, AIV/CSV, safety): https://ngvla.nrao.edu/page/projectdocs
+- ngVLA main overview and mission framing: <https://ngvla.nrao.edu/>
+- ngVLA science page (community-driven key science goals): <https://ngvla.nrao.edu/page/science>
+- ngVLA FAQ (science-ready data and broad observatory posture): <https://ngvla.nrao.edu/page/faq>
+- ngVLA design documentation index (operations, timing, calibration, RFI/EMC, AIV/CSV, safety): <https://ngvla.nrao.edu/page/projectdocs>
 
 ## Gaps identified vs current planning
 
@@ -20,7 +20,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
 - Needed:
   - explicit timing metadata fields, quality checks, and alert thresholds.
 
-2. RFI/EMC observability and mitigation loop is not explicit in runtime planning.
+1. RFI/EMC observability and mitigation loop is not explicit in runtime planning.
 
 - Why it matters:
   - RFI directly affects science product trust and ingest stability.
@@ -29,7 +29,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
 - Needed:
   - RFI event model, quality flags, and operator visualization surfaces.
 
-3. VO interoperability is only partially covered (ObsCore fields) but service endpoints are not planned.
+1. VO interoperability is only partially covered (ObsCore fields) but service endpoints are not planned.
 
 - Why it matters:
   - community archive access relies on standards-based discovery/access patterns.
@@ -38,7 +38,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
 - Needed:
   - TAP/ADQL + DataLink/SODA compatibility planning and contract tests.
 
-4. Commissioning/AIV-readiness data scenarios are not first-class test tracks.
+1. Commissioning/AIV-readiness data scenarios are not first-class test tracks.
 
 - Why it matters:
   - ngVLA project docs emphasize AIV/CSV and staged readiness.
@@ -47,7 +47,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
 - Needed:
   - commissioning scenario suite and acceptance gates.
 
-5. Archive continuity and disaster-recovery replication are not explicit for 240 PB path.
+1. Archive continuity and disaster-recovery replication are not explicit for 240 PB path.
 
 - Why it matters:
   - mission continuity requires recoverable, durable archive posture.
@@ -56,7 +56,7 @@ Purpose: identify oversights in current roadmap/backlog relative to ngVLA missio
 - Needed:
   - cross-site replication policy, restore drills, and RPO/RTO gates.
 
-6. Low-latency transient/multi-messenger alert path is under-specified.
+1. Low-latency transient/multi-messenger alert path is under-specified.
 
 - Why it matters:
   - ngVLA KSG5 and transient science benefit from low-latency event handling.

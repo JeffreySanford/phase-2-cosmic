@@ -6,7 +6,12 @@ import { LoadProfileService } from "../../services/load-profile.service";
 import { Subscription } from "rxjs";
 import { switchMap } from "rxjs/operators";
 import { interval } from "rxjs";
-import { DiagnosticsIndex, DockerServiceStatus, PulsarStatus, RabbitMQStatus } from "../../shared/types";
+import {
+  DiagnosticsIndex,
+  DockerServiceStatus,
+  PulsarStatus,
+  RabbitMQStatus,
+} from "../../shared/types";
 
 @Component({
   selector: "app-diagnostics",
@@ -26,10 +31,13 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   lastUpdated: Date | null = null;
   currentPollingMs = 5000;
   pulsarStatus: PulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
-  rabbitMQStatus: RabbitMQStatus = { status: 'unknown', connection: 'unknown' };
+  rabbitMQStatus: RabbitMQStatus = { status: "unknown", connection: "unknown" };
   // mission closure metrics
   timingDriftNs?: number;
   rfiEventRate?: number;
+  // VO services
+  voTapUrl?: string | null = null;
+  voDataLinkUrl?: string | null = null;
   private pollSubscription?: Subscription;
   private pollingMsSubscription?: Subscription;
 
@@ -46,6 +54,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     this.fetchPulsarStatus();
     this.fetchRabbitMQStatus();
     this.fetchTimingMetrics();
+    this.fetchVoServices();
     this.startPolling();
   }
 
@@ -99,6 +108,25 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
         },
         () => {
           // ignore errors; diagnostics already shows other failures
+        }
+      );
+  }
+
+  private fetchVoServices() {
+    if (this.dataSource.mode === "mock") {
+      this.voTapUrl = null;
+      this.voDataLinkUrl = null;
+      return;
+    }
+    this.http
+      .get<{ tapUrl?: string; dataLinkUrl?: string }>("/api/v1/vo/services")
+      .subscribe(
+        (res) => {
+          this.voTapUrl = res.tapUrl ?? null;
+          this.voDataLinkUrl = res.dataLinkUrl ?? null;
+        },
+        () => {
+          // non-critical; ignore failures
         }
       );
   }
@@ -182,31 +210,35 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   }
 
   fetchPulsarStatus(): void {
-    this.http.get<PulsarStatus>('/api/v1/pulsar/status').subscribe({
+    this.http.get<PulsarStatus>("/api/v1/pulsar/status").subscribe({
       next: (status: PulsarStatus) => {
         this.pulsarStatus = {
           brokers: status.brokers || 0,
           topics: status.topics || 0,
-          partitions: status.partitions || 0
+          partitions: status.partitions || 0,
         };
       },
       error: (err) => {
         // Keep previous status or set to 0 on error
         this.pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
 
-        console.log('Failed to fetch Pulsar status:', err);
-      }
+        console.log("Failed to fetch Pulsar status:", err);
+      },
     });
   }
 
   fetchRabbitMQStatus(): void {
-    this.http.get<RabbitMQStatus>('/api/v1/rabbitmq/status').subscribe({
+    this.http.get<RabbitMQStatus>("/api/v1/rabbitmq/status").subscribe({
       next: (status: RabbitMQStatus) => {
         this.rabbitMQStatus = status;
       },
       error: (err) => {
-        this.rabbitMQStatus = { status: 'unavailable', connection: 'error', error: err.message };
-      }
+        this.rabbitMQStatus = {
+          status: "unavailable",
+          connection: "error",
+          error: err.message,
+        };
+      },
     });
   }
 

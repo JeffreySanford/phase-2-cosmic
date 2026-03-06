@@ -6,6 +6,7 @@ import com.cosmic.governance.api.model.JobRecord;
 import com.cosmic.governance.api.model.JobState;
 import com.cosmic.governance.api.util.RedisMarshaller;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cosmic.governance.api.controller.BrokerEventsController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -28,7 +29,7 @@ class JobServiceLineageTest {
         marshaller = new RedisMarshaller(new ObjectMapper());
         auditService = Mockito.mock(AuditService.class);
         registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
-        service = new JobService(null, new ObjectMapper(), null, marshaller, auditService, registry);
+        service = new JobService(null, new ObjectMapper(), null, marshaller, auditService, (BrokerEventsController)null, registry);
     }
 
     @Test

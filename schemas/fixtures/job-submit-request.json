@@ -5,7 +5,7 @@
     "weighting": "briggs",
     "robust": "0.5"
   },
-  "lineage": {"parentJobId":"orig-1234"},
-  "manifest": {"job":"example","version":1},
+  "lineage": { "parentJobId": "orig-1234" },
+  "manifest": { "job": "example", "version": 1 },
   "requestedBy": "ci-smoke"
 }

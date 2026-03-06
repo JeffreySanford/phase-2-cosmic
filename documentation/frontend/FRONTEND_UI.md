@@ -193,6 +193,12 @@ Interaction requirements:
 
 Data contract summary:
 
+- **Broker events service:** new `BrokerEventsService` provides an observable stream of live job/ingest events via SSE (`/api/v1/broker-events`).
+  The dashboard includes `JobEventsComponent` which shows the latest ten events in a corner panel; other pages may also consume the stream for notifications or alerts.
+- **Contract/versioning tests:** frontend jest suite now includes `contract-versioning.spec.ts` to compare generated models against OpenAPI fixtures, ensuring drift is detected early.
+
+Data contract summary:
+
 - `GET /api/proxy/prometheus` (short-term baseline)
 - future: governance summary endpoint for consolidated KPIs
 
@@ -229,7 +235,7 @@ Detail drawer tabs:
 
 - summary
 - parameters
-- lineage  <!-- newly added to capture parent/ancestor job IDs -->
+- lineage <!-- newly added to capture parent/ancestor job IDs -->
 - timeline
 - logs/errors
 - artifacts (future)
@@ -247,7 +253,7 @@ Future required API additions:
 
 - `GET /api/v1/jobs?status=&workflow=&datasetId=&page=`
 - `POST /api/v1/jobs/{id}/cancel`
-- `GET /api/v1/jobs/{id}/lineage`  <!-- supports lineage tab in detail drawer -->
+- `GET /api/v1/jobs/{id}/lineage` <!-- supports lineage tab in detail drawer -->
 
 ## 5.3 Datasets
 

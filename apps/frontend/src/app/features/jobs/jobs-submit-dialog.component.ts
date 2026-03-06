@@ -11,7 +11,7 @@ export interface JobsSubmitData {
   selector: "app-jobs-submit-dialog",
   templateUrl: "./jobs-submit-dialog.component.html",
   styleUrls: ["./jobs-submit-dialog.component.scss"],
-  standalone: false
+  standalone: false,
 })
 export class JobsSubmitDialogComponent implements OnInit {
   workflow = "import";
@@ -51,7 +51,7 @@ export class JobsSubmitDialogComponent implements OnInit {
     scheduler: ["cron"],
   };
 
-  public publicSources: Array<{name:string,url:string}> = [];
+  public publicSources: Array<{ name: string; url: string }> = [];
 
   constructor(
     public dialogRef: MatDialogRef<JobsSubmitDialogComponent>,

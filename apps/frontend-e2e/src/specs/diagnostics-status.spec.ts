@@ -6,8 +6,8 @@ describe("Diagnostics page", () => {
       body: {
         brokers: 3,
         topics: 15,
-        partitions: 45
-      }
+        partitions: 45,
+      },
     }).as("pulsarStatus");
 
     cy.intercept("GET", "/api/v1/rabbitmq/status", {
@@ -17,13 +17,13 @@ describe("Diagnostics page", () => {
         connection: "connected",
         queues: {
           "audit-queue": {},
-          "control-queue": {}
+          "control-queue": {},
         },
         exchanges: {
           "audit-exchange": {},
-          "control-exchange": {}
-        }
-      }
+          "control-exchange": {},
+        },
+      },
     }).as("rabbitMQStatus");
 
     // Visit the diagnostics page
@@ -51,12 +51,12 @@ describe("Diagnostics page", () => {
     // Intercept with error responses
     cy.intercept("GET", "/api/v1/pulsar/status", {
       statusCode: 500,
-      body: { error: "Service unavailable" }
+      body: { error: "Service unavailable" },
     }).as("pulsarStatusError");
 
     cy.intercept("GET", "/api/v1/rabbitmq/status", {
       statusCode: 500,
-      body: { error: "Connection failed" }
+      body: { error: "Connection failed" },
     }).as("rabbitMQStatusError");
 
     // Visit the diagnostics page
@@ -88,8 +88,8 @@ describe("Diagnostics page", () => {
         body: {
           brokers: callCount,
           topics: callCount * 5,
-          partitions: callCount * 15
-        }
+          partitions: callCount * 15,
+        },
       });
     }).as("pulsarStatus");
 
@@ -98,9 +98,9 @@ describe("Diagnostics page", () => {
       body: {
         status: "connected",
         connection: "connected",
-        queues: { "queue1": {} },
-        exchanges: { "exchange1": {} }
-      }
+        queues: { queue1: {} },
+        exchanges: { exchange1: {} },
+      },
     }).as("rabbitMQStatus");
 
     // Visit the diagnostics page

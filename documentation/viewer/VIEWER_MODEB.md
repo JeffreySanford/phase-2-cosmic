@@ -87,11 +87,11 @@ Required switching behavior:
 
 ## Survey-tier strategy (initial)
 
-| Tier | Mode B role | Preferred source class | Near-term candidate sources |
-| --- | --- | --- | --- |
-| 0 | Preview / wide field | Stable wide-field baseline | Current `DSS2` baseline, with future registry-based fallback |
-| 1 | Mid zoom | Public HiPS with better detail | `VLASS` HiPS/basic public products |
-| 2 | Deep zoom | Highest-quality public image products available before archive-only paths | `VLASS` enhanced/basic products, `NVAS` historical images, later NRAO archive image products |
+| Tier | Mode B role          | Preferred source class                                                    | Near-term candidate sources                                                                  |
+| ---- | -------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 0    | Preview / wide field | Stable wide-field baseline                                                | Current `DSS2` baseline, with future registry-based fallback                                 |
+| 1    | Mid zoom             | Public HiPS with better detail                                            | `VLASS` HiPS/basic public products                                                           |
+| 2    | Deep zoom            | Highest-quality public image products available before archive-only paths | `VLASS` enhanced/basic products, `NVAS` historical images, later NRAO archive image products |
 
 Selection inputs:
 

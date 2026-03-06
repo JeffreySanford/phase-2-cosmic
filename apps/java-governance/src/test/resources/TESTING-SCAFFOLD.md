@@ -19,8 +19,9 @@ Provide a stable, maintainable integration test framework for `apps/java-governa
 2. Lightweight integration tests
 
    - Replace existing large suites with focused tests:
-     - `KafkaIngestListenerIntegrationTest` -> only verifies DLQ behavior for singular invalid message
+     - `KafkaIngestListenerIntegrationTest` -> only verifies DLQ behavior for singular invalid message (Kafka path is implemented)
      - `SimulatorLifecycleTest` -> verify state transitions using seeded Redis + mocked executors
+   - **Future work:** add similar `RabbitIngestListenerIntegrationTest` and `PulsarIngestListenerIntegrationTest` once the corresponding listeners are implemented. These classes exist already as disabled placeholders.
 
 3. Provenance E2E test (new)
 

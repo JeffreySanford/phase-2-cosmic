@@ -52,7 +52,7 @@ flowchart LR
 | Contracts and API docs (`JAVA_GOVERNANCE_SPEC`, `API_CONTRACT_STATUS`)                                | aligned      | Baseline endpoints and drift controls are documented and consistent.                                                              |
 | Trust and lineage docs (`DATA_TRUST_PLATFORM`, `PROVENANCE`, `storage/*`)                             | planned      | Strategic direction is clear; several controls remain future-state.                                                               |
 | Environment/deployment/testing docs (`GETTING_STARTED`, `ENVIRONMENT`, `DEPLOYMENT`, testing docs)    | aligned      | Current commands and quality gates are represented, including an execution-layer test matrix.                                     |
-| Security docs (`security/*`)                                                                            | aligned      | A dedicated security section now exists for execution-layer threat modeling and operator-trust expectations.                      |
+| Security docs (`security/*`)                                                                          | aligned      | A dedicated security section now exists for execution-layer threat modeling and operator-trust expectations.                      |
 | `docuentation/planning/TODO.md` (simulation harness)                                                  | aligned      | Explicitly secondary to root `TODO.md`; remains useful as scoped runbook/backlog.                                                 |
 
 ## Drift risks observed

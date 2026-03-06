@@ -9,7 +9,7 @@
     "weighting": "briggs"
   },
   "lineage": { "parentJobId": "orig-1234" },
-  "manifest": { "job":"casa-imaging","version":1 },
+  "manifest": { "job": "casa-imaging", "version": 1 },
   "requestedBy": "ci-smoke",
   "version": 1
 }

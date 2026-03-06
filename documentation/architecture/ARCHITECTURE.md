@@ -48,6 +48,7 @@ Cosmic Horizon is a hybrid control platform composed of:
 ### Planned
 
 - End-to-end streaming-to-governance contract hardening
+  (Kafka/RabbitMQ/Pulsar implementation now available; parity tests running)
 - External compute adapter integration (HPC/TACC/CosmicAI)
 - Trident-inspired routing, FSP allocation, and backend fan-out simulation
 - Production security and policy enforcement layers

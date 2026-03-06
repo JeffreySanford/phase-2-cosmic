@@ -266,44 +266,9 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   private fetchMetrics() {
     if (this.dataSource.mode === "mock") {
       const keys = (this.lastLinks ?? []).map((l) => this.getLinkKey(l));
-      this.mock.topologyMetricsForLinks(keys).subscribe((res: TopologyMetricsResponse) => {
-        this.captureMissionMetrics(res);
-        let changed = false;
-        for (const ln of this.lastLinks ?? []) {
-          const key = this.getLinkKey(ln);
-          const m = res[key];
-          if (m) {
-            const stats = this.statsRef(ln)._stats ?? ({} as LinkStats);
-            stats.throughputMBpsCurrent = m.currentMBps;
-            if (m.maxMBps) stats.throughputMBpsMax = m.maxMBps;
-            stats.throughput = `${Math.round(
-              stats.throughputMBpsCurrent ?? 0
-            )} MB/s (max ${Math.round(
-              stats.throughputMBpsMax ?? stats.throughputMBpsCurrent ?? 0
-            )} MB/s)`;
-            stats.throughputPct = `${Math.round(
-              ((stats.throughputMBpsCurrent ?? 0) /
-                Math.max(
-                  1,
-                  stats.throughputMBpsMax || stats.throughputMBpsCurrent || 1
-                )) *
-                100
-            )}%`;
-            this.statsRef(ln)._stats = stats;
-            changed = true;
-          }
-        }
-        if (changed) this.render(this.lastNodes, this.lastLinks, true);
-      });
-      return;
-    }
-
-    this.http
-      .get<TopologyMetricsResponse>(
-        "/api/metrics/topology"
-      )
-      .subscribe(
-        (res) => {
+      this.mock
+        .topologyMetricsForLinks(keys)
+        .subscribe((res: TopologyMetricsResponse) => {
           this.captureMissionMetrics(res);
           let changed = false;
           for (const ln of this.lastLinks ?? []) {
@@ -330,16 +295,49 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
               changed = true;
             }
           }
-          if (changed) {
-            // re-render to update visuals; avoid triggering another metrics fetch
-            this.render(this.lastNodes, this.lastLinks, true);
+          if (changed) this.render(this.lastNodes, this.lastLinks, true);
+        });
+      return;
+    }
+
+    this.http.get<TopologyMetricsResponse>("/api/metrics/topology").subscribe(
+      (res) => {
+        this.captureMissionMetrics(res);
+        let changed = false;
+        for (const ln of this.lastLinks ?? []) {
+          const key = this.getLinkKey(ln);
+          const m = res[key];
+          if (m) {
+            const stats = this.statsRef(ln)._stats ?? ({} as LinkStats);
+            stats.throughputMBpsCurrent = m.currentMBps;
+            if (m.maxMBps) stats.throughputMBpsMax = m.maxMBps;
+            stats.throughput = `${Math.round(
+              stats.throughputMBpsCurrent ?? 0
+            )} MB/s (max ${Math.round(
+              stats.throughputMBpsMax ?? stats.throughputMBpsCurrent ?? 0
+            )} MB/s)`;
+            stats.throughputPct = `${Math.round(
+              ((stats.throughputMBpsCurrent ?? 0) /
+                Math.max(
+                  1,
+                  stats.throughputMBpsMax || stats.throughputMBpsCurrent || 1
+                )) *
+                100
+            )}%`;
+            this.statsRef(ln)._stats = stats;
+            changed = true;
           }
-        },
-        () => {
-          this.lastError =
-            "Live topology metrics are unavailable. Showing last known topology structure.";
         }
-      );
+        if (changed) {
+          // re-render to update visuals; avoid triggering another metrics fetch
+          this.render(this.lastNodes, this.lastLinks, true);
+        }
+      },
+      () => {
+        this.lastError =
+          "Live topology metrics are unavailable. Showing last known topology structure.";
+      }
+    );
   }
 
   async ngAfterViewInit(): Promise<void> {
@@ -725,83 +723,79 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   }
 
   private pollMetricsAndAnimate() {
-    this.http
-      .get<TopologyMetricsResponse>(
-        "/api/metrics/topology"
-      )
-      .subscribe(
-        (res) => {
-          this.lastError = null;
-          this.captureMissionMetrics(res);
-          for (const ln of this.lastLinks ?? []) {
-            const key = this.getLinkKey(ln);
-            const prev = this.statsRef(ln)._stats;
-            const m = res[key];
-            if (m) {
-              const stats = prev ?? ({} as LinkStats);
-              const prevVal = Number(stats.throughputMBpsCurrent ?? 0);
-              stats.throughputMBpsCurrent = m.currentMBps;
-              if (m.maxMBps) stats.throughputMBpsMax = m.maxMBps;
-              stats.throughput = `${Math.round(
-                stats.throughputMBpsCurrent ?? 0
-              )} MB/s (max ${Math.round(
-                stats.throughputMBpsMax ?? stats.throughputMBpsCurrent ?? 0
-              )} MB/s)`;
-              stats.throughputPct = `${Math.round(
-                ((stats.throughputMBpsCurrent ?? 0) /
-                  Math.max(
-                    1,
-                    stats.throughputMBpsMax || stats.throughputMBpsCurrent || 1
-                  )) *
-                  100
-              )}%`;
-              this.statsRef(ln)._stats = stats;
-              // animate if change significant by percentage of max or sensitivityPct
-              const maxVal = Number(stats.throughputMBpsMax ?? 1);
-              const delta = Math.abs((m.currentMBps || 0) - prevVal);
-              const pctChange = maxVal > 0 ? (delta / maxVal) * 100 : 0;
-              // adjust particle speed based on utilization (immediate)
-              try {
-                const svgEl = this.graphEl.nativeElement.querySelector(
-                  "svg"
-                ) as SVGSVGElement | null;
-                if (svgEl) {
-                  const particle = svgEl.querySelector(
-                    `.flow-particle[data-key="${key}"]`
-                  ) as SVGCircleElement | null;
-                  if (particle) {
-                    const util = Number(
-                      stats.throughputPctNumeric ??
-                        (stats.throughputMBpsCurrent && stats.throughputMBpsMax
-                          ? Math.round(
-                              ((stats.throughputMBpsCurrent ?? 0) /
-                                Math.max(1, stats.throughputMBpsMax ?? 1)) *
-                                100
-                            )
-                          : 10)
-                    );
-                    const durSec = Math.max(0.6, 5 - util / 20);
-                    const animEl = particle.querySelector(
-                      "animateMotion"
-                    ) as SVGAnimateElement | null;
-                    if (animEl) animEl.setAttribute("dur", `${durSec}s`);
-                  }
+    this.http.get<TopologyMetricsResponse>("/api/metrics/topology").subscribe(
+      (res) => {
+        this.lastError = null;
+        this.captureMissionMetrics(res);
+        for (const ln of this.lastLinks ?? []) {
+          const key = this.getLinkKey(ln);
+          const prev = this.statsRef(ln)._stats;
+          const m = res[key];
+          if (m) {
+            const stats = prev ?? ({} as LinkStats);
+            const prevVal = Number(stats.throughputMBpsCurrent ?? 0);
+            stats.throughputMBpsCurrent = m.currentMBps;
+            if (m.maxMBps) stats.throughputMBpsMax = m.maxMBps;
+            stats.throughput = `${Math.round(
+              stats.throughputMBpsCurrent ?? 0
+            )} MB/s (max ${Math.round(
+              stats.throughputMBpsMax ?? stats.throughputMBpsCurrent ?? 0
+            )} MB/s)`;
+            stats.throughputPct = `${Math.round(
+              ((stats.throughputMBpsCurrent ?? 0) /
+                Math.max(
+                  1,
+                  stats.throughputMBpsMax || stats.throughputMBpsCurrent || 1
+                )) *
+                100
+            )}%`;
+            this.statsRef(ln)._stats = stats;
+            // animate if change significant by percentage of max or sensitivityPct
+            const maxVal = Number(stats.throughputMBpsMax ?? 1);
+            const delta = Math.abs((m.currentMBps || 0) - prevVal);
+            const pctChange = maxVal > 0 ? (delta / maxVal) * 100 : 0;
+            // adjust particle speed based on utilization (immediate)
+            try {
+              const svgEl = this.graphEl.nativeElement.querySelector(
+                "svg"
+              ) as SVGSVGElement | null;
+              if (svgEl) {
+                const particle = svgEl.querySelector(
+                  `.flow-particle[data-key="${key}"]`
+                ) as SVGCircleElement | null;
+                if (particle) {
+                  const util = Number(
+                    stats.throughputPctNumeric ??
+                      (stats.throughputMBpsCurrent && stats.throughputMBpsMax
+                        ? Math.round(
+                            ((stats.throughputMBpsCurrent ?? 0) /
+                              Math.max(1, stats.throughputMBpsMax ?? 1)) *
+                              100
+                          )
+                        : 10)
+                  );
+                  const durSec = Math.max(0.6, 5 - util / 20);
+                  const animEl = particle.querySelector(
+                    "animateMotion"
+                  ) as SVGAnimateElement | null;
+                  if (animEl) animEl.setAttribute("dur", `${durSec}s`);
                 }
-              } catch {
-                return;
               }
-              if (pctChange >= this.sensitivityPct) {
-                this.animatePulse(key, prevVal, m.currentMBps || 0);
-                this.flashLine(key);
-              }
+            } catch {
+              return;
+            }
+            if (pctChange >= this.sensitivityPct) {
+              this.animatePulse(key, prevVal, m.currentMBps || 0);
+              this.flashLine(key);
             }
           }
-        },
-        () => {
-          this.lastError =
-            "Live topology metrics polling failed. Graph structure is preserved, but link activity may be stale.";
         }
-      );
+      },
+      () => {
+        this.lastError =
+          "Live topology metrics polling failed. Graph structure is preserved, but link activity may be stale.";
+      }
+    );
   }
 
   private animatePulse(key: string, prev: number, next: number) {

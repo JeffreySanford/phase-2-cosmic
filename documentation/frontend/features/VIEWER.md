@@ -40,12 +40,12 @@ Provide sky/object visualization with progressive resolution behavior that suppo
 
 ## Preferred public seed sources
 
-| Use | Preferred source |
-| --- | --- |
-| Mid-zoom imagery | `VLASS` HiPS/basic products |
-| Deep-zoom public fallback | `NVAS` historical image products |
-| Metadata overlays | NRAO TAP service |
-| Catalog/source overlays | `data.gov` `NVSS`, `VLSSr`, `QORG` |
+| Use                          | Preferred source                                      |
+| ---------------------------- | ----------------------------------------------------- |
+| Mid-zoom imagery             | `VLASS` HiPS/basic products                           |
+| Deep-zoom public fallback    | `NVAS` historical image products                      |
+| Metadata overlays            | NRAO TAP service                                      |
+| Catalog/source overlays      | `data.gov` `NVSS`, `VLSSr`, `QORG`                    |
 | Timing/provenance enrichment | NIST timing data, NSF provenance/publication metadata |
 
 ## SSR and data delivery

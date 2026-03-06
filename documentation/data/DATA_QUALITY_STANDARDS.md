@@ -36,7 +36,7 @@ These standards apply to:
 - Consistency: manifest fields match stored objects and job metadata.
 - Integrity: payload and artifact checksums are verifiable.
 - Traceability: lineage links and provenance fields are present.
-- External source citations: when a dataset or manifest references an external/public data source, the citation **must** match an entry returned by the governance service `GET /api/v1/public-sources` registry (see documentation/public-data).  This ensures operators use approved, curated sources.
+- External source citations: when a dataset or manifest references an external/public data source, the citation **must** match an entry returned by the governance service `GET /api/v1/public-sources` registry (see documentation/public-data). This ensures operators use approved, curated sources.
 - Timeliness: stage timestamps are monotonic and within expected windows.
 
 ## 3. Required fields by stage
@@ -102,7 +102,7 @@ Checks:
 
 ## 4. Standardized failure response
 
-> **Note:** All gates are evaluated by the governance API when a job is promoted to a terminal state (e.g. COMPLETED).  Violations are recorded and the transition is rejected with a `400` response as documented below.
+> **Note:** All gates are evaluated by the governance API when a job is promoted to a terminal state (e.g. COMPLETED). Violations are recorded and the transition is rejected with a `400` response as documented below.
 
 If any gate fails, the API must reject the transition with:
 

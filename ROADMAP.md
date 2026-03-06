@@ -11,7 +11,7 @@
 
 - Foundation baseline established (frontend routes, governance API baseline, contracts, compose observability stack).
 - Phase 1, 1B, and 1C completion milestones are recorded.
-- Active roadmap execution is centered on Phase 2/2A/3/4 and PI-1 sprint sequencing.
+- Active roadmap execution is centered on Phase 2/2A/3/4 and PI-1 sprint sequencing. Phase 2 features now include a working SSE endpoint and front-end event panel with e2e validation.
 - Public-data candidate sources for ETL/viewer work are now documented in `documentation/public-data/PUBLIC_DATA_RESOURCES.md`.
 - Remaining frontend hardening is now carried inside adjacent roadmap work.
   See `FRONTEND_HARDENING_TRACKER.md` for the carry-forward cleanup list.
@@ -29,6 +29,7 @@ timeline
         Messaging Status : RabbitMQ and Pulsar status endpoints integrated
 
     section In Progress (PI-1 Sprint 2)
+        Phase 2 : Streaming-to-governance integration (Kafka/RabbitMQ/Pulsar) complete; SSE endpoint live
         Provenance E2E : Deterministic implementation with manifest verification
         Jobs UX : Lineage metadata display and parent reference submissions
         Public Data : NRAO TAP metadata ingest planning and public-sources registry API stub
@@ -49,8 +50,9 @@ timeline
 ### Immediate
 
 - Complete deterministic provenance E2E implementation (now includes manifest verification and HTTP audit endpoint).
-- Close deferred docs-validation items from NGVLA fidelity track. *(completed 2026‑03‑06 — all referenced docs reviewed and synchronized)*
-- Begin frontend Jobs UX enhancements: surface lineage metadata and allow job submissions with parent references.
+- Close deferred docs-validation items from NGVLA fidelity track. _(completed 2026‑03‑06 — all referenced docs reviewed and synchronized)_
+- **Kafka/RabbitMQ/Pulsar ingestion paths are live** – gateway consumes `phase2-events` from all three brokers with idempotent ingest and DLQ handling.
+- Broker integration complete; runbook for DLQ/replay and interruption safety published (`documentation/messaging/BROKER_SAFETY_RUNBOOK.md`).- Begin frontend Jobs UX enhancements: surface lineage metadata and allow job submissions with parent references.
 - Define public-data integration slice: NRAO TAP metadata ingest, viewer seed imagery, and source attribution fields.
 
 ### High
@@ -109,6 +111,7 @@ timeline
 
 ## Completed
 
+- Phase 2 streaming-to-governance integration: Kafka, RabbitMQ, Pulsar ingest implementations, test matrix, DLQ safety and SSE endpoint ✅
 - Baseline frontend telemetry/topology/diagnostics plus `Jobs`/`Datasets` routes with SSR shim.
 - Baseline streaming stack: data generator + Kafka/Prometheus/Grafana compose setup.
 - Baseline governance contracts and API scaffolding with Redis-backed local durability.

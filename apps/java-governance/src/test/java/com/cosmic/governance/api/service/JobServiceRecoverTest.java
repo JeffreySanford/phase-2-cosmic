@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cosmic.governance.api.controller.BrokerEventsController;
 import com.cosmic.governance.api.executor.JobExecutor;
 import org.springframework.data.redis.core.RedisTemplate;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -33,7 +34,7 @@ class JobServiceRecoverTest {
         marshaller = new RedisMarshaller(new ObjectMapper());
         auditService = Mockito.mock(AuditService.class);
         MeterRegistry registry = new SimpleMeterRegistry();
-        service = new JobService(null, new ObjectMapper(), null, marshaller, auditService, registry);
+        service = new JobService(null, new ObjectMapper(), null, marshaller, auditService, (BrokerEventsController)null, registry);
         // register a lightweight test-only simulator executor so dispatchQueuedJobs() can move QUEUED->RUNNING
         JobExecutor simExec = new JobExecutor() {
             @Override

@@ -55,10 +55,7 @@ export type ViewerSourceState =
   | "stale"
   | "mock";
 
-export type ViewerMode =
-  | "auto"
-  | "preview"
-  | "high-resolution";
+export type ViewerMode = "auto" | "preview" | "high-resolution";
 
 export type ViewerLayerKind =
   | "hips"

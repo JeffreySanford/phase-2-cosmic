@@ -1,8 +1,8 @@
 ---
 packages:
-  - 'apps/*'
-  - 'libs/*'
-  - 'tools/*'
+  - "apps/*"
+  - "libs/*"
+  - "tools/*"
 
 onlyBuiltDependencies:
   - "@nestjs/core"

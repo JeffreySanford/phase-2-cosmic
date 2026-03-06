@@ -41,17 +41,20 @@ public class GovernanceController {
     private final DatasetService datasetService;
     private final PublicDataService publicDataService;
     private final RabbitTemplate rabbitTemplate;
+    private final com.cosmic.governance.api.service.VoService voService;
 
     @Value("${pulsar.admin.url:http://localhost:8085}")
     private String pulsarAdminUrl;
 
     public GovernanceController(JobService jobService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService,
-                                 PublicDataService publicDataService, RabbitTemplate rabbitTemplate) {
+                                 PublicDataService publicDataService, RabbitTemplate rabbitTemplate,
+                                 com.cosmic.governance.api.service.VoService voService) {
         this.jobService = jobService;
         this.schemaService = schemaService;
         this.datasetService = datasetService;
         this.publicDataService = publicDataService;
         this.rabbitTemplate = rabbitTemplate;
+        this.voService = voService;
     }
 
     @GetMapping("/health")
@@ -61,6 +64,11 @@ public class GovernanceController {
                 "service", "java-governance",
                 "timestamp", Instant.now().toString()
         );
+    }
+
+    @GetMapping("/vo/services")
+    public Map<String, String> voServices() {
+        return voService.getServices();
     }
 
     @PostMapping("/ingest")

@@ -33,7 +33,9 @@ as a standalone pause in execution.
 
   - Remove nested subscription chains.
   - Clean up polling teardown and align page-state UX.
+
 - [done] Integrate Pulsar status component into Telemetry/Diagnostics view
+
   - Backend API endpoints configured for Docker networking; frontend displays Pulsar broker health alongside Kafka/RabbitMQ
   - Mission outcome: Human decision speed
   - Operator/science impact: real-time visibility into all messaging fabric brokers for early issue detection

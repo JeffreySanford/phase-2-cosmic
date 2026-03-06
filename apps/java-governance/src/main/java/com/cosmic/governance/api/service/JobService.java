@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.cosmic.governance.api.util.RedisMarshaller;
+import com.cosmic.governance.api.controller.BrokerEventsController;
 import jakarta.annotation.PostConstruct;
 import java.util.concurrent.Executors;
 
@@ -61,6 +62,7 @@ public class JobService {
     private final RedisMarshaller marshaller;
     private final AuditService auditService;
     private final io.micrometer.core.instrument.Counter qualityGateFailureCounter;
+    private final BrokerEventsController brokerEventsController;
     // in-memory fallback store used when RedisTemplate is not available
     private final ConcurrentHashMap<String, Object> inMemoryStore = new ConcurrentHashMap<>();
 
@@ -71,7 +73,8 @@ public class JobService {
     private final AtomicLong scannedCount = new AtomicLong(0);
     private final AtomicLong dispatchedCount = new AtomicLong(0);
 
-    public JobService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, @Autowired List<JobExecutor> executors, RedisMarshaller marshaller, AuditService auditService, io.micrometer.core.instrument.MeterRegistry registry) {
+    public JobService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, @Autowired List<JobExecutor> executors, RedisMarshaller marshaller, AuditService auditService, BrokerEventsController brokerEventsController, io.micrometer.core.instrument.MeterRegistry registry) {
+        this.brokerEventsController = brokerEventsController;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.marshaller = marshaller;
@@ -348,6 +351,15 @@ public class JobService {
         if (request.requestedBy() != null) eventDetails.put("requestedBy", request.requestedBy());
         eventDetails.put("executor", executorName);
         auditService.publishJobEvent(jobId, "submitted", eventDetails);
+        // also emit over SSE for any subscribed frontends
+        try {
+            brokerEventsController.publish(Map.of(
+                    "source", "governance-api",
+                    "jobId", jobId,
+                    "eventType", "submitted",
+                    "details", eventDetails
+            ));
+        } catch (Exception ignored) {}
         Map<String, Object> paramsObj = request.parameters() == null ? Map.<String, Object>of() : Map.copyOf(request.parameters());
         if (paramsObj.containsKey("executor")) executorName = String.valueOf(paramsObj.get("executor"));
         else if (request.workflow() != null && request.workflow().equalsIgnoreCase("ingest")) executorName = "tacc";

@@ -243,8 +243,9 @@ External/public-source quality additions:
 
 ```
 Stage 1 – Ingest (RAW)
-  Source:   ngVLA correlator → Kafka topic `ngvla.raw.visibilities`
-  Consumer: java-governance KafkaIngestListener
+  Source:   ngVLA correlator → streaming brokers (`ngvla.raw.visibilities` topics/queues on Kafka, RabbitMQ, Pulsar)
+  Consumer: java-governance KafkaIngestListener, RabbitIngestListener, PulsarIngestListener
+    * **Note:** All three broker paths are now implemented with idempotent ingest, duplicate suppression, and DLQ forwarding.  Kafka, RabbitMQ and Pulsar are exercised by respective integration tests.
   Actions:  validate ArraySegment + frequency, checksum, write to raw/ on MinIO
   Output:   JobRecord (workflow=ingest, state=COMPLETED), DatasetManifest (processingLevel=RAW)
 
@@ -276,19 +277,19 @@ Stage 4 – Archive
 
 Extends `GET /api/v1/datasets` with query parameters:
 
-| Parameter         | Type     | Example      | Description                  |
-| ----------------- | -------- | ------------ | ---------------------------- |
-| `processingLevel` | enum     | `CAL`        | Filter by processing level   |
-| `arraySegment`    | string   | `Main`       | Filter by array segment      |
-| `workflow`        | string   | `image`      | Filter by producing workflow |
-| `startAfter`      | ISO-8601 | `2026-01-01` | Observation start after      |
-| `startBefore`     | ISO-8601 | `2026-06-01` | Observation start before     |
-| `minFreqGHz`      | float    | `1.2`        | Minimum frequency band       |
-| `maxFreqGHz`      | float    | `50.0`       | Maximum frequency band       |
-| `q`               | string   | `M31`        | Full-text search on metadata |
+| Parameter         | Type     | Example      | Description                      |
+| ----------------- | -------- | ------------ | -------------------------------- |
+| `processingLevel` | enum     | `CAL`        | Filter by processing level       |
+| `arraySegment`    | string   | `Main`       | Filter by array segment          |
+| `workflow`        | string   | `image`      | Filter by producing workflow     |
+| `startAfter`      | ISO-8601 | `2026-01-01` | Observation start after          |
+| `startBefore`     | ISO-8601 | `2026-06-01` | Observation start before         |
+| `minFreqGHz`      | float    | `1.2`        | Minimum frequency band           |
+| `maxFreqGHz`      | float    | `50.0`       | Maximum frequency band           |
+| `q`               | string   | `M31`        | Full-text search on metadata     |
 | `sourceName`      | string   | `VLASS`      | Filter by external/public source |
-| `providerName`    | string   | `NRAO`       | Filter by source provider |
-| `page` / `size`   | int      | `0` / `20`   | Pagination                   |
+| `providerName`    | string   | `NRAO`       | Filter by source provider        |
+| `page` / `size`   | int      | `0` / `20`   | Pagination                       |
 
 ### 6.2 Search backend options (evaluation)
 

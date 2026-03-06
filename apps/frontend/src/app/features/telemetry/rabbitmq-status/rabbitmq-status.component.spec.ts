@@ -23,10 +23,10 @@ describe("RabbitMQStatusComponent", () => {
 
   it("should display connected status", () => {
     const testStatus: RabbitMQStatus = {
-      status: 'connected',
-      connection: 'connected',
-      queues: { 'queue1': {}, 'queue2': {} },
-      exchanges: { 'exchange1': {} }
+      status: "connected",
+      connection: "connected",
+      queues: { queue1: {}, queue2: {} },
+      exchanges: { exchange1: {} },
     };
     component.status = testStatus;
     fixture.detectChanges();
@@ -37,10 +37,10 @@ describe("RabbitMQStatusComponent", () => {
 
   it("should handle empty queues and exchanges", () => {
     const testStatus: RabbitMQStatus = {
-      status: 'connected',
-      connection: 'connected',
+      status: "connected",
+      connection: "connected",
       queues: {},
-      exchanges: {}
+      exchanges: {},
     };
     component.status = testStatus;
     fixture.detectChanges();
@@ -51,8 +51,8 @@ describe("RabbitMQStatusComponent", () => {
 
   it("should handle undefined queues and exchanges", () => {
     const testStatus: RabbitMQStatus = {
-      status: 'disconnected',
-      connection: 'disconnected'
+      status: "disconnected",
+      connection: "disconnected",
     };
     component.status = testStatus;
     fixture.detectChanges();
@@ -63,13 +63,13 @@ describe("RabbitMQStatusComponent", () => {
 
   it("should display error status", () => {
     const testStatus: RabbitMQStatus = {
-      status: 'error',
-      connection: 'error',
-      error: 'Connection timeout'
+      status: "error",
+      connection: "error",
+      error: "Connection timeout",
     };
     component.status = testStatus;
     fixture.detectChanges();
 
-    expect(component.status.error).toBe('Connection timeout');
+    expect(component.status.error).toBe("Connection timeout");
   });
 });

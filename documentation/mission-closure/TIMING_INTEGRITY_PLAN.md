@@ -39,9 +39,9 @@ Current platform risk:
 
 1. Quality gate enforcement
 
-- Add `DQ-TIM-*` rules to `DATA_QUALITY_STANDARDS.md`. *(completed)*
-- Enforce maximum allowed drift/offset per processing level. *(implemented in `JobService.transition`)*
-- Block SCI promotion on timing-budget violation with `etl_quality_gate_failed`. *(unit and controller tests added)*
+- Add `DQ-TIM-*` rules to `DATA_QUALITY_STANDARDS.md`. _(completed)_
+- Enforce maximum allowed drift/offset per processing level. _(implemented in `JobService.transition`)_
+- Block SCI promotion on timing-budget violation with `etl_quality_gate_failed`. _(unit and controller tests added)_
 
 1. Runtime observability
 

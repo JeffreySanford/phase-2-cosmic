@@ -95,7 +95,12 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // prototype status data for Pulsar component
   pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
-  rabbitMQStatus: RabbitMQStatus = { status: 'unknown', connection: 'unknown', queues: {}, exchanges: {} };
+  rabbitMQStatus: RabbitMQStatus = {
+    status: "unknown",
+    connection: "unknown",
+    queues: {},
+    exchanges: {},
+  };
   lastUpdated: number | null = null;
   stats: { min: number; max: number; avg: number; p95: number } = {
     min: 0,
@@ -196,7 +201,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       this.pulsarStatus = {
         brokers: status.brokers,
         topics: status.topics,
-        partitions: status.partitions
+        partitions: status.partitions,
       };
     });
   }
@@ -782,12 +787,12 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private fetchPulsarStatus(): void {
-    this.http.get<PulsarStatus>('/api/v1/pulsar/status').subscribe(
+    this.http.get<PulsarStatus>("/api/v1/pulsar/status").subscribe(
       (status: PulsarStatus) => {
         this.pulsarStatus = {
           brokers: status.brokers || 0,
           topics: status.topics || 0,
-          partitions: status.partitions || 0
+          partitions: status.partitions || 0,
         };
       },
       () => {
@@ -798,24 +803,24 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private fetchRabbitMQStatus(): void {
-    this.http.get<RabbitMQStatus>('/api/v1/rabbitmq/status').subscribe(
+    this.http.get<RabbitMQStatus>("/api/v1/rabbitmq/status").subscribe(
       (status: RabbitMQStatus) => {
         this.rabbitMQStatus = {
-          status: status.status || 'unknown',
-          connection: status.connection || 'unknown',
+          status: status.status || "unknown",
+          connection: status.connection || "unknown",
           queues: status.queues || {},
           exchanges: status.exchanges || {},
-          error: status.error
+          error: status.error,
         };
       },
       () => {
         // Set to disconnected on error
         this.rabbitMQStatus = {
-          status: 'error',
-          connection: 'error',
+          status: "error",
+          connection: "error",
           queues: {},
           exchanges: {},
-          error: 'Connection failed'
+          error: "Connection failed",
         };
       }
     );
