@@ -53,6 +53,7 @@ class GovernanceControllerTest extends AbstractRedisTest {
                 {
                   "workflow": "casa-imaging",
                   "datasetId": "VLASS_J1347+1217",
+                  "lineage": {"parentJobId":"orig-1"},
                   "parameters": {"weighting": "briggs"},
                   "requestedBy": "integration-test"
                 }
@@ -75,6 +76,11 @@ class GovernanceControllerTest extends AbstractRedisTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.jobId").value(jobId))
                 .andExpect(jsonPath("$.status").value("QUEUED"));
+
+        // lineage endpoint returns the parentJobId value
+        mockMvc.perform(get("/api/v1/jobs/" + jobId + "/lineage"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parentJobId").value("orig-1"));
     }
 
     @Test

@@ -68,6 +68,26 @@ services:
       timeout: 5s
       retries: 5
 
+  pulsar:
+    image: apachepulsar/pulsar:3.2.4
+    command:
+      - /bin/bash
+      - -c
+      - bin/pulsar standalone
+    ports:
+      - "6650:6650"
+      - "8085:8080"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:8080/admin/v2/clusters"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
   minio:
     image: minio/minio:latest
     command: server /data

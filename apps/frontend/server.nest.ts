@@ -28,6 +28,16 @@ import { Request, Response } from "express";
 import { spawn, type ChildProcess } from "child_process";
 
 type LoadProfilePct = 10 | 25 | 50 | 100;
+type TopologyNode = {
+  id: string;
+  label: string;
+  group: "app" | "infra" | "ngvla";
+};
+type TopologyLink = {
+  source: string;
+  target: string;
+  value?: number;
+};
 
 type RuntimeProfileSpec = {
   workers: number;
@@ -463,9 +473,97 @@ export class AppController {
     throw lastError ?? new Error("fetch_failed");
   }
 
+  private governanceBaseCandidates(): string[] {
+    const governanceBase =
+      process.env["GOVERNANCE_API_URL"] || "http://127.0.0.1:8082";
+    return this.buildBaseCandidates(governanceBase);
+  }
+
+  private topologyPayload(): { nodes: TopologyNode[]; links: TopologyLink[] } {
+    return {
+      nodes: [
+        { id: "backend", label: "Nest SSR", group: "app" },
+        { id: "frontend", label: "Angular Frontend", group: "app" },
+        { id: "java-governance", label: "Java Governance", group: "app" },
+        { id: "java-ingest", label: "Java Ingest", group: "app" },
+        { id: "data-generator", label: "Data Generator", group: "app" },
+        { id: "kafka", label: "Kafka", group: "infra" },
+        { id: "pulsar", label: "Pulsar", group: "infra" },
+        { id: "rabbitmq", label: "RabbitMQ", group: "infra" },
+        { id: "redis", label: "Redis", group: "infra" },
+        { id: "minio", label: "MinIO", group: "infra" },
+        { id: "prom", label: "Prometheus", group: "infra" },
+        { id: "grafana", label: "Grafana", group: "infra" },
+        { id: "loki", label: "Loki", group: "infra" },
+        { id: "alertmanager", label: "Alertmanager", group: "infra" },
+        { id: "nginx", label: "NGINX (static)", group: "infra" },
+        { id: "zookeeper", label: "Zookeeper", group: "infra" },
+        { id: "array-main", label: "Main Array (214 x 18m)", group: "ngvla" },
+        { id: "array-lbl", label: "Long Baseline (19 x 6m)", group: "ngvla" },
+        { id: "array-sba", label: "SBA (19 x 18m)", group: "ngvla" },
+      ],
+      links: [
+        { source: "frontend", target: "backend" },
+        { source: "frontend", target: "nginx" },
+        { source: "backend", target: "java-governance" },
+        { source: "backend", target: "prom" },
+        { source: "data-generator", target: "pulsar" },
+        { source: "data-generator", target: "kafka" },
+        { source: "data-generator", target: "array-main" },
+        { source: "data-generator", target: "array-lbl" },
+        { source: "data-generator", target: "array-sba" },
+        { source: "pulsar", target: "kafka" },
+        { source: "zookeeper", target: "kafka" },
+        { source: "rabbitmq", target: "java-governance" },
+        { source: "java-governance", target: "kafka" },
+        { source: "java-governance", target: "minio" },
+        { source: "java-governance", target: "redis" },
+        { source: "kafka", target: "java-ingest" },
+        { source: "prom", target: "grafana" },
+        { source: "prom", target: "alertmanager" },
+        { source: "loki", target: "grafana" },
+        { source: "array-main", target: "minio", value: 3 },
+        { source: "array-lbl", target: "minio", value: 2 },
+        { source: "array-sba", target: "minio", value: 2 },
+      ],
+    };
+  }
+
   @Get("/api/env")
   getEnv() {
     return this.ssr.getPublicEnv();
+  }
+
+  @Get("/api/topology")
+  getTopology() {
+    return this.topologyPayload();
+  }
+
+  @Get("/api/metrics/topology")
+  async proxyTopologyMetrics(
+    @Res() res: Response
+  ): Promise<void> {
+    const targetUrls = this
+      .governanceBaseCandidates()
+      .map((b) => `${b}/api/v1/metrics/topology`);
+    try {
+      const upstream = await this.fetchWithFallback(
+        targetUrls,
+        { method: "GET" },
+        7000
+      );
+      const text = await upstream.text();
+      const ct = upstream.headers.get("content-type");
+      if (ct) res.setHeader("content-type", ct);
+      res.status(upstream.status).send(text);
+    } catch (e: any) {
+      console.error("Error proxying topology metrics:", e);
+      res.status(502).json({
+        error: "topology_metrics_proxy_error",
+        message: String(e),
+        targetsTried: targetUrls,
+      });
+    }
   }
 
   @Get("/api/proxy/prometheus")
@@ -1061,9 +1159,7 @@ export class AppController {
     @Req() req: Request,
     @Res() res: Response
   ): Promise<void> {
-    const governanceBase =
-      process.env["GOVERNANCE_API_URL"] || "http://127.0.0.1:8082";
-    const baseCandidates = this.buildBaseCandidates(governanceBase);
+    const baseCandidates = this.governanceBaseCandidates();
     const targetUrls = baseCandidates.map((b) => `${b}${req.originalUrl}`);
     try {
       const headers = new Headers();

@@ -30,13 +30,14 @@ import { DashboardComponent } from "./features/dashboard/dashboard.component";
 import { TopologyComponent } from "./features/topology/topology.component";
 import { TopologyInfoDialogComponent } from "./features/topology/topology-info-dialog.component";
 import { DiagnosticsComponent } from "./features/diagnostics/diagnostics.component";
-import { TelemetryComponent } from "./features/telemetry/telemetry.component";
+import { TelemetryModule } from "./features/telemetry/telemetry.module";
 import { PromqlCardComponent } from "./shared/promql-card/promql-card.component";
 import { SettingsComponent } from "./features/settings/settings.component";
 import { SettingsDialogComponent } from "./features/settings/settings-dialog.component";
 import { ViewerComponent } from "./features/viewer/viewer.component";
 import { JobsComponent } from "./features/jobs/jobs.component";
 import { JobsSubmitDialogComponent } from "./features/jobs/jobs-submit-dialog.component";
+import { JobsLineageEditorComponent } from "./features/jobs/jobs-lineage-editor.component";
 import { DatasetsComponent } from "./features/datasets/datasets.component";
 import { PageStateModule } from "./shared/page-state/page-state.module";
 import { StatusBandModule } from "./shared/status-band/status-band.module";
@@ -57,13 +58,14 @@ import { ProvenancePanelModule } from "./shared/provenance-panel/provenance-pane
     TopologyComponent,
     TopologyInfoDialogComponent,
     DiagnosticsComponent,
-    TelemetryComponent,
+    // telemetry components moved into feature module
     PromqlCardComponent,
     SettingsComponent,
     SettingsDialogComponent,
     ViewerComponent,
     JobsComponent,
     JobsSubmitDialogComponent,
+    JobsLineageEditorComponent,
     DatasetsComponent,
   ],
   imports: [
@@ -83,12 +85,14 @@ import { ProvenancePanelModule } from "./shared/provenance-panel/provenance-pane
     MatMenuModule,
     MatInputModule,
     MatIconModule,
+    MatCardModule,
     MatDialogModule,
     MatTabsModule,
     PageStateModule,
     StatusBandModule,
     DisclaimerBannerModule,
     ProvenancePanelModule,
+    TelemetryModule,
   ],
   providers: [],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

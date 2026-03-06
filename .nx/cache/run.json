@@ -1,40 +1,18 @@
 {
   "run": {
-    "command": "nx run-many --target=test --all --configuration=ci --parallel=false",
-    "startTime": "2026-03-05T21:50:18.001Z",
-    "endTime": "2026-03-05T21:50:29.493Z",
+    "command": "nx run frontend-e2e:e2e",
+    "startTime": "2026-03-06T03:00:25.183Z",
+    "endTime": "2026-03-06T03:00:54.313Z",
     "inner": false
   },
   "tasks": [
     {
-      "taskId": "ui-theme:test:ci",
-      "target": "test",
-      "projectName": "ui-theme",
-      "hash": "1235793812954432162",
-      "startTime": "2026-03-05T21:50:18.056Z",
-      "endTime": "2026-03-05T21:50:18.065Z",
-      "params": "",
-      "cacheStatus": "local-cache-hit",
-      "status": 0
-    },
-    {
-      "taskId": "frontend:test:ci",
-      "target": "test",
-      "projectName": "frontend",
-      "hash": "7597601342383614601",
-      "startTime": "2026-03-05T21:50:18.073Z",
-      "endTime": "2026-03-05T21:50:28.734Z",
-      "params": "",
-      "cacheStatus": "cache-miss",
-      "status": 0
-    },
-    {
-      "taskId": "java-governance:test",
-      "target": "test",
-      "projectName": "java-governance",
-      "hash": "3135753532747001878",
-      "startTime": "2026-03-05T21:50:28.750Z",
-      "endTime": "2026-03-05T21:50:29.490Z",
+      "taskId": "frontend-e2e:e2e",
+      "target": "e2e",
+      "projectName": "frontend-e2e",
+      "hash": "14313400618460895252",
+      "startTime": "2026-03-06T03:00:25.189Z",
+      "endTime": "2026-03-06T03:00:54.308Z",
       "params": "",
       "cacheStatus": "cache-miss",
       "status": 0

@@ -72,12 +72,27 @@
     <!-- submit now handled via dialog -->
 
     <div *ngIf="selectedJob" class="detail">
-      <h3>Job: {{ selectedJob.jobId }}</h3>
-      <div>Workflow: {{ selectedJob.workflow }}</div>
-      <div>Status: {{ selectedJob.status }}</div>
-      <div>Created: {{ selectedJob.createdAt | date:'medium' }}</div>
-      <div>Updated: {{ selectedJob.updatedAt | date:'medium' }}</div>
-      <pre class="payload">{{ selectedJob.parameters | json }}</pre>
+      <mat-tab-group>
+        <mat-tab label="Details">
+          <div>
+            <h3>Job: {{ selectedJob.jobId }}</h3>
+            <div>Workflow: {{ selectedJob.workflow }}</div>
+            <div>Status: {{ selectedJob.status }}</div>
+            <div>Created: {{ selectedJob.createdAt | date:'medium' }}</div>
+            <div>Updated: {{ selectedJob.updatedAt | date:'medium' }}</div>
+            <pre class="payload">{{ selectedJob.parameters | json }}</pre>
+          </div>
+        </mat-tab>
+        <mat-tab label="Lineage">
+          <div style="margin-top:8px;">
+            <app-jobs-lineage-editor
+              [lineage]="selectedJob.lineage"
+              (lineageChange)="selectedJob.lineage = $event"
+            ></app-jobs-lineage-editor>
+            <button mat-stroked-button color="primary" (click)="saveLineage()" style="margin-top:8px;">Save</button>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
 
       <div style="margin-top:8px;">
         <button mat-stroked-button (click)="fetchLogs(selectedJob.jobId)">Refresh Logs</button>

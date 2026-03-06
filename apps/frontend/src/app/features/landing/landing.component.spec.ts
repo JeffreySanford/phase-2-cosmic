@@ -19,6 +19,8 @@ class StubSidebar {
 }
 
 class StubJobsService {
+  lineage: Record<string,unknown> = { parentJobId: 'stub' };
+  getLineage = jest.fn().mockReturnValue(of(this.lineage));
   list() {
     return of([
       { jobId: "j-1", workflow: "simulate", status: "RUNNING" },

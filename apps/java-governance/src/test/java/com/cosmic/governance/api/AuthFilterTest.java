@@ -22,6 +22,15 @@ class AuthFilterTest {
     @Autowired
     private MockMvc mockMvc;
 
+    // stub policy enforcer that only rejects a token value of "bad"
+    @org.springframework.boot.test.context.TestConfiguration
+    static class TestConfig {
+        @org.springframework.context.annotation.Bean
+        public com.cosmic.governance.config.PolicyEnforcer policyEnforcer() {
+            return (token, req) -> !"bad".equals(token);
+        }
+    }
+
     @Test
     void requestsWithoutHeaderAreRejected() throws Exception {
         mockMvc.perform(get("/api/v1/health").accept(MediaType.APPLICATION_JSON))
@@ -34,5 +43,12 @@ class AuthFilterTest {
         mockMvc.perform(get("/api/v1/health").header("Authorization", "Bearer foo"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ok"));
+    }
+
+    @Test
+    void requestsWithPolicyRejectedTokenAreForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/health").header("Authorization", "Bearer bad"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("forbidden"));
     }
 }

@@ -1,0 +1,10 @@
+<div class="lineage-list">
+  <div class="row" *ngFor="let e of entries; let i = index">
+    <input [(ngModel)]="e.key" placeholder="key" />
+    <input [(ngModel)]="e.value" placeholder="value" />
+    <button mat-icon-button color="warn" aria-label="Remove" (click)="remove(i)">
+      <mat-icon>delete</mat-icon>
+    </button>
+  </div>
+  <button mat-button (click)="add()">Add entry</button>
+</div>

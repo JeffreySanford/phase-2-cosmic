@@ -175,6 +175,34 @@ test.describe("Provenance Panel", () => {
   });
 
   test.describe("dataset creation with provenance", () => {
+    test("should create dataset and display provenance panel via API manifest", async ({
+      page,
+    }) => {
+      // create dataset directly through API with provenance metadata
+      const data = {
+        name: `E2E Manifest ${Date.now()}`,
+        description: "Dataset created with manifest metadata",
+        metadata: {
+          workflow: "demo",
+          jobId: "job-manifest-123",
+          parameters: { manifest: { job: "demo1", version: 1 } },
+        },
+      };
+      await page.request.post(`${baseUrl}/api/v1/datasets`, { data });
+
+      await page.goto(`${baseUrl}/datasets?e2e=1`);
+      await page.waitForSelector("app-provenance-panel", { timeout: 10000 });
+
+      // expand first panel and inspect parameters code
+      const header = page.locator(".provenance-panel__header").first();
+      await header.click();
+      const codeBlock = page.locator(".provenance-panel__code").first();
+      const codeText = await codeBlock.textContent();
+      expect(codeText).toContain('"manifest"');
+      expect(codeText).toContain('"job":"demo1"');
+      expect(codeText).toContain('"version":1');
+    });
+
     test("should create dataset and display provenance panel", async ({
       page,
     }) => {

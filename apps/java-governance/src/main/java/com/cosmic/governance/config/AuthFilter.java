@@ -32,6 +32,10 @@ public class AuthFilter extends OncePerRequestFilter {
     @Autowired
     private org.springframework.core.env.Environment env;
 
+    // optional hook, may be null in tests or dev mode
+    @Autowired(required = false)
+    private PolicyEnforcer policyEnforcer;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -48,7 +52,52 @@ public class AuthFilter extends OncePerRequestFilter {
             response.getWriter().write("{\"error\":\"unauthorized\"}");
             return;
         }
-        // TODO: add token validation/claims extraction or policy checks here
+
+        // strip off the bearer prefix and validate basic structure
+        String token = authHeader;
+        if (token.toLowerCase().startsWith("bearer ")) {
+            token = token.substring(7).trim();
+        }
+
+        if (token.isEmpty()) {
+            log.debug("rejecting request due to empty bearer token");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"unauthorized\"}");
+            return;
+        }
+
+        // try to extract JWT-style claims if present; failure is non-fatal
+        try {
+            String[] parts = token.split("\\.");
+            if (parts.length >= 2) {
+                String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+                org.json.JSONObject claims = new org.json.JSONObject(payload);
+                request.setAttribute("auth.claims", claims.toMap());
+            }
+        } catch (IllegalArgumentException | org.json.JSONException ex) {
+            // not a JWT, ignore
+            log.debug("could not parse token as JWT for claim extraction", ex);
+        }
+
+        // policy hook allows production components to enforce rules
+        if (policyEnforcer != null) {
+            boolean permitted;
+            try {
+                permitted = policyEnforcer.permit(token, request);
+            } catch (Exception e) {
+                log.warn("policy enforcer threw, rejecting request", e);
+                permitted = false;
+            }
+            if (!permitted) {
+                log.debug("policy enforcer rejected token");
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"forbidden\"}");
+                return;
+            }
+        }
+
         filterChain.doFilter(request, response);
     }
 }

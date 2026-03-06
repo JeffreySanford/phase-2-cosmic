@@ -9,7 +9,7 @@
     "antennaClass": "18m",
     "baselineRange": {
       "minimum": 26,
-      "maximum": 1005000,
+      "maximum": 1005001,
       "unit": "meters"
     },
     "geographicExtent": "Southwestern United States",

@@ -61,9 +61,10 @@ jobs:
           chmod +x ./scripts/ci/preflight.sh || true
           ./scripts/ci/preflight.sh
 
-      - name: Run Maven tests (no skipping)
+      - name: Run Maven tests (no skipping, with containers)
         working-directory: apps/java-governance
-        run: mvn -B test
+        # this execution includes the ProvenanceE2ETest added in Sprint 2
+        run: mvn -B test -Pwith-containers
 
       - name: Upload Surefire reports
         if: always()

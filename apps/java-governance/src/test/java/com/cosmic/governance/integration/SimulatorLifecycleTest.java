@@ -32,7 +32,7 @@ public class SimulatorLifecycleTest extends AbstractRedisTest {
     @Test
     public void simulatorJobShouldPassThroughRunningState() throws Exception {
         // submit a job and verify state transitions produced by the simulator executor
-        JobSubmitRequest req = new JobSubmitRequest("foo", "ds", Map.of(), "tester");
+        JobSubmitRequest req = new JobSubmitRequest("foo", "ds", Map.of(), null, null, "tester");
         var resp = jobService.submit(req);
         assertThat(resp).isNotNull();
         String jobId = resp.jobId();

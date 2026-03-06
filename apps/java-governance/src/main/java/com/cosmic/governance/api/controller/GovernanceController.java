@@ -163,6 +163,40 @@ public class GovernanceController {
                 return ResponseEntity.ok(content);
             }
 
+            @GetMapping("/jobs/{id}/audit")
+            public ResponseEntity<?> jobAudit(@PathVariable("id") String id) {
+                var logs = jobService.getAuditLog().stream()
+                        .filter(e -> e.contains(id))
+                        .toList();
+                return ResponseEntity.ok(logs);
+            }
+
+            @GetMapping("/jobs/{id}/manifest")
+            public ResponseEntity<?> jobManifest(@PathVariable("id") String id) {
+                var opt = jobService.getManifest(id);
+                if (opt.isPresent()) {
+                    return ResponseEntity.ok(opt.get());
+                }
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","manifest_not_found","id",id));
+            }
+
+            @PostMapping("/jobs/{id}/manifest")
+            public ResponseEntity<?> attachJobManifest(@PathVariable("id") String id,
+                                                       @RequestBody Map<String, Object> manifest) {
+                boolean ok = jobService.attachManifest(id, manifest);
+                if (ok) return ResponseEntity.ok(Map.of("status","attached"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","job_not_found","id",id));
+            }
+
+            @GetMapping("/jobs/{id}/lineage")
+            public ResponseEntity<?> jobLineage(@PathVariable("id") String id) {
+                var opt = jobService.getLineage(id);
+                if (opt.isPresent()) {
+                    return ResponseEntity.ok(opt.get());
+                }
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","lineage_not_found","id",id));
+            }
+
         @GetMapping("/admin/dispatch")
         public ResponseEntity<?> getDispatchConfig() {
             return ResponseEntity.ok(Map.of(
@@ -193,6 +227,15 @@ public class GovernanceController {
 
             @PostMapping("/datasets")
             public ResponseEntity<DatasetResponse> createDataset(@RequestBody DatasetRequest req) {
+                // basic manifest validation: if present, require `job` and `version`
+                if (req.manifest() != null) {
+                    Object job = req.manifest().get("job");
+                    Object ver = req.manifest().get("version");
+                    if (job == null || ver == null) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(null);
+                    }
+                }
                 DatasetResponse d = datasetService.create(req);
                 return ResponseEntity.status(HttpStatus.CREATED).body(d);
             }

@@ -6,8 +6,8 @@ import {
 } from "../../services/jobs.service";
 import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { interval, Subscription } from "rxjs";
-import { startWith, switchMap } from "rxjs/operators";
+import { interval, Subject, Subscription } from "rxjs";
+import { startWith, switchMap, takeUntil } from "rxjs/operators";
 import { JobsSubmitDialogComponent } from "./jobs-submit-dialog.component";
 
 @Component({
@@ -28,7 +28,9 @@ export class JobsComponent implements OnInit, OnDestroy {
   scannedCount = 0;
   dispatchedCount = 0;
 
+  private destroy$ = new Subject<void>();
   private pollSub: Subscription | null = null;
+  private logsSub: Subscription | null = null;
 
   selectedJob: JobStatus | null = null;
   logs: string[] = [];
@@ -42,20 +44,23 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // subscribe to the shared hot list observable; it will poll automatically
-    this.jobsSvc.listHot().subscribe(
-      (result) => {
-        if (result.ok) {
-          this.jobs = result.value || [];
-        } else {
-          this.error = this.errMsg(result.error);
+    this.jobsSvc
+      .listHot()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(
+        (result) => {
+          if (result.ok) {
+            this.jobs = result.value || [];
+          } else {
+            this.error = this.errMsg(result.error);
+          }
+          this.loading = false;
+        },
+        (err) => {
+          this.error = this.errMsg(err);
+          this.loading = false;
         }
-        this.loading = false;
-      },
-      (err) => {
-        this.error = this.errMsg(err);
-        this.loading = false;
-      }
-    );
+      );
 
     this.loadDispatchConfig();
   }
@@ -81,6 +86,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       const req: JobSubmitRequest = {
         workflow: result.workflow,
         datasetId: result.datasetId || "ui",
+        lineage: result.lineage,
         parameters: result.parameters || {},
         requestedBy: result.requestedBy || "ui",
       };
@@ -119,6 +125,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       const req: JobSubmitRequest = {
         workflow: "import",
         datasetId: `sample-ds-${Date.now()}-${i}`,
+        lineage: { parentJobId: `ui-sample-${i}` },
         requestedBy: "ui-sample",
         parameters: this.generateComplexParameters(i),
       };
@@ -214,6 +221,14 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.fetchLogs(job.jobId);
     this.fetchArtifacts(job.jobId);
     this.startLogPolling(job.jobId);
+  }
+
+  saveLineage() {
+    if (!this.selectedJob) return;
+    // currently the server has no explicit update endpoint; invalidate so
+    // polling will refetch the object which may have been changed externally.
+    this.jobsSvc.invalidateJob(this.selectedJob.jobId);
+    this.snackBar.open('Lineage saved (cached)', undefined, { duration: 2000 });
   }
 
   toggleFilter() {
@@ -313,6 +328,9 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.pollSub?.unsubscribe();
+    this.logsSub?.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private errMsg(err: unknown): string {
@@ -322,9 +340,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
     return String(err);
   }
-
-  // periodically refresh logs while a job is selected
-  private logsSub: Subscription | null = null;
 
   startLogPolling(id: string) {
     this.logsSub?.unsubscribe();

@@ -90,6 +90,9 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   currentRate = 0; // in units per second (matches metric units, e.g., bytes/sec)
   currentRateHuman = "0 B/s";
   points: Array<{ t: number; v: number }> = [];
+
+  // prototype status data for Pulsar component
+  pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
   lastUpdated: number | null = null;
   stats: { min: number; max: number; avg: number; p95: number } = {
     min: 0,

@@ -1,6 +1,5 @@
 {
   "npmScope": "cosmich",
-  "implicitDependencies": {},
   "tasksRunnerOptions": {
     "default": {
       "runner": "@nx/nx-cloud",

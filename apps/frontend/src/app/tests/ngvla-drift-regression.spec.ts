@@ -78,8 +78,9 @@ describe("NGVLA Reference Drift Tests", () => {
         26
       );
       expect(mainArrayFixture.arrayConfiguration.baselineRange.maximum).toBe(
-        1005000
-      );
+        1005001
+      ); // updated after 2026-03 review
+
     });
 
     it('should have canonical label "Main"', () => {

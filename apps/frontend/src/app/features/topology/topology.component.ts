@@ -1040,6 +1040,9 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
       { id: "backend", label: "Nest SSR", group: "app" },
       { id: "frontend", label: "Angular Frontend", group: "app" },
       { id: "minio", label: "MinIO", group: "infra" },
+      { id: "pulsar", label: "Pulsar", group: "infra" },
+      { id: "rabbitmq", label: "RabbitMQ", group: "infra" },
+      { id: "redis", label: "Redis", group: "infra" },
       { id: "prom", label: "Prometheus", group: "infra" },
       { id: "grafana", label: "Grafana", group: "infra" },
       { id: "loki", label: "Loki", group: "infra" },
@@ -1057,7 +1060,11 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   private mockLinks(): TopoLink[] {
     return [
       // Infrastructure connections
+      { source: "backend", target: "java-governance" },
       { source: "kafka", target: "backend" },
+      { source: "pulsar", target: "kafka" },
+      { source: "rabbitmq", target: "java-governance" },
+      { source: "java-governance", target: "redis" },
       { source: "backend", target: "frontend" },
       { source: "frontend", target: "prom" },
       { source: "prom", target: "grafana" },
@@ -1068,6 +1075,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
       { source: "frontend", target: "nginx" },
       // ngVLA array segment connections
       { source: "dg-main", target: "kafka" },
+      { source: "dg-main", target: "pulsar" },
       { source: "dg-main", target: "array-main" },
       { source: "dg-main", target: "array-lbl" },
       { source: "dg-main", target: "array-sba" },

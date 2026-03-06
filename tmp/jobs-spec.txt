@@ -1,0 +1,133 @@
+[isolated-plugin] spawned worker for "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\js" (pid: 55520, socket: \\.\pipe\nx\C:\Users\Sanford\AppData\Local\Temp\plugin16460-0-305.0978.sock)
+[isolated-plugin] spawned worker for "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\package-json" (pid: 38704, socket: \\.\pipe\nx\C:\Users\Sanford\AppData\Local\Temp\plugin16460-1-310.4332.sock)
+[isolated-plugin] spawned worker for "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\project-json\build-nodes\project-json" (pid: 57108, socket: \\.\pipe\nx\C:\Users\Sanford\AppData\Local\Temp\plugin16460-2-313.9847.sock)
+[isolated-plugin] spawned worker for "@nx/cypress/plugin" (pid: 60684, socket: \\.\pipe\nx\C:\Users\Sanford\AppData\Local\Temp\plugin16460-3-326.945.sock)
+[isolated-plugin] spawned worker for "@nx/eslint/plugin" (pid: 39140, socket: \\.\pipe\nx\C:\Users\Sanford\AppData\Local\Temp\plugin16460-4-330.9761.sock)
+[plugin-worker] "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\js" (pid: 55520) listening on \\.\pipe\nx\C:\Users\Sanford\AppData\Local\Temp\plugin16460-0-305.0978.sock
+[plugin-worker] "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\package-json" (pid: 38704) listening on \\.\pipe\nx\C:\Users\Sanford\AppData\Local\Temp\plugin16460-1-310.4332.sock
+[isolated-plugin] connected to worker for "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\js" (pid: 55520) after 1 attempt(s)
+[plugin-worker] "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\js" (pid: 55520) connected
+[plugin-worker] "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\project-json\build-nodes\project-json" (pid: 57108) listening on \\.\pipe\nx\C:\Users\Sanford\AppData\Local\Temp\plugin16460-2-313.9847.sock
+[plugin-worker] "@nx/cypress/plugin" (pid: 60684) listening on \\.\pipe\nx\C:\Users\Sanford\AppData\Local\Temp\plugin16460-3-326.945.sock
+[plugin-worker] "@nx/eslint/plugin" (pid: 39140) listening on \\.\pipe\nx\C:\Users\Sanford\AppData\Local\Temp\plugin16460-4-330.9761.sock
+[isolated-plugin] connected to worker for "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\package-json" (pid: 38704) after 1 attempt(s)
+[isolated-plugin] connected to worker for "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\project-json\build-nodes\project-json" (pid: 57108) after 1 attempt(s)
+[isolated-plugin] connected to worker for "@nx/cypress/plugin" (pid: 60684) after 1 attempt(s)
+[isolated-plugin] connected to worker for "@nx/eslint/plugin" (pid: 39140) after 1 attempt(s)
+[plugin-worker] "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\package-json" (pid: 38704) connected
+[plugin-worker] "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\project-json\build-nodes\project-json" (pid: 57108) connected
+[plugin-worker] "@nx/eslint/plugin" (pid: 39140) connected
+[plugin-worker] "@nx/cypress/plugin" (pid: 60684) connected
+[plugin-worker] "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\js" (pid: 55520) loaded successfully
+[plugin-worker] "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\package-json" (pid: 38704) loaded successfully
+[plugin-worker] "C:\repos\phase-2-cosmic\node_modules\.pnpm\nx@22.5.2_@swc-node+registe_107c2c5feb7b0c812931f3639e3d97b4\node_modules\nx\src\plugins\project-json\build-nodes\project-json" (pid: 57108) loaded successfully
+[plugin-worker] "@nx/eslint/plugin" (pid: 39140) loaded successfully
+[plugin-worker] "@nx/cypress/plugin" (pid: 60684) loaded successfully
+[isolated-plugin] shutting down worker for "nx/core/project-json" after last hook
+[isolated-plugin] shutting down worker for "nx/core/package-json" after last hook
+[isolated-plugin] shutting down worker for "@nx/cypress/plugin" after last hook
+[isolated-plugin] shutting down worker for "@nx/eslint/plugin" after last hook
+[isolated-plugin] shutting down worker for "nx/js/dependencies-and-lockfile" after last hook
+[NX CLOUD] Verifying current cloud bundle
+[NX CLOUD] A local bundle currently exists:  {
+  version: '2603.05.9',
+  fullPath: 'C:\\repos\\phase-2-cosmic\\node_modules\\.cache\\nx\\cloud\\2603.05.9'
+}
+[NX CLOUD] Last verification was within the past 30 minutes, will not verify this time
+[NX CLOUD] Done:  C:\repos\phase-2-cosmic\node_modules\.cache\nx\cloud\2603.05.9
+[Nx Cloud Debug] Skipping foreground heartbeat since CI environment is not detected.
+[NX CLOUD] Verifying current cloud bundle
+[NX CLOUD] A local bundle currently exists:  {
+  version: '2603.05.9',
+  fullPath: 'C:\\repos\\phase-2-cosmic\\node_modules\\.cache\\nx\\cloud\\2603.05.9'
+}
+[NX CLOUD] Last verification was within the past 30 minutes, will not verify this time
+[NX CLOUD] Done:  C:\repos\phase-2-cosmic\node_modules\.cache\nx\cloud\2603.05.9
+[Nx Cloud Debug] Attempting to acquire filesystem lock with path:  C:\Users\Sanford\AppData\Local\Temp\client-instance-id.lock
+[Nx Cloud Debug] Failed to create folder lock at path: C:\Users\Sanford\AppData\Local\Temp\client-instance-id.lock
+[Nx Cloud] Unable to detect a VCS context from the environment.
+
+[7m[1m[38;5;214m NX [39m[22m[27m  [38;5;214mRunStart[39m
+
+
+{
+  "branch": null,
+  "runGroup": "5789e256672db432e3b2b5dc10c2e279e8e28155",
+  "ciExecutionId": null,
+  "ciExecutionEnv": "",
+  "hashes": [
+    "4017274202711745592"
+  ],
+  "machineInfo": {
+    "machineId": "c3X8GBzoATr3yOf79oimeA==",
+    "platform": "win32",
+    "version": "Windows 11 Pro",
+    "cpuCores": 24
+  },
+  "vcsContext": null,
+  "clientInstanceSource": "CLOUD_RUNNER",
+  "clientInstanceId": "d10fb3ce-1abb-4051-a129-1856f14cc4c2"
+}
+
+[Nx Cloud] Unable to detect a VCS context from the environment.
+
+[7m[1m[38;5;214m NX [39m[22m[27m  [38;5;214mRunStart[39m
+
+
+{
+  "branch": null,
+  "runGroup": "5789e256672db432e3b2b5dc10c2e279e8e28155",
+  "ciExecutionId": null,
+  "ciExecutionEnv": "",
+  "hashes": [
+    "4017274202711745592"
+  ],
+  "machineInfo": {
+    "machineId": "c3X8GBzoATr3yOf79oimeA==",
+    "platform": "win32",
+    "version": "Windows 11 Pro",
+    "cpuCores": 24
+  },
+  "vcsContext": null,
+  "clientInstanceSource": "CLOUD_RUNNER",
+  "clientInstanceId": "d10fb3ce-1abb-4051-a129-1856f14cc4c2"
+}
+
+
+[7m[1m[38;5;214m NX [39m[22m[27m  [38;5;214mConnection to Nx Cloud failed with status code 401[39m
+
+Invalid Credentials (Personal Access Token): The provided personal access token does not exist or is invalid.
+
+
+[7m[1m[38;5;214m NX [39m[22m[27m  [38;5;214mConnection to Nx Cloud failed with status code 401[39m
+
+Invalid Credentials (Personal Access Token): The provided personal access token does not exist or is invalid.
+
+
+[7m[1m[38;5;214m NX [39m[22m[27m  [38;5;214mNx Cloud: Cache miss 4017274202711745592.[39m
+
+
+[2m> [22m[2mnx run[22m frontend:test --testFile=apps/frontend/src/app/features/jobs/jobs.component.spec.ts
+
+
+[2m[31m[39m[22m
+
+[7m[1m[31m NX [39m[22m[27m  [31mRunning target [1mtest[22m for project frontend failed[39m
+
+[2mFailed tasks:[22m
+
+[2m-[22m frontend:test
+
+[2mHint: run the command with[22m --verbose [2mfor more details.[22m
+
+
+[7m[1m[38;5;214m NX [39m[22m[27m  [38;5;214mStoring terminal outputs for frontend:test with hash 4017274202711745592[39m
+
+
+[7m[1m[38;5;214m NX [39m[22m[27m  [38;5;214mTiming for storing artifacts to the remote cache: 0ms[39m
+
+
+[7m[1m[33m NX [39m[22m[27m  [33mNx Cloud encountered some problems[39m
+
+Invalid Credentials (Personal Access Token): The provided personal access token does not exist or is invalid. (code: 401)
+

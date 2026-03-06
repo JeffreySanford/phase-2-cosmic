@@ -1,0 +1,6 @@
+{
+  "name": "Test Dataset",
+  "description": "Created with manifest",
+  "metadata": {"foo":"bar"},
+  "manifest": {"job":"demo1","version":1}
+}

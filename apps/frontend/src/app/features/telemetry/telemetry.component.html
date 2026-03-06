@@ -59,6 +59,9 @@
       <button mat-stroked-button color="primary" (click)="exportCsv()">Export CSV</button>
       <span class="last-updated">Last: {{ lastUpdated ? (lastUpdated | date:'medium') : 'n/a' }}</span>
     </div>
+
+    <!-- pulsar status prototype -->
+    <app-pulsar-status [status]="pulsarStatus"></app-pulsar-status>
     <mat-tab-group [(selectedIndex)]="selectedVizTab" (selectedIndexChange)="onVizTabChanged()">
       <mat-tab label="Trend">
         <div class="chart" #chart></div>

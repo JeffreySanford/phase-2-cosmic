@@ -14,6 +14,7 @@ export interface JobsSubmitData {
 export class JobsSubmitDialogComponent implements OnInit {
   workflow = "import";
   payloadText = "";
+  lineageObj: Record<string, unknown> | undefined;
   datasetId = "";
   requestedBy = "";
   error: string | null = null;
@@ -97,9 +98,11 @@ export class JobsSubmitDialogComponent implements OnInit {
           return;
         }
       }
+      const lineage = this.lineageObj;
       this.dialogRef.close({
         workflow: this.workflow,
         datasetId: this.datasetId,
+        lineage,
         parameters,
         requestedBy: this.requestedBy,
       });

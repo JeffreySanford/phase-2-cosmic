@@ -17,6 +17,8 @@
     <input matInput [(ngModel)]="requestedBy" placeholder="your name or id" />
   </mat-form-field>
 
+  <app-jobs-lineage-editor [(lineage)]="lineageObj"></app-jobs-lineage-editor>
+
   <mat-form-field appearance="outline" style="width:100%">
     <mat-label>Parameters (JSON)</mat-label>
     <textarea matInput rows="8" [(ngModel)]="payloadText"></textarea>

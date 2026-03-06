@@ -23,10 +23,20 @@ module.exports = [
   },
   {
     files: ["**/*.ts", "**/*.tsx"],
-    rules: {},
+    rules: {
+      // disabling to avoid lint crash on inline Angular templates
+      "@typescript-eslint/ban-ts-comment": "off",
+    },
   },
   {
     files: ["**/*.js", "**/*.jsx"],
     rules: {},
+  },
+  {
+    // disable problematic rule for HTML templates (including inline-generated)
+    files: ["**/*.html"],
+    rules: {
+      "@typescript-eslint/ban-ts-comment": "off",
+    },
   },
 ];

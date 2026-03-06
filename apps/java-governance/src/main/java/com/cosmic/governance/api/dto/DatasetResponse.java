@@ -7,5 +7,6 @@ public record DatasetResponse(
         String name,
         String description,
         String createdAt,
-        Map<String, Object> metadata
+        Map<String, Object> metadata,
+        Map<String, Object> manifest
 ) {}

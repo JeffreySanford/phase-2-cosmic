@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -57,7 +58,7 @@ class JobServiceRecoverTest {
         String jobId = "test-job";
         JobRecord rec = new JobRecord(jobId, "wf", "ds", JobState.RUNNING,
                 Instant.now().toString(), Instant.now().toString(),
-                Map.of("executor", "simulator"), "tester");
+                Map.of("executor", "simulator"), null, "tester");
         service.putRaw("job:" + jobId, rec);
 
         service.completeStaleRunningJobs();
@@ -73,7 +74,7 @@ class JobServiceRecoverTest {
         String jobId = "queued-job";
         JobRecord rec = new JobRecord(jobId, "wf", "ds", JobState.QUEUED,
                 Instant.now().toString(), Instant.now().toString(),
-                Map.of("executor", "simulator"), "tester");
+                Map.of("executor", "simulator"), null, "tester");
         service.putRaw("job:" + jobId, rec);
 
         // run the dispatch scan manually
@@ -85,5 +86,19 @@ class JobServiceRecoverTest {
         JobRecord updated = marshaller.toJobRecord(o);
         assertThat(updated).isNotNull();
         assertThat(updated.getState()).isEqualTo(JobState.RUNNING);
+    }
+
+    @Test
+    void lineageStoredAndRetrieved() {
+        String jobId = "lineage-job";
+        Map<String,Object> params = Map.of("lineage", Map.of("parent", "p1"));
+        JobRecord rec = new JobRecord(jobId, "wf", "ds", JobState.QUEUED,
+                Instant.now().toString(), Instant.now().toString(),
+                params, null, "tester");
+        service.putRaw("job:" + jobId, rec);
+
+        Optional<Map<String,Object>> lin = service.getLineage(jobId);
+        assertThat(lin).isPresent();
+        assertThat(lin.get()).containsEntry("parent", "p1");
     }
 }

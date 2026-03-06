@@ -12,6 +12,7 @@
 - Foundation baseline established (frontend routes, governance API baseline, contracts, compose observability stack).
 - Phase 1, 1B, and 1C completion milestones are recorded.
 - Active roadmap execution is centered on Phase 2/2A/3/4 and PI-1 sprint sequencing.
+- Public-data candidate sources for ETL/viewer work are now documented in `documentation/public-data/PUBLIC_DATA_RESOURCES.md`.
 - Remaining frontend hardening is now carried inside adjacent roadmap work.
   See `FRONTEND_HARDENING_TRACKER.md` for the carry-forward cleanup list.
 
@@ -19,21 +20,26 @@
 
 ### Immediate
 
-- Finalize Sprint 1 Testcontainers scaffold and CI lane setup.
-- Complete deterministic provenance E2E implementation.
+- Complete deterministic provenance E2E implementation (now includes manifest verification and HTTP audit endpoint).
 - Close deferred docs-validation items from NGVLA fidelity track.
+- Begin frontend Jobs UX enhancements: surface lineage metadata and allow job submissions with parent references.
+- Kick off Pulsar status component prototype and integrate into Telemetry/Diagnostics views.
+- Define public-data integration slice: NRAO TAP metadata ingest, viewer seed imagery, and source attribution fields.
 
 ### High
 
 - Phase 2 streaming-to-governance integration with broker interruption/replay safety.
 - Phase 2A mission-critical closure (timing integrity, RFI loop, VO interoperability expansion, commissioning, DR policy).
-- Phase 3 frontend control-plane fidelity and Viewer Mode B rollout.
+- Phase 3 frontend control-plane fidelity, lineage/manifest display, and Pulsar component integration; Viewer Mode B rollout.
+- Phase 3 public-data viewer integration and source citation treatment for externally sourced datasets/images.
 
 ### Medium
 
 - Phase 4 reliability/security hardening (backpressure, rate limiting, auth, audit, SLO dashboards).
+- Quarterly NGVLA reference reviews to refresh citations and trigger drift-test updates (first review Mar 2026 completed).
 - Phase 5 HPC adapter path and compute-orchestration contract alignment.
 - Phase 6 ngVLA data architecture delivery (manifest, lineage, catalog, RBAC, analytics).
+- Phase 6 external-source registry and enrichment pipeline for `data.gov`/`NSF`/`NIST` metadata where mission-relevant.
 
 ### Low
 
@@ -44,10 +50,10 @@
 
 - Phase 2: Kafka/RabbitMQ/Pulsar integration parity, contract versioning, DLQ/replay runbooks, full test matrix.
 - Phase 2A: timing/frequency metadata gates, RFI model, TAP/ADQL/DataLink/SODA conformance, commissioning scenarios, DR drills.
-- Phase 3: governance-integrated UI lifecycle flows, route-state fidelity, diagnostics hardening, stress-profile UX standardization.
+- Phase 3: governance-integrated UI lifecycle flows, route-state fidelity, diagnostics hardening, stress-profile UX standardization, public-source citation rendering.
 - Phase 4: queue controls, authN/authZ enforcement, immutable audit strategy, load/failure resilience gates.
 - Phase 5: external compute adapter contracts, async dispatch, provenance-linked compute outputs.
-- Phase 6: canonical dataset manifest model, lineage chain APIs, dataset search/catalog, ETL quality validator, publication policy hooks.
+- Phase 6: canonical dataset manifest model, lineage chain APIs, dataset search/catalog, ETL quality validator, publication policy hooks, external-source registry/enrichment.
 - Ongoing tracks: testing coverage, documentation synchronization, messaging docs parity, quarterly performance benchmarks.
 
 ## Completed
@@ -59,6 +65,14 @@
 - Phase 1B: frontend orchestration baseline outcomes marked complete.
 - Phase 1C: NGVLA reference fidelity and demo automation outcomes marked complete (except explicitly deferred items moved to next phases).
 - Added performance publisher tooling and testing documentation baseline.
+- Sprint 1 Testcontainers scaffold and CI lane setup finalized (docker-compose for integration tests, Maven profile `with-containers`, new `ci-tests` workflow).
+  - Mission outcome: Reproducible science
+  - Operator/science impact: integration checks run automatically, reducing drift between local dev and CI
+  - Validation evidence: CI job executes container tests and passes
+- Provenance E2E skeleton added with audit-log polling (beginning Sprint 2).
+  - Mission outcome: Observatory continuity
+  - Operator/science impact: end-to-end metadata capture verified in early tests
+  - Validation evidence: `ProvenanceE2ETest` runs in CI and checks in-memory audit log
 
 ## INSTRUCTIONS
 
@@ -74,6 +88,7 @@
   5. Human decision speed
 - Keep roadmap runtime-synchronized; avoid documentation-only claims.
 - Favor contract-first integration and preserve migration safety with parallel transitional components when needed.
+- When external/public data is presented in the UI, prefer showing the authoritative source as subdued small text with a link when layout permits; if a surface cannot support it, preserve the source URL/identifier in metadata for drill-down views.
 - Required quality track expectations:
   - PR gate: lint/format/OpenAPI validation/unit tests/coverage/frontend smoke e2e/Java verify.
   - Integration track: Testcontainers-based broker+state dependencies, compose smoke, compatibility tests.
@@ -89,4 +104,5 @@
   - Mission: `docuentation/ngvla/NGVLA_MISSION_ALIGNMENT.md`, `docuentation/ngvla/MISSION_TO_CAPABILITY_TRACE.md`, `docuentation/ngvla/MISSION_GATES.md`
   - Data architecture: `docuentation/data/DATA_ARCHITECTURE.md`, `docuentation/ngvla/NGVLA_DATA_ARCHITECT_RESEARCH.md`
   - Mission closure: `docuentation/mission-closure/*.md`
+  - Public data planning: `documentation/public-data/PUBLIC_DATA_RESOURCES.md`
   <!-- markdownlint-enable MD013 -->

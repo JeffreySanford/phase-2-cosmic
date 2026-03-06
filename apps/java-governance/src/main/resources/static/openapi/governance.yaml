@@ -194,24 +194,62 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JobStatusResponse"
-        "400":
-          description: Cannot cancel (invalid state or request)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Job not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-        "409":
-          description: Version mismatch
+        "400":
+          description: Validation error
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/jobs/{id}/audit:
+    get:
+      operationId: getJobAudit
+      tags: [Jobs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: list of audit messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/v1/jobs/{id}/lineage:
+    get:
+      operationId: getJobLineage
+      tags: [Jobs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lineage metadata for job
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "404":
+          description: Lineage not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/v1/jobs/{id}/retry:
     post:
       operationId: retryJob
@@ -321,8 +359,7 @@ components:
           minLength: 1
         parameters:
           type: object
-          additionalProperties:
-            type: string
+          additionalProperties: true
         requestedBy:
           type: string
       additionalProperties: false
@@ -381,8 +418,13 @@ components:
           format: date-time
         parameters:
           type: object
-          additionalProperties:
-            type: string
+          additionalProperties: true
+        lineage:
+          type: object
+          description: "Optional lineage metadata stored in job parameters."
+          additionalProperties: true
+        manifest:
+          $ref: "#/components/schemas/Manifest"
         requestedBy:
           type: string
         version:

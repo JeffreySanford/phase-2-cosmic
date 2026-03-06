@@ -10,6 +10,7 @@ public class JobRecord {
     private String createdAt;
     private String updatedAt;
     private Map<String, Object> parameters;
+    private Map<String, Object> manifest; // optional job manifest metadata
     private String requestedBy;
     // optimistic lock version counter; incremented on each update
     private long version;
@@ -19,7 +20,7 @@ public class JobRecord {
     }
 
     public JobRecord(String jobId, String workflow, String datasetId, JobState state, String createdAt, String updatedAt,
-                     Map<String, Object> parameters, String requestedBy) {
+                     Map<String, Object> parameters, Map<String, Object> manifest, String requestedBy) {
         this.jobId = jobId;
         this.workflow = workflow;
         this.datasetId = datasetId;
@@ -27,6 +28,7 @@ public class JobRecord {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.parameters = parameters;
+        this.manifest = manifest;
         this.requestedBy = requestedBy;
         this.version = 0L;
     }
@@ -46,6 +48,8 @@ public class JobRecord {
     public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
     public Map<String, Object> getParameters() { return parameters; }
     public void setParameters(Map<String, Object> parameters) { this.parameters = parameters; }
+    public Map<String, Object> getManifest() { return manifest; }
+    public void setManifest(Map<String, Object> manifest) { this.manifest = manifest; }
     public String getRequestedBy() { return requestedBy; }
     public void setRequestedBy(String requestedBy) { this.requestedBy = requestedBy; }
 

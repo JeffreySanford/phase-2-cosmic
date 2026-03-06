@@ -11,6 +11,8 @@ public record JobStatusResponse(
         String createdAt,
         String updatedAt,
         Map<String, Object> parameters,
+        Map<String, Object> lineage,
+        Map<String, Object> manifest,
         String requestedBy,
         long version
 ) {

@@ -193,20 +193,58 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JobStatusResponse"
-        "400":
-          description: Cannot cancel (invalid state or request)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Job not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-        "409":
-          description: Version mismatch
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/jobs/{id}/audit:
+    get:
+      operationId: getJobAudit
+      tags: [Jobs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit log entries for job
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /api/v1/jobs/{id}/lineage:
+    get:
+      operationId: getJobLineage
+      tags: [Jobs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lineage metadata for job
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "404":
+          description: Lineage not found
           content:
             application/json:
               schema:
@@ -252,6 +290,67 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: Version mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # dataset endpoints
+  /api/v1/datasets:
+    get:
+      operationId: listDatasets
+      tags: [Datasets]
+      responses:
+        "200":
+          description: List of datasets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DatasetResponse"
+    post:
+      operationId: createDataset
+      tags: [Datasets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatasetRequest"
+      responses:
+        "201":
+          description: Dataset created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/datasets/{id}:
+    get:
+      operationId: getDataset
+      tags: [Datasets]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dataset details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetResponse"
+        "404":
+          description: Dataset not found
           content:
             application/json:
               schema:
@@ -307,6 +406,19 @@ components:
         acceptedAt:
           type: string
           format: date-time
+    Manifest:
+      type: object
+      description: >-
+        Opaque job or dataset manifest payload. Typically contains
+        job identifiers and version metadata.
+      properties:
+        job:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+      additionalProperties: true
+
     JobSubmitRequest:
       type: object
       required:
@@ -321,8 +433,15 @@ components:
           minLength: 1
         parameters:
           type: object
-          additionalProperties:
-            type: string
+          additionalProperties: true
+        lineage:
+          type: object
+          description: >-
+            Optional lineage metadata such as parent job or dataset
+            references.
+          additionalProperties: true
+        manifest:
+          $ref: "#/components/schemas/Manifest"
         ngvlaParams:
           $ref: "#/components/schemas/NgvlaObservationParams"
         requestedBy:
@@ -385,11 +504,59 @@ components:
           type: object
           additionalProperties:
             type: string
+        lineage:
+          type: object
+          description: >-
+            Optional lineage metadata (parents, ancestors) stored at
+            submission time.
+          additionalProperties: true
+        manifest:
+          $ref: "#/components/schemas/Manifest"
         requestedBy:
           type: string
         version:
           type: integer
           minimum: 0
+
+    DatasetRequest:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        manifest:
+          $ref: "#/components/schemas/Manifest"
+      additionalProperties: false
+
+    DatasetResponse:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        manifest:
+          $ref: "#/components/schemas/Manifest"
     JobTransitionRequest:
       type: object
       required: [state]
@@ -418,6 +585,7 @@ components:
           type: string
         currentVersion:
           type: integer
+
     NgvlaObservationParams:
       type: object
       description: >
@@ -455,3 +623,7 @@ components:
           minimum: 0
           description: "Observation bandwidth in MHz"
       additionalProperties: false
+
+# audit path already defined earlier; duplicate removed
+
+# The NgvlaObservationParams schema has been moved into components.schemas

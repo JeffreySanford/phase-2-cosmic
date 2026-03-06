@@ -8,15 +8,17 @@ public class DatasetRecord {
     private String description;
     private String createdAt;
     private Map<String, Object> metadata;
+    private Map<String, Object> manifest;
 
     public DatasetRecord() {}
 
-    public DatasetRecord(String id, String name, String description, String createdAt, Map<String, Object> metadata) {
+    public DatasetRecord(String id, String name, String description, String createdAt, Map<String, Object> metadata, Map<String, Object> manifest) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.createdAt = createdAt;
         this.metadata = metadata;
+        this.manifest = manifest;
     }
 
     public String getId() { return id; }
@@ -29,4 +31,6 @@ public class DatasetRecord {
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
     public Map<String, Object> getMetadata() { return metadata; }
     public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
+    public Map<String, Object> getManifest() { return manifest; }
+    public void setManifest(Map<String, Object> manifest) { this.manifest = manifest; }
 }

@@ -18,6 +18,7 @@ export interface JobStatus {
   createdAt?: string;
   updatedAt?: string;
   parameters?: Record<string, unknown>;
+  lineage?: Record<string, unknown>;
   requestedBy?: string;
   [key: string]: unknown;
 }
@@ -25,7 +26,9 @@ export interface JobStatus {
 export interface JobSubmitRequest {
   workflow: string;
   datasetId?: string;
+  lineage?: Record<string, unknown>;
   parameters?: Record<string, unknown>;
+  manifest?: Record<string, unknown>;
   requestedBy?: string;
 }
 
@@ -189,5 +192,14 @@ export class JobsService {
 
   deleteJob(id: string): Observable<unknown> {
     return this.http.delete(`${this.base}/${id}`);
+  }
+
+  /**
+   * Shortcut to retrieve lineage metadata for a job.  Mirrors backend
+   * `/jobs/{id}/lineage` endpoint and is used by the UI when detail panel
+   * requires explicit refresh.
+   */
+  getLineage(id: string): Observable<Record<string, unknown>> {
+    return this.http.get<Record<string, unknown>>(`${this.base}/${id}/lineage`);
   }
 }

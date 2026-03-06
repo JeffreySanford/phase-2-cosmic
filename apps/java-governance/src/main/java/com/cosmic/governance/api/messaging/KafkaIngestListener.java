@@ -34,8 +34,10 @@ public class KafkaIngestListener {
             String datasetId = obj.containsKey("datasetId") ? String.valueOf(obj.get("datasetId")) : "unknown";
             Map<String,Object> params = obj.containsKey("parameters") && obj.get("parameters") instanceof Map ? (Map<String,Object>) obj.get("parameters") : Map.of();
             String requestedBy = obj.containsKey("requestedBy") ? String.valueOf(obj.get("requestedBy")) : "kafka-ingest";
+            Map<String,Object> manifest = obj.containsKey("manifest") && obj.get("manifest") instanceof Map ? (Map<String,Object>) obj.get("manifest") : null;
+            Map<String,Object> lineage = obj.containsKey("lineage") && obj.get("lineage") instanceof Map ? (Map<String,Object>) obj.get("lineage") : null;
 
-            JobSubmitRequest req = new JobSubmitRequest(workflow, datasetId, params, requestedBy);
+            JobSubmitRequest req = new JobSubmitRequest(workflow, datasetId, params, lineage, manifest, requestedBy);
             // Validate the constructed request against bean validation constraints
             Set<ConstraintViolation<JobSubmitRequest>> violations = validator.validate(req);
             if (!violations.isEmpty()) {

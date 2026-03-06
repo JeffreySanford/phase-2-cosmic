@@ -35,6 +35,21 @@ public class JobService {
     private static final String KEY_PREFIX = "job:";
     private static final Logger log = LoggerFactory.getLogger(JobService.class);
 
+    // simple in-memory audit log for provenance/E2E tests
+    private final java.util.List<String> auditLog = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
+    /**
+     * Expose a copy of the audit log for testing.
+     */
+    public java.util.List<String> getAuditLog() {
+        return new java.util.ArrayList<>(auditLog);
+    }
+
+    private void recordAudit(String msg) {
+        auditLog.add(msg);
+        log.info("Audit: {}", msg);
+    }
+
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final RedisMarshaller marshaller;
@@ -254,7 +269,12 @@ public class JobService {
     public JobStatusResponse submit(JobSubmitRequest request) {
         String now = Instant.now().toString();
         String jobId = UUID.randomUUID().toString();
-        Map<String, Object> params = request.parameters() == null ? Map.<String, Object>of() : Map.copyOf(request.parameters());
+        Map<String, Object> params = request.parameters() == null ? new HashMap<>() : new HashMap<>(request.parameters());
+        // if the request included a dedicated lineage object, stash it under parameters for storage
+        if (request.lineage() != null) {
+            params.put("lineage", Map.copyOf(request.lineage()));
+        }
+        Map<String, Object> manifest = request.manifest() == null ? null : Map.copyOf(request.manifest());
         JobRecord record = new JobRecord(
                 jobId,
                 request.workflow(),
@@ -263,6 +283,7 @@ public class JobService {
                 now,
                 now,
                 params,
+                manifest,
                 request.requestedBy()
         );
         // start version at 1 now that the record is persisted
@@ -277,7 +298,22 @@ public class JobService {
             record.setParameters(p);
         }
         setValue(KEY_PREFIX + jobId, record);
-        log.info("Audit: job submitted {} workflow={} dataset={}", jobId, request.workflow(), request.datasetId());
+        StringBuilder auditSb = new StringBuilder();
+        auditSb.append("job submitted ").append(jobId)
+               .append(" workflow=").append(request.workflow())
+               .append(" dataset=").append(request.datasetId());
+        if (manifest != null) {
+            auditSb.append(" manifest=").append(manifest.toString());
+        } else if (params != null && params.containsKey("manifest")) {
+            // backwards compatibility: manifest inside parameters
+            auditSb.append(" manifest=").append(params.get("manifest").toString());
+        }
+        if (request.lineage() != null) {
+            auditSb.append(" lineage=").append(request.lineage().toString());
+        } else if (params != null && params.containsKey("lineage")) {
+            auditSb.append(" lineage=").append(params.get("lineage").toString());
+        }
+        recordAudit(auditSb.toString());
 
         // pick executor (explicit param 'executor' overrides; default to 'tacc' for ingest workflow)
         String executorName = "simulator";
@@ -317,8 +353,43 @@ public class JobService {
                 Object o = getValue(key);
                 if (o instanceof List) return ((List<?>) o).stream().map(Object::toString).collect(Collectors.toList());
             } catch (Exception ignored) {}
-            return List.of();
         }
+        return List.of();
+    }
+
+    // manifest helpers ---------------------------------------------
+    public Optional<Map<String, Object>> getManifest(String jobId) {
+        Optional<JobStatusResponse> status = get(jobId);
+        return status.map(JobStatusResponse::manifest);
+    }
+
+    /**
+     * Retrieve lineage metadata stored in the job parameters under key "lineage".
+     * This is a simple implementation for medium-priority backlog; clients may
+     * populate this field when submitting jobs to record parent/ancestor IDs.
+     */
+    public Optional<Map<String, Object>> getLineage(String jobId) {
+        Optional<JobStatusResponse> status = get(jobId);
+        if (status.isEmpty()) return Optional.empty();
+        Map<String, Object> params = status.get().parameters();
+        if (params != null && params.get("lineage") instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> lineage = (Map<String, Object>) params.get("lineage");
+            return Optional.of(lineage);
+        }
+        return Optional.empty();
+    }
+
+    public boolean attachManifest(String jobId, Map<String, Object> manifest) {
+        Object o = getValue(KEY_PREFIX + jobId);
+        if (!(o instanceof JobRecord)) return false;
+        JobRecord rec = (JobRecord) o;
+        rec.setManifest(manifest);
+        rec.setUpdatedAt(Instant.now().toString());
+        rec.setVersion(rec.getVersion() + 1);
+        setValue(KEY_PREFIX + jobId, rec);
+        recordAudit("manifest attached " + jobId + " " + manifest.toString());
+        return true;
     }
 
     public List<Map<String, String>> getArtifacts(String jobId) {
@@ -434,7 +505,7 @@ public class JobService {
             log.warn("Invalid state transition attempted for {}: {} -> {}", jobId, current, newState);
             return Optional.empty();
         }
-        log.info("Audit: job {} transitioning {} -> {}", jobId, current, newState);
+        recordAudit("job " + jobId + " transitioning " + current + " -> " + newState);
         rec.setState(newState);
         rec.setUpdatedAt(Instant.now().toString());
         rec.setVersion(rec.getVersion() + 1);
@@ -466,6 +537,13 @@ public class JobService {
     }
 
     private JobStatusResponse toResponse(JobRecord record) {
+        // extract any lineage object from parameters
+        Map<String,Object> lineage = null;
+        if (record.getParameters() != null && record.getParameters().get("lineage") instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String,Object> tmp = (Map<String,Object>) record.getParameters().get("lineage");
+            lineage = tmp;
+        }
         return new JobStatusResponse(
                 record.getJobId(),
                 record.getWorkflow(),
@@ -474,6 +552,8 @@ public class JobService {
                 record.getCreatedAt(),
                 record.getUpdatedAt(),
                 record.getParameters(),
+                lineage,
+                record.getManifest(),
                 record.getRequestedBy(),
                 record.getVersion()
         );

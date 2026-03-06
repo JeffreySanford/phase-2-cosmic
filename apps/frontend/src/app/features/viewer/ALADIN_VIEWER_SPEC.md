@@ -2,6 +2,11 @@
 
 This document specifies the `ViewerComponent` which embeds Aladin Lite into the Angular application.
 
+Related docs
+
+- [VIEWER_MODEB.md](/docuentation/viewer/VIEWER_MODEB.md)
+- [VIEWER_SOURCE_CONTRACT.md](/docuentation/viewer/VIEWER_SOURCE_CONTRACT.md)
+
 ## Purpose
 
 Provide a reusable Angular component that initializes and hosts an Aladin Lite sky viewer using Angular best practices (DOM access via `Renderer2` and `DOCUMENT`). The component must handle UMD vs ESM bundles, local asset fallbacks, WASM initialization race, and expose a clear API for parent components.
@@ -17,10 +22,18 @@ Provide a reusable Angular component that initializes and hosts an Aladin Lite s
   - `showLayersControl?: boolean` — Default: `false`.
   - `showZoomControl?: boolean` — Default: `false`.
   - `showFullScreenControl?: boolean` — Default: `false`.
+  - Planned Mode B inputs:
+    - `resolvedLayer?: ViewerResolvedLayer` — preferred source/layer configuration chosen by Mode B policy.
+    - `sourceAttribution?: ViewerSourceAttribution` — externally visible attribution payload for current active source.
+    - `mode?: 'auto' | 'preview' | 'high-resolution'` — current viewer mode.
 
 - Outputs
   - `ready: EventEmitter<AladinInstance>` — Emitted when the viewer is successfully created.
   - `error: EventEmitter<any>` — Emitted on failure to initialize.
+  - Planned Mode B outputs:
+    - `layerResolved` — emits when the component applies a new resolved layer.
+    - `sourceChanged` — emits when fallback or manual mode changes the active source.
+    - `attributionChanged` — emits when rendered attribution payload changes.
 
 ## Lifecycle & Behavior
 
@@ -50,8 +63,27 @@ Provide a reusable Angular component that initializes and hosts an Aladin Lite s
 
 - The container must have `role="region"` and `aria-label="Sky viewer"`.
 
+## Planned Mode B extension points
+
+The base component should remain focused on rendering and runtime integration with `Aladin Lite`. Source selection policy should remain outside the component.
+
+Recommended responsibility split:
+
+- Parent/policy service:
+  - resolve survey registry entries
+  - choose fallback sources
+  - build `ViewerResolvedLayer`
+  - build `ViewerSourceAttribution`
+- `ViewerComponent`:
+  - render the selected layer
+  - surface runtime errors/load failures
+  - expose enough events for policy code to detect fallback conditions
+
+This keeps the component reusable and prevents source-selection policy from becoming tightly coupled to Aladin-specific implementation details.
+
 ## Implementation Notes
 
 - Use `Renderer2` for DOM mutations and `@Inject(DOCUMENT)` to access `document`/`location` safely.
 - Keep implementation testable and side-effect free from constructors.
 - Keep the loader logic contained in private helper methods.
+- Preserve a stable path for attribution metadata so viewer chrome and detail panels can render the same citation payload.

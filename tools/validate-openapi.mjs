@@ -14,6 +14,8 @@ const fixtureSchemaPairs = [
   ['schemas/fixtures/ingest-request.json', 'IngestRequest'],
   ['schemas/fixtures/job-submit-request.json', 'JobSubmitRequest'],
   ['schemas/fixtures/job-status-response.json', 'JobStatusResponse'],
+  ['schemas/fixtures/dataset-request-with-manifest.json', 'DatasetRequest'],
+  ['schemas/fixtures/dataset-response-with-manifest.json', 'DatasetResponse'],
 ];
 
 const openapi = await SwaggerParser.validate(openApiPath);

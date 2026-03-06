@@ -6,5 +6,6 @@ public record DatasetRequest(
         String id,
         String name,
         String description,
-        Map<String, Object> metadata
+        Map<String, Object> metadata,
+        Map<String, Object> manifest
 ) {}

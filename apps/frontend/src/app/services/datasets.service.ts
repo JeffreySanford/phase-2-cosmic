@@ -16,6 +16,7 @@ export interface Dataset {
   sourceDatasetId?: string;
   processingTimestamp?: string;
   parameters?: Record<string, unknown>;
+  manifest?: Record<string, unknown>;
   ngvlaParams?: {
     arraySegment?: string;
     antennaClass?: string;
@@ -36,7 +37,19 @@ export class DatasetsService {
   constructor(private http: HttpClient) {}
 
   list(): Observable<Dataset[]> {
-    return this.http.get<Dataset[]>(this.base);
+    // flatten metadata keys onto the dataset object so provenance fields
+    // (workflow, jobId, parameters, etc.) become top-level properties.
+    return this.http.get<Dataset[]>(this.base).pipe(
+      map((arr) =>
+        (arr || []).map((d) => {
+          if (d.metadata && typeof d.metadata === "object") {
+            // spread metadata into dataset, precedence to existing keys
+            return { ...d, ...d.metadata } as Dataset;
+          }
+          return d;
+        })
+      )
+    );
   }
 
   private _listCache$?: Observable<Dataset[]>;
@@ -62,6 +75,17 @@ export class DatasetsService {
   }
 
   create(req: DatasetRequest): Observable<Dataset> {
-    return this.http.post<Dataset>(this.base, req);
+    // after creation the backend returns the raw dataset response; merge
+    // any metadata fields so caller can immediately access provenance info.
+    return this.http
+      .post<Dataset>(this.base, req)
+      .pipe(
+        map((d) => {
+          if (d.metadata && typeof d.metadata === "object") {
+            return { ...d, ...d.metadata } as Dataset;
+          }
+          return d;
+        })
+      );
   }
 }
