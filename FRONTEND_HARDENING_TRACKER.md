@@ -33,16 +33,11 @@ as a standalone pause in execution.
 
   - Remove nested subscription chains.
   - Clean up polling teardown and align page-state UX.
-- [done] Display and edit job lineage in Jobs route
-  - Show lineage info in job-detail panel and allow submit payloads to include lineage metadata
-  - Mission outcome: Institutional trust and audit
-  - Operator/science impact: operators can trace parent/ancestor jobs directly from UI
-  - Validation evidence: new unit tests for JobsService and e2e scenario covering lineage, plus dialog and editor component tests
-- [new] Evaluate Pulsar status component integration into Telemetry/Diagnostics view
-  - Determine if the existing Pulsar-dashboard component can be embedded just like Kafka/RabbitMQ
-  - Mission outcome: Observatory continuity
-  - Operator/science impact: earlier visibility into message‑fabric health for Pulsar
-  - Validation evidence: prototype draft and performance smoke tests
+- [done] Integrate Pulsar status component into Telemetry/Diagnostics view
+  - Backend API endpoints configured for Docker networking; frontend displays Pulsar broker health alongside Kafka/RabbitMQ
+  - Mission outcome: Human decision speed
+  - Operator/science impact: real-time visibility into all messaging fabric brokers for early issue detection
+  - Validation evidence: `/api/v1/pulsar/status` returns healthy JSON; frontend diagnostics page shows broker metrics
 
 - [pending] Unify load-profile and operational-state UX
   - Clarify runtime-controlled vs scaffold behavior.

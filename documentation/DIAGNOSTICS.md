@@ -26,9 +26,9 @@ The diagnostics UI is at the `Diagnostics` feature in the frontend and uses a ta
   - **Prometheus** - metrics collection (HTTP readiness check)
   - **Grafana** - dashboards (HTTP health check)
   - **Loki** - log aggregation (HTTP ready check)
-  - **Pulsar** - message broker (TCP port check)
+  - **Pulsar** - message broker (API status check + TCP port check)
   - **Kafka** - message broker (TCP port check)
-  - **RabbitMQ** - message broker (TCP port check)
+  - **RabbitMQ** - message broker (API status check + TCP port check)
   - **Alertmanager** - alerting (HTTP readiness check)
   - **Redis** - cache/state (TCP port check)
 
@@ -99,6 +99,44 @@ Returns detailed status for a single service by name (case-insensitive):
   "details": "http://127.0.0.1:9090",
   "latencyMs": 12,
   "lastChecked": 1709654321000
+}
+```
+
+### Messaging Status Endpoints
+
+The diagnostics view also displays detailed messaging broker status through dedicated API endpoints:
+
+#### `GET /api/v1/rabbitmq/status`
+
+Returns RabbitMQ broker health and configuration:
+
+```json
+{
+  "queues": {
+    "audit": "cosmic.audit.queue",
+    "control": "cosmic.control.queue"
+  },
+  "exchanges": {
+    "audit": "cosmic.audit.exchange",
+    "control": "cosmic.control.exchange"
+  },
+  "connection": "established",
+  "status": "healthy",
+  "lastUpdated": "2026-03-06T05:52:49.856084300Z"
+}
+```
+
+#### `GET /api/v1/pulsar/status`
+
+Returns Pulsar cluster health and topology:
+
+```json
+{
+  "brokers": 1,
+  "topics": 3,
+  "partitions": 3,
+  "status": "healthy",
+  "lastUpdated": "2026-03-06T05:52:44.468003168Z"
 }
 ```
 

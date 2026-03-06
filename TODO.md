@@ -7,6 +7,17 @@
 - Active execution backlog for PI-1 (March-April 2026).
 - Current focus: testing reliability, messaging parity, mission-closure gaps, and data-architecture hardening.
 
+### Current Status Overview
+
+```mermaid
+pie title TODO Status (March 2026)
+    "Completed" : 3
+    "In Progress" : 2
+    "High Priority" : 4
+    "Medium Priority" : 5
+    "Low Priority" : 3
+```
+
 ## Current
 
 - Sprint execution underway for Testcontainers scaffold, provenance E2E, and CI gating.
@@ -33,6 +44,10 @@
   - Mission outcome: Reproducible science
   - Operator/science impact: prevents silent domain drift from approved ngVLA specifications
   - Validation evidence: `ngvla-drift-regression.spec.ts` runs in CI and fails on mismatches
+- Fix Docker networking configuration for RabbitMQ and Pulsar status endpoints.
+  - Mission outcome: Human decision speed
+  - Operator/science impact: frontend now displays real-time messaging broker health status without 503 errors
+  - Validation evidence: `/api/v1/rabbitmq/status` and `/api/v1/pulsar/status` return healthy JSON responses; frontend diagnostics page shows broker status
 
 ### NOW
 
@@ -50,8 +65,6 @@
 
 ### High
 
-- RabbitMQ control-plane wiring and Kafka audit mirroring. (high-priority backlog once provenance/UI and NGVLA tasks stabilized)
-- Pulsar edge-ingest bridge with replay/DLQ runbook.
 - Integrate Pulsar health/status component into Telemetry/Diagnostics frontend.
 - Topology/Visualization broker parity (Kafka + RabbitMQ + Pulsar).
 - ngVLA timing integrity and RFI/EMC observability tracks.

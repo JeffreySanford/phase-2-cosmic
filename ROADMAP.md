@@ -16,6 +16,34 @@
 - Remaining frontend hardening is now carried inside adjacent roadmap work.
   See `FRONTEND_HARDENING_TRACKER.md` for the carry-forward cleanup list.
 
+### Current Roadmap Status Overview
+
+```mermaid
+timeline
+    title Phase 2 Cosmic Horizon Roadmap (March 2026)
+    section Completed
+        Phase 1 : MVP baseline, governance API, frontend routes
+            : Phase 1B: Frontend orchestration baseline
+            : Phase 1C: NGVLA fidelity and demo automation
+        Provenance E2E : Testcontainers scaffold and audit endpoint
+        Messaging Status : RabbitMQ and Pulsar status endpoints integrated
+
+    section In Progress (PI-1 Sprint 2)
+        Provenance E2E : Deterministic implementation with manifest verification
+        Jobs UX : Lineage metadata display and parent reference submissions
+        Public Data : NRAO TAP metadata ingest planning
+
+    section Next (High Priority)
+        Phase 2 : Streaming-to-governance integration with broker safety
+        Phase 2A : Mission-critical closure (timing, RFI, VO interoperability)
+        Phase 3 : Control-plane fidelity and Pulsar component integration
+
+    section Future
+        Phase 4 : Reliability/security hardening
+        Phase 5 : HPC adapter path
+        Phase 6 : Data architecture delivery
+```
+
 ## Next
 
 ### Immediate
@@ -23,7 +51,6 @@
 - Complete deterministic provenance E2E implementation (now includes manifest verification and HTTP audit endpoint).
 - Close deferred docs-validation items from NGVLA fidelity track.
 - Begin frontend Jobs UX enhancements: surface lineage metadata and allow job submissions with parent references.
-- Kick off Pulsar status component prototype and integrate into Telemetry/Diagnostics views.
 - Define public-data integration slice: NRAO TAP metadata ingest, viewer seed imagery, and source attribution fields.
 
 ### High
@@ -73,6 +100,10 @@
   - Mission outcome: Observatory continuity
   - Operator/science impact: end-to-end metadata capture verified in early tests
   - Validation evidence: `ProvenanceE2ETest` runs in CI and checks in-memory audit log
+- Pulsar status component integrated into Telemetry/Diagnostics views.
+  - Mission outcome: Human decision speed
+  - Operator/science impact: operators can monitor Pulsar broker health alongside Kafka and RabbitMQ in real-time
+  - Validation evidence: `/api/v1/pulsar/status` endpoint returns broker, topic, and partition counts; frontend diagnostics page displays Pulsar status
 
 ## INSTRUCTIONS
 
