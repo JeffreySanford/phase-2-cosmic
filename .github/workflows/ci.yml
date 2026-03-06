@@ -85,7 +85,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build frontend
-        run: pnpm -C apps/frontend build
+        run: pnpm nx build frontend
 
       - name: Run java-governance verify (unit + IT)
         run: |
