@@ -53,6 +53,7 @@ public class JobService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final RedisMarshaller marshaller;
+    private final AuditService auditService;
     // in-memory fallback store used when RedisTemplate is not available
     private final ConcurrentHashMap<String, Object> inMemoryStore = new ConcurrentHashMap<>();
 
@@ -63,10 +64,11 @@ public class JobService {
     private final AtomicLong scannedCount = new AtomicLong(0);
     private final AtomicLong dispatchedCount = new AtomicLong(0);
 
-    public JobService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, @Autowired List<JobExecutor> executors, RedisMarshaller marshaller) {
+    public JobService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, @Autowired List<JobExecutor> executors, RedisMarshaller marshaller, AuditService auditService) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.marshaller = marshaller;
+        this.auditService = auditService;
         if (executors != null) {
             for (JobExecutor e : executors) executorMap.put(e.name(), e);
         }
@@ -317,6 +319,15 @@ public class JobService {
 
         // pick executor (explicit param 'executor' overrides; default to 'tacc' for ingest workflow)
         String executorName = "simulator";
+
+        // Publish job submitted event to control plane
+        Map<String, Object> eventDetails = Map.of(
+            "workflow", request.workflow(),
+            "datasetId", request.datasetId(),
+            "requestedBy", request.requestedBy(),
+            "executor", executorName
+        );
+        auditService.publishJobEvent(jobId, "submitted", eventDetails);
         Map<String, Object> paramsObj = request.parameters() == null ? Map.<String, Object>of() : Map.copyOf(request.parameters());
         if (paramsObj.containsKey("executor")) executorName = String.valueOf(paramsObj.get("executor"));
         else if (request.workflow() != null && request.workflow().equalsIgnoreCase("ingest")) executorName = "tacc";
@@ -532,6 +543,15 @@ public class JobService {
         rec.setUpdatedAt(Instant.now().toString());
         rec.setVersion(rec.getVersion() + 1);
         redisTemplate.opsForValue().set(key, rec);
+
+        // Publish job transition event to control plane
+        Map<String, Object> eventDetails = Map.of(
+            "fromState", current.toString(),
+            "toState", newState.toString(),
+            "expectedVersion", expectedVersion != null ? expectedVersion : "none"
+        );
+        auditService.publishJobEvent(jobId, "transitioned", eventDetails);
+
         return Optional.of(toResponse(rec));
     }
 

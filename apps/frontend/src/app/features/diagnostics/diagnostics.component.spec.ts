@@ -172,4 +172,66 @@ describe("DiagnosticsComponent", () => {
     expect(comp.dockerServices[2].status).toBe("unknown");
     httpMock.verify();
   });
+
+  it("fetches Pulsar status on init and polling", () => {
+    fixture.detectChanges();
+    httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
+    httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
+
+    // Should fetch Pulsar status on init
+    const pulsarReq = httpMock.expectOne("/api/v1/pulsar/status");
+    pulsarReq.flush({
+      brokers: 3,
+      topics: 15,
+      partitions: 45
+    });
+    expect(comp.pulsarStatus.brokers).toBe(3);
+    expect(comp.pulsarStatus.topics).toBe(15);
+    expect(comp.pulsarStatus.partitions).toBe(45);
+
+    // Should fetch RabbitMQ status on init
+    const rabbitReq = httpMock.expectOne("/api/v1/rabbitmq/status");
+    rabbitReq.flush({
+      status: 'connected',
+      connection: 'connected',
+      queues: { 'audit-queue': {}, 'control-queue': {} },
+      exchanges: { 'audit-exchange': {}, 'control-exchange': {} }
+    });
+    expect(comp.rabbitMQStatus.status).toBe('connected');
+    expect(comp.rabbitMQStatus.connection).toBe('connected');
+
+    httpMock.verify();
+  });
+
+  it("handles Pulsar status error gracefully", () => {
+    fixture.detectChanges();
+    httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
+    httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
+
+    const pulsarReq = httpMock.expectOne("/api/v1/pulsar/status");
+    pulsarReq.error(new ErrorEvent('network error'));
+
+    expect(comp.pulsarStatus.brokers).toBe(0);
+    expect(comp.pulsarStatus.topics).toBe(0);
+    expect(comp.pulsarStatus.partitions).toBe(0);
+
+    httpMock.verify();
+  });
+
+  it("handles RabbitMQ status error gracefully", () => {
+    fixture.detectChanges();
+    httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
+    httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
+
+    httpMock.expectOne("/api/v1/pulsar/status").flush({ brokers: 1, topics: 1, partitions: 1 });
+
+    const rabbitReq = httpMock.expectOne("/api/v1/rabbitmq/status");
+    rabbitReq.error(new ErrorEvent('connection refused'));
+
+    expect(comp.rabbitMQStatus.status).toBe('unavailable');
+    expect(comp.rabbitMQStatus.connection).toBe('error');
+    expect(comp.rabbitMQStatus.error).toBe('connection_refused');
+
+    httpMock.verify();
+  });
 });

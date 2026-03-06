@@ -37,11 +37,11 @@ flowchart LR
 
 - In a smoke scenario, an operator identifies unhealthy service and affected workflow from the UI within 30 seconds.
 
-2. Job lifecycle operability:
+1. Job lifecycle operability:
 
 - A user can submit a job, view transition state, and retrieve logs/artifacts from the UI without manual API calls.
 
-3. Dataset workflow continuity:
+1. Dataset workflow continuity:
 
 - A user can create/list/read datasets and trace associated pipeline context at baseline fidelity.
 

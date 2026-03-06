@@ -2,8 +2,9 @@ package com.cosmic.governance.api.service;
 
 import com.cosmic.governance.api.model.JobRecord;
 import com.cosmic.governance.api.model.JobState;
-import com.cosmic.governance.api.service.JobService;
+import com.cosmic.governance.api.service.AuditService;
 import com.cosmic.governance.api.util.RedisMarshaller;
+import org.mockito.Mockito;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,12 +22,15 @@ class JobServiceRecoverTest {
 
     RedisMarshaller marshaller;
 
+    AuditService auditService;
+
     JobService service;
 
     @BeforeEach
     void setup() {
         marshaller = new RedisMarshaller(new ObjectMapper());
-        service = new JobService(null, new ObjectMapper(), null, marshaller);
+        auditService = Mockito.mock(AuditService.class);
+        service = new JobService(null, new ObjectMapper(), null, marshaller, auditService);
         // register a lightweight test-only simulator executor so dispatchQueuedJobs() can move QUEUED->RUNNING
         JobExecutor simExec = new JobExecutor() {
             @Override

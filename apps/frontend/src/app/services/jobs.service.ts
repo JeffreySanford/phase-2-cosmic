@@ -202,4 +202,11 @@ export class JobsService {
   getLineage(id: string): Observable<Record<string, unknown>> {
     return this.http.get<Record<string, unknown>>(`${this.base}/${id}/lineage`);
   }
+
+  /**
+   * Update lineage metadata for a job. Mirrors backend `/jobs/{id}/lineage` PUT endpoint.
+   */
+  updateLineage(id: string, lineage: Record<string, unknown>): Observable<unknown> {
+    return this.http.put<unknown>(`${this.base}/${id}/lineage`, lineage);
+  }
 }

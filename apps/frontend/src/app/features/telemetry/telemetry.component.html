@@ -62,6 +62,7 @@
 
     <!-- pulsar status prototype -->
     <app-pulsar-status [status]="pulsarStatus"></app-pulsar-status>
+    <app-rabbitmq-status [status]="rabbitMQStatus"></app-rabbitmq-status>
     <mat-tab-group [(selectedIndex)]="selectedVizTab" (selectedIndexChange)="onVizTabChanged()">
       <mat-tab label="Trend">
         <div class="chart" #chart></div>

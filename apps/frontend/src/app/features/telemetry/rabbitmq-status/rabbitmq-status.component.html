@@ -1,0 +1,14 @@
+<mat-card class="broker-card rabbitmq-status-card" [ngClass]="'status-' + (status.status || 'unknown')">
+  <mat-card-title>RabbitMQ</mat-card-title>
+  <mat-card-content>
+    <div class="status-values">
+      <span>Status: {{ status.status }}</span>
+      <span>Connection: {{ status.connection }}</span>
+      <span>Queues: {{ getQueuesCount() }}</span>
+      <span>Exchanges: {{ getExchangesCount() }}</span>
+    </div>
+    <div *ngIf="status.error" class="error-message">
+      Error: {{ status.error }}
+    </div>
+  </mat-card-content>
+</mat-card>

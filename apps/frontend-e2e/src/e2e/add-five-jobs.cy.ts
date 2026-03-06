@@ -61,5 +61,12 @@ describe("Add five jobs and processing", () => {
     cy.contains("table tbody tr", "COMPLETED").contains("button", "View").click();
     cy.contains("Workflow:").should("exist");
     cy.contains("Lineage").should("exist");
+
+    // Test lineage editing and saving
+    cy.contains("Lineage").click();
+    // The lineage editor should be visible
+    cy.get("app-jobs-lineage-editor").should("exist");
+    // Save button should be present
+    cy.contains("button", "Save").should("exist");
   });
 });

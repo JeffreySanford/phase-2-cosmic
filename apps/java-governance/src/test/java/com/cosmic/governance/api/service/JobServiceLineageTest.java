@@ -8,6 +8,7 @@ import com.cosmic.governance.api.util.RedisMarshaller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.Map;
@@ -23,7 +24,8 @@ class JobServiceLineageTest {
     @BeforeEach
     void setup() {
         marshaller = new RedisMarshaller(new ObjectMapper());
-        service = new JobService(null, new ObjectMapper(), null, marshaller);
+        AuditService auditService = Mockito.mock(AuditService.class);
+        service = new JobService(null, new ObjectMapper(), null, marshaller, auditService);
     }
 
     @Test

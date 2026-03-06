@@ -87,4 +87,19 @@ describe("StatusBandComponent", () => {
     const timestamp = component.getTimestamp();
     expect(timestamp).toMatch(/1m ago/);
   });
+
+  it("should update timestampDisplay when status changes", () => {
+    const oldDate = new Date(Date.now() - 30000); // 30 seconds ago
+    component.status = {
+      health: "healthy",
+      lastCheck: oldDate,
+      services: {
+        governance: "online",
+        telemetry: "online",
+        diagnostics: "online",
+      },
+    };
+    component.updateTimestampDisplay();
+    expect(component.timestampDisplay).toMatch(/30s ago/);
+  });
 });

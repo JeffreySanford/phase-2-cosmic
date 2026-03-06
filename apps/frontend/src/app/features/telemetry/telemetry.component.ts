@@ -8,10 +8,12 @@ import {
   Inject,
 } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
+import { HttpClient } from "@angular/common/http";
 import { TelemetryService } from "../../services/telemetry.service";
 import { BehaviorSubject, Subscription, timer, NEVER, from, of } from "rxjs";
 import { switchMap, map, catchError } from "rxjs/operators";
 import { LoadProfileService } from "../../services/load-profile.service";
+import { RabbitMQStatus, PulsarStatus } from "../../shared/types";
 
 // Prometheus range value is [timestamp, value-as-string]
 type PrometheusRangeValue = [number, string];
@@ -93,6 +95,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // prototype status data for Pulsar component
   pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
+  rabbitMQStatus: RabbitMQStatus = { status: 'unknown', connection: 'unknown', queues: {}, exchanges: {} };
   lastUpdated: number | null = null;
   stats: { min: number; max: number; avg: number; p95: number } = {
     min: 0,
@@ -118,7 +121,8 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     @Inject(TelemetryService) private telemetry: TelemetryService,
     @Inject(LoadProfileService) private loadProfile: LoadProfileService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -139,7 +143,11 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     // When poll interval changes, recreate the polling subscription
     this.pollSub = this.pollIntervalMs$
       .pipe(switchMap((ms) => (ms > 0 ? timer(0, ms) : NEVER)))
-      .subscribe(() => this.fetchRangeAndRender());
+      .subscribe(() => {
+        this.fetchRangeAndRender();
+        this.fetchPulsarStatus();
+        this.fetchRabbitMQStatus();
+      });
   }
 
   ngAfterViewInit(): void {
@@ -182,6 +190,15 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
           this.handleRangeResponse(res as PrometheusRangeResponse)
         );
     }
+
+    // Fetch Pulsar status
+    this.telemetry.getPulsarStatus().subscribe((status) => {
+      this.pulsarStatus = {
+        brokers: status.brokers,
+        topics: status.topics,
+        partitions: status.partitions
+      };
+    });
   }
 
   private handleRateResponse(res: PrometheusRangeResponse): void {
@@ -762,5 +779,45 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   formatStat(v: number): string {
     return this.humanRate(v);
+  }
+
+  private fetchPulsarStatus(): void {
+    this.http.get<PulsarStatus>('/api/v1/pulsar/status').subscribe(
+      (status: PulsarStatus) => {
+        this.pulsarStatus = {
+          brokers: status.brokers || 0,
+          topics: status.topics || 0,
+          partitions: status.partitions || 0
+        };
+      },
+      (err) => {
+        // Keep previous status or set to 0 on error
+        this.pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
+      }
+    );
+  }
+
+  private fetchRabbitMQStatus(): void {
+    this.http.get<RabbitMQStatus>('/api/v1/rabbitmq/status').subscribe(
+      (status: RabbitMQStatus) => {
+        this.rabbitMQStatus = {
+          status: status.status || 'unknown',
+          connection: status.connection || 'unknown',
+          queues: status.queues || {},
+          exchanges: status.exchanges || {},
+          error: status.error
+        };
+      },
+      (err) => {
+        // Set to disconnected on error
+        this.rabbitMQStatus = {
+          status: 'error',
+          connection: 'error',
+          queues: {},
+          exchanges: {},
+          error: 'Connection failed'
+        };
+      }
+    );
   }
 }

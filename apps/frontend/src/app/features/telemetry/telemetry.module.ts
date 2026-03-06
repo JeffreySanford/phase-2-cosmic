@@ -10,9 +10,10 @@ import { MatTabsModule } from '@angular/material/tabs';
 
 import { TelemetryComponent } from './telemetry.component';
 import { PulsarStatusComponent } from './pulsar-status/pulsar-status.component';
+import { RabbitMQStatusComponent } from './rabbitmq-status/rabbitmq-status.component';
 
 @NgModule({
-  declarations: [TelemetryComponent, PulsarStatusComponent],
+  declarations: [TelemetryComponent, PulsarStatusComponent, RabbitMQStatusComponent],
   imports: [
     CommonModule,
     FormsModule,
@@ -24,6 +25,6 @@ import { PulsarStatusComponent } from './pulsar-status/pulsar-status.component';
     MatSlideToggleModule,
     MatTabsModule,
   ],
-  exports: [TelemetryComponent, PulsarStatusComponent],
+  exports: [TelemetryComponent, PulsarStatusComponent, RabbitMQStatusComponent],
 })
 export class TelemetryModule {}

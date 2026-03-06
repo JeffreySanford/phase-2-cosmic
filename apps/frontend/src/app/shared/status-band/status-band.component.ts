@@ -102,12 +102,14 @@ export class StatusBandComponent implements OnInit, OnDestroy {
 
   shouldShow = true;
   private subscription?: Subscription;
+  timestampDisplay = "";
 
   constructor(private statusService: SystemStatusService) {}
 
   ngOnInit(): void {
     this.subscription = this.statusService.status$.subscribe((status) => {
       this.status = status;
+      this.updateTimestampDisplay();
       this.shouldShow = true;
     });
   }
@@ -155,5 +157,9 @@ export class StatusBandComponent implements OnInit, OnDestroy {
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
     return `${hours}h ago`;
+  }
+
+  private updateTimestampDisplay(): void {
+    this.timestampDisplay = this.getTimestamp();
   }
 }

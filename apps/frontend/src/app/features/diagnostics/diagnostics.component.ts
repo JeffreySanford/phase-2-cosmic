@@ -6,20 +6,7 @@ import { LoadProfileService } from "../../services/load-profile.service";
 import { Subscription } from "rxjs";
 import { switchMap } from "rxjs/operators";
 import { interval } from "rxjs";
-
-interface DiagnosticsIndex {
-  path: string;
-  files: string[];
-}
-
-interface DockerServiceStatus {
-  name: string;
-  status: "online" | "degraded" | "offline" | "unknown";
-  details?: string;
-  error?: string;
-  latencyMs?: number;
-  icon?: string;
-}
+import { DiagnosticsIndex, DockerServiceStatus, PulsarStatus, RabbitMQStatus } from "../../shared/types";
 
 @Component({
   selector: "app-diagnostics",
@@ -38,6 +25,8 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   autoRefresh = true;
   lastUpdated: Date | null = null;
   currentPollingMs = 5000;
+  pulsarStatus: PulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
+  rabbitMQStatus: RabbitMQStatus = { status: 'unknown', connection: 'unknown' };
   private pollSubscription?: Subscription;
   private pollingMsSubscription?: Subscription;
 
@@ -51,6 +40,8 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.fetchIndex();
     this.fetchDockerServices();
+    this.fetchPulsarStatus();
+    this.fetchRabbitMQStatus();
     this.startPolling();
   }
 
@@ -72,6 +63,8 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         if (this.autoRefresh) {
           this.fetchDockerServices(true); // silent refresh
+          this.fetchPulsarStatus();
+          this.fetchRabbitMQStatus();
         }
       });
   }
@@ -161,6 +154,35 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
           }
         }
       );
+  }
+
+  fetchPulsarStatus(): void {
+    this.http.get<PulsarStatus>('/api/v1/pulsar/status').subscribe({
+      next: (status: PulsarStatus) => {
+        this.pulsarStatus = {
+          brokers: status.brokers || 0,
+          topics: status.topics || 0,
+          partitions: status.partitions || 0
+        };
+      },
+      error: (err) => {
+        // Keep previous status or set to 0 on error
+        this.pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
+
+        console.log('Failed to fetch Pulsar status:', err);
+      }
+    });
+  }
+
+  fetchRabbitMQStatus(): void {
+    this.http.get<RabbitMQStatus>('/api/v1/rabbitmq/status').subscribe({
+      next: (status: RabbitMQStatus) => {
+        this.rabbitMQStatus = status;
+      },
+      error: (err) => {
+        this.rabbitMQStatus = { status: 'unavailable', connection: 'error', error: err.message };
+      }
+    });
   }
 
   get visibleFiles(): string[] {

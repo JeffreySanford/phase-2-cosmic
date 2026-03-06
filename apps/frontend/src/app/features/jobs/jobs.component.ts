@@ -225,10 +225,16 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   saveLineage() {
     if (!this.selectedJob) return;
-    // currently the server has no explicit update endpoint; invalidate so
-    // polling will refetch the object which may have been changed externally.
-    this.jobsSvc.invalidateJob(this.selectedJob.jobId);
-    this.snackBar.open('Lineage saved (cached)', undefined, { duration: 2000 });
+    this.jobsSvc.updateLineage(this.selectedJob.jobId, this.selectedJob.lineage || {}).subscribe(
+      () => {
+        this.snackBar.open('Lineage saved successfully', undefined, { duration: 2000 });
+        // Invalidate cache to ensure fresh data on next poll
+        this.jobsSvc.invalidateJob(this.selectedJob!.jobId);
+      },
+      (error) => {
+        this.snackBar.open('Failed to save lineage: ' + error.message, undefined, { duration: 3000 });
+      }
+    );
   }
 
   toggleFilter() {

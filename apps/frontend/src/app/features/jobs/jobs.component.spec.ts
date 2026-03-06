@@ -29,6 +29,9 @@ class StubJobsService {
   get(id: string) {
     return of({ jobId: id, workflow: 'x', status: 'QUEUED', lineage: { parentJobId: 'p' } } satisfies JobStatus);
   }
+  updateLineage(_id: string, _lineage: Record<string, unknown>) {
+    return of(undefined);
+  }
   getLogs(_id: string) {
     return of([] as string[]);
   }
@@ -69,11 +72,13 @@ describe('JobsComponent', () => {
 
   it('allows editing lineage and saving', () => {
     const job: JobStatus = { jobId: '321', workflow: 'bar', status: 'QUEUED', lineage: { parentJobId: 'orig' } } as JobStatus;
-    const spy = jest.spyOn(component, 'saveLineage');
+    const updateLineageSpy = jest.spyOn(component['jobsSvc'], 'updateLineage').mockReturnValue(of(undefined));
+    const snackBarSpy = jest.spyOn(component['snackBar'], 'open');
     component.view(job);
     fixture.detectChanges();
     component.selectedJob = job;
     component.saveLineage();
-    expect(spy).toHaveBeenCalled();
+    expect(updateLineageSpy).toHaveBeenCalledWith('321', { parentJobId: 'orig' });
+    expect(snackBarSpy).toHaveBeenCalledWith('Lineage saved successfully', undefined, { duration: 2000 });
   });
 });

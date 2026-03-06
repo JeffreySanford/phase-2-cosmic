@@ -20,9 +20,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.apache.pulsar.client.admin.PulsarAdmin;
+import org.apache.pulsar.client.admin.PulsarAdminException;
+import org.apache.pulsar.common.policies.data.ClusterData;
+import org.apache.pulsar.common.policies.data.TenantInfo;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -30,11 +37,13 @@ public class GovernanceController {
     private final JobService jobService;
     private final com.cosmic.governance.api.service.SchemaService schemaService;
     private final DatasetService datasetService;
+    private final RabbitTemplate rabbitTemplate;
 
-    public GovernanceController(JobService jobService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService) {
+    public GovernanceController(JobService jobService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService, RabbitTemplate rabbitTemplate) {
         this.jobService = jobService;
         this.schemaService = schemaService;
         this.datasetService = datasetService;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @GetMapping("/health")
@@ -366,15 +375,105 @@ public class GovernanceController {
 
     @GetMapping("/pulsar/status")
     public ResponseEntity<?> getPulsarStatus() {
-        // TODO: Implement actual Pulsar admin client integration
-        // For now, return mock status data
-        Map<String, Object> status = Map.of(
-            "brokers", 1,
-            "topics", 5,
-            "partitions", 15,
-            "status", "healthy",
-            "lastUpdated", Instant.now().toString()
-        );
-        return ResponseEntity.ok(status);
+        try (PulsarAdmin admin = PulsarAdmin.builder()
+                .serviceHttpUrl("http://localhost:8085") // Pulsar admin port from docker-compose
+                .build()) {
+
+            // Get cluster info
+            List<String> clusters = admin.clusters().getClusters();
+            int brokers = 0;
+            if (!clusters.isEmpty()) {
+                String clusterName = clusters.get(0);
+                brokers = admin.brokers().getActiveBrokers(clusterName).size();
+            }
+
+            // For topics and partitions, use a simpler approach
+            // This is approximate as it requires scanning all tenants/namespaces
+            int topics = 0;
+            int partitions = 0;
+            try {
+                List<String> tenants = admin.tenants().getTenants();
+                for (String tenant : tenants) {
+                    List<String> namespaces = admin.namespaces().getNamespaces(tenant);
+                    for (String namespace : namespaces) {
+                        List<String> topicList = admin.topics().getList(namespace);
+                        topics += topicList.size();
+                        // Count partitions for each topic
+                        for (String topic : topicList) {
+                            try {
+                                var partitionedMeta = admin.topics().getPartitionedTopicMetadata(topic);
+                                partitions += partitionedMeta.partitions > 0 ? partitionedMeta.partitions : 1;
+                            } catch (Exception e) {
+                                // Non-partitioned topic, count as 1 partition
+                                partitions += 1;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // If we can't get detailed stats, return basic info
+                topics = -1;
+                partitions = -1;
+            }
+
+            Map<String, Object> status = Map.of(
+                "brokers", brokers,
+                "topics", topics,
+                "partitions", partitions,
+                "status", brokers > 0 ? "healthy" : "degraded",
+                "lastUpdated", Instant.now().toString()
+            );
+            return ResponseEntity.ok(status);
+
+        } catch (Exception e) {
+            // Fallback to mock data if Pulsar is not available
+            Map<String, Object> status = Map.of(
+                "brokers", 0,
+                "topics", 0,
+                "partitions", 0,
+                "status", "unavailable",
+                "error", e.getMessage(),
+                "lastUpdated", Instant.now().toString()
+            );
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(status);
+        }
+    }
+
+    @GetMapping("/rabbitmq/status")
+    public ResponseEntity<?> getRabbitMQStatus() {
+        try {
+            // Check RabbitMQ connection by attempting to declare a test queue
+            Queue testQueue = new Queue("cosmic.test.queue", false, true, true);
+            rabbitTemplate.execute(channel -> {
+                channel.queueDeclare(testQueue.getName(), testQueue.isDurable(),
+                    testQueue.isExclusive(), testQueue.isAutoDelete(), null);
+                return null;
+            });
+
+            // Get basic connection info
+            Map<String, Object> status = Map.of(
+                "status", "healthy",
+                "connection", "established",
+                "queues", Map.of(
+                    "audit", "cosmic.audit.queue",
+                    "control", "cosmic.control.queue"
+                ),
+                "exchanges", Map.of(
+                    "audit", "cosmic.audit.exchange",
+                    "control", "cosmic.control.exchange"
+                ),
+                "lastUpdated", Instant.now().toString()
+            );
+            return ResponseEntity.ok(status);
+
+        } catch (Exception e) {
+            Map<String, Object> status = Map.of(
+                "status", "unavailable",
+                "connection", "failed",
+                "error", e.getMessage(),
+                "lastUpdated", Instant.now().toString()
+            );
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(status);
+        }
     }
 }
