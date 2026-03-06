@@ -13,6 +13,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.DockerClientFactory;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +35,7 @@ public class KafkaIngestIntegrationTest {
         }
         if (dockerAvailable) {
             try {
-                kafka = new KafkaContainer("confluentinc/cp-kafka:7.4.1");
+                kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.1"));
                 kafka.start();
                 redis = new org.testcontainers.containers.GenericContainer<>("redis:7-alpine")
                         .withExposedPorts(6379);

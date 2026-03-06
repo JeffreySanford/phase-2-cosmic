@@ -37,10 +37,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Start Kafka & Zookeeper (dev-compose)
+      - name: Start Kafka, Zookeeper, and Redis (dev-compose)
         run: |
           set -euo pipefail
-          KAFKA_HOST_PORT=${{ env.KAFKA_HOST_PORT }} docker compose -f docker/dev-compose.yml up -d zookeeper kafka
+          KAFKA_HOST_PORT=${{ env.KAFKA_HOST_PORT }} docker compose -f docker/dev-compose.yml up -d zookeeper kafka redis
 
       - name: Wait for Kafka readiness
         run: |
@@ -61,6 +61,8 @@ jobs:
         env:
           USE_HOST_KAFKA: "true"
           HOST_KAFKA_BOOTSTRAP: "localhost:${{ env.KAFKA_HOST_PORT }}"
+          SPRING_REDIS_HOST: "localhost"
+          SPRING_REDIS_PORT: "6379"
           MAVEN_OPTS: -Xmx2g
         run: |
           mvn -f apps/java-governance/pom.xml clean verify -Pintegration-tests -DskipTests=false -B -V

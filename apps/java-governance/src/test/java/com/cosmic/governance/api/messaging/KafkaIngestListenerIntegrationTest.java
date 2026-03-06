@@ -1,6 +1,7 @@
 package com.cosmic.governance.api.messaging;
 
 import com.cosmic.governance.api.service.JobService;
+import com.cosmic.governance.test.AbstractRedisTest;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -32,7 +33,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
 
 @SpringBootTest(properties = {"spring.main.allow-bean-definition-overriding=true"})
-public class KafkaIngestListenerIntegrationTest {
+public class KafkaIngestListenerIntegrationTest extends AbstractRedisTest {
 
     // If USE_HOST_KAFKA=true, tests will use host Kafka (e.g., localhost:9092).
     // Otherwise, start a Testcontainers Kafka container.
