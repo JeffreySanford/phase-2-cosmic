@@ -459,6 +459,19 @@ components:
         parameters:
           type: object
           additionalProperties: true
+        lineage:
+          type: object
+          description: "Optional lineage metadata stored in job parameters."
+          additionalProperties: true
+        manifest:
+          $ref: "#/components/schemas/Manifest"
+        details:
+          type: object
+          description: >-
+            Optional event payload details for broker-driven submissions.
+          additionalProperties: true
+        ngvlaParams:
+          $ref: "#/components/schemas/NgvlaObservationParams"
         requestedBy:
           type: string
       additionalProperties: false
