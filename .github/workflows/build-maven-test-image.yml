@@ -9,6 +9,8 @@ jobs:
   build-and-push:
     name: Build and push image
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/jeffreysanford/phase2-maven-test
     permissions:
       contents: read
       packages: write
@@ -37,9 +39,9 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/${{ github.repository_owner }}/phase2-maven-test:17
-            ghcr.io/${{ github.repository_owner }}/phase2-maven-test:latest
-            ghcr.io/${{ github.repository_owner }}/phase2-maven-test:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:17
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
@@ -52,6 +54,6 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/${{ github.repository_owner }}/phase2-maven-test:${{ github.event.release.tag_name }}
+            ${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
