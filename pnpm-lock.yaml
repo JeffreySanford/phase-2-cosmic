@@ -42,8 +42,8 @@ importers:
         specifier: ~18.2.0
         version: 18.2.14(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(@angular/platform-browser@18.2.14(@angular/animations@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10)))(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10)))(rxjs@7.8.2)
       '@angular/ssr':
-        specifier: ~18.2.0
-        version: 18.2.21(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))
+        specifier: ~19.2.21
+        version: 19.2.21(4e104d809e0bbb29f506180503cc01df)
       aladin-lite:
         specifier: ^3.7.3-beta
         version: 3.7.3-beta
@@ -500,11 +500,16 @@ packages:
       '@angular/platform-browser': 18.2.14
       rxjs: ^6.5.3 || ^7.4.0
 
-  '@angular/ssr@18.2.21':
-    resolution: {integrity: sha512-0euH/xxVLv12xVPf1WkfVVmteFccsObjcomCQg/wwu6U4pp5BVqtXpLgA6kAyJByhwbjJWnJJwxovHcVMsRoig==}
+  '@angular/ssr@19.2.21':
+    resolution: {integrity: sha512-to3d4PZaufkUkWjlqM2cXQoYVNJUaUCYYw1g3b6ubCVHzSYZNCqXvreklMSKXwQoUhEHm2HOZ1h3WhcKEDiaag==}
     peerDependencies:
-      '@angular/common': ^18.0.0
-      '@angular/core': ^18.0.0
+      '@angular/common': ^19.0.0 || ^19.2.0-next.0
+      '@angular/core': ^19.0.0 || ^19.2.0-next.0
+      '@angular/platform-server': ^19.0.0 || ^19.2.0-next.0
+      '@angular/router': ^19.0.0 || ^19.2.0-next.0
+    peerDependenciesMeta:
+      '@angular/platform-server':
+        optional: true
 
   '@apidevtools/json-schema-ref-parser@14.0.1':
     resolution: {integrity: sha512-Oc96zvmxx1fqoSEdUmfmvvb59/KDOnUoJ7s2t7bISyAn0XEz57LCCw8k2Y4Pf3mwKaZLMciESALORLgfe2frCw==}
@@ -9073,12 +9078,14 @@ snapshots:
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@angular/ssr@18.2.21(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))':
+  '@angular/ssr@19.2.21(4e104d809e0bbb29f506180503cc01df)':
     dependencies:
       '@angular/common': 18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(rxjs@7.8.2)
       '@angular/core': 18.2.14(rxjs@7.8.2)(zone.js@0.14.10)
-      critters: 0.0.24
+      '@angular/router': 18.2.14(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(@angular/platform-browser@18.2.14(@angular/animations@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10)))(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10)))(rxjs@7.8.2)
       tslib: 2.8.1
+    optionalDependencies:
+      '@angular/platform-server': 18.2.14(@angular/animations@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10)))(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(rxjs@7.8.2))(@angular/compiler@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10)))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(@angular/platform-browser@18.2.14(@angular/animations@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10)))(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10)))
 
   '@apidevtools/json-schema-ref-parser@14.0.1':
     dependencies:
@@ -11725,6 +11732,12 @@ snapshots:
       - typescript
       - verdaccio
 
+  '@nrwl/devkit@19.8.4(nx@19.8.4(@swc-node/register@1.9.2(@swc/core@1.5.29(@swc/helpers@0.5.19))(@swc/types@0.1.25)(typescript@5.5.4))(@swc/core@1.5.29(@swc/helpers@0.5.19)))':
+    dependencies:
+      '@nx/devkit': 19.8.4(nx@19.8.4(@swc-node/register@1.9.2(@swc/core@1.5.29(@swc/helpers@0.5.19))(@swc/types@0.1.25)(typescript@5.5.4))(@swc/core@1.5.29(@swc/helpers@0.5.19)))
+    transitivePeerDependencies:
+      - nx
+
   '@nrwl/devkit@19.8.4(nx@22.5.2(@swc-node/register@1.9.2(@swc/core@1.5.29(@swc/helpers@0.5.19))(@swc/types@0.1.25)(typescript@5.5.4))(@swc/core@1.5.29(@swc/helpers@0.5.19)))':
     dependencies:
       '@nx/devkit': 19.8.4(nx@22.5.2(@swc-node/register@1.9.2(@swc/core@1.5.29(@swc/helpers@0.5.19))(@swc/types@0.1.25)(typescript@5.5.4))(@swc/core@1.5.29(@swc/helpers@0.5.19)))
@@ -11953,7 +11966,7 @@ snapshots:
 
   '@nx/devkit@19.8.4(nx@19.8.4(@swc-node/register@1.9.2(@swc/core@1.5.29(@swc/helpers@0.5.19))(@swc/types@0.1.25)(typescript@5.5.4))(@swc/core@1.5.29(@swc/helpers@0.5.19)))':
     dependencies:
-      '@nrwl/devkit': 19.8.4(nx@22.5.2(@swc-node/register@1.9.2(@swc/core@1.5.29(@swc/helpers@0.5.19))(@swc/types@0.1.25)(typescript@5.5.4))(@swc/core@1.5.29(@swc/helpers@0.5.19)))
+      '@nrwl/devkit': 19.8.4(nx@19.8.4(@swc-node/register@1.9.2(@swc/core@1.5.29(@swc/helpers@0.5.19))(@swc/types@0.1.25)(typescript@5.5.4))(@swc/core@1.5.29(@swc/helpers@0.5.19)))
       ejs: 3.1.10
       enquirer: 2.3.6
       ignore: 5.3.2
