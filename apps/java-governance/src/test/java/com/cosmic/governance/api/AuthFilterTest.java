@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * Runs in a separate context with the property turned on so other tests are
  * unaffected.
  */
-@SpringBootTest(properties = {"governance.auth.enabled=true","spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration"})
+@SpringBootTest(properties = {"governance.auth.enabled=true","governance.messaging.enabled=false","governance.redis.enabled=false","governance.audit.rabbit.enabled=false","spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration,org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration"})
 @AutoConfigureMockMvc
 class AuthFilterTest {
     @Autowired

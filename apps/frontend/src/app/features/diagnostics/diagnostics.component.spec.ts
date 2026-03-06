@@ -236,6 +236,10 @@ describe("DiagnosticsComponent", () => {
     metricsReq.flush({ timing_drift_ns: 123, rfi_event_rate: 5 });
     expect(comp.timingDriftNs).toBe(123);
     expect(comp.rfiEventRate).toBe(5);
+    const voReq = httpMock.expectOne("/api/v1/vo/services");
+    voReq.flush({ tapUrl: "https://tap.example", dataLinkUrl: "https://datalink.example" });
+    expect(comp.voTapUrl).toBe("https://tap.example");
+    expect(comp.voDataLinkUrl).toBe("https://datalink.example");
     // DOM metrics are only visible under the second tab; component state is sufficient for unit test
   });
 

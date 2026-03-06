@@ -67,4 +67,14 @@ public class OpenApiContractTest {
         Map<?,?> paths = (Map<?,?>) root.get("paths");
         assertNotNull(paths.get("/api/v1/vo/services"), "OpenAPI must declare /api/v1/vo/services path");
     }
+
+    @Test
+    public void rfiEventSchemaPresent() throws Exception {
+        InputStream stream = this.getClass().getResourceAsStream("/static/openapi/governance.yaml");
+        Yaml yaml = new Yaml();
+        Map<?,?> root = yaml.load(stream);
+        Map<?,?> components = (Map<?,?>) root.get("components");
+        Map<?,?> schemas = (Map<?,?>) components.get("schemas");
+        assertNotNull(schemas.get("RfiEvent"), "OpenAPI must declare RfiEvent schema");
+    }
 }

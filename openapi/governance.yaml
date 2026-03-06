@@ -490,6 +490,31 @@ components:
           additionalProperties: true
       additionalProperties: true
 
+    RfiEvent:
+      type: object
+      description: "Schema describing a detected RFI/EMC event"
+      properties:
+        source:
+          type: string
+          description: "Origin of detection (monitor, telescope, external feed)"
+        band:
+          type: string
+          description: "Affected frequency band (e.g., L, S)"
+        intensity:
+          type: string
+          description: "Severity or intensity classification (low|medium|high)"
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        affectedChannels:
+          type: array
+          items:
+            type: integer
+      additionalProperties: true
+
     JobSubmitRequest:
       type: object
       required:

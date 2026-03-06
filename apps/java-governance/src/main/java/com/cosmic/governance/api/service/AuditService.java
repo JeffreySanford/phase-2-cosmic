@@ -6,12 +6,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Map;
 
 @Service
+@ConditionalOnProperty(name = "governance.messaging.enabled", havingValue = "true", matchIfMissing = true)
 public class AuditService {
 
     private static final Logger log = LoggerFactory.getLogger(AuditService.class);
@@ -19,10 +22,15 @@ public class AuditService {
     private final RabbitTemplate rabbitTemplate;
     private final boolean rabbitPublishingEnabled;
 
-    public AuditService(
-        RabbitTemplate rabbitTemplate,
-        @Value("${governance.audit.rabbit.enabled:true}") boolean rabbitPublishingEnabled
-    ) {
+    public AuditService(ObjectProvider<RabbitTemplate> rabbitTemplateProvider,
+                        @Value("${governance.audit.rabbit.enabled:true}") boolean rabbitPublishingEnabled) {
+        this.rabbitTemplate = rabbitTemplateProvider.getIfAvailable();
+        this.rabbitPublishingEnabled = rabbitPublishingEnabled;
+    }
+
+    // Backwards-compatible constructor for tests and legacy wiring
+    public AuditService(RabbitTemplate rabbitTemplate,
+                        @Value("${governance.audit.rabbit.enabled:true}") boolean rabbitPublishingEnabled) {
         this.rabbitTemplate = rabbitTemplate;
         this.rabbitPublishingEnabled = rabbitPublishingEnabled;
     }
@@ -32,14 +40,13 @@ public class AuditService {
      */
     @KafkaListener(topics = "cosmic-audit", groupId = "audit-mirror")
     public void mirrorAuditEvent(String message) {
-        if (!rabbitPublishingEnabled) {
-            log.debug("Skipping RabbitMQ audit mirror because governance.audit.rabbit.enabled=false");
+        if (!rabbitPublishingEnabled || rabbitTemplate == null) {
+            log.debug("Skipping RabbitMQ audit mirror because publishing disabled or RabbitTemplate missing");
             return;
         }
         try {
             log.debug("Mirroring audit event to RabbitMQ: {}", message);
 
-            // Create audit event with additional metadata
             Map<String, Object> auditEvent = Map.of(
                 "source", "kafka",
                 "timestamp", Instant.now().toString(),
@@ -63,8 +70,8 @@ public class AuditService {
      * Publishes control-plane events to RabbitMQ
      */
     public void publishControlEvent(String eventType, Map<String, Object> payload) {
-        if (!rabbitPublishingEnabled) {
-            log.debug("Skipping RabbitMQ control event {} because governance.audit.rabbit.enabled=false", eventType);
+        if (!rabbitPublishingEnabled || rabbitTemplate == null) {
+            log.debug("Skipping RabbitMQ control event {} because publishing disabled or RabbitTemplate missing", eventType);
             return;
         }
         try {

@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.ObjectProvider;
 import com.cosmic.governance.api.util.RedisMarshaller;
 import com.cosmic.governance.api.controller.BrokerEventsController;
 import jakarta.annotation.PostConstruct;
@@ -73,6 +74,20 @@ public class JobService {
     private final AtomicLong scannedCount = new AtomicLong(0);
     private final AtomicLong dispatchedCount = new AtomicLong(0);
 
+    @Autowired
+    public JobService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, @Autowired List<JobExecutor> executors, RedisMarshaller marshaller, ObjectProvider<AuditService> auditServiceProvider, BrokerEventsController brokerEventsController, io.micrometer.core.instrument.MeterRegistry registry) {
+        this.brokerEventsController = brokerEventsController;
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+        this.marshaller = marshaller;
+        this.auditService = auditServiceProvider == null ? null : auditServiceProvider.getIfAvailable();
+        if (executors != null) {
+            for (JobExecutor e : executors) executorMap.put(e.name(), e);
+        }
+        this.qualityGateFailureCounter = registry.counter("etl_quality_gate_failures_total");
+    }
+
+    // Backwards-compatible constructor for tests and legacy wiring
     public JobService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, @Autowired List<JobExecutor> executors, RedisMarshaller marshaller, AuditService auditService, BrokerEventsController brokerEventsController, io.micrometer.core.instrument.MeterRegistry registry) {
         this.brokerEventsController = brokerEventsController;
         this.redisTemplate = redisTemplate;

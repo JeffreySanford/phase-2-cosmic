@@ -65,6 +65,11 @@
         <h3>Timing / RFI Metrics</h3>
         <p *ngIf="timingDriftNs !== undefined">Timing drift: {{ timingDriftNs }} ns</p>
         <p *ngIf="rfiEventRate !== undefined">RFI event rate: {{ rfiEventRate }} /s</p>
+        <div *ngIf="voTapUrl || voDataLinkUrl" class="vo-services">
+          <h4>VO Services</h4>
+          <p *ngIf="voTapUrl">TAP: <a [href]="voTapUrl" target="_blank" rel="noopener">{{ voTapUrl }}</a></p>
+          <p *ngIf="voDataLinkUrl">DataLink: <a [href]="voDataLinkUrl" target="_blank" rel="noopener">{{ voDataLinkUrl }}</a></p>
+        </div>
       </div>
     </mat-tab>
 

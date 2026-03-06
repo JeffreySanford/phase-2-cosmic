@@ -43,7 +43,19 @@ Pulsar. It covers configuration, failure modes, and recovery procedures.
    - Pulsar: use `pulsar-client consume --subscription test --topic
 phase2-events-dlq` then recreate via `pulsar-client produce`.
 3. For large-scale replays, use the ingest API directly with a script or
-   `java-ingest` utility rather than pushing through brokers again.
+  `java-ingest` utility rather than pushing through brokers again.
+
+## 4. RFI-driven replay guidance
+
+1. When RFI events are recorded, operators should identify affected time windows
+  and locate related jobs/datasets by querying `GET /api/v1/datasets` and
+  filtering on `manifest.timingWindowStart`/`manifest.timingWindowEnd` or
+  `rfiFlags`.
+2. The `RfiService` stores recent RFI events for quick triage; implementors may
+  add `GET /api/v1/rfi/recent` for convenient operator access.
+3. Prefer replay via the governance API (resubmit jobs with original manifest
+  and replay window parameters) instead of bulk producing corrected records
+  back into brokers to keep provenance and audits consistent.
 
 ## 4. Monitoring & Alerts
 

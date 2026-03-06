@@ -10,8 +10,10 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Configuration
+@ConditionalOnProperty(name = "governance.messaging.enabled", havingValue = "true", matchIfMissing = true)
 public class RabbitMQConfig {
 
     @Value("${spring.rabbitmq.host:localhost}")
