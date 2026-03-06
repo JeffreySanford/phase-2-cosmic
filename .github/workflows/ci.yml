@@ -29,8 +29,10 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Install pnpm
-        run: npm install -g pnpm@8
+      - name: Enable corepack (pnpm)
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.23.0 --activate
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
@@ -74,8 +76,10 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Install pnpm
-        run: npm install -g pnpm@8
+      - name: Enable corepack (pnpm)
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.23.0 --activate
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
