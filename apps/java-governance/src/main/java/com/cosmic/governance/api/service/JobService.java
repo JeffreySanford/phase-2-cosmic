@@ -380,6 +380,28 @@ public class JobService {
         return Optional.empty();
     }
 
+    /**
+     * Update lineage metadata for a job. This updates the lineage field in the
+     * job parameters and increments the version.
+     */
+    public boolean updateLineage(String jobId, Map<String, Object> lineage) {
+        Object o = getValue(KEY_PREFIX + jobId);
+        if (!(o instanceof JobRecord)) return false;
+        JobRecord rec = (JobRecord) o;
+        Map<String, Object> params = rec.getParameters();
+        if (params == null) {
+            params = new HashMap<>();
+            rec.setParameters(params);
+        }
+        params.put("lineage", Map.copyOf(lineage));
+        rec.setUpdatedAt(Instant.now().toString());
+        rec.setVersion(rec.getVersion() + 1);
+        setValue(KEY_PREFIX + jobId, rec);
+        // Record audit entry for lineage update
+        recordAudit("job:" + jobId + " lineage updated to " + lineage.toString());
+        return true;
+    }
+
     public boolean attachManifest(String jobId, Map<String, Object> manifest) {
         Object o = getValue(KEY_PREFIX + jobId);
         if (!(o instanceof JobRecord)) return false;

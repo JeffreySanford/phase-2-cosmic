@@ -298,4 +298,15 @@ class GovernanceControllerTest extends AbstractRedisTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("invalid_transition"));
     }
+
+    @Test
+    void pulsarStatusEndpointReturnsMockData() throws Exception {
+        mockMvc.perform(get("/api/v1/pulsar/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.brokers").isNumber())
+                .andExpect(jsonPath("$.topics").isNumber())
+                .andExpect(jsonPath("$.partitions").isNumber())
+                .andExpect(jsonPath("$.status").isString())
+                .andExpect(jsonPath("$.lastUpdated").isString());
+    }
 }

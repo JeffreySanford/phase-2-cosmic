@@ -197,6 +197,14 @@ public class GovernanceController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","lineage_not_found","id",id));
             }
 
+            @PutMapping("/jobs/{id}/lineage")
+            public ResponseEntity<?> updateJobLineage(@PathVariable("id") String id,
+                                                     @RequestBody Map<String, Object> lineage) {
+                boolean ok = jobService.updateLineage(id, lineage);
+                if (ok) return ResponseEntity.ok(Map.of("status","updated"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","job_not_found","id",id));
+            }
+
         @GetMapping("/admin/dispatch")
         public ResponseEntity<?> getDispatchConfig() {
             return ResponseEntity.ok(Map.of(
@@ -355,4 +363,18 @@ public class GovernanceController {
                 }
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse("cannot_retry", id, null));
             }
+
+    @GetMapping("/pulsar/status")
+    public ResponseEntity<?> getPulsarStatus() {
+        // TODO: Implement actual Pulsar admin client integration
+        // For now, return mock status data
+        Map<String, Object> status = Map.of(
+            "brokers", 1,
+            "topics", 5,
+            "partitions", 15,
+            "status", "healthy",
+            "lastUpdated", Instant.now().toString()
+        );
+        return ResponseEntity.ok(status);
+    }
 }
