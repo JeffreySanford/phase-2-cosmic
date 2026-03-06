@@ -30,6 +30,7 @@ import org.apache.pulsar.common.policies.data.ClusterData;
 import org.apache.pulsar.common.policies.data.TenantInfo;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -38,6 +39,9 @@ public class GovernanceController {
     private final com.cosmic.governance.api.service.SchemaService schemaService;
     private final DatasetService datasetService;
     private final RabbitTemplate rabbitTemplate;
+
+    @Value("${pulsar.admin.url:http://localhost:8085}")
+    private String pulsarAdminUrl;
 
     public GovernanceController(JobService jobService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService, RabbitTemplate rabbitTemplate) {
         this.jobService = jobService;
@@ -376,7 +380,7 @@ public class GovernanceController {
     @GetMapping("/pulsar/status")
     public ResponseEntity<?> getPulsarStatus() {
         try (PulsarAdmin admin = PulsarAdmin.builder()
-                .serviceHttpUrl("http://localhost:8085") // Pulsar admin port from docker-compose
+                .serviceHttpUrl(pulsarAdminUrl) // Configurable Pulsar admin URL
                 .build()) {
 
             // Get cluster info

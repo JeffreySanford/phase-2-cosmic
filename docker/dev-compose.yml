@@ -221,9 +221,13 @@ services:
     ports:
       - "8082:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=docker,kafka
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PULSAR_ADMIN_URL=http://pulsar:8080
       - PROMETHEUS_ENDPOINT=prometheus:9090
       - PROMETHEUS_BASEURL=http://prometheus:9090
       - PROMETHEUS_BASE_URL=http://prometheus:9090
