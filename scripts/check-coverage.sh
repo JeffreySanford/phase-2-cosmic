@@ -9,8 +9,19 @@ FAILED=0
 
 check_jacoco() {
   if [[ -f "apps/java-governance/target/site/jacoco/jacoco.xml" ]]; then
-    pct=$(xmllint --xpath "string(//counter[@type='INSTRUCTION']/@covered)" apps/java-governance/target/site/jacoco/jacoco.xml)
-    miss=$(xmllint --xpath "string(//counter[@type='INSTRUCTION']/@missed)" apps/java-governance/target/site/jacoco/jacoco.xml)
+    read -r pct miss < <(
+      python - <<'PY'
+import xml.etree.ElementTree as ET
+
+root = ET.parse("apps/java-governance/target/site/jacoco/jacoco.xml").getroot()
+for counter in root.findall(".//counter"):
+    if counter.get("type") == "INSTRUCTION":
+        print(counter.get("covered", "0"), counter.get("missed", "0"))
+        break
+else:
+    print("0 0")
+PY
+    )
     total=$((pct + miss))
     if [[ $total -gt 0 ]]; then
       cov=$((100 * pct / total))

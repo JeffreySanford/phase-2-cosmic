@@ -15,7 +15,7 @@
     "openapi-validate": "node tools/validate-openapi.mjs",
     "unit-test": "pnpm nx run-many --target=test --all --configuration=ci --parallel=false",
     "unit-test:coverage": "pnpm nx run-many --target=test --all --configuration=ci --codeCoverage --parallel=false",
-    "e2e-smoke": "pnpm nx run frontend-e2e:e2e-ci",
+    "e2e-smoke": "pnpm nx run frontend-e2e:e2e --configuration=production",
     "quality:ci": "pnpm run lint && pnpm run format:check:changed && pnpm run unit-test && pnpm run openapi-validate && pnpm run docs:validate && pnpm run e2e-smoke",
     "playwright:install": "pnpm exec playwright install --with-deps",
     "docs:validate": "bash scripts/check-docs.sh",
