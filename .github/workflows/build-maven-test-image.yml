@@ -41,7 +41,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image (multi-arch + manifest)
+      - name: Build and push image to GHCR (multi-arch + manifest)
+        if: ${{ env.DOCKERHUB_USERNAME == '' || env.DOCKERHUB_TOKEN == '' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: tools/maven-test-image
+          file: tools/maven-test-image/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/${{ env.GHCR_NAMESPACE }}/phase2-maven-test:17
+            ghcr.io/${{ env.GHCR_NAMESPACE }}/phase2-maven-test:latest
+            ghcr.io/${{ env.GHCR_NAMESPACE }}/phase2-maven-test:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      - name: Build and push image (Docker Hub + GHCR)
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         uses: docker/build-push-action@v5
         with:
           context: tools/maven-test-image
@@ -59,7 +75,20 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
       - name: Publish release tags (when release published)
-        if: github.event_name == 'release' && github.event.action == 'published'
+        if: ${{ github.event_name == 'release' && github.event.action == 'published' && env.DOCKERHUB_USERNAME == '' || github.event_name == 'release' && github.event.action == 'published' && env.DOCKERHUB_TOKEN == '' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: tools/maven-test-image
+          file: tools/maven-test-image/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/${{ env.GHCR_NAMESPACE }}/phase2-maven-test:${{ github.event.release.tag_name }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      - name: Publish release tags (Docker Hub + GHCR)
+        if: ${{ github.event_name == 'release' && github.event.action == 'published' && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         uses: docker/build-push-action@v5
         with:
           context: tools/maven-test-image
