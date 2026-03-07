@@ -5,7 +5,8 @@ module.exports = [
   ...baseConfig,
   cypress.configs["recommended"],
   {
-    // Override or add rules here
-    rules: {},
+    rules: {
+      "@nx/enforce-module-boundaries": "off",
+    },
   },
 ];

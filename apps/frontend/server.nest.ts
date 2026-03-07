@@ -14,7 +14,7 @@ import {
   All,
 } from "@nestjs/common";
 import express from "express";
-import { createClient, RedisClientType } from "redis";
+import { createClient } from "redis";
 import { createServer as createViteServer } from "vite";
 import { CommonEngine } from "@angular/ssr";
 import { join } from "path";
@@ -89,12 +89,19 @@ interface SsrOptions {
   commonEngine: CommonEngine;
 }
 
+type RedisClientOps = {
+  on(event: "error", listener: (err: unknown) => void): unknown;
+  connect(): Promise<unknown>;
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, options: { EX: number }): Promise<unknown>;
+};
+
 // Redis client singleton (optional)
-let redisClient: RedisClientType | null = null;
+let redisClient: RedisClientOps | null = null;
 async function initRedisClient() {
   const url = process.env["REDIS_URL"] || process.env["REDIS_URI"] || "redis://127.0.0.1:6379";
   try {
-    const c: RedisClientType = createClient({ url });
+    const c = createClient({ url }) as unknown as RedisClientOps;
     c.on("error", (err: unknown) => console.warn("Redis client error:", err));
     await c.connect();
     redisClient = c;
@@ -1171,6 +1178,15 @@ export class AppController {
 
   @Get("/api/load-profile")
   getLoadProfile() {
+    if (!this.runtimeLoad) {
+      return {
+        profilePct: 10,
+        workers: 0,
+        mode: "baseline",
+        note: PROFILE_MAP[10].note,
+      };
+    }
+
     return this.runtimeLoad.status();
   }
 
@@ -1180,6 +1196,17 @@ export class AppController {
     @Res() res: Response
   ): Promise<void> {
     try {
+      if (!this.runtimeLoad) {
+        res.status(503).json({
+          error: "load_profile_unavailable",
+          profilePct: 10,
+          workers: 0,
+          mode: "baseline",
+          note: PROFILE_MAP[10].note,
+        });
+        return;
+      }
+
       const body = (req as any).body || {};
       const pctRaw = Number(body.profilePct);
       const smokeSeconds =

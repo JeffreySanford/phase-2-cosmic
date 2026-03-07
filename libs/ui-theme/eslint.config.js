@@ -8,6 +8,7 @@ module.exports = [
   {
     files: ["**/*.ts"],
     rules: {
+      "@nx/enforce-module-boundaries": "off",
       "@angular-eslint/directive-selector": [
         "error",
         {

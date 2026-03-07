@@ -1172,7 +1172,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private linkStats(l: TopoLink): LinkStats {
     const stats = {} as LinkStats;
-    this.populateStatsFromMetric(stats, this.metricForLink(undefined, l)!);
+    const metric = this.metricForLink(undefined, l);
+    if (metric) {
+      this.populateStatsFromMetric(stats, metric);
+    }
     stats.latencyMs = this.syntheticLatencyMs(l);
     stats.errorRate = this.syntheticErrorRate(l);
     return stats;

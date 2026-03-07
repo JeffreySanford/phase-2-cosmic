@@ -44,7 +44,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   expandedJobId: string | null = null;
   logs: string[] = [];
   artifacts: { name: string; url: string }[] = [];
-  externalSources: Array<any> = [];
+  externalSources: Array<Record<string, unknown>> = [];
 
   constructor(
     private jobsSvc: JobsService,
@@ -263,12 +263,12 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   stepsCount(job: JobStatus): number {
-    const s = (job as any)["steps"];
+    const s = job["steps"];
     return Array.isArray(s) ? s.length : 0;
   }
 
   artifactsCount(job: JobStatus): number {
-    const a = (job as any)["artifacts"];
+    const a = job["artifacts"];
     return Array.isArray(a) ? a.length : 0;
   }
 
@@ -379,18 +379,23 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.jobsSvc.artifacts(id).subscribe(
       (a) => {
         (a || [])
-          .filter((af) => af && af.name && af.name.endsWith('.json'))
+          .filter((af) => af && af.name && af.name.endsWith(".json"))
           .forEach((af) => {
             try {
-              this.http.get<any>(af.url).subscribe(
+              this.http.get<Record<string, unknown>>(af.url).subscribe(
                 (body) => {
-                  if (body && (body.type === 'external-source' || body.type === 'external-sources' || body.provider)) {
+                  if (
+                    body &&
+                    (body["type"] === "external-source" ||
+                      body["type"] === "external-sources" ||
+                      body["provider"])
+                  ) {
                     this.externalSources.push(body);
                   }
                 },
                 () => null
               );
-            } catch (err) {
+            } catch {
               // ignore
             }
           });

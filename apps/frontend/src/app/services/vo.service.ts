@@ -7,6 +7,12 @@ export interface VoServices {
   dataLinkUrl?: string;
 }
 
+type CachedVoSamplesResponse = {
+  fields?: string[];
+  rows?: unknown[];
+  links?: unknown[];
+};
+
 @Injectable({ providedIn: "root" })
 export class VoService {
   // hot observable holding latest VO samples (array of simple sample objects)
@@ -20,7 +26,7 @@ export class VoService {
       .pipe(
         switchMap(() => {
           this.voLoading$.next(true);
-          return this.http.get<{ fields?: string[]; rows?: any[]; links?: any[] }>("/api/v1/vo/cached-samples").pipe(
+          return this.http.get<CachedVoSamplesResponse>("/api/v1/vo/cached-samples").pipe(
             catchError(() => of(null))
           );
         })
@@ -31,8 +37,8 @@ export class VoService {
             this.voLoading$.next(false);
             return;
           }
-          const fields = (res as any)?.fields || [];
-          const rows = (res as any)?.rows || [];
+          const fields = res?.fields || [];
+          const rows = res?.rows || [];
           const parsed: Array<{ time: string; valueHuman: string; pct: number }> = [];
           const voRows: Array<Record<string, string>> = [];
           for (const r of rows) {

@@ -9,12 +9,15 @@ describe("API contract versioning", () => {
 
   it("frontend model files should align with OpenAPI schema", () => {
     const content = fs.readFileSync(openapiPath, "utf8");
-    expect(content).toContain("JobSubmitRequest:");
+    expect(content).toContain("/api/v1/jobs:");
+    expect(content).toContain('#/components/schemas/JobStatusResponse');
   });
 
-  it("should include JobTransitionRequest with state property", () => {
+  it("should expose job list filtering by state in the OpenAPI contract", () => {
     const content = fs.readFileSync(openapiPath, "utf8");
-    expect(content).toContain("JobTransitionRequest:");
-    expect(content).toContain("state:");
+    expect(content).toContain("name: state");
+    expect(content).toContain("Filter by job state.");
+    expect(content).toContain("type: string");
+    expect(content).toContain("enum: [QUEUED, RUNNING, COMPLETED, FAILED, CANCELED, TIMED_OUT]");
   });
 });

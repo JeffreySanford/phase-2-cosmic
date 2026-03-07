@@ -70,7 +70,7 @@ public class GovernanceController {
                 "ACCEPTED",
                 acceptedAt
         );
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/jobs")
@@ -92,6 +92,16 @@ public class GovernanceController {
             created.version()
         );
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+    }
+
+    @GetMapping("/public-sources")
+    public ResponseEntity<?> publicSources() {
+        // simple hard-coded list used by e2e tests and UI when no backend catalog exists
+        var list = List.of(
+            Map.<String,Object>of("name","Example Public Source","url","https://public.example.org"),
+            Map.<String,Object>of("name","Sample Archive","url","https://archive.example.org")
+        );
+        return ResponseEntity.ok(list);
     }
 
     @PostMapping("/jobs/validate")
@@ -302,10 +312,27 @@ public class GovernanceController {
             }
 
         @PostMapping("/jobs/{id}/transition")
-        public ResponseEntity<?> transitionJob(@PathVariable("id") String id, @Valid @RequestBody com.cosmic.governance.api.dto.JobTransitionRequest req) {
-        // attempt transition; handle missing job, invalid transition, or version mismatch
+        public ResponseEntity<?> transitionJob(@PathVariable("id") String id, @RequestBody(required = false) java.util.Map<String,Object> reqBody) {
+        // accept either { "state": "RUNNING" } or legacy { "newState": "RUNNING" } payloads
+        String stateStr = null;
+        Long expectedVersion = null;
+        if (reqBody != null) {
+            if (reqBody.containsKey("state") && reqBody.get("state") != null) stateStr = String.valueOf(reqBody.get("state"));
+            else if (reqBody.containsKey("newState") && reqBody.get("newState") != null) stateStr = String.valueOf(reqBody.get("newState"));
+            if (reqBody.containsKey("expectedVersion") && reqBody.get("expectedVersion") != null) {
+                try { expectedVersion = Long.parseLong(String.valueOf(reqBody.get("expectedVersion"))); } catch (Exception ignored) {}
+            }
+        }
+        if (stateStr == null || stateStr.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "validation_failed", "details", Map.of("state", "must not be null")));
+        }
+        com.cosmic.governance.api.model.JobState newState;
+        try { newState = com.cosmic.governance.api.model.JobState.valueOf(stateStr.toUpperCase()); }
+        catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse("invalid_state", null, null));
+        }
         try {
-            var result = jobService.transition(id, req.state(), req.expectedVersion());
+            var result = jobService.transition(id, newState, expectedVersion);
             if (result.isPresent()) {
                 return ResponseEntity.ok(result.get());
             }

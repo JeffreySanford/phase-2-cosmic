@@ -1,3 +1,4 @@
+---
 # Compose snippet for java-provenance service (reference only)
 java-provenance:
   image: phase2/java-provenance:dev

@@ -29,11 +29,12 @@ export class StartupWarmService {
     // If HttpClient is not available (e.g. unit tests without HttpClientTestingModule),
     // skip network warm-up to avoid injecting HTTP dependencies into many specs.
     if (!this.http) return;
+    const http = this.http;
 
     setTimeout(() => {
       this.cache
         .getOrCreate("telemetry:instant:sum(up)", 1500, () =>
-          this.http!
+          http
             .get("/api/proxy/prometheus", {
               params: { query: "sum(up)" },
               responseType: "text",
@@ -44,7 +45,7 @@ export class StartupWarmService {
 
       this.cache
         .getOrCreate("diagnostics:index", 5000, () =>
-          this.http!
+          http
             .get("/api/diagnostics")
             .pipe(catchError(() => of({ path: "", files: [] })))
         )
@@ -52,7 +53,7 @@ export class StartupWarmService {
 
       this.cache
         .getOrCreate("diagnostics:pulsar-status", 5000, () =>
-          this.http!
+          http
             .get("/api/v1/pulsar/status")
             .pipe(catchError(() => of({ brokers: 0, topics: 0, partitions: 0 })))
         )
@@ -60,7 +61,7 @@ export class StartupWarmService {
 
       this.cache
         .getOrCreate("diagnostics:rabbit-status", 5000, () =>
-          this.http!
+          http
             .get("/api/v1/rabbitmq/status")
             .pipe(catchError(() => of({ status: "unknown", connection: "unknown" })))
         )

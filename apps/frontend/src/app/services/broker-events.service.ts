@@ -9,6 +9,7 @@ export interface BrokerEvent {
 declare global {
   interface Window {
     __emitBrokerEvent?: (evt: BrokerEvent) => void;
+    __pendingBrokerEvents?: BrokerEvent[];
   }
 }
 
@@ -22,25 +23,36 @@ export class BrokerEventsService implements OnDestroy {
   private source?: EventSource;
 
   constructor() {
-    // open SSE connection when service is instantiated
-    const url = "/api/v1/broker-events";
-    this.source = new EventSource(url);
-    this.source.onmessage = (e) => {
-      try {
-        const parsed: BrokerEvent = JSON.parse(e.data);
-        this.events$.next(parsed);
-      } catch (err) {
-        console.error("failed to parse broker event", err, e.data);
-      }
-    };
-    this.source.onerror = (err) => {
-      console.error("broker events SSE error", err);
-      // optionally try reconnect logic here
-    };
-
-    // expose helper for end-to-end tests to simulate incoming events
+    // expose helper for end-to-end tests to simulate incoming events and flush any pending events
     if (typeof window !== "undefined") {
-      window.__emitBrokerEvent = (evt: BrokerEvent) => this._push(evt);
+      const w = window;
+      w.__emitBrokerEvent = (evt: BrokerEvent) => this._push(evt);
+      if (Array.isArray(w.__pendingBrokerEvents) && w.__pendingBrokerEvents.length) {
+        w.__pendingBrokerEvents.forEach((e: BrokerEvent) => this._push(e));
+        // clear the buffer once flushed
+        delete w.__pendingBrokerEvents;
+      }
+    }
+
+    // open SSE connection when service is instantiated (guarded)
+    try {
+      const url = "/api/v1/broker-events";
+      this.source = new EventSource(url);
+      this.source.onmessage = (e) => {
+        try {
+          const parsed: BrokerEvent = JSON.parse(e.data);
+          this.events$.next(parsed);
+        } catch (err) {
+          console.error("failed to parse broker event", err, e.data);
+        }
+      };
+      this.source.onerror = (err) => {
+        console.error("broker events SSE error", err);
+        // optionally try reconnect logic here
+      };
+    } catch (err) {
+      // some browsers or test environments may not support EventSource
+      console.warn("broker events SSE not available", err);
     }
   }
 

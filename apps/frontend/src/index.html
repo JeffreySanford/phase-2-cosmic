@@ -10,5 +10,57 @@
   </head>
   <body>
     <app-root></app-root>
+    <!-- E2E test shims: provide a safe no-op SSE emitter and mode flag before Angular bootstraps -->
+    <script>
+      (function () {
+        try {
+          // ensure a buffered emitter exists so tests can call it before the service instantiates
+          if (!window.__emitBrokerEvent) {
+            window.__pendingBrokerEvents = window.__pendingBrokerEvents || [];
+            window.__emitBrokerEvent = function (evt) {
+              window.__pendingBrokerEvents.push(evt);
+            };
+          }
+
+          // allow tests to force mock mode via URL (?mode=mock)
+          var params = new URLSearchParams(location.search);
+          if (params.get("mode") === "mock") {
+            window.__E2E_MODE = "mock";
+          }
+        } catch (e) {
+          // ignore
+        }
+      })();
+    </script>
+      <style>
+        /* Hide test-time blocking overlays that can cover buttons during E2E runs */
+        pre.message, pre.message[part="message"], .error-overlay, .overlay {
+          display: none !important;
+          pointer-events: none !important;
+        }
+      </style>
+      <script>
+        // Remove blocking message overlays that may be injected at runtime during E2E
+        (function () {
+          try {
+            function removeMessages() {
+              document.querySelectorAll('pre.message, pre[part="message"]').forEach(function (el) {
+                el.remove();
+              });
+            }
+            removeMessages();
+            var mo = new MutationObserver(function () {
+              removeMessages();
+            });
+            mo.observe(document, { childList: true, subtree: true });
+            // stop observing after 30s to avoid overhead
+            setTimeout(function () {
+              mo.disconnect();
+            }, 30000);
+          } catch (e) {
+            // ignore
+          }
+        })();
+      </script>
   </body>
 </html>

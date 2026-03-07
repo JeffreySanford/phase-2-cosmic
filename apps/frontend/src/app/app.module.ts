@@ -18,6 +18,9 @@ import { MatTabsModule } from "@angular/material/tabs";
 import { HttpClientModule } from "@angular/common/http";
 
 import { AppComponent } from "./app.component";
+import { APP_INITIALIZER } from "@angular/core";
+import { BrokerEventsService } from "./services/broker-events.service";
+import { DataSourceService } from "./services/data-source.service";
 import { appRoutes } from "./app.routes";
 import { UiThemeComponent } from "ui-theme";
 import { HeaderComponent } from "./base/header/header.component";
@@ -98,7 +101,28 @@ import { ExternalSourcesComponent } from "./shared/external-sources/external-sou
     ProvenancePanelModule,
     TelemetryModule,
   ],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INITIALIZER,
+      useFactory:
+        (dataSource: DataSourceService, broker: BrokerEventsService) =>
+        () => {
+          try {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("mode") === "mock") {
+              dataSource.setMode("mock");
+            }
+          } catch {
+            // ignore
+          }
+          // ensure broker service is instantiated early so test helper is present
+          void broker;
+          return Promise.resolve();
+        },
+      deps: [DataSourceService, BrokerEventsService],
+      multi: true,
+    },
+  ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent],
 })

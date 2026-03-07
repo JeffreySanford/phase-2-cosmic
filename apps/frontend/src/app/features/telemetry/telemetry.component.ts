@@ -40,6 +40,12 @@ type MetricOption = {
   kind: MetricKind;
   format: MetricFormat;
 };
+type SamplePoint = { time: string; valueHuman: string; pct: number };
+type VoTableResponse = {
+  fields?: string[];
+  rows?: unknown[];
+  links?: unknown[];
+};
 
 @Component({
   selector: "app-telemetry",
@@ -118,7 +124,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   // raw parsed VO rows (if any)
   voRows: Array<Record<string, string>> = [];
   // Hot observable (BehaviorSubject) that holds the latest VO samples
-  voSamples$ = new BehaviorSubject<Array<{ time: string; valueHuman: string; pct: number }>>([]);
+  voSamples$ = new BehaviorSubject<SamplePoint[]>([]);
   private gaugeCap = 1;
 
   private pollSub?: Subscription;
@@ -171,7 +177,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       (s) => {
         this.voServices = s;
         // wire local observable to service's hot observable so template can async-pipe it
-        this.voSamples$ = this.voService.voSamples$ as BehaviorSubject<any>;
+        this.voSamples$ = this.voService.voSamples$;
       },
       () => {
         this.voServices = null;
@@ -877,7 +883,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     // Only attempt VO fetch when VO services are configured
     if (!this.voServices || (!this.voServices.tapUrl && !this.voServices.dataLinkUrl)) return;
     const url = "/api/v1/vo/votable?table=chanmaster&position=3c273";
-    this.http.get<{ fields?: string[]; rows?: any[]; links?: any[] }>(url).subscribe(
+    this.http.get<VoTableResponse>(url).subscribe(
       (res) => {
         const fields = res?.fields || [];
         const rows = res?.rows || [];

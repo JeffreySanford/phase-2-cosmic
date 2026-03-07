@@ -326,14 +326,15 @@ public class JobService {
             else deferred = "true".equalsIgnoreCase(String.valueOf(dv));
         }
 
-        // Publish job submitted event to control plane
-        Map<String, Object> eventDetails = Map.of(
-            "workflow", request.workflow(),
-            "datasetId", request.datasetId(),
-            "requestedBy", request.requestedBy(),
-            "executor", executorName
-        );
-        auditService.publishJobEvent(jobId, "submitted", eventDetails);
+        // Publish job submitted event to control plane (avoid Map.of which rejects nulls)
+        Map<String, Object> eventDetails = new HashMap<>();
+        if (request.workflow() != null) eventDetails.put("workflow", request.workflow());
+        if (request.datasetId() != null) eventDetails.put("datasetId", request.datasetId());
+        if (request.requestedBy() != null) eventDetails.put("requestedBy", request.requestedBy());
+        eventDetails.put("executor", executorName);
+        if (auditService != null) {
+            auditService.publishJobEvent(jobId, "submitted", eventDetails);
+        }
         Map<String, Object> paramsObj = request.parameters() == null ? Map.<String, Object>of() : Map.copyOf(request.parameters());
         if (paramsObj.containsKey("executor")) executorName = String.valueOf(paramsObj.get("executor"));
         else if (request.workflow() != null && request.workflow().equalsIgnoreCase("ingest")) executorName = "tacc";
@@ -403,19 +404,19 @@ public class JobService {
      */
     public boolean updateLineage(String jobId, Map<String, Object> lineage) {
         Object o = getValue(KEY_PREFIX + jobId);
-        if (!(o instanceof JobRecord)) return false;
-        JobRecord rec = (JobRecord) o;
+        JobRecord rec = marshaller.toJobRecord(o);
+        if (rec == null) return false;
         Map<String, Object> params = rec.getParameters();
         if (params == null) {
             params = new HashMap<>();
             rec.setParameters(params);
         }
-        params.put("lineage", Map.copyOf(lineage));
+        params.put("lineage", new HashMap<>(lineage == null ? Map.of() : lineage));
         rec.setUpdatedAt(Instant.now().toString());
         rec.setVersion(rec.getVersion() + 1);
         setValue(KEY_PREFIX + jobId, rec);
         // Record audit entry for lineage update
-        recordAudit("job:" + jobId + " lineage updated to " + lineage.toString());
+        recordAudit("job:" + jobId + " lineage updated to " + String.valueOf(lineage));
         return true;
     }
 
@@ -516,7 +517,7 @@ public class JobService {
      */
     public Optional<JobStatusResponse> retry(String jobId, Long expectedVersion) {
         String key = KEY_PREFIX + jobId;
-        Object o = redisTemplate.opsForValue().get(key);
+        Object o = getValue(key);
         if (o == null) return Optional.empty();
         JobRecord rec = marshaller.toJobRecord(o);
         if (rec == null) return Optional.empty();
@@ -530,7 +531,7 @@ public class JobService {
         rec.setState(JobState.QUEUED);
         rec.setUpdatedAt(Instant.now().toString());
         rec.setVersion(rec.getVersion() + 1);
-        redisTemplate.opsForValue().set(key, rec);
+        setValue(key, rec);
         log.info("Audit: job {} retried (version now {})", jobId, rec.getVersion());
         return Optional.of(toResponse(rec));
     }
@@ -579,7 +580,7 @@ public class JobService {
 
     public Optional<JobStatusResponse> transition(String jobId, JobState newState, Long expectedVersion) {
         String key = KEY_PREFIX + jobId;
-        Object o = redisTemplate.opsForValue().get(key);
+        Object o = getValue(key);
         if (o == null) return Optional.empty();
         JobRecord rec = marshaller.toJobRecord(o);
         if (rec == null) return Optional.empty();
@@ -595,7 +596,7 @@ public class JobService {
         rec.setState(newState);
         rec.setUpdatedAt(Instant.now().toString());
         rec.setVersion(rec.getVersion() + 1);
-        redisTemplate.opsForValue().set(key, rec);
+        setValue(key, rec);
 
         // Publish job transition event to control plane
         Map<String, Object> eventDetails = Map.of(
@@ -603,7 +604,9 @@ public class JobService {
             "toState", newState.toString(),
             "expectedVersion", expectedVersion != null ? expectedVersion : "none"
         );
-        auditService.publishJobEvent(jobId, "transitioned", eventDetails);
+        if (auditService != null) {
+            auditService.publishJobEvent(jobId, "transitioned", eventDetails);
+        }
 
         return Optional.of(toResponse(rec));
     }
