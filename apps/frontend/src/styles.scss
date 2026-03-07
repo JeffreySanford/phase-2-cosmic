@@ -7,6 +7,7 @@
 body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #071028;
 }
 /* Keep overlays above routed content (menus/dialogs/tooltips/snackbars). */
 .cdk-overlay-container {
@@ -45,6 +46,7 @@ app-root {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background: #071028;
 }
 
 /* ensure both the custom element wrapper and the <main> inside behave as full-height flex containers */
@@ -54,12 +56,10 @@ main.app-mainstage {
   flex-direction: column;
   flex: 1 1 0;
   min-height: 0;
-  /* the header spacing is applied as padding instead of a top margin
-	   so that children can stretch to the very top of the stage without
-	   needing negative margins. keeps layout sane and avoids downstream
-	   hacks in feature components. */
-  padding-top: 56px;
+  min-width: 0;
+  padding-top: 0;
   margin-top: 0;
+  background: #071028;
 }
 
 /* make direct children of the main stage (route host elements) stretch to fill the stage */
@@ -70,6 +70,7 @@ app-mainstage > * {
 	   stretch should declare `display:flex; flex:1 1 0;` on their host.
 	   Keep `min-height:0` so stretched children can shrink correctly. */
   min-height: 0;
+  min-width: 0;
 }
 
 /* global safeguard: prevent any component from injecting a negative top margin
