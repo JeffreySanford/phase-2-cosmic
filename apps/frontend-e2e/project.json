@@ -16,8 +16,8 @@
     "e2e": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "apps/frontend-e2e",
-        "command": "cypress run"
+        "cwd": "./",
+        "command": "cross-env CYPRESS_webServerCommand=\"pnpm exec concurrently --kill-others-on-fail --success first \\\"cross-env FRONTEND_PORT=4000 pnpm run serve:ssr\\\" \\\"pnpm exec nx run frontend:serve\\\"\" CYPRESS_BASE_URL=\"http://localhost:4200\" node scripts/run-cypress.js run --project apps/frontend-e2e"
       },
       "cache": true,
       "inputs": ["default", "^default"],
@@ -34,8 +34,8 @@
     "e2e-ci": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "apps/frontend-e2e",
-        "command": "cypress run --env webServerCommand=\"pnpm exec nx run frontend:serve-static\" --config=\"{\\\"baseUrl\\\":\\\"http://localhost:4200\\\"}\""
+        "cwd": "./",
+        "command": "cross-env CYPRESS_webServerCommand=\"pnpm exec concurrently --kill-others-on-fail --success first \\\"cross-env FRONTEND_PORT=4000 pnpm run serve:ssr\\\" \\\"pnpm exec nx run frontend:serve\\\"\" CYPRESS_BASE_URL=\"http://localhost:4200\" node scripts/run-cypress.js run --project apps/frontend-e2e"
       },
       "cache": true,
       "inputs": ["default", "^default"],

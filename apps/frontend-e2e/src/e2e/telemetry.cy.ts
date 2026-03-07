@@ -4,13 +4,9 @@ describe("Telemetry page", () => {
   });
 
   it("displays Pulsar status component", () => {
-    // Wait for the telemetry page to load
     cy.contains("Data Generator Telemetry").should("exist");
-
-    // Check that Pulsar status component is present
-    cy.contains("Pulsar").should("exist");
-
-    // Check that it displays broker, topic, and partition counts
+    cy.contains("mat-panel-title", "Pulsar").should("exist");
+    cy.contains("mat-expansion-panel-header", "Pulsar").click();
     cy.contains("Brokers:").should("exist");
     cy.contains("Topics:").should("exist");
     cy.contains("Partitions:").should("exist");
@@ -18,13 +14,7 @@ describe("Telemetry page", () => {
 
   it("updates Pulsar status periodically", () => {
     cy.contains("Data Generator Telemetry").should("exist");
-
-    // Wait for initial load
-    cy.contains("Brokers:").should("exist");
-
-    // The status should update automatically (mock data may change)
-    // We can't easily test the polling without complex timing, but we can
-    // verify the component structure is correct
-    cy.get("app-pulsar-status").should("exist");
+    cy.get("mat-expansion-panel").should("have.length.greaterThan", 1);
+    cy.contains("mat-panel-title", "Pulsar").should("contain.text", "Brokers:");
   });
 });

@@ -8,8 +8,10 @@ import { LoadProfileService } from "./load-profile.service";
 describe("LoadProfileService", () => {
   let service: LoadProfileService;
   let httpMock: HttpTestingController;
+  let warnSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
     });
@@ -19,6 +21,7 @@ describe("LoadProfileService", () => {
 
   afterEach(() => {
     httpMock.verify();
+    warnSpy.mockRestore();
   });
 
   it("should bootstrap profile/mode from runtime status endpoint", () => {

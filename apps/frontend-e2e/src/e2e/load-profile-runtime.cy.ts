@@ -19,7 +19,7 @@ describe("load profile runtime control", () => {
 
     // visit landing in mock mode via query param (sets data source in app)
     cy.visit("/landing?mode=mock");
-    cy.contains("span.label", "Mode: mock").should("exist");
+    cy.contains("span.label", "Mode: Mock Data").should("exist");
     cy.wait("@getLoadProfile");
   });
 

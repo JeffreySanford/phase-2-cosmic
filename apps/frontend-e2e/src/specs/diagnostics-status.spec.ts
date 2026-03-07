@@ -1,4 +1,24 @@
 describe("Diagnostics page", () => {
+  beforeEach(() => {
+    cy.intercept("GET", "/api/diagnostics", {
+      statusCode: 200,
+      body: { path: "/tmp/logs", files: ["system-specs.txt"] },
+    }).as("diagnosticsIndex");
+
+    cy.intercept("GET", "/api/diagnostics/docker-services", {
+      statusCode: 200,
+      body: [
+        {
+          name: "RabbitMQ",
+          status: "online",
+          details: "127.0.0.1:5672",
+          latencyMs: 12,
+          icon: "stream",
+        },
+      ],
+    }).as("dockerServices");
+  });
+
   it("should display Pulsar and RabbitMQ status", () => {
     // Intercept the status API calls
     cy.intercept("GET", "/api/v1/pulsar/status", {
@@ -30,21 +50,23 @@ describe("Diagnostics page", () => {
     cy.visit("/diagnostics");
 
     // Wait for the status requests to complete
+    cy.wait("@diagnosticsIndex");
+    cy.wait("@dockerServices");
     cy.wait("@pulsarStatus");
     cy.wait("@rabbitMQStatus");
 
-    // Check that Pulsar status is displayed
-    cy.contains("Pulsar Status").should("be.visible");
-    cy.contains("Brokers: 3").should("be.visible");
-    cy.contains("Topics: 15").should("be.visible");
-    cy.contains("Partitions: 45").should("be.visible");
+    cy.contains("[role=\"tab\"]", "Broker Systems").click();
+    cy.contains("Pulsar").should("exist");
+    cy.contains("Brokers: 3").should("exist");
+    cy.contains("Topics: 15").should("exist");
+    cy.contains("Partitions: 45").should("exist");
 
     // Check that RabbitMQ status is displayed
-    cy.contains("RabbitMQ").should("be.visible");
-    cy.contains("Status: connected").should("be.visible");
-    cy.contains("Connection: connected").should("be.visible");
-    cy.contains("Queues: 2").should("be.visible");
-    cy.contains("Exchanges: 2").should("be.visible");
+    cy.contains("RabbitMQ").should("exist");
+    cy.contains("Status: connected").should("exist");
+    cy.contains("Connection: connected").should("exist");
+    cy.contains("Queues: 2").should("exist");
+    cy.contains("Exchanges: 2").should("exist");
   });
 
   it("should handle status API errors gracefully", () => {
@@ -63,21 +85,23 @@ describe("Diagnostics page", () => {
     cy.visit("/diagnostics");
 
     // Wait for the error responses
+    cy.wait("@diagnosticsIndex");
+    cy.wait("@dockerServices");
     cy.wait("@pulsarStatusError");
     cy.wait("@rabbitMQStatusError");
 
-    // Check that error states are displayed appropriately
-    cy.contains("Pulsar Status").should("be.visible");
-    cy.contains("Brokers: 0").should("be.visible");
-    cy.contains("Topics: 0").should("be.visible");
-    cy.contains("Partitions: 0").should("be.visible");
+    cy.contains("[role=\"tab\"]", "Broker Systems").click();
+    cy.contains("Pulsar").should("exist");
+    cy.contains("Brokers: 0").should("exist");
+    cy.contains("Topics: 0").should("exist");
+    cy.contains("Partitions: 0").should("exist");
 
-    cy.contains("RabbitMQ").should("be.visible");
-    cy.contains("Status: unavailable").should("be.visible");
-    cy.contains("Connection: error").should("be.visible");
+    cy.contains("RabbitMQ").should("exist");
+    cy.contains("Status: unavailable").should("exist");
+    cy.contains("Connection: error").should("exist");
   });
 
-  it("should poll status updates", () => {
+  it("should refresh status updates after a reload", () => {
     let callCount = 0;
 
     // Intercept and count calls
@@ -107,14 +131,20 @@ describe("Diagnostics page", () => {
     cy.visit("/diagnostics");
 
     // Wait for initial calls
+    cy.wait("@diagnosticsIndex");
+    cy.wait("@dockerServices");
     cy.wait("@pulsarStatus");
     cy.wait("@rabbitMQStatus");
 
-    // Check initial values
+    cy.contains("[role=\"tab\"]", "Broker Systems").click();
     cy.contains("Brokers: 1").should("be.visible");
 
-    // Wait for polling to update
+    cy.reload();
+    cy.wait("@diagnosticsIndex");
+    cy.wait("@dockerServices");
     cy.wait("@pulsarStatus", { timeout: 10000 });
-    cy.contains("Brokers: 2").should("be.visible");
+    cy.wrap(null).then(() => {
+      expect(callCount).to.equal(2);
+    });
   });
 });

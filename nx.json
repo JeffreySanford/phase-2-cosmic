@@ -1,12 +1,11 @@
 {
   "npmScope": "cosmich",
+  "neverConnectToCloud": true,
   "tasksRunnerOptions": {
     "default": {
-      "runner": "@nx/nx-cloud",
+      "runner": "nx/tasks-runners/default",
       "options": {
-        "accessToken": "",
-        "canTrackAnalytics": false,
-        "showUsageWarnings": true
+        "canTrackAnalytics": false
       }
     }
   },
@@ -38,18 +37,7 @@
     },
     "e2e-ci--**/*": { "dependsOn": ["^build"] }
   },
-  "plugins": [
-    {
-      "plugin": "@nx/cypress/plugin",
-      "options": {
-        "targetName": "e2e",
-        "openTargetName": "open-cypress",
-        "componentTestingTargetName": "component-test",
-        "ciTargetName": "e2e-ci"
-      }
-    },
-    { "plugin": "@nx/eslint/plugin", "options": { "targetName": "lint" } }
-  ],
+  "plugins": [{ "plugin": "@nx/eslint/plugin", "options": { "targetName": "lint" } }],
   "generators": {
     "@nx/angular:application": {
       "e2eTestRunner": "cypress",
@@ -59,6 +47,5 @@
     },
     "@nx/angular:library": { "linter": "eslint", "unitTestRunner": "jest" },
     "@nx/angular:component": { "style": "scss" }
-  },
-  "nxCloudId": "69a4c7e2347fc88600cae43f"
+  }
 }

@@ -7,13 +7,15 @@ export default defineConfig({
     ...nxE2EPreset(__filename, {
       cypressDir: "src",
       webServerCommands: {
-        default: "pnpm exec nx run frontend:serve",
-        production: "pnpm exec nx run frontend:serve-static",
+        default:
+          'pnpm exec concurrently --kill-others-on-fail --success first "cross-env FRONTEND_PORT=4000 pnpm run serve:ssr" "pnpm exec nx run frontend:serve"',
+        production: "cross-env FRONTEND_PORT=4000 pnpm run serve:ssr",
       },
       webServerConfig: {
         timeout: 180000,
       },
-      ciWebServerCommand: "pnpm exec nx run frontend:serve-static",
+      ciWebServerCommand:
+        'pnpm exec concurrently --kill-others-on-fail --success first "cross-env FRONTEND_PORT=4000 pnpm run serve:ssr" "pnpm exec nx run frontend:serve"',
       ciBaseUrl: "http://localhost:4200",
     }),
     // Support file for custom commands

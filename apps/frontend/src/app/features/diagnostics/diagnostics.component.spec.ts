@@ -16,6 +16,11 @@ class PulsarStatusStubComponent {
   @Input() status?: Partial<PulsarStatus>;
 }
 
+@Component({ selector: "app-rabbitmq-status", template: "" })
+class RabbitMQStatusStubComponent {
+  @Input() status?: unknown;
+}
+
 @Component({ selector: "app-disclaimer-banner", template: "" })
 class DisclaimerBannerStubComponent {
   @Input() dismissible?: boolean;
@@ -42,8 +47,10 @@ describe("DiagnosticsComponent", () => {
   let comp: DiagnosticsComponent;
   let httpMock: HttpTestingController;
   const pollingMsSubject = new BehaviorSubject<number>(5000);
+  let logSpy: jest.SpyInstance;
 
   beforeEach(async () => {
+    logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
     await TestBed.configureTestingModule({
       imports: [
         HttpClientTestingModule,
@@ -60,6 +67,7 @@ describe("DiagnosticsComponent", () => {
         DiagnosticsComponent,
         PromqlCardStubComponent,
         PulsarStatusStubComponent,
+        RabbitMQStatusStubComponent,
         DisclaimerBannerStubComponent,
       ],
       providers: [
@@ -99,6 +107,10 @@ describe("DiagnosticsComponent", () => {
   });
 
   afterEach(() => {
+    if (!httpMock) {
+      logSpy.mockRestore();
+      return;
+    }
     // catch any outstanding status/metrics requests
     try {
       httpMock.expectOne("/api/metrics/topology").flush({});
@@ -127,6 +139,7 @@ describe("DiagnosticsComponent", () => {
       // ignore absence
     }
     httpMock.verify();
+    logSpy.mockRestore();
   });
 
   it("fetches index and system-specs", () => {

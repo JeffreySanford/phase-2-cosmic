@@ -67,11 +67,19 @@ describe("datasets provenance", () => {
     cy.contains(".provenance-panel__badge", "Main").should("exist");
     cy.contains(".provenance-panel__code", '"mode": "zoom"').should("exist");
 
-    cy.contains("mat-form-field", "Name").find("input").type("Created Dataset");
-    cy.contains("mat-form-field", "Description")
+    cy.get("mat-card-content mat-form-field").first().find("input").clear();
+    cy.get("mat-card-content mat-form-field")
+      .first()
+      .find("input")
+      .type("Created Dataset");
+    cy.get("mat-card-content mat-form-field").eq(1).find("input").clear();
+    cy.get("mat-card-content mat-form-field")
+      .eq(1)
       .find("input")
       .type("Created from Cypress");
-    cy.contains("button", "Create").click();
+    cy.get("mat-card-content button")
+      .contains("Create")
+      .click({ force: true });
     cy.wait("@createDataset");
 
     cy.contains("strong", "Created Dataset").should("exist");

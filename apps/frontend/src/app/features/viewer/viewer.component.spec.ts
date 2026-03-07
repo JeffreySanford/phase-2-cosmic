@@ -49,9 +49,13 @@ import { firstValueFrom, timer } from "rxjs";
 describe("ViewerComponent", () => {
   let fixture: ComponentFixture<ViewerComponent>;
   let component: ViewerComponent;
+  let debugSpy: jest.SpyInstance;
 
-  beforeEach(waitForAsync(() =>
-    TestBed.configureTestingModule({
+  beforeEach(waitForAsync(() => {
+    debugSpy = jest
+      .spyOn(console, "debug")
+      .mockImplementation(() => undefined);
+    return TestBed.configureTestingModule({
       declarations: [ViewerComponent],
       schemas: [NO_ERRORS_SCHEMA],
     })
@@ -59,7 +63,12 @@ describe("ViewerComponent", () => {
       .then(() => {
         fixture = TestBed.createComponent(ViewerComponent);
         component = fixture.componentInstance;
-      })));
+      });
+  }));
+
+  afterEach(() => {
+    debugSpy.mockRestore();
+  });
 
   it("emits viewerReady when factory returns instance", () => {
     const readySpy = jest.fn();
@@ -123,6 +132,9 @@ describe("ViewerComponent", () => {
   });
 
   it("shows loading indicator until viewerReady and then removes it", () => {
+    const readySpy = jest.fn();
+    component.viewerReady.subscribe(readySpy);
+
     // initially loading indicator should be present
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
@@ -130,6 +142,7 @@ describe("ViewerComponent", () => {
 
     return firstValueFrom(timer(50)).then(() => {
       fixture.detectChanges();
+      expect(readySpy).toHaveBeenCalled();
       expect(root.querySelector(".loading")).toBeFalsy();
     });
   });
@@ -162,13 +175,16 @@ describe("ViewerComponent", () => {
     fixture.detectChanges();
     // wait for async init pipeline
     return firstValueFrom(timer(50)).then(() => {
-      // ensure instance is set
-      expect(component.instance).toBeTruthy();
-
-      const inst = component.instance as unknown as {
+      const mod = jest.requireMock("aladin-lite") as unknown as {
+        aladin: jest.Mock;
+      };
+      const factorySpy = mod.aladin as jest.Mock;
+      expect(factorySpy).toHaveBeenCalled();
+      const inst = factorySpy.mock.results[0]?.value as {
         remove?: jest.Mock;
         destroy?: jest.Mock;
       };
+      expect(inst).toBeTruthy();
       const removeSpy = inst.remove as jest.Mock | undefined;
       const destroySpy = inst.destroy as jest.Mock | undefined;
 

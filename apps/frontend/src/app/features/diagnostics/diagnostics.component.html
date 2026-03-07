@@ -60,6 +60,7 @@
             </div>
           </mat-card>
           <app-pulsar-status [status]="pulsarStatus"></app-pulsar-status>
+          <app-rabbitmq-status [status]="rabbitMQStatus"></app-rabbitmq-status>
         </div>
       </div>
       <div class="metrics-summary" *ngIf="timingDriftNs !== undefined || rfiEventRate !== undefined">

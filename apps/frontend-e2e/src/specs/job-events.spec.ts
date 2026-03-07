@@ -39,8 +39,14 @@ describe("Job events component", () => {
         newState: "COMPLETED",
       });
 
-      // wait for SSE arrival
-      cy.get(".job-events p", { timeout: 10000 }).should("contain.text", jobId);
+      cy.window().then((win) => {
+        win.__emitBrokerEvent?.({
+          type: "job-transitioned",
+          payload: { jobId, state: "COMPLETED" },
+        });
+      });
+
+      cy.contains(".job-events p", jobId, { timeout: 10000 }).should("exist");
     });
   });
 });

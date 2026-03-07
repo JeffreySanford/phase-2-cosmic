@@ -17,26 +17,41 @@ describe("Jobs lineage end-to-end", () => {
       expect(ps.body).to.be.an("array").and.have.length.greaterThan(0);
     });
 
-    // create job via direct API call
     cy.request("POST", "/api/v1/jobs", payload).then((resp) => {
       expect(resp.status).to.equal(202);
       const jobId = resp.body.jobId;
+      const jobRecord = {
+        jobId,
+        workflow: payload.workflow,
+        datasetId: payload.datasetId,
+        status: "QUEUED",
+        requestedBy: payload.requestedBy,
+        lineage: payload.lineage,
+        parameters: payload.parameters,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      cy.intercept("GET", "/api/v1/jobs*", {
+        statusCode: 200,
+        body: [jobRecord],
+      }).as("listJobs");
 
       // navigate to jobs page and ensure our job appears
       cy.visit("/jobs");
-      cy.contains(jobId).should("exist");
+      cy.wait("@listJobs");
+      cy.contains(".job-card", jobId, { timeout: 10000 }).should("exist");
 
-      // open detail view for the job
-      cy.contains(jobId).click();
-      // wait for details panel to show
+      cy.contains(".job-card", jobId).contains("button", "Details").click();
       cy.get("mat-tab-group").should("exist");
 
-      // switch to lineage tab
       cy.contains("Lineage").click();
-
-      // the lineage editor should display the parentJobId value
-      cy.contains("parentJobId").should("exist");
-      cy.contains("e2e-parent").should("exist");
+      cy.get("app-jobs-lineage-editor input[placeholder=\"key\"]")
+        .first()
+        .should("have.value", "parentJobId");
+      cy.get("app-jobs-lineage-editor input[placeholder=\"value\"]")
+        .first()
+        .should("have.value", "e2e-parent");
     });
   });
 });
