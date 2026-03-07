@@ -1,0 +1,24 @@
+{
+  "rabbit_version": "3.11.0",
+  "users": [],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [],
+  "parameters": [],
+  "global_parameters": [],
+  "policies": [],
+  "queues": [
+    {
+      "name": "phase2-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "exchanges": [],
+  "bindings": []
+}

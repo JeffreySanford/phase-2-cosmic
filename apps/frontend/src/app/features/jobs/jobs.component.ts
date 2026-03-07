@@ -166,29 +166,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     );
   }
 
-  releaseDeferred() {
-    this.loading = true;
-    this.jobsSvc.releaseDeferred().subscribe(
-      (res) => {
-        this.loading = false;
-        this.snackBar.open(
-          `Released ${res.released} deferred jobs`,
-          undefined,
-          { duration: 3000 }
-        );
-        this.jobsSvc.invalidateList();
-      },
-      (err) => {
-        this.loading = false;
-        this.snackBar.open(
-          `Failed to release deferred jobs: ${this.errMsg(err)}`,
-          undefined,
-          { duration: 5000 }
-        );
-      }
-    );
-  }
-
   private generateComplexParameters(index: number): Record<string, unknown> {
     // emulate NGVLA-like complex job parameters: observation window, antennas, frequency selection, provenance flags
     const now = new Date().toISOString();

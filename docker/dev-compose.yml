@@ -21,6 +21,8 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
+    env_file:
+      - ./.env
     depends_on:
       - zookeeper
     environment:
@@ -50,6 +52,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -57,6 +60,9 @@ services:
       - "5672:5672"
       - "15672:15672"
     restart: unless-stopped
+    volumes:
+      - ./docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     healthcheck:
       test:
         - "CMD"
@@ -85,6 +91,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 10
+      start_period: 60s
 
   minio:
     image: minio/minio:latest
@@ -111,6 +118,8 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
       - "9090:9090"
+    env_file:
+      - ./.env
     restart: unless-stopped
     healthcheck:
       test:
@@ -122,6 +131,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
 
   grafana:
     image: grafana/grafana:9.5.0
@@ -156,6 +166,16 @@ services:
       - ./loki-config.yml:/etc/loki/local-config.yaml:ro
       - loki-data:/loki
     restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:3100/ready"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   alertmanager:
     image: prom/alertmanager:latest
@@ -164,6 +184,16 @@ services:
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:9093/-/ready"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   data-generator:
     build:
@@ -191,6 +221,8 @@ services:
     image: phase2/java-ingest:dev
     ports:
       - "8081:8080"
+    env_file:
+      - ./.env
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
@@ -209,29 +241,50 @@ services:
         - "http://localhost:8080/actuator/health"
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 20s
 
   java-governance:
     build:
-      context: ../apps/java-governance
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/java-governance/Dockerfile
     image: phase2/java-governance:dev
     ports:
       - "8082:8080"
+    env_file:
+      - ./.env
     environment:
       - SPRING_PROFILES_ACTIVE=docker,kafka
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+      - REDIS_HOST=redis
+      - SPRING_REDIS_URL=redis://redis:6379
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_PORT=5672
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - HOST_KAFKA_BOOTSTRAP=kafka:9092
       - PULSAR_ADMIN_URL=http://pulsar:8080
+      - PULSAR_SERVICE_URL=pulsar://pulsar:6650
+      - PULSAR_BROKER_URL=pulsar://pulsar:6650
+      - SPRING_PULSAR_SERVICE_URL=pulsar://pulsar:6650
       - PROMETHEUS_ENDPOINT=prometheus:9090
       - PROMETHEUS_BASEURL=http://prometheus:9090
       - PROMETHEUS_BASE_URL=http://prometheus:9090
-      # Ensure JVM system property is set so Spring reads prometheus.baseUrl
+      # Ensure JVM system property so Spring reads prometheus.baseUrl
       - JAVA_TOOL_OPTIONS=-Dprometheus.baseUrl=http://prometheus:9090
     restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      pulsar:
+        condition: service_healthy
     healthcheck:
       test:
         - "CMD"
@@ -247,6 +300,15 @@ services:
     ports:
       - "6379:6379"
     restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "redis-cli"
+        - "ping"
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 10s
 
   nginx-static:
     image: nginx:stable
@@ -255,6 +317,16 @@ services:
     volumes:
       - ../dist/apps/frontend:/usr/share/nginx/html:ro
     restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:80/"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   test-runner:
     image: node:20-bullseye

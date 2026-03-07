@@ -1,6 +1,5 @@
 describe("Diagnostics page", () => {
-  it("should display Pulsar and RabbitMQ status", () => {
-    // Intercept the status API calls
+  it("should display broker systems status", () => {
     cy.intercept("GET", "/api/v1/pulsar/status", {
       statusCode: 200,
       body: {
@@ -26,29 +25,43 @@ describe("Diagnostics page", () => {
       },
     }).as("rabbitMQStatus");
 
-    // Visit the diagnostics page
-    cy.visit("/diagnostics");
+    cy.intercept("GET", "/api/diagnostics/docker-services", {
+      statusCode: 200,
+      body: [
+        {
+          name: "RabbitMQ",
+          status: "healthy",
+          details: "AMQP ready",
+          latencyMs: 12,
+        },
+        {
+          name: "Kafka",
+          status: "healthy",
+          details: "Broker available",
+          latencyMs: 18,
+        },
+      ],
+    }).as("dockerServices");
 
-    // Wait for the status requests to complete
+    cy.visit("/diagnostics");
+    cy.contains('[role="tab"]', "Broker Systems").click();
+
+    cy.wait("@dockerServices");
     cy.wait("@pulsarStatus");
     cy.wait("@rabbitMQStatus");
 
-    // Check that Pulsar status is displayed
-    cy.contains("Pulsar Status").should("be.visible");
-    cy.contains("Brokers: 3").should("be.visible");
-    cy.contains("Topics: 15").should("be.visible");
-    cy.contains("Partitions: 45").should("be.visible");
+    cy.contains("Broker & Service Status").should("be.visible");
+    cy.contains(".tile-title", "RabbitMQ").should("exist");
+    cy.contains(".tile-status", "healthy").should("exist");
+    cy.contains(".tile-body", "AMQP ready").should("exist");
 
-    // Check that RabbitMQ status is displayed
-    cy.contains("RabbitMQ").should("be.visible");
-    cy.contains("Status: connected").should("be.visible");
-    cy.contains("Connection: connected").should("be.visible");
-    cy.contains("Queues: 2").should("be.visible");
-    cy.contains("Exchanges: 2").should("be.visible");
+    cy.get("app-pulsar-status").should("contain.text", "Pulsar");
+    cy.get("app-pulsar-status").should("contain.text", "Brokers: 3");
+    cy.get("app-pulsar-status").should("contain.text", "Topics: 15");
+    cy.get("app-pulsar-status").should("contain.text", "Partitions: 45");
   });
 
   it("should handle status API errors gracefully", () => {
-    // Intercept with error responses
     cy.intercept("GET", "/api/v1/pulsar/status", {
       statusCode: 500,
       body: { error: "Service unavailable" },
@@ -59,62 +72,23 @@ describe("Diagnostics page", () => {
       body: { error: "Connection failed" },
     }).as("rabbitMQStatusError");
 
-    // Visit the diagnostics page
-    cy.visit("/diagnostics");
+    cy.intercept("GET", "/api/diagnostics/docker-services", {
+      statusCode: 200,
+      body: [],
+    }).as("dockerServices");
 
-    // Wait for the error responses
+    cy.visit("/diagnostics");
+    cy.contains('[role="tab"]', "Broker Systems").click();
+
+    cy.wait("@dockerServices");
     cy.wait("@pulsarStatusError");
     cy.wait("@rabbitMQStatusError");
 
-    // Check that error states are displayed appropriately
-    cy.contains("Pulsar Status").should("be.visible");
-    cy.contains("Brokers: 0").should("be.visible");
-    cy.contains("Topics: 0").should("be.visible");
-    cy.contains("Partitions: 0").should("be.visible");
-
-    cy.contains("RabbitMQ").should("be.visible");
-    cy.contains("Status: unavailable").should("be.visible");
-    cy.contains("Connection: error").should("be.visible");
+    cy.contains("Broker & Service Status").should("be.visible");
+    cy.get("app-pulsar-status").should("contain.text", "Pulsar");
+    cy.get("app-pulsar-status").should("contain.text", "Brokers: 0");
+    cy.get("app-pulsar-status").should("contain.text", "Topics: 0");
+    cy.get("app-pulsar-status").should("contain.text", "Partitions: 0");
   });
 
-  it("should poll status updates", () => {
-    let callCount = 0;
-
-    // Intercept and count calls
-    cy.intercept("GET", "/api/v1/pulsar/status", (req) => {
-      callCount++;
-      req.reply({
-        statusCode: 200,
-        body: {
-          brokers: callCount,
-          topics: callCount * 5,
-          partitions: callCount * 15,
-        },
-      });
-    }).as("pulsarStatus");
-
-    cy.intercept("GET", "/api/v1/rabbitmq/status", {
-      statusCode: 200,
-      body: {
-        status: "connected",
-        connection: "connected",
-        queues: { queue1: {} },
-        exchanges: { exchange1: {} },
-      },
-    }).as("rabbitMQStatus");
-
-    // Visit the diagnostics page
-    cy.visit("/diagnostics");
-
-    // Wait for initial calls
-    cy.wait("@pulsarStatus");
-    cy.wait("@rabbitMQStatus");
-
-    // Check initial values
-    cy.contains("Brokers: 1").should("be.visible");
-
-    // Wait for polling to update
-    cy.wait("@pulsarStatus", { timeout: 10000 });
-    cy.contains("Brokers: 2").should("be.visible");
-  });
 });

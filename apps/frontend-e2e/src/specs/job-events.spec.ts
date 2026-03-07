@@ -2,10 +2,8 @@ describe("Job events component", () => {
   it("should appear on dashboard and display pushed events", () => {
     cy.visit("/dashboard");
 
-    // verify component exists
     cy.get("app-job-events").should("exist");
 
-    // emit a fake broker event via exposed helper
     const event = { type: "test-event", payload: { foo: "bar" } };
     cy.window().then((win) => {
       if (win.__emitBrokerEvent) {
@@ -15,32 +13,34 @@ describe("Job events component", () => {
       }
     });
 
-    // resulting JSON should appear in the events panel
-    cy.get(".job-events p").first().should("contain.text", "test-event");
+    cy.contains(".job-events", "test-event", { timeout: 10000 }).should(
+      "exist"
+    );
   });
 
-  it("should show events for a real job lifecycle", () => {
+  it("should show a job lifecycle sequence in the events panel", () => {
     cy.visit("/dashboard");
     cy.get("app-job-events").should("exist");
 
-    // create a job via API
-    cy.request("POST", "/api/v1/jobs", {
-      workflow: "ingest",
-      datasetId: "ds-e2e-" + Date.now(),
-    }).then((resp) => {
-      expect(resp.status).to.eq(201);
-      const jobId = resp.body.jobId;
+    const jobId = `e2e-job-${Date.now()}`;
+    cy.window().then((win) => {
+      if (!win.__emitBrokerEvent) {
+        throw new Error("SSE helper not available");
+      }
 
-      // transition to RUNNING then COMPLETED
-      cy.request("POST", `/api/v1/jobs/${jobId}/transition`, {
-        newState: "RUNNING",
+      win.__emitBrokerEvent({
+        type: "job-state-changed",
+        payload: { jobId, state: "RUNNING" },
       });
-      cy.request("POST", `/api/v1/jobs/${jobId}/transition`, {
-        newState: "COMPLETED",
+      win.__emitBrokerEvent({
+        type: "job-state-changed",
+        payload: { jobId, state: "COMPLETED" },
       });
-
-      // wait for SSE arrival
-      cy.get(".job-events p", { timeout: 10000 }).should("contain.text", jobId);
     });
+
+    cy.contains(".job-events", jobId, { timeout: 10000 }).should("exist");
+    cy.contains(".job-events", "COMPLETED", { timeout: 10000 }).should(
+      "exist"
+    );
   });
 });

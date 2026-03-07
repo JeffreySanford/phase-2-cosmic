@@ -212,7 +212,6 @@ public class JobService {
                     JobRecord rec = marshaller.toJobRecord(o);
                     if (rec == null) continue;
                     if (rec.getState() == JobState.QUEUED) {
-                        // skip jobs explicitly marked as deferred (pre-seeded samples)
                         Map<String, Object> paramsObjCheck = rec.getParameters() == null ? Map.<String, Object>of() : rec.getParameters();
                         boolean deferred = false;
                         if (paramsObjCheck.containsKey("deferred")) {
@@ -221,8 +220,14 @@ public class JobService {
                             else deferred = "true".equalsIgnoreCase(String.valueOf(dv));
                         }
                         if (deferred) {
-                            log.info("Skipping deferred queued job {} (awaiting release)", rec.getJobId());
-                            continue;
+                            var newParams = new HashMap<String, Object>(paramsObjCheck);
+                            newParams.remove("deferred");
+                            rec.setParameters(newParams);
+                            rec.setUpdatedAt(Instant.now().toString());
+                            rec.setVersion(rec.getVersion() + 1);
+                            setValue(k, rec);
+                            log.info("Released deferred sample job {} into normal dispatch", rec.getJobId());
+                            paramsObjCheck = newParams;
                         }
                         String executorName = "simulator";
                         var paramsObj = rec.getParameters() == null ? Map.<String, Object>of() : rec.getParameters();

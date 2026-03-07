@@ -17,6 +17,7 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import { CommonEngine } from "@angular/ssr";
 import { join } from "path";
+import { Readable } from "stream";
 import {
   existsSync,
   readFileSync,
@@ -449,11 +450,14 @@ export class AppController {
     timeoutMs = 7000
   ): Promise<globalThis.Response> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort("timeout"), timeoutMs);
+    const timer =
+      timeoutMs > 0
+        ? setTimeout(() => controller.abort("timeout"), timeoutMs)
+        : null;
     try {
       return await fetch(url, { ...init, signal: controller.signal });
     } finally {
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
     }
   }
 
@@ -474,8 +478,13 @@ export class AppController {
   }
 
   private governanceBaseCandidates(): string[] {
+    // Prefer the governance container (docker-compose mapping) for dev by default.
+    // - If a user explicitly sets `GOVERNANCE_API_URL` that value is used.
+    // - Default prefers the host-facing compose mapping `http://localhost:8082` which
+    //   maps to the container's `8080` port in our docker-compose dev stacks.
+    // - The `buildBaseCandidates` will add localhost/127.0.0.1 variants.
     const governanceBase =
-      process.env["GOVERNANCE_API_URL"] || "http://127.0.0.1:8082";
+      process.env["GOVERNANCE_API_URL"] || "http://localhost:8082";
     return this.buildBaseCandidates(governanceBase);
   }
 
@@ -1189,14 +1198,30 @@ export class AppController {
         }
       }
 
+      const wantsSse =
+        req.path === "/api/v1/broker-events" ||
+        String(req.headers["accept"] || "").includes("text/event-stream");
       const upstream = await this.fetchWithFallback(
         targetUrls,
         { method, headers, body },
-        7000
+        wantsSse ? 0 : 7000
       );
-      const text = await upstream.text();
       const ct = upstream.headers.get("content-type");
       if (ct) res.setHeader("content-type", ct);
+      if (wantsSse || (ct && ct.includes("text/event-stream"))) {
+        res.status(upstream.status);
+        res.setHeader("cache-control", "no-cache, no-transform");
+        res.setHeader("connection", "keep-alive");
+        res.flushHeaders?.();
+        if (!upstream.body) {
+          res.end();
+          return;
+        }
+        Readable.fromWeb(upstream.body as any).pipe(res);
+        return;
+      }
+
+      const text = await upstream.text();
       res.status(upstream.status).send(text);
     } catch (e: any) {
       console.error("Error proxying to governance API:", e);

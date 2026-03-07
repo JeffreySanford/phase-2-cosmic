@@ -6,9 +6,6 @@ describe("Add five jobs and processing", () => {
   it("submits five complex jobs and verifies they are processed", () => {
     // intercept job list and submit endpoints
     cy.intercept("POST", "/api/v1/jobs").as("submitJob");
-    cy.intercept("POST", "/api/v1/admin/release-deferred").as(
-      "releaseDeferred"
-    );
 
     // open dialog and submit a single job with explicit lineage
     cy.contains("button", "New Job").click();
@@ -45,12 +42,6 @@ describe("Add five jobs and processing", () => {
     cy.wait("@submitJob", { timeout: 20000 }).then(() => {
       // at least one submit observed; allow some time for others
     });
-
-    // release deferred samples (in case precached were deferred)
-    cy.contains("button", "Release deferred samples").click();
-    cy.wait("@releaseDeferred", { timeout: 10000 })
-      .its("response.statusCode")
-      .should("be.oneOf", [200, 201]);
 
     // now poll job list and verify table exists and jobs appear
     // header text lives outside the table in a mat-card-title
