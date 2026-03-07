@@ -2,8 +2,6 @@ package com.cosmic.governance.api.messaging;
 
 import com.cosmic.governance.api.dto.JobSubmitRequest;
 import com.cosmic.governance.api.service.JobService;
-import org.springframework.kafka.core.KafkaTemplate;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -20,13 +18,11 @@ public class KafkaIngestListener {
     private final JobService jobService;
     private final ObjectMapper mapper;
     private final Validator validator;
-    private final KafkaTemplate<String,String> kafkaTemplate;
 
-    public KafkaIngestListener(JobService jobService, ObjectMapper mapper, Validator validator, KafkaTemplate<String,String> kafkaTemplate) {
+    public KafkaIngestListener(JobService jobService, ObjectMapper mapper, Validator validator) {
         this.jobService = jobService;
         this.mapper = mapper;
         this.validator = validator;
-        this.kafkaTemplate = kafkaTemplate;
     }
 
     @KafkaListener(topics = "phase2-events", groupId = "governance-group")
@@ -34,22 +30,6 @@ public class KafkaIngestListener {
         try {
             // Expect payload to be a JSON object with fields for a job submit
             Map<String,Object> obj = mapper.readValue(payload, Map.class);
-            // Determine requestId for idempotency: prefer parameters.requestId or top-level requestId
-            String requestId = null;
-            if (obj.containsKey("requestId")) requestId = String.valueOf(obj.get("requestId"));
-            if ((requestId == null || requestId.isBlank()) && obj.containsKey("parameters") && obj.get("parameters") instanceof Map) {
-                @SuppressWarnings("unchecked") Map<String,Object> p = (Map<String,Object>) obj.get("parameters");
-                if (p.containsKey("requestId")) requestId = String.valueOf(p.get("requestId"));
-            }
-            if (requestId == null || requestId.isBlank()) requestId = UUID.randomUUID().toString();
-
-            // dedup check: if already processed, ignore duplicate
-            boolean duplicate = false;
-            try { duplicate = jobService.checkAndMarkRequestId(requestId, 24 * 60 * 60); } catch (Exception ignored) {}
-            if (duplicate) {
-                log.info("Ignoring duplicate Kafka ingest message requestId={}", requestId);
-                return;
-            }
             String workflow = obj.containsKey("workflow") ? String.valueOf(obj.get("workflow")) : "ingest";
             String datasetId = obj.containsKey("datasetId") ? String.valueOf(obj.get("datasetId")) : "unknown";
             Map<String,Object> params = obj.containsKey("parameters") && obj.get("parameters") instanceof Map ? (Map<String,Object>) obj.get("parameters") : Map.of();
@@ -69,13 +49,7 @@ public class KafkaIngestListener {
             jobService.submit(req);
         } catch (Exception ex) {
             log.warn("Failed to process Kafka message: {}", ex.toString());
-            // forward to DLQ topic for operator review
-            try {
-                if (kafkaTemplate != null) kafkaTemplate.send("phase2-events-dlq", payload);
-            } catch (Exception inner) {
-                log.error("Unable to publish to Kafka DLQ", inner);
-            }
-            // swallow exception to avoid infinite retries
+            throw new RuntimeException(ex);
         }
     }
 }

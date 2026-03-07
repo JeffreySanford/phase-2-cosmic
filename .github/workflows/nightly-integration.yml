@@ -18,23 +18,21 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Enable corepack (pnpm)
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.23.0 --activate
+      - name: Install pnpm
+        run: npm install -g pnpm@8
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Start governance container for nightly integration (image is source-of-truth)
-        run: |
-          docker compose -f docker/dev-compose.yml pull java-governance || true
-          docker compose -f docker/dev-compose.yml up -d --force-recreate --no-deps java-governance
-          for i in {1..30}; do
-            if curl -sSf http://localhost:8082/actuator/health; then exit 0; fi
-            sleep 5
-          done
-          echo "java-governance failed to become healthy" && docker compose -f docker/dev-compose.yml logs java-governance || true ; exit 1
+      - name: Run integration tests with containers (requires Docker accessible to runner)
+        run: mvn -f apps/java-governance/pom.xml test -Pwith-containers
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-surefire-reports
+          path: apps/java-governance/target/surefire-reports/**
 
     # NOTE: This job assumes the runner has Docker available and Testcontainers can talk to it.
     # On GitHub-hosted runners Testcontainers usually needs Docker-in-Docker or setup configured.

@@ -17,10 +17,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v2
 
       - name: Build local Maven test image
         uses: docker/build-push-action@v5
@@ -61,18 +61,14 @@ jobs:
           chmod +x ./scripts/ci/preflight.sh || true
           ./scripts/ci/preflight.sh
 
-      - name: Start governance container (image is source-of-truth)
-        run: |
-          docker compose -f docker/dev-compose.yml pull java-governance || true
-          docker compose -f docker/dev-compose.yml up -d --force-recreate --no-deps java-governance
-          for i in {1..30}; do
-            if curl -sSf http://localhost:8082/actuator/health; then
-              echo "java-governance is healthy"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "java-governance failed to become healthy" && docker compose -f docker/dev-compose.yml logs java-governance || true ; exit 1
+      - name: Run Maven tests (no skipping, with containers)
+        working-directory: apps/java-governance
+        # this execution includes the ProvenanceE2ETest added in Sprint 2
+        run: mvn -B test -Pwith-containers
 
-      - name: Note: no surefire reports for java-governance (image-based)
-        run: echo "Governance is provided as a docker image; surefire artifacts are not produced in this workflow."
+      - name: Upload Surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-java-governance
+          path: apps/java-governance/target/surefire-reports || true

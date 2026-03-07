@@ -22,17 +22,15 @@ jobs:
             openapi:
               - 'openapi/**'
             docs:
-              - 'documentation/**'
+              - 'docuentation/**'
 
       - name: Set up Node 18
         uses: actions/setup-node@v4
         with:
           node-version: "18"
 
-      - name: Enable corepack (pnpm)
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.23.0 --activate
+      - name: Install pnpm
+        run: npm install -g pnpm@8
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
@@ -76,30 +74,34 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Enable corepack (pnpm)
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.23.0 --activate
+      - name: Install pnpm
+        run: npm install -g pnpm@8
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build frontend
-        run: pnpm nx build frontend
+        run: pnpm -C apps/frontend build
 
-      - name: Start java-governance container (image is source-of-truth)
+      - name: Run java-governance verify (unit + IT)
         run: |
-          docker compose -f docker/dev-compose.yml pull java-governance || true
-          docker compose -f docker/dev-compose.yml up -d --force-recreate --no-deps java-governance
-          # wait for health endpoint (max ~150s)
-          for i in {1..30}; do
-            if curl -sSf http://localhost:8082/actuator/health; then
-              echo "java-governance is healthy"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "java-governance failed to become healthy" && docker compose -f docker/dev-compose.yml logs java-governance || true ; exit 1
+          mvn -f apps/java-governance/pom.xml clean verify -Pwith-containers -B
+
+      - name: Generate JaCoCo report
+        run: mvn -f apps/java-governance/pom.xml jacoco:report
+
+      - name: Run coverage enforcement
+        run: bash scripts/check-coverage.sh 90
+
+      - name: Archive JVM test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-reports
+          path: |
+            apps/java-governance/target/surefire-reports/**
+            apps/java-governance/target/failsafe-reports/**
+            apps/java-governance/target/site/jacoco/**
 
       - name: Run java-ingest verify (unit)
         run: mvn -f tools/java-ingest/pom.xml clean verify -B
@@ -121,4 +123,33 @@ jobs:
       - name: Run docs validation
         run: bash scripts/check-docs.sh
 
-      # No surefire reports for java-governance when the service is provided as a docker image.
+      - name: Archive surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: apps/java-governance/target/surefire-reports/**
+
+  e2e-ci:
+    name: E2E (Nx Agents)
+    # This job runs only when an Nx Cloud / Nx Agents secret is configured in the repository.
+    # If no secret is present the job will be skipped to avoid false failures in PRs.
+    if: ${{ secrets.NX_CLOUD_AUTH_TOKEN != '' || secrets.NX_CLOUD_TOKEN != '' || secrets.NX_AGENT_TOKEN != '' || secrets.NX_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install pnpm
+        run: npm install -g pnpm@8
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Nx E2E (requires Nx Agents)
+        run: pnpm nx run frontend-e2e:e2e-ci

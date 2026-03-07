@@ -252,11 +252,9 @@ All Phase 1 deliverables have been successfully completed. The platform now has 
 
 2. **Streaming-to-Governance Integration**:
 
-   - Gateway consumers/producers for Kafka, RabbitMQ and Pulsar with idempotent ingest
-   - Handle interruptions, duplicates, DLQ and replay so control plane never sits on a flaky pipe
-   - Shared, versioned schema/contracts for execution/telemetry events across all three brokers
-   - Full test matrix (unit/integration/Testcontainers) exercising every broker path
-   - Dead-letter and replay runbook for operators
+   - Kafka consumer path with idempotent ingest
+   - Contract versioning for telemetry-to-governance events
+   - Dead-letter and replay runbook
 
 3. **Contract Testing**:
 

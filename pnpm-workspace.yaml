@@ -1,9 +1,4 @@
 ---
-packages:
-  - "apps/*"
-  - "libs/*"
-  - "tools/*"
-
 onlyBuiltDependencies:
   - "@nestjs/core"
   - "@parcel/watcher"
@@ -12,4 +7,6 @@ onlyBuiltDependencies:
   - esbuild
   - lmdb
   - msgpackr-extract
+  - nx
+
   - nx

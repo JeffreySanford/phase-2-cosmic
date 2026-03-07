@@ -3,10 +3,12 @@ name: Integration Tests
 on:
   push:
     paths:
+      - "apps/java-governance/**"
       - "docker/**"
       - ".github/workflows/**"
   pull_request:
     paths:
+      - "apps/java-governance/**"
       - "docker/**"
 
 jobs:
@@ -35,10 +37,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Start Kafka, Zookeeper, and Redis (dev-compose)
+      - name: Start Kafka & Zookeeper (dev-compose)
         run: |
           set -euo pipefail
-          KAFKA_HOST_PORT=${{ env.KAFKA_HOST_PORT }} docker compose -f docker/dev-compose.yml up -d zookeeper kafka redis
+          KAFKA_HOST_PORT=${{ env.KAFKA_HOST_PORT }} docker compose -f docker/dev-compose.yml up -d zookeeper kafka
 
       - name: Wait for Kafka readiness
         run: |
@@ -55,26 +57,13 @@ jobs:
           docker compose -f docker/dev-compose.yml logs kafka || true
           exit 1
 
-      - name: Start governance container and run integration smoke
+      - name: Run integration tests
         env:
           USE_HOST_KAFKA: "true"
           HOST_KAFKA_BOOTSTRAP: "localhost:${{ env.KAFKA_HOST_PORT }}"
-          SPRING_REDIS_HOST: "localhost"
-          SPRING_REDIS_PORT: "6379"
           MAVEN_OPTS: -Xmx2g
         run: |
-          # Start governance container (image is source-of-truth)
-          docker compose -f docker/dev-compose.yml pull java-governance || true
-          docker compose -f docker/dev-compose.yml up -d --force-recreate --no-deps java-governance
-          for i in {1..30}; do
-            if curl -sSf http://localhost:8082/actuator/health; then
-              echo "java-governance is healthy"
-              break
-            fi
-            sleep 5
-          done
-          # Run lightweight integration smoke: ensure health and a basic API ping
-          curl -sSf http://localhost:8082/actuator/health
+          mvn -f apps/java-governance/pom.xml clean verify -Pintegration-tests -DskipTests=false -B -V
 
       - name: Tear down compose
         if: always()

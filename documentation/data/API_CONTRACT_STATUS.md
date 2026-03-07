@@ -127,7 +127,6 @@ Viewer route:
    - Extended Dataset interface with provenance and ngvlaParams fields
 
 2. 🔄 Contract testing strategy:
-
    - Add automated contract tests for: jobs submit/list/get/transition/cancel
    - Add automated contract tests for: datasets create/list/get
    - Integrate fixture compatibility validation in CI
