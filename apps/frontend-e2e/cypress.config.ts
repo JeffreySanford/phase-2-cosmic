@@ -8,15 +8,15 @@ export default defineConfig({
       cypressDir: "src",
       webServerCommands: {
         default:
-          'pnpm exec concurrently --kill-others-on-fail --success first "cross-env FRONTEND_PORT=4000 pnpm run serve:ssr" "pnpm exec nx run frontend:serve"',
+          'pnpm exec concurrently --kill-others-on-fail --success first "cross-env FRONTEND_PORT=4000 DEV_SERVER_ORIGIN=http://127.0.0.1:4200 pnpm run serve:ssr" "pnpm exec nx run frontend:serve --host=127.0.0.1"',
         production: "cross-env FRONTEND_PORT=4000 pnpm run serve:ssr",
       },
       webServerConfig: {
         timeout: 180000,
       },
       ciWebServerCommand:
-        'pnpm exec concurrently --kill-others-on-fail --success first "cross-env FRONTEND_PORT=4000 pnpm run serve:ssr" "pnpm exec nx run frontend:serve"',
-      ciBaseUrl: "http://localhost:4200",
+        'pnpm exec concurrently --kill-others-on-fail --success first "cross-env FRONTEND_PORT=4000 DEV_SERVER_ORIGIN=http://127.0.0.1:4200 pnpm run serve:ssr" "pnpm exec nx run frontend:serve --host=127.0.0.1"',
+      ciBaseUrl: "http://127.0.0.1:4200",
     }),
     // Support file for custom commands
     supportFile: "src/support/e2e.ts",
@@ -25,6 +25,6 @@ export default defineConfig({
       "src/**/*.cy.{js,jsx,ts,tsx}",
       "src/specs/**/*.spec.{js,jsx,ts,tsx}",
     ],
-    baseUrl: "http://localhost:4200",
+    baseUrl: "http://127.0.0.1:4200",
   },
 });
