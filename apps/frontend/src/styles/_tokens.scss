@@ -8,22 +8,22 @@ $tokens: (
     accent-2: #7b61ff,
     accent-3: #00e5ff,
     text: #e6f7ff,
-    muted: rgba(230,247,255,0.7)
+    muted: rgba(230, 247, 255, 0.7),
   ),
   spacing: (
     xs: 4px,
     sm: 8px,
     md: 12px,
-    lg: 20px
+    lg: 20px,
   ),
   radii: (
     sm: 6px,
-    md: 12px
+    md: 12px,
   ),
   transitions: (
     fast: 120ms,
-    medium: 220ms
-  )
+    medium: 220ms,
+  ),
 );
 
 @function token($keys...) {

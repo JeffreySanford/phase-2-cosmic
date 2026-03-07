@@ -37,7 +37,9 @@
     },
     "e2e-ci--**/*": { "dependsOn": ["^build"] }
   },
-  "plugins": [{ "plugin": "@nx/eslint/plugin", "options": { "targetName": "lint" } }],
+  "plugins": [
+    { "plugin": "@nx/eslint/plugin", "options": { "targetName": "lint" } }
+  ],
   "generators": {
     "@nx/angular:application": {
       "e2eTestRunner": "cypress",

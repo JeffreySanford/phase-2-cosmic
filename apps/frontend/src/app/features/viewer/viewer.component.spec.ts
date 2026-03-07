@@ -52,9 +52,7 @@ describe("ViewerComponent", () => {
   let debugSpy: jest.SpyInstance;
 
   beforeEach(waitForAsync(() => {
-    debugSpy = jest
-      .spyOn(console, "debug")
-      .mockImplementation(() => undefined);
+    debugSpy = jest.spyOn(console, "debug").mockImplementation(() => undefined);
     return TestBed.configureTestingModule({
       declarations: [ViewerComponent],
       schemas: [NO_ERRORS_SCHEMA],

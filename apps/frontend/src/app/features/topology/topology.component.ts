@@ -465,7 +465,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     return {
       currentMBps: Math.round(
         maxMBps *
-          Math.min(1, Math.max(0.04, this.loadScale() * this.linkActivityBias(key)))
+          Math.min(
+            1,
+            Math.max(0.04, this.loadScale() * this.linkActivityBias(key))
+          )
       ),
       maxMBps,
     };
@@ -489,10 +492,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     return Array.from(aliases).filter((alias) => alias !== key);
   }
 
-  private composeLinkKey(
-    source?: string,
-    target?: string
-  ): string | undefined {
+  private composeLinkKey(source?: string, target?: string): string | undefined {
     if (!source || !target) return undefined;
     return `${source}->${target}`;
   }
@@ -582,13 +582,19 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     particles.forEach((particle, index) => {
       particle.setAttribute("r", `${radius}`);
       particle.setAttribute("fill", fill);
-      particle.setAttribute("opacity", `${Math.max(0.38, 0.95 - index * 0.12)}`);
+      particle.setAttribute(
+        "opacity",
+        `${Math.max(0.38, 0.95 - index * 0.12)}`
+      );
       const animEl = particle.querySelector(
         "animateMotion"
       ) as SVGAnimateElement | null;
       if (animEl) {
         animEl.setAttribute("dur", `${durationSec}s`);
-        animEl.setAttribute("begin", `${(index * durationSec) / desiredCount}s`);
+        animEl.setAttribute(
+          "begin",
+          `${(index * durationSec) / desiredCount}s`
+        );
       }
     });
   }
@@ -1228,20 +1234,20 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         (res) => {
           this.topologySource = "live";
           this.hasTopologyData = true;
-        this.render(res.nodes ?? [], res.links ?? []);
-        this.loading = false;
-        this.initialLoadSettled = true;
-      },
-      () => {
-        this.topologySource = "unavailable";
-        this.hasTopologyData = false;
-        this.clearGraph();
-        this.lastError =
-          "Live topology data is unavailable. Retry when the topology API is online.";
-        this.loading = false;
-        this.initialLoadSettled = true;
-      }
-    );
+          this.render(res.nodes ?? [], res.links ?? []);
+          this.loading = false;
+          this.initialLoadSettled = true;
+        },
+        () => {
+          this.topologySource = "unavailable";
+          this.hasTopologyData = false;
+          this.clearGraph();
+          this.lastError =
+            "Live topology data is unavailable. Retry when the topology API is online.";
+          this.loading = false;
+          this.initialLoadSettled = true;
+        }
+      );
       return;
     }
 

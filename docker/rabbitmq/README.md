@@ -22,6 +22,6 @@ services:
     volumes:
       - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
-``` 
+```
 
 If you previously used `docker/docker/rabbitmq`, it has been consolidated here.

@@ -62,13 +62,13 @@ Client-side guidance:
 
 ## 4. ObsCore → DatasetManifest mapping (recommended)
 
-| ObsCore field | DatasetManifest path | Notes |
-| --- | --- | --- |
-| obs_publisher_did | manifest.sourceAttribution.datasetId | Persistent identifier from provider |
-| access_url | manifest.sourceAttribution.accessUrl | Prefer DataLink/accessURL when present |
-| dataproduct_type | manifest.sourceAttribution.sourceType | image/catalog/visibility |
-| obs_collection | manifest.sourceAttribution.sourceName | survey or collection name |
-| ra, dec | manifest.pointing | store as canonical numeric fields |
+| ObsCore field     | DatasetManifest path                  | Notes                                  |
+| ----------------- | ------------------------------------- | -------------------------------------- |
+| obs_publisher_did | manifest.sourceAttribution.datasetId  | Persistent identifier from provider    |
+| access_url        | manifest.sourceAttribution.accessUrl  | Prefer DataLink/accessURL when present |
+| dataproduct_type  | manifest.sourceAttribution.sourceType | image/catalog/visibility               |
+| obs_collection    | manifest.sourceAttribution.sourceName | survey or collection name              |
+| ra, dec           | manifest.pointing                     | store as canonical numeric fields      |
 
 ## 5. Caching, rate limits, and robustness
 

@@ -77,9 +77,7 @@ describe("datasets provenance", () => {
       .eq(1)
       .find("input")
       .type("Created from Cypress");
-    cy.get("mat-card-content button")
-      .contains("Create")
-      .click({ force: true });
+    cy.get("mat-card-content button").contains("Create").click({ force: true });
     cy.wait("@createDataset");
 
     cy.contains("strong", "Created Dataset").should("exist");

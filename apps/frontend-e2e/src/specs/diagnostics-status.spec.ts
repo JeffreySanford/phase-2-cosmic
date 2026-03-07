@@ -55,7 +55,7 @@ describe("Diagnostics page", () => {
     cy.wait("@pulsarStatus");
     cy.wait("@rabbitMQStatus");
 
-    cy.contains("[role=\"tab\"]", "Broker Systems").click();
+    cy.contains('[role="tab"]', "Broker Systems").click();
     cy.contains("Pulsar").should("exist");
     cy.contains("Brokers: 3").should("exist");
     cy.contains("Topics: 15").should("exist");
@@ -90,7 +90,7 @@ describe("Diagnostics page", () => {
     cy.wait("@pulsarStatusError");
     cy.wait("@rabbitMQStatusError");
 
-    cy.contains("[role=\"tab\"]", "Broker Systems").click();
+    cy.contains('[role="tab"]', "Broker Systems").click();
     cy.contains("Pulsar").should("exist");
     cy.contains("Brokers: 0").should("exist");
     cy.contains("Topics: 0").should("exist");
@@ -136,7 +136,7 @@ describe("Diagnostics page", () => {
     cy.wait("@pulsarStatus");
     cy.wait("@rabbitMQStatus");
 
-    cy.contains("[role=\"tab\"]", "Broker Systems").click();
+    cy.contains('[role="tab"]', "Broker Systems").click();
     cy.contains("Brokers: 1").should("be.visible");
 
     cy.reload();

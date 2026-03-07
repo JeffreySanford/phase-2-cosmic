@@ -105,8 +105,7 @@ import { ExternalSourcesComponent } from "./shared/external-sources/external-sou
     {
       provide: APP_INITIALIZER,
       useFactory:
-        (dataSource: DataSourceService, broker: BrokerEventsService) =>
-        () => {
+        (dataSource: DataSourceService, broker: BrokerEventsService) => () => {
           try {
             const params = new URLSearchParams(window.location.search);
             if (params.get("mode") === "mock") {

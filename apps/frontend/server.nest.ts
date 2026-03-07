@@ -99,7 +99,10 @@ type RedisClientOps = {
 // Redis client singleton (optional)
 let redisClient: RedisClientOps | null = null;
 async function initRedisClient() {
-  const url = process.env["REDIS_URL"] || process.env["REDIS_URI"] || "redis://127.0.0.1:6379";
+  const url =
+    process.env["REDIS_URL"] ||
+    process.env["REDIS_URI"] ||
+    "redis://127.0.0.1:6379";
   try {
     const c = createClient({ url }) as unknown as RedisClientOps;
     c.on("error", (err: unknown) => console.warn("Redis client error:", err));
@@ -1334,8 +1337,14 @@ export class AppController {
 
       // Not in cache — fetch lightweight VOTable summary from governance API (same as telemetry expects)
       const baseCandidates = this.governanceBaseCandidates();
-      const urls = baseCandidates.map((b) => `${b}/api/v1/vo/votable?table=chanmaster&position=3c273`);
-      const upstream = await this.fetchWithFallback(urls, { method: "GET" }, 7000);
+      const urls = baseCandidates.map(
+        (b) => `${b}/api/v1/vo/votable?table=chanmaster&position=3c273`
+      );
+      const upstream = await this.fetchWithFallback(
+        urls,
+        { method: "GET" },
+        7000
+      );
       const txt = await upstream.text();
       const ct = upstream.headers.get("content-type") || "application/json";
 
@@ -1431,7 +1440,11 @@ async function bootstrap() {
 }
 
 // Avoid starting the Nest HTTP server when running unit tests (Jest)
-if (typeof process !== "undefined" && process.env && process.env["JEST_WORKER_ID"] === undefined) {
+if (
+  typeof process !== "undefined" &&
+  process.env &&
+  process.env["JEST_WORKER_ID"] === undefined
+) {
   bootstrap().catch((e) => console.error(e));
 } else {
   // In test environments we skip starting the real HTTP server to avoid

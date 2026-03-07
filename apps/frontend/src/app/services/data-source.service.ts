@@ -13,7 +13,8 @@ declare global {
 export class DataSourceService {
   // initialize synchronously from E2E shim when present so tests see the correct mode early
   private modeSubject = new BehaviorSubject<DataMode>(
-    (typeof window !== "undefined" && (window.__E2E_MODE === "mock" ? "mock" : "live")) as DataMode
+    (typeof window !== "undefined" &&
+      (window.__E2E_MODE === "mock" ? "mock" : "live")) as DataMode
   );
   readonly mode$ = this.modeSubject.asObservable();
 

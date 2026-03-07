@@ -118,7 +118,8 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedVizTab = 0;
   recentSamples: Array<{ time: string; valueHuman: string; pct: number }> = [];
   // Prometheus-derived recent samples (kept separate from VO samples)
-  prometheusSamples: Array<{ time: string; valueHuman: string; pct: number }> = [];
+  prometheusSamples: Array<{ time: string; valueHuman: string; pct: number }> =
+    [];
   // VO services metadata (if configured)
   voServices?: VoServices | null = null;
   // raw parsed VO rows (if any)
@@ -194,7 +195,9 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private cssVar(name: string, fallback = ""): string {
     try {
-      const v = getComputedStyle(document.documentElement).getPropertyValue(name);
+      const v = getComputedStyle(document.documentElement).getPropertyValue(
+        name
+      );
       return (v || fallback).trim();
     } catch {
       return fallback;
@@ -337,13 +340,13 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       .append("path")
       .attr("class", "line")
       .attr("fill", "none")
-      .attr("stroke", this.cssVar('--color-accent-2', '#7b61ff'))
+      .attr("stroke", this.cssVar("--color-accent-2", "#7b61ff"))
       .attr("stroke-width", 2);
     this.svg
       .append("path")
       .attr("class", "ma")
       .attr("fill", "none")
-      .attr("stroke", this.cssVar('--color-accent-1', '#ff6b6b'))
+      .attr("stroke", this.cssVar("--color-accent-1", "#ff6b6b"))
       .attr("stroke-width", 1.5)
       .style("stroke-dasharray", "4 2");
     // tooltip/focus group
@@ -352,7 +355,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       .select("g.focus")
       .append("circle")
       .attr("r", 3)
-      .attr("fill", this.cssVar('--color-accent-3', '#00e5ff'));
+      .attr("fill", this.cssVar("--color-accent-3", "#00e5ff"));
     this.svg
       .select("g.focus")
       .append("text")
@@ -538,12 +541,12 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.gaugeGroup
       .append("path")
       .attr("class", "gauge-bg")
-      .attr("fill", this.cssVar('--color-muted', '#e0e0e0'));
+      .attr("fill", this.cssVar("--color-muted", "#e0e0e0"));
     // foreground arc
     this.gaugeGroup
       .append("path")
       .attr("class", "gauge-arc")
-      .attr("fill", this.cssVar('--color-accent-1', '#ff6b6b'));
+      .attr("fill", this.cssVar("--color-accent-1", "#ff6b6b"));
     // label
     this.gaugeGroup
       .append("text")
@@ -652,7 +655,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       .attr("y", (d: Bin) => y(d.length))
       .attr("width", (d: Bin) => Math.max(1, x(d.x1) - x(d.x0) - 1))
       .attr("height", (d: Bin) => h - margin.bottom - y(d.length))
-      .attr("fill", this.cssVar('--color-accent-3', '#00e5ff'));
+      .attr("fill", this.cssVar("--color-accent-3", "#00e5ff"));
     g.exit().remove();
 
     this.histSvg.selectAll("g.hist-x-axis").remove();
@@ -881,14 +884,19 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   private fetchVoSamples(): void {
     // Only attempt VO fetch when VO services are configured
-    if (!this.voServices || (!this.voServices.tapUrl && !this.voServices.dataLinkUrl)) return;
+    if (
+      !this.voServices ||
+      (!this.voServices.tapUrl && !this.voServices.dataLinkUrl)
+    )
+      return;
     const url = "/api/v1/vo/votable?table=chanmaster&position=3c273";
     this.http.get<VoTableResponse>(url).subscribe(
       (res) => {
         const fields = res?.fields || [];
         const rows = res?.rows || [];
         this.voRows = [];
-        const parsed: Array<{ time: string; valueHuman: string; pct: number }> = [];
+        const parsed: Array<{ time: string; valueHuman: string; pct: number }> =
+          [];
         for (const r of rows) {
           let rec: Record<string, string> = {};
           if (Array.isArray(r)) {
@@ -897,7 +905,9 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
               rec[key] = String(r[i] ?? "");
             }
           } else if (typeof r === "object" && r !== null) {
-            rec = Object.fromEntries(Object.entries(r).map(([k, v]) => [k, String(v ?? "")]));
+            rec = Object.fromEntries(
+              Object.entries(r).map(([k, v]) => [k, String(v ?? "")])
+            );
           }
           this.voRows.push(rec);
         }
@@ -905,15 +915,26 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         // Heuristic mapping: pick first column as time-like and second as numeric value if present
         const sampleRecs = this.voRows.map((rec) => {
           const keys = Object.keys(rec);
-          const timeVal = rec["time"] ?? rec["timestamp"] ?? (keys.length ? rec[keys[0]] : new Date().toLocaleTimeString());
-          const valueRaw = rec["value"] ?? rec["flux"] ?? rec["mag"] ?? (keys.length > 1 ? rec[keys[1]] : "0");
+          const timeVal =
+            rec["time"] ??
+            rec["timestamp"] ??
+            (keys.length ? rec[keys[0]] : new Date().toLocaleTimeString());
+          const valueRaw =
+            rec["value"] ??
+            rec["flux"] ??
+            rec["mag"] ??
+            (keys.length > 1 ? rec[keys[1]] : "0");
           const n = Number(String(valueRaw).replace(/[^0-9.+-eE]/g, "")) || 0;
           return { time: String(timeVal), value: n };
         });
 
         const max = Math.max(1, ...sampleRecs.map((s) => s.value));
         for (const s of sampleRecs) {
-          parsed.push({ time: s.time, valueHuman: this.humanRate(s.value), pct: Math.min(100, Math.max(0, (s.value / max) * 100)) });
+          parsed.push({
+            time: s.time,
+            valueHuman: this.humanRate(s.value),
+            pct: Math.min(100, Math.max(0, (s.value / max) * 100)),
+          });
         }
 
         if (parsed.length) {
@@ -933,7 +954,11 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.prometheusSamples.slice(0, 5);
   }
 
-  get remainingSamples(): Array<{ time: string; valueHuman: string; pct: number }> {
+  get remainingSamples(): Array<{
+    time: string;
+    valueHuman: string;
+    pct: number;
+  }> {
     return this.prometheusSamples.slice(5);
   }
 

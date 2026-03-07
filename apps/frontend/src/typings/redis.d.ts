@@ -1,4 +1,4 @@
-declare module 'redis' {
+declare module "redis" {
   export type RedisClientType = {
     connect?: () => Promise<void>;
     disconnect?: () => Promise<void>;

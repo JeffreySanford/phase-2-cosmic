@@ -4,8 +4,29 @@
 .external-sources {
   margin-top: 8px;
 }
-.external-source { margin-bottom: 12px; @extend %vibrant-card !optional; }
-.external-source .muted { color: rgba(230,247,255,0.75); font-size: 0.9em; }
-.sample-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-.sample-table th, .sample-table td { border: 1px solid rgba(255,255,255,0.06); padding: 6px 8px; font-size: 0.9em; color: rgba(230,247,255,0.95); }
-.links a { margin-right: 8px; display:inline-block; margin-top:6px; color: #a5f3fc; }
+.external-source {
+  margin-bottom: 12px;
+  @extend %vibrant-card !optional;
+}
+.external-source .muted {
+  color: rgba(230, 247, 255, 0.75);
+  font-size: 0.9em;
+}
+.sample-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+}
+.sample-table th,
+.sample-table td {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 6px 8px;
+  font-size: 0.9em;
+  color: rgba(230, 247, 255, 0.95);
+}
+.links a {
+  margin-right: 8px;
+  display: inline-block;
+  margin-top: 6px;
+  color: #a5f3fc;
+}

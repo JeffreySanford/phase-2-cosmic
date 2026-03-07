@@ -1,5 +1,8 @@
 import { Component, Input } from "@angular/core";
-import { DataMode, DataSourceService } from "../../services/data-source.service";
+import {
+  DataMode,
+  DataSourceService,
+} from "../../services/data-source.service";
 
 export type DisclaimerType = "modeling" | "demo" | "development" | "simulation";
 
@@ -78,6 +81,10 @@ export class DisclaimerBannerComponent {
     if (this.requireMockMode !== undefined) {
       return this.requireMockMode;
     }
-    return this.type === "demo" || this.type === "modeling" || this.type === "simulation";
+    return (
+      this.type === "demo" ||
+      this.type === "modeling" ||
+      this.type === "simulation"
+    );
   }
 }

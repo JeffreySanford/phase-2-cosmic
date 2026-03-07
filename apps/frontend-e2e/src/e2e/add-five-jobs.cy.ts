@@ -26,15 +26,16 @@ describe("Add five jobs and processing", () => {
     // now poll job list and verify table exists and jobs appear
     // header text lives outside the table in a mat-card-title
     cy.contains("mat-card-title", "Governance Jobs").should("exist");
-    cy.get(".job-card", { timeout: 30000 }).should("have.length.greaterThan", 0);
+    cy.get(".job-card", { timeout: 30000 }).should(
+      "have.length.greaterThan",
+      0
+    );
 
     // wait up to 30s for a completed job row to appear
     cy.contains(".job-card", "COMPLETED", { timeout: 30000 }).should("exist");
 
     // open the completed job detail card
-    cy.contains(".job-card", "COMPLETED")
-      .contains("button", "Details")
-      .click();
+    cy.contains(".job-card", "COMPLETED").contains("button", "Details").click();
     cy.contains("Workflow:").should("exist");
     cy.contains("Lineage").should("exist");
 

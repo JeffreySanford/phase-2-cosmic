@@ -52,7 +52,7 @@ export class DatasetsComponent implements OnInit {
   }
 
   externalSourcesFor(dataset: Dataset): unknown[] {
-    const topLevel = ((dataset as unknown) as Record<string, unknown>)[
+    const topLevel = (dataset as unknown as Record<string, unknown>)[
       "sourceAttribution"
     ];
     const manifest = dataset.manifest?.["sourceAttribution"];

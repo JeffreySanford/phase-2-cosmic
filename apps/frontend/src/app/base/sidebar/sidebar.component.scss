@@ -3,7 +3,11 @@
 
 .app-sidebar {
   width: 240px;
-  background: linear-gradient(180deg, token(colors, surface-start), token(colors, surface-end));
+  background: linear-gradient(
+    180deg,
+    token(colors, surface-start),
+    token(colors, surface-end)
+  );
   color: token(colors, muted);
   height: calc(100vh - 96px);
   padding: token(spacing, lg);
@@ -12,7 +16,8 @@
   top: 56px;
   left: 0;
   overflow: auto;
-  transition: width token(transitions, medium) ease, background token(transitions, medium) ease;
+  transition: width token(transitions, medium) ease,
+    background token(transitions, medium) ease;
   min-width: 0;
 }
 .app-sidebar.collapsed {
@@ -36,10 +41,14 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: background token(transitions, fast) ease, transform token(transitions, fast) ease;
+  transition: background token(transitions, fast) ease,
+    transform token(transitions, fast) ease;
 }
 
-.app-sidebar button:hover { transform: translateX(4px); background: rgba(255,255,255,0.02); }
+.app-sidebar button:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.02);
+}
 
 /* icon/label styling */
 .app-sidebar .icon {
@@ -63,14 +72,19 @@
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   border-radius: token(radii, sm);
   color: token(colors, text);
   font-size: 0.85rem;
   margin-top: token(spacing, sm);
 }
 
-.app-sidebar .chip .value { font-weight: 600; color: token(colors, text); }
+.app-sidebar .chip .value {
+  font-weight: 600;
+  color: token(colors, text);
+}
 
 /* active link indicator */
-.app-sidebar button.active { box-shadow: inset 4px 0 0 0 token(colors, accent-1); }
+.app-sidebar button.active {
+  box-shadow: inset 4px 0 0 0 token(colors, accent-1);
+}

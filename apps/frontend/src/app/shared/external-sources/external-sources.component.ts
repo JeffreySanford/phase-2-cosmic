@@ -73,7 +73,10 @@ export class ExternalSourcesComponent {
   urlFor(source: unknown): string {
     const normalized = this.asSource(source);
     return (
-      normalized?.citationUrl || normalized?.accessUrl || normalized?.tapUrl || ""
+      normalized?.citationUrl ||
+      normalized?.accessUrl ||
+      normalized?.tapUrl ||
+      ""
     );
   }
 }

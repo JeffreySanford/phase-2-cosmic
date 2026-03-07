@@ -1,11 +1,15 @@
-@import 'tokens';
+@import "tokens";
 
 /* Shared vibrant theme variables and helpers (shims to keep existing names) */
 $vibrant-accent-1: token(colors, accent-1) !default;
 $vibrant-accent-2: token(colors, accent-2) !default;
 $vibrant-accent-3: token(colors, accent-3) !default;
 $vibrant-bg-1: token(colors, bg) !default;
-$vibrant-surface: linear-gradient(135deg, rgba(10,20,34,0.6), rgba(6,18,28,0.65));
+$vibrant-surface: linear-gradient(
+  135deg,
+  rgba(10, 20, 34, 0.6),
+  rgba(6, 18, 28, 0.65)
+);
 
 /* utility card surface */
 %vibrant-card {
@@ -13,15 +17,15 @@ $vibrant-surface: linear-gradient(135deg, rgba(10,20,34,0.6), rgba(6,18,28,0.65)
   color: #e6f7ff;
   border-radius: 12px;
   padding: 0.75rem;
-  box-shadow: 0 8px 24px rgba(11,85,104,0.22);
+  box-shadow: 0 8px 24px rgba(11, 85, 104, 0.22);
 }
 
 /* accent button mixin for small glows */
-@mixin accent-glow($c1,$c2) {
+@mixin accent-glow($c1, $c2) {
   $glow: mix($c1, $c2, 50%);
   background: linear-gradient(90deg, $c1 0%, $c2 100%);
   color: #fff;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 18px rgba($glow, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 18px rgba($glow, 0.18);
 }
 
 /* Global Material / layout overrides to ensure labels/titles use vibrant tokens on dark backgrounds */
@@ -48,7 +52,11 @@ $vibrant-surface: linear-gradient(135deg, rgba(10,20,34,0.6), rgba(6,18,28,0.65)
 }
 
 /* Card and panel titles / headings */
-h1, h2, h3, .mat-card-title, .mat-panel-title {
+h1,
+h2,
+h3,
+.mat-card-title,
+.mat-panel-title {
   color: token(colors, accent-2) !important;
   font-weight: 700;
 }
@@ -59,12 +67,17 @@ h1, h2, h3, .mat-card-title, .mat-panel-title {
 }
 
 /* Ensure buttons have readable foreground on vibrant panels */
-.mat-button, .mat-stroked-button, .mat-flat-button, button {
+.mat-button,
+.mat-stroked-button,
+.mat-flat-button,
+button {
   color: token(colors, text) !important;
 }
 
 /* Small utility: make inline labels (like KPI labels) vivid */
-.kpi .label, .metric-label, .overview-title {
+.kpi .label,
+.metric-label,
+.overview-title {
   color: token(colors, accent-3) !important;
   font-weight: 700;
 }

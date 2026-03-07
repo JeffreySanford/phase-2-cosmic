@@ -55,7 +55,9 @@ export class StartupWarmService {
         .getOrCreate("diagnostics:pulsar-status", 5000, () =>
           http
             .get("/api/v1/pulsar/status")
-            .pipe(catchError(() => of({ brokers: 0, topics: 0, partitions: 0 })))
+            .pipe(
+              catchError(() => of({ brokers: 0, topics: 0, partitions: 0 }))
+            )
         )
         .subscribe();
 
@@ -63,7 +65,9 @@ export class StartupWarmService {
         .getOrCreate("diagnostics:rabbit-status", 5000, () =>
           http
             .get("/api/v1/rabbitmq/status")
-            .pipe(catchError(() => of({ status: "unknown", connection: "unknown" })))
+            .pipe(
+              catchError(() => of({ status: "unknown", connection: "unknown" }))
+            )
         )
         .subscribe();
     }, 500);

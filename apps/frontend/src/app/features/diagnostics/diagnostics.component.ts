@@ -116,7 +116,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   private fetchVoServices() {
     // intentionally left blank - diagnostics no longer queries VO services
   }
-    // intentionally left blank - diagnostics no longer fetches VO summaries
+  // intentionally left blank - diagnostics no longer fetches VO summaries
 
   fetchIndex() {
     this.loading = true;
@@ -130,21 +130,23 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       });
       return;
     }
-    this.cache.getOrCreate("diagnostics:index", 5000, () =>
-      this.http.get<DiagnosticsIndex>("/api/diagnostics")
-    ).subscribe(
-      (res) => {
-        this.index = res;
-        this.sortedFiles = this.sortFilesByRecency(res.files);
-        this.loading = false;
-        this.initialLoadSettled = true;
-      },
-      (err) => {
-        this.error = String(err?.message || err);
-        this.loading = false;
-        this.initialLoadSettled = true;
-      }
-    );
+    this.cache
+      .getOrCreate("diagnostics:index", 5000, () =>
+        this.http.get<DiagnosticsIndex>("/api/diagnostics")
+      )
+      .subscribe(
+        (res) => {
+          this.index = res;
+          this.sortedFiles = this.sortFilesByRecency(res.files);
+          this.loading = false;
+          this.initialLoadSettled = true;
+        },
+        (err) => {
+          this.error = String(err?.message || err);
+          this.loading = false;
+          this.initialLoadSettled = true;
+        }
+      );
   }
 
   viewSystemSpecs() {
@@ -204,40 +206,44 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   }
 
   fetchPulsarStatus(): void {
-    this.cache.getOrCreate("diagnostics:pulsar-status", 5000, () =>
-      this.http.get<PulsarStatus>("/api/v1/pulsar/status")
-    ).subscribe({
-      next: (status: PulsarStatus) => {
-        this.pulsarStatus = {
-          brokers: status.brokers || 0,
-          topics: status.topics || 0,
-          partitions: status.partitions || 0,
-        };
-      },
-      error: (err) => {
-        // Keep previous status or set to 0 on error
-        this.pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
+    this.cache
+      .getOrCreate("diagnostics:pulsar-status", 5000, () =>
+        this.http.get<PulsarStatus>("/api/v1/pulsar/status")
+      )
+      .subscribe({
+        next: (status: PulsarStatus) => {
+          this.pulsarStatus = {
+            brokers: status.brokers || 0,
+            topics: status.topics || 0,
+            partitions: status.partitions || 0,
+          };
+        },
+        error: (err) => {
+          // Keep previous status or set to 0 on error
+          this.pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
 
-        console.log("Failed to fetch Pulsar status:", err);
-      },
-    });
+          console.log("Failed to fetch Pulsar status:", err);
+        },
+      });
   }
 
   fetchRabbitMQStatus(): void {
-    this.cache.getOrCreate("diagnostics:rabbit-status", 5000, () =>
-      this.http.get<RabbitMQStatus>("/api/v1/rabbitmq/status")
-    ).subscribe({
-      next: (status: RabbitMQStatus) => {
-        this.rabbitMQStatus = status;
-      },
-      error: (err) => {
-        this.rabbitMQStatus = {
-          status: "unavailable",
-          connection: "error",
-          error: err.message,
-        };
-      },
-    });
+    this.cache
+      .getOrCreate("diagnostics:rabbit-status", 5000, () =>
+        this.http.get<RabbitMQStatus>("/api/v1/rabbitmq/status")
+      )
+      .subscribe({
+        next: (status: RabbitMQStatus) => {
+          this.rabbitMQStatus = status;
+        },
+        error: (err) => {
+          this.rabbitMQStatus = {
+            status: "unavailable",
+            connection: "error",
+            error: err.message,
+          };
+        },
+      });
   }
 
   get visibleFiles(): string[] {

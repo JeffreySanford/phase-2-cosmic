@@ -37,33 +37,34 @@
   color: #e6f7ff; /* light, high-contrast */
 }
 
-.last-updated, .polling-interval {
+.last-updated,
+.polling-interval {
   color: #d7f0ff;
 }
 
 /* Material tab styling: make tab bar more vibrant and readable */
 ::ng-deep .mat-mdc-tab-list {
-  background: linear-gradient(90deg,#04293a 0%, #0b5568 100%);
+  background: linear-gradient(90deg, #04293a 0%, #0b5568 100%);
   border-radius: 8px;
   padding: 6px;
 }
 
 ::ng-deep .mat-mdc-tab-label {
-  color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
   padding: 8px 12px;
   border-radius: 6px;
   transition: background 200ms ease, color 200ms ease, transform 150ms ease;
 }
 
 ::ng-deep .mat-mdc-tab-label.mat-mdc-tab-label-active {
-  background: linear-gradient(90deg,#ff6b6b 0%, #7b61ff 100%);
+  background: linear-gradient(90deg, #ff6b6b 0%, #7b61ff 100%);
   color: #ffffff !important;
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(123,97,255,0.18);
+  box-shadow: 0 8px 24px rgba(123, 97, 255, 0.18);
 }
 
 ::ng-deep .mat-mdc-tab-label:hover {
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .tabs-container {

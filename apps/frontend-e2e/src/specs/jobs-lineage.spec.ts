@@ -46,10 +46,10 @@ describe("Jobs lineage end-to-end", () => {
       cy.get("mat-tab-group").should("exist");
 
       cy.contains("Lineage").click();
-      cy.get("app-jobs-lineage-editor input[placeholder=\"key\"]")
+      cy.get('app-jobs-lineage-editor input[placeholder="key"]')
         .first()
         .should("have.value", "parentJobId");
-      cy.get("app-jobs-lineage-editor input[placeholder=\"value\"]")
+      cy.get('app-jobs-lineage-editor input[placeholder="value"]')
         .first()
         .should("have.value", "e2e-parent");
     });

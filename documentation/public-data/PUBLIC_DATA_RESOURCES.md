@@ -11,7 +11,7 @@ This file lists public data sources from `data.gov`, `NSF`, `NIST`, `NRAO`, and 
 These are the strongest near-term candidates if the goal is to stand up a realistic ingestion and viewer pipeline quickly:
 
 | Priority | Resource                                              | Why it is a good fit                                                                                 |
-| --- | --- | --- |
+| -------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | 1        | NRAO Data Archive (`data.nrao.edu`)                   | Core archive for raw and derived radio astronomy data, with image viewing and downloadable products. |
 | 2        | NRAO TAP metadata service (`data-query.nrao.edu/tap`) | Best option for repeatable scripted ETL of archive metadata before bulk download.                    |
 | 3        | VLASS basic products and HiPS imagery                 | Good viewer seed data because the products are already tiled, image-oriented, and public-facing.     |
@@ -29,7 +29,7 @@ objects with `name` and `url` fields, e.g. the NRAO TAP service, VLASS HiPS imag
 dynamically populate dropdowns or help text with approved source links.
 
 | Resource                                                  | URL                                                                                  | What it provides                                                                                                             | Likely system use                                                                              |
-| --- | --- | --- | --- |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | NRAO VLA Sky Survey Catalog (NVSS)                        | <https://catalog.data.gov/dataset/nrao-vla-sky-survey-catalog>                       | Public catalog for the 1.4 GHz NVSS survey, including nearly 2 million discrete radio sources and associated image products. | Bootstrap catalog ingest, sky search, cone search, crossmatch testing, viewer overlays.        |
 | VLA Low-Frequency Sky Survey Redux Source Catalog (VLSSr) | <https://catalog.data.gov/dataset/vla-low-frequency-sky-survey-redux-source-catalog> | Public low-frequency counterpart to NVSS at about 74 MHz / 73.8 MHz with source catalog and supporting files.                | Multi-frequency crossmatch, spectral index pipelines, low-frequency ingest validation.         |
 | All-Sky Optical Catalog of Radio/X-Ray Sources (QORG)     | <https://catalog.data.gov/dataset/all-sky-optical-catalog-of-radio-x-ray-sources>    | Cross-domain catalog linking radio and X-ray associations with optical objects, including NVSS/FIRST/SUMSS references.       | Entity enrichment, source association workflows, viewer annotation, search federation testing. |
@@ -42,7 +42,7 @@ Notes:
 ## NSF
 
 | Resource                           | URL                                                                          | What it provides                                                                                                                     | Likely system use                                                                            |
-| --- | --- | --- | --- |
+| ---------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
 | NSF Developer Resources            | <https://www.nsf.gov/digital/developer>                                      | Official index of NSF developer-facing data resources. Links to the Award Search API and NSF data on `data.gov`.                     | Starting point for programmatic ingest of NSF metadata and future data discovery.            |
 | Award Search API                   | <https://www.research.gov/common/webapi/awardapisearch-v1.htm>               | API for NSF award metadata, principal investigators, institutions, funding, dates, abstracts, and outcomes context.                  | ETL for grant provenance, project lineage, award-to-dataset joins, analytics dashboards.     |
 | Open Data at NSF                   | <https://www.nsf.gov/digital/data>                                           | Official NSF open-data page linking the award abstracts database, public data inventory JSON, NCSES, PAR, and other agency datasets. | Governance metadata, inventory harvesting, link validation, data catalog seeding.            |
@@ -58,7 +58,7 @@ Notes:
 ## NIST
 
 | Resource                               | URL                                                                                                          | What it provides                                                                                                | Likely system use                                                                            |
-| --- | --- | --- | --- |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | NIST data landing page                 | <https://www.nist.gov/data>                                                                                  | Official hub for NIST public data, including the Science Data Portal and Public Data Repository.                | Discovery layer for NIST machine-readable datasets and standards-oriented reference data.    |
 | NIST Science Data Portal               | <https://data.nist.gov/sdp/>                                                                                 | Search and exploration portal across NIST public datasets and repository holdings.                              | External reference catalog ingest, standards lookup, reproducibility metadata.               |
 | NIST Public Data Repository about page | <https://data.nist.gov/pdr/about>                                                                            | Explains repository capabilities, persistent identifiers, machine-readable access, and API/search support.      | Integration planning for DOI-backed reference datasets and metadata harvesting.              |
@@ -73,14 +73,14 @@ Notes:
 
 ## NRAO
 
-| Resource                                           | URL                                                                              | What it provides                                                                                                        | Likely system use                                                                                   |
-| --- | --- | --- | --- |
-| NRAO Data Archive                                  | <https://data.nrao.edu>                                                          | Primary archive for raw VLA, VLBA, GMVA, some GBT, and ALMA-served content, with project, observation, and image views. | Core ingest target for archive metadata, raw observations, calibrated measurement sets, and images. |
-| NRAO archive documentation                         | <https://science.nrao.edu/facilities/vla/archive/index>                          | Current description of archive search, download flows, image viewing, formats, and archive organization.                | ETL design reference, downloader design, metadata model design, archive behavior validation.        |
-| NRAO TAP service                                   | <https://data-query.nrao.edu/tap>                                                | Virtual Observatory Table Access Protocol endpoint for scripted metadata queries across archive holdings.               | Automated metadata harvest, scheduled ETL, source/position queries, downstream index building.      |
-| Related guidance: see [VO Integration](../data/VO_INTEGRATION.md) for example TAP queries, VOTable parsing notes, and DataLink handling. |                                                                                      |                                                                                                                        |                                                                                                   |
-| Scripted archive access guide                      | <https://science.nrao.edu/srdp/scripted-access-to-the-nrao-archive>              | Official guide for using the TAP interface, including useful returned columns and workflow notes.                       | Implementation reference for pyVO or TAP-based metadata ingestion.                                  |
-| Science Reference Data Products (SRDP) for the VLA | <https://science.nrao.edu/srdp/science-reference-data-products-srdp-for-the-vla> | Quality-assessed calibration products, calibrated measurement sets, pipeline weblogs, and archive images.               | Faster ingest path for viewer-ready products, QA workflows, calibration lineage capture.            |
+| Resource                                                                                                                                 | URL                                                                              | What it provides                                                                                                        | Likely system use                                                                                   |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| NRAO Data Archive                                                                                                                        | <https://data.nrao.edu>                                                          | Primary archive for raw VLA, VLBA, GMVA, some GBT, and ALMA-served content, with project, observation, and image views. | Core ingest target for archive metadata, raw observations, calibrated measurement sets, and images. |
+| NRAO archive documentation                                                                                                               | <https://science.nrao.edu/facilities/vla/archive/index>                          | Current description of archive search, download flows, image viewing, formats, and archive organization.                | ETL design reference, downloader design, metadata model design, archive behavior validation.        |
+| NRAO TAP service                                                                                                                         | <https://data-query.nrao.edu/tap>                                                | Virtual Observatory Table Access Protocol endpoint for scripted metadata queries across archive holdings.               | Automated metadata harvest, scheduled ETL, source/position queries, downstream index building.      |
+| Related guidance: see [VO Integration](../data/VO_INTEGRATION.md) for example TAP queries, VOTable parsing notes, and DataLink handling. |                                                                                  |                                                                                                                         |                                                                                                     |
+| Scripted archive access guide                                                                                                            | <https://science.nrao.edu/srdp/scripted-access-to-the-nrao-archive>              | Official guide for using the TAP interface, including useful returned columns and workflow notes.                       | Implementation reference for pyVO or TAP-based metadata ingestion.                                  |
+| Science Reference Data Products (SRDP) for the VLA                                                                                       | <https://science.nrao.edu/srdp/science-reference-data-products-srdp-for-the-vla> | Quality-assessed calibration products, calibrated measurement sets, pipeline weblogs, and archive images.               | Faster ingest path for viewer-ready products, QA workflows, calibration lineage capture.            |
 
 Notes:
 
@@ -90,7 +90,7 @@ Notes:
 ## VLA
 
 | Resource                            | URL                                                    | What it provides                                                                                                  | Likely system use                                                                              |
-| --- | --- | --- | --- |
+| ----------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | VLA Sky Survey (VLASS)              | <https://science.nrao.edu/vlass>                       | Top-level landing page for the modern VLA sky survey, including current campaign context and product links.       | Survey discovery, viewer framing, roadmap for public image products.                           |
 | VLASS data page                     | <https://science.nrao.edu/vlass/vlass-data>            | Links to tile definitions, observing status, basic products, enhanced products, weblogs, and interactive imagery. | Product harvesting, survey-tile metadata ETL, viewer navigation model.                         |
 | VLASS HiPS imagery                  | <https://vlass-dl.nrao.edu>                            | Interactive HiPS and Aladin Lite compatible survey imagery for large-sky browsing.                                | Immediate viewer prototype data source, tiled image exploration, progressive rendering.        |
@@ -106,7 +106,7 @@ Notes:
 ## Suggested ETL split
 
 | Pipeline area                  | Best source candidates                                           |
-| --- | --- |
+| ------------------------------ | ---------------------------------------------------------------- |
 | Catalog ingest                 | `data.gov` NVSS, VLSSr, QORG                                     |
 | Archive metadata ingest        | NRAO TAP service, NRAO archive docs, VLASS tile/status pages     |
 | Raw science data ingest        | NRAO Data Archive                                                |

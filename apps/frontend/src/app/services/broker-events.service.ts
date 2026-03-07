@@ -27,7 +27,10 @@ export class BrokerEventsService implements OnDestroy {
     if (typeof window !== "undefined") {
       const w = window;
       w.__emitBrokerEvent = (evt: BrokerEvent) => this._push(evt);
-      if (Array.isArray(w.__pendingBrokerEvents) && w.__pendingBrokerEvents.length) {
+      if (
+        Array.isArray(w.__pendingBrokerEvents) &&
+        w.__pendingBrokerEvents.length
+      ) {
         w.__pendingBrokerEvents.forEach((e: BrokerEvent) => this._push(e));
         // clear the buffer once flushed
         delete w.__pendingBrokerEvents;

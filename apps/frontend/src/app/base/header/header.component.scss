@@ -1,4 +1,3 @@
-
 @import "../../../styles/tokens";
 @import "../../../styles/vibrant-theme";
 
@@ -9,7 +8,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(90deg, token(colors, surface-start), token(colors, surface-end));
+  background: linear-gradient(
+    90deg,
+    token(colors, surface-start),
+    token(colors, surface-end)
+  );
   color: token(colors, text);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
   position: fixed;
@@ -46,7 +49,9 @@
   transition: transform token(transitions, fast) ease;
 }
 
-.menu-btn:active { transform: scale(0.98); }
+.menu-btn:active {
+  transform: scale(0.98);
+}
 .brand {
   font-weight: 600;
   overflow: hidden;
@@ -62,16 +67,29 @@
   height: 10px;
   margin-left: 8px;
   border-radius: 50%;
-  background: linear-gradient(90deg, token(colors, accent-1), token(colors, accent-2));
+  background: linear-gradient(
+    90deg,
+    token(colors, accent-1),
+    token(colors, accent-2)
+  );
   $brand-mix: mix(token(colors, accent-1), token(colors, accent-2), 50%);
   box-shadow: 0 6px 18px rgba($brand-mix, 0.12);
   animation: brand-pulse 2.6s ease-in-out infinite;
 }
 
 @keyframes brand-pulse {
-  0% { transform: scale(1); opacity: 0.96 }
-  50% { transform: scale(1.18); opacity: 1 }
-  100% { transform: scale(1); opacity: 0.96 }
+  0% {
+    transform: scale(1);
+    opacity: 0.96;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.96;
+  }
 }
 .user-btn {
   @include accent-glow(token(colors, accent-2), token(colors, accent-3));
@@ -80,7 +98,8 @@
   font-size: 1.05rem;
   cursor: pointer;
   min-width: 44px;
-  transition: transform token(transitions, fast) ease, box-shadow token(transitions, medium) ease;
+  transition: transform token(transitions, fast) ease,
+    box-shadow token(transitions, medium) ease;
 }
 
 .user-btn:hover {

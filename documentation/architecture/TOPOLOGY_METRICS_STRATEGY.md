@@ -207,12 +207,14 @@ Add edge-aware emitters to services that already know about transport behavior.
 Examples:
 
 - `java-ingest`
+
   - bytes consumed from Kafka
   - records processed
   - write throughput to MinIO
   - processing latency
 
 - `data-generator`
+
   - bytes generated
   - stream output per broker target
   - pressure from runtime worker count

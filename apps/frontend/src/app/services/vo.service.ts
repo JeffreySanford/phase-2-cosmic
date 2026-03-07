@@ -1,6 +1,13 @@
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { Observable, BehaviorSubject, timer, switchMap, catchError, of } from "rxjs";
+import {
+  Observable,
+  BehaviorSubject,
+  timer,
+  switchMap,
+  catchError,
+  of,
+} from "rxjs";
 
 export interface VoServices {
   tapUrl?: string;
@@ -16,7 +23,9 @@ type CachedVoSamplesResponse = {
 @Injectable({ providedIn: "root" })
 export class VoService {
   // hot observable holding latest VO samples (array of simple sample objects)
-  voSamples$ = new BehaviorSubject<Array<{ time: string; valueHuman: string; pct: number }>>([]);
+  voSamples$ = new BehaviorSubject<
+    Array<{ time: string; valueHuman: string; pct: number }>
+  >([]);
   // loading indicator
   voLoading$ = new BehaviorSubject<boolean>(false);
 
@@ -26,9 +35,9 @@ export class VoService {
       .pipe(
         switchMap(() => {
           this.voLoading$.next(true);
-          return this.http.get<CachedVoSamplesResponse>("/api/v1/vo/cached-samples").pipe(
-            catchError(() => of(null))
-          );
+          return this.http
+            .get<CachedVoSamplesResponse>("/api/v1/vo/cached-samples")
+            .pipe(catchError(() => of(null)));
         })
       )
       .subscribe((res) => {
@@ -39,7 +48,11 @@ export class VoService {
           }
           const fields = res?.fields || [];
           const rows = res?.rows || [];
-          const parsed: Array<{ time: string; valueHuman: string; pct: number }> = [];
+          const parsed: Array<{
+            time: string;
+            valueHuman: string;
+            pct: number;
+          }> = [];
           const voRows: Array<Record<string, string>> = [];
           for (const r of rows) {
             let rec: Record<string, string> = {};
@@ -49,22 +62,36 @@ export class VoService {
                 rec[key] = String(r[i] ?? "");
               }
             } else if (typeof r === "object" && r !== null) {
-              rec = Object.fromEntries(Object.entries(r).map(([k, v]) => [k, String(v ?? "")]));
+              rec = Object.fromEntries(
+                Object.entries(r).map(([k, v]) => [k, String(v ?? "")])
+              );
             }
             voRows.push(rec);
           }
           const sampleRecs = voRows.map((rec) => {
             const keys = Object.keys(rec);
-            const timeVal = rec["time"] ?? rec["timestamp"] ?? (keys.length ? rec[keys[0]] : new Date().toLocaleTimeString());
-            const valueRaw = rec["value"] ?? rec["flux"] ?? rec["mag"] ?? (keys.length > 1 ? rec[keys[1]] : "0");
+            const timeVal =
+              rec["time"] ??
+              rec["timestamp"] ??
+              (keys.length ? rec[keys[0]] : new Date().toLocaleTimeString());
+            const valueRaw =
+              rec["value"] ??
+              rec["flux"] ??
+              rec["mag"] ??
+              (keys.length > 1 ? rec[keys[1]] : "0");
             const n = Number(String(valueRaw).replace(/[^0-9.+-eE]/g, "")) || 0;
             return { time: String(timeVal), value: n };
           });
           const max = Math.max(1, ...sampleRecs.map((s) => s.value));
           for (const s of sampleRecs) {
-            parsed.push({ time: s.time, valueHuman: this.humanRate(s.value), pct: Math.min(100, Math.max(0, (s.value / max) * 100)) });
+            parsed.push({
+              time: s.time,
+              valueHuman: this.humanRate(s.value),
+              pct: Math.min(100, Math.max(0, (s.value / max) * 100)),
+            });
           }
-          if (parsed.length) this.voSamples$.next(parsed.slice(0, 50).reverse());
+          if (parsed.length)
+            this.voSamples$.next(parsed.slice(0, 50).reverse());
         } finally {
           this.voLoading$.next(false);
         }

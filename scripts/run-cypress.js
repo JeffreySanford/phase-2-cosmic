@@ -21,9 +21,7 @@ const child =
           "/c",
           `pnpm exec cypress ${args
             .map((arg) =>
-              /[\s"]/u.test(arg)
-                ? `"${arg.replace(/"/g, '\\"')}"`
-                : arg
+              /[\s"]/u.test(arg) ? `"${arg.replace(/"/g, '\\"')}"` : arg
             )
             .join(" ")}`,
         ],

@@ -131,12 +131,12 @@ External/public-source requirement:
 
 ### Audit log & governance service
 
-The governance API emits structured audit entries for every job submission and state transition.  These entries are persisted in the runtime log and (during testing) also captured in an in-memory audit store that can be queried by integration tests.  The `ProvenanceE2ETest` exercises this store by submitting a job (including a manifest parameter) and polling for the expected audit record, providing a lightweight deterministic verification of the full control-plane flow.  In addition to the in-memory log, HTTP query endpoints were added for easy introspection of the recorded messages and metadata:
+The governance API emits structured audit entries for every job submission and state transition. These entries are persisted in the runtime log and (during testing) also captured in an in-memory audit store that can be queried by integration tests. The `ProvenanceE2ETest` exercises this store by submitting a job (including a manifest parameter) and polling for the expected audit record, providing a lightweight deterministic verification of the full control-plane flow. In addition to the in-memory log, HTTP query endpoints were added for easy introspection of the recorded messages and metadata:
 
 - `GET /api/v1/jobs/{id}/audit` returns the textual audit log entries for a job
 - `GET /api/v1/jobs/{id}/lineage` returns any stored lineage metadata (parent/ancestor identifiers) associated with a job, supporting traceability across workflows
 
-  The platform UI reflects provenance metadata stored on datasets: metadata keys are flattened into the dataset model so the provenance panel can display workflow, job identifiers, ngVLA parameters, and arbitrary processing parameters such as the submitted manifest.  A front‑end e2e test now verifies that a dataset created via the API containing a manifest appears correctly in the panel.
+  The platform UI reflects provenance metadata stored on datasets: metadata keys are flattened into the dataset model so the provenance panel can display workflow, job identifiers, ngVLA parameters, and arbitrary processing parameters such as the submitted manifest. A front‑end e2e test now verifies that a dataset created via the API containing a manifest appears correctly in the panel.
 
 - Retention & deletion: record lifecycle transitions, TTLs, legal holds, and an immutable deletion record when objects are destroyed.
 

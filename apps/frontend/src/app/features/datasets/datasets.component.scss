@@ -11,13 +11,29 @@
   @extend %vibrant-card;
   display: block;
   padding: token(spacing, md);
-  transition: transform token(transitions, fast) ease, box-shadow token(transitions, medium) ease;
+  transition: transform token(transitions, fast) ease,
+    box-shadow token(transitions, medium) ease;
 }
-.dataset-card strong { color: token(colors, text); }
-.dataset-card .muted { color: token(colors, muted); }
-.dataset-list-item { padding: token(spacing, sm); }
+.dataset-card strong {
+  color: token(colors, text);
+}
+.dataset-card .muted {
+  color: token(colors, muted);
+}
+.dataset-list-item {
+  padding: token(spacing, sm);
+}
 
-.dataset-card:hover { transform: translateY(-6px); }
+.dataset-card:hover {
+  transform: translateY(-6px);
+}
 
-.create-row { display:flex; gap: token(spacing, sm); align-items:center; }
-.create-row mat-form-field { background: rgba(255,255,255,0.02); border-radius: token(radii, sm); }
+.create-row {
+  display: flex;
+  gap: token(spacing, sm);
+  align-items: center;
+}
+.create-row mat-form-field {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: token(radii, sm);
+}
