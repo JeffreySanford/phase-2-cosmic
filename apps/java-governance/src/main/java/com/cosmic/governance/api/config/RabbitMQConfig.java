@@ -16,7 +16,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @ConditionalOnProperty(name = "governance.messaging.enabled", havingValue = "true", matchIfMissing = true)
 public class RabbitMQConfig {
 
-    @Value("${spring.rabbitmq.host:localhost}")
+    @Value("${spring.rabbitmq.host:${RABBITMQ_HOST:rabbitmq}}")
     private String rabbitHost;
 
     @Value("${spring.rabbitmq.port:5672}")

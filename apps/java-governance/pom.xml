@@ -119,6 +119,17 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <!-- Copy the canonical OpenAPI spec from the repo root into the module's classpath
+             so the app can serve /openapi/governance.yaml without duplicating files. -->
+        <directory>${project.basedir}/../../openapi</directory>
+        <includes>
+          <include>governance.yaml</include>
+        </includes>
+        <targetPath>static/openapi</targetPath>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>

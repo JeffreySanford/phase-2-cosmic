@@ -43,7 +43,7 @@ public class GovernanceController {
     private final RabbitTemplate rabbitTemplate;
     private final com.cosmic.governance.api.service.VoService voService;
 
-    @Value("${pulsar.admin.url:http://localhost:8085}")
+    @Value("${pulsar.admin.url:${PULSAR_ADMIN_URL:http://pulsar:8085}}")
     private String pulsarAdminUrl;
 
     public GovernanceController(JobService jobService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService,

@@ -7,6 +7,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +23,18 @@ public class AuditService {
     private final RabbitTemplate rabbitTemplate;
     private final boolean rabbitPublishingEnabled;
 
+    @Autowired
     public AuditService(ObjectProvider<RabbitTemplate> rabbitTemplateProvider,
                         @Value("${governance.audit.rabbit.enabled:true}") boolean rabbitPublishingEnabled) {
         this.rabbitTemplate = rabbitTemplateProvider.getIfAvailable();
         this.rabbitPublishingEnabled = rabbitPublishingEnabled;
+    }
+
+    // No-arg constructor to support frameworks or serializers that require it.
+    // Sets publishing disabled by default to avoid accidental calls during early init.
+    protected AuditService() {
+        this.rabbitTemplate = null;
+        this.rabbitPublishingEnabled = false;
     }
 
     // Backwards-compatible constructor for tests and legacy wiring

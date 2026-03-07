@@ -24,21 +24,21 @@ export default defineConfig({
       // Forward local `/api/proxy/*` requests to the running Nest backend (or set NEST_PROXY env)
       // Useful for development so the Vite dev server doesn't serve the SPA index for these API calls.
       "/api/proxy": {
-        target: process.env.NEST_PROXY || "http://localhost:3000",
+        target: process.env.NEST_PROXY || "http://nest:3000",
         changeOrigin: true,
         secure: false,
         // keep path as-is so backend receives `/api/proxy/prometheus` etc.
       },
       // Also match deeper paths explicitly
       "/api/proxy/**": {
-        target: process.env.NEST_PROXY || "http://localhost:3000",
+        target: process.env.NEST_PROXY || "http://nest:3000",
         changeOrigin: true,
         secure: false,
       },
       // Forward plain `/api` to the Nest SSR server so client dev requests are proxied
       // This prevents the dev server from returning the SPA index for API calls
       "/api": {
-        target: process.env.NEST_PROXY || "http://localhost:3000",
+        target: process.env.NEST_PROXY || "http://nest:3000",
         changeOrigin: true,
         secure: false,
       },

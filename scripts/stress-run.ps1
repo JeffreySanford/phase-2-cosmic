@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 # 4) always revert profile back to 10%
 
 $SSR_URL = if ($env:SSR_URL) { $env:SSR_URL } else { 'http://localhost:4000' }
-$PROFILE = if ($env:PROFILE) { [int]$env:PROFILE } else { 100 }
+$LoadProfile = if ($env:PROFILE) { [int]$env:PROFILE } else { 100 }
 $SMOKE_SECONDS = if ($env:SMOKE_SECONDS) { [int]$env:SMOKE_SECONDS } else { 180 }
 $RATE = if ($env:RATE) { [int]$env:RATE } else { 200 }
 $TOTAL = if ($env:TOTAL) { [int]$env:TOTAL } else { 5000 }

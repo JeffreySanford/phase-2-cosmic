@@ -31,7 +31,9 @@ public class PulsarIngestListener {
     private final ObjectMapper mapper;
     private final Validator validator;
 
-    @Value("${pulsar.serviceUrl:pulsar://localhost:6650}")
+    // Prefer configuration property `pulsar.serviceUrl`, then environment variable
+    // `PULSAR_SERVICE_URL`, finally fall back to the internal compose hostname.
+    @Value("${pulsar.serviceUrl:${PULSAR_SERVICE_URL:pulsar://pulsar:6650}}")
     private String serviceUrl;
 
     private PulsarClient client;

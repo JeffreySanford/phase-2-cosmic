@@ -24,7 +24,7 @@ import java.util.Map;
 @ConditionalOnProperty(name = "governance.messaging.enabled", havingValue = "true", matchIfMissing = true)
 public class KafkaConfig {
 
-    @Value("${spring.kafka.bootstrap-servers:}")
+    @Value("${spring.kafka.bootstrap-servers:${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}}")
     private String bootstrapServers;
 
     @Bean
