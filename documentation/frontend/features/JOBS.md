@@ -24,9 +24,9 @@ The Jobs page is the operational orchestration surface for:
 
 ## Required layout
 
-- Left panel: submit form
-- Center panel: job queue table
-- Right panel or drawer: selected job details
+- Top toolbar: submit, refresh, deferred-release, and filter actions
+- Main stage: compact job card grid/list
+- Detail experience: inline expansion on card click rather than a permanently open second table or drawer
 
 Mobile:
 
@@ -47,25 +47,68 @@ Action:
 
 Success behavior:
 
-- optimistic insertion into queue table
+- optimistic insertion into the compact jobs list
 - confirmation toast with new `jobId`
 
 Validation behavior:
 
 - field-level inline errors
 - preserve entered values on failure
+- newly submitted jobs should appear as `QUEUED` first, then transition through `RUNNING`, then a terminal state such as `COMPLETED`
+
+Implementation direction:
+
+- use Angular reactive forms as the primary submit mechanism
+- avoid making raw JSON text the default authoring path for structured workflows
+- allow a generated JSON preview for advanced users, but keep it secondary
+
+### VO-specific submit mode
+
+When the selected workflow is a VO job type, the form must switch from generic key/value entry to a typed VO form.
+
+Supported VO workflow family:
+
+- `vo.cone-search`
+- `vo.adql.query`
+- `vo.obscore.search`
+- `vo.votable.fetch`
+- `vo.datalink.resolve`
+- `vo.product.fetch`
+- `vo.soda.cutout`
+- `vo.preview.fetch`
+
+VO form requirements:
+
+- dynamic subform by selected VO workflow
+- provider selector populated from configured public VO providers
+- URL validation for TAP, DataLink, SODA, and product URLs
+- conditional validators for target name vs RA/Dec entry
+- range validation for radius and optional spectral/time bounds
+- explicit live-source labeling; VO jobs should default to live public data, not simulator mode
+- pre-submit validation through `POST /api/v1/jobs/validate`
+
+VO artifact expectations:
+
+- discovery jobs return parsed tables and provenance metadata
+- DataLink jobs return resolved product links
+- product fetch and cutout jobs may return binary artifacts such as `fits`, `jpg`, or `png`
+
+VO execution rule:
+
+- if the UI offers a VO workflow, the backend executor path for that workflow must be a live VO executor or an explicitly labeled fallback mode
+- hidden simulator behavior is not acceptable for operator-facing VO submissions
 
 ## Queue table contract
 
-Minimum columns:
+The page should no longer render both a card list and a duplicate table of the same jobs.
 
-- job id
-- workflow
-- dataset id
-- status
-- created at
-- updated at
-- requested by
+List/card requirements:
+
+- jobs are collapsed by default so more records fit on screen
+- each card shows workflow, job id, dataset id, status, and recent update time
+- deferred jobs are visually marked
+- clicking `Details` expands inline detail content for exactly one job at a time
+- expanded content contains parameters, lineage editing, logs, artifacts, and external-source detail where available
 
 Sorting:
 
@@ -77,6 +120,11 @@ Filter controls:
 - workflow
 - dataset
 - time window
+
+Deferred-job control:
+
+- provide a visible release action for queued cached/deferred jobs
+- release action should trigger backend deferred-job release and then refresh the job list
 
 ## Job detail contract
 
@@ -127,6 +175,9 @@ Required next:
 
 - `GET /api/v1/jobs` filtering/pagination parameters
 - dedicated cancellation endpoint (`POST /api/v1/jobs/{id}/cancel`) or explicit decision to keep generic transition API
+- typed workflow schemas for the VO workflow family
+- provider/capability metadata endpoint sufficient to drive VO form options
+- live VO executor contract that returns source-state metadata (`live`, `cached`, `fallback`, `failed`)
 
 ## Testing requirements
 

@@ -60,7 +60,7 @@ describe("SnackService", () => {
     service.showError("broken");
 
     expect(snackBar.open).toHaveBeenNthCalledWith(1, "saved", undefined, {
-      duration: 5000,
+      duration: 10000,
       horizontalPosition: "center",
       verticalPosition: "bottom",
       panelClass: ["snack-success", "app-snack"],
@@ -72,7 +72,7 @@ describe("SnackService", () => {
       panelClass: ["snack-info", "app-snack"],
     });
     expect(snackBar.open).toHaveBeenNthCalledWith(3, "broken", undefined, {
-      duration: 8000,
+      duration: 10000,
       horizontalPosition: "center",
       verticalPosition: "bottom",
       panelClass: ["snack-error", "app-snack"],

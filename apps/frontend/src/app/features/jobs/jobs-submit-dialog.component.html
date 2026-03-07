@@ -33,7 +33,7 @@
 
   <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
     <button mat-stroked-button (click)="generateSample()">Generate sample</button>
-    <div *ngIf="workflow !== 'custom'" style="color:rgba(0,0,0,0.6)">Sample for selected type</div>
+    <div *ngIf="workflow !== 'custom'" class="muted">Sample for selected type</div>
   </div>
 
   <div *ngIf="error" class="error">{{ error }}</div>

@@ -3,6 +3,7 @@ import { HttpClient } from "@angular/common/http";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
 import { LoadProfileService } from "../../services/load-profile.service";
+import { RequestCacheService } from "../../services/request-cache.service";
 import { Subscription } from "rxjs";
 import { switchMap } from "rxjs/operators";
 import { interval } from "rxjs";
@@ -35,9 +36,9 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   // mission closure metrics
   timingDriftNs?: number;
   rfiEventRate?: number;
+  initialLoadSettled = false;
   // VO services
-  voTapUrl?: string | null = null;
-  voDataLinkUrl?: string | null = null;
+  // external-source preview removed from diagnostics; see Datasets / Viewer instead
   private pollSubscription?: Subscription;
   private pollingMsSubscription?: Subscription;
 
@@ -45,7 +46,8 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private dataSource: DataSourceService,
     private mock: MockDataService,
-    private loadProfile: LoadProfileService
+    private loadProfile: LoadProfileService,
+    private cache: RequestCacheService
   ) {}
 
   ngOnInit(): void {
@@ -54,7 +56,6 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     this.fetchPulsarStatus();
     this.fetchRabbitMQStatus();
     this.fetchTimingMetrics();
-    this.fetchVoServices();
     this.startPolling();
   }
 
@@ -113,23 +114,9 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   }
 
   private fetchVoServices() {
-    if (this.dataSource.mode === "mock") {
-      this.voTapUrl = null;
-      this.voDataLinkUrl = null;
-      return;
-    }
-    this.http
-      .get<{ tapUrl?: string; dataLinkUrl?: string }>("/api/v1/vo/services")
-      .subscribe(
-        (res) => {
-          this.voTapUrl = res.tapUrl ?? null;
-          this.voDataLinkUrl = res.dataLinkUrl ?? null;
-        },
-        () => {
-          // non-critical; ignore failures
-        }
-      );
+    // intentionally left blank - diagnostics no longer queries VO services
   }
+    // intentionally left blank - diagnostics no longer fetches VO summaries
 
   fetchIndex() {
     this.loading = true;
@@ -139,18 +126,23 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
         this.index = res as DiagnosticsIndex;
         this.sortedFiles = this.sortFilesByRecency(this.index?.files || []);
         this.loading = false;
+        this.initialLoadSettled = true;
       });
       return;
     }
-    this.http.get<DiagnosticsIndex>("/api/diagnostics").subscribe(
+    this.cache.getOrCreate("diagnostics:index", 5000, () =>
+      this.http.get<DiagnosticsIndex>("/api/diagnostics")
+    ).subscribe(
       (res) => {
         this.index = res;
         this.sortedFiles = this.sortFilesByRecency(res.files);
         this.loading = false;
+        this.initialLoadSettled = true;
       },
       (err) => {
         this.error = String(err?.message || err);
         this.loading = false;
+        this.initialLoadSettled = true;
       }
     );
   }
@@ -192,8 +184,10 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       });
       return;
     }
-    this.http
-      .get<DockerServiceStatus[]>("/api/diagnostics/docker-services")
+    this.cache
+      .getOrCreate("diagnostics:docker-services", 4000, () =>
+        this.http.get<DockerServiceStatus[]>("/api/diagnostics/docker-services")
+      )
       .subscribe(
         (res) => {
           this.dockerServices = res;
@@ -210,7 +204,9 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   }
 
   fetchPulsarStatus(): void {
-    this.http.get<PulsarStatus>("/api/v1/pulsar/status").subscribe({
+    this.cache.getOrCreate("diagnostics:pulsar-status", 5000, () =>
+      this.http.get<PulsarStatus>("/api/v1/pulsar/status")
+    ).subscribe({
       next: (status: PulsarStatus) => {
         this.pulsarStatus = {
           brokers: status.brokers || 0,
@@ -228,7 +224,9 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   }
 
   fetchRabbitMQStatus(): void {
-    this.http.get<RabbitMQStatus>("/api/v1/rabbitmq/status").subscribe({
+    this.cache.getOrCreate("diagnostics:rabbit-status", 5000, () =>
+      this.http.get<RabbitMQStatus>("/api/v1/rabbitmq/status")
+    ).subscribe({
       next: (status: RabbitMQStatus) => {
         this.rabbitMQStatus = status;
       },

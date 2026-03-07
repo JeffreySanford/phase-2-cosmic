@@ -6,30 +6,33 @@ import { of, EMPTY } from "rxjs";
 import { HttpErrorResponse } from "@angular/common/http";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatSnackBarModule } from "@angular/material/snack-bar";
+import { HttpClientTestingModule } from "@angular/common/http/testing";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 
 class StubJobsService {
-  list() {
-    return of([
-      {
-        jobId: "1",
-        workflow: "x",
-        status: "QUEUED",
-        lineage: { parentJobId: "p" },
-      } satisfies JobStatus,
-    ]);
-  }
   listHot() {
-    // simple observable stub for hot list
-    return of([]);
+    return of({
+      ok: true as const,
+      value: [
+        {
+          jobId: "1",
+          workflow: "x",
+          status: "QUEUED",
+          lineage: { parentJobId: "p" },
+        } satisfies JobStatus,
+      ],
+    });
   }
   getDispatchConfig() {
     // return minimal config object expected by component
-    return of({ intervalSeconds: 0, scannedCount: 0 });
+    return of({ intervalSeconds: 0, scannedCount: 0, dispatchedCount: 0 });
   }
   watchJob() {
     return EMPTY;
+  }
+  list() {
+    return of([] as JobStatus[]);
   }
   invalidateList() {
     return;
@@ -51,6 +54,24 @@ class StubJobsService {
   artifacts() {
     return of([] as { name: string; url: string }[]);
   }
+  releaseDeferred() {
+    return of({ released: 2 });
+  }
+  setDispatchInterval() {
+    return of(undefined);
+  }
+  transition() {
+    return of(undefined);
+  }
+  submitJob() {
+    return of(undefined);
+  }
+  validate() {
+    return of(undefined);
+  }
+  deleteJob() {
+    return of(undefined);
+  }
   invalidateJob() {
     return;
   }
@@ -65,6 +86,7 @@ describe("JobsComponent", () => {
       declarations: [JobsComponent],
       imports: [
         NoopAnimationsModule,
+        HttpClientTestingModule,
         MatDialogModule,
         MatSnackBarModule,
         FormsModule,
@@ -91,7 +113,20 @@ describe("JobsComponent", () => {
     component.view(job);
     fixture.detectChanges();
     expect(component.selectedJob?.jobId).toBe("123");
+    expect(component.expandedJobId).toBe("123");
     expect(component.selectedJob?.lineage?.["parentJobId"]).toBe("abc");
+  });
+
+  it("collapses an already expanded job when clicked again", () => {
+    const job: JobStatus = {
+      jobId: "123",
+      workflow: "foo",
+      status: "QUEUED",
+    } as JobStatus;
+    component.view(job);
+    component.view(job);
+    expect(component.selectedJob).toBeNull();
+    expect(component.expandedJobId).toBeNull();
   });
 
   it("allows editing lineage and saving", () => {
@@ -115,7 +150,7 @@ describe("JobsComponent", () => {
     expect(snackBarSpy).toHaveBeenCalledWith(
       "Lineage saved successfully",
       undefined,
-      { duration: 2000 }
+      { duration: 10000 }
     );
   });
 
@@ -131,5 +166,15 @@ describe("JobsComponent", () => {
     const msg = component["errMsg"](fakeError);
     expect(msg).toContain("etl_quality_gate_failed");
     expect(msg).toContain("DQ-TIM-001");
+  });
+
+  it("identifies deferred jobs from parameters", () => {
+    const job: JobStatus = {
+      jobId: "deferred-1",
+      workflow: "foo",
+      status: "QUEUED",
+      parameters: { deferred: true },
+    } as JobStatus;
+    expect(component.isDeferred(job)).toBe(true);
   });
 });

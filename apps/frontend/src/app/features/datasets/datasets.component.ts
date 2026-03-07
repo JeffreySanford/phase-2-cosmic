@@ -8,13 +8,14 @@ import {
 @Component({
   selector: "app-datasets",
   templateUrl: "./datasets.component.html",
-  styleUrls: [],
+  styleUrls: ["./datasets.component.scss"],
 })
 export class DatasetsComponent implements OnInit {
   datasets: Dataset[] = [];
   name = "";
   description = "";
   error: string | null = null;
+  initialLoadSettled = false;
 
   constructor(private ds: DatasetsService) {}
 
@@ -24,8 +25,14 @@ export class DatasetsComponent implements OnInit {
 
   reload() {
     this.ds.list().subscribe(
-      (list) => (this.datasets = list || []),
-      (e) => (this.error = this.errMsg(e))
+      (list) => {
+        this.datasets = list || [];
+        this.initialLoadSettled = true;
+      },
+      (e) => {
+        this.error = this.errMsg(e);
+        this.initialLoadSettled = true;
+      }
     );
   }
 
@@ -41,6 +48,17 @@ export class DatasetsComponent implements OnInit {
         this.description = "";
       },
       (e) => (this.error = this.errMsg(e))
+    );
+  }
+
+  externalSourcesFor(dataset: Dataset): unknown[] {
+    const topLevel = ((dataset as unknown) as Record<string, unknown>)[
+      "sourceAttribution"
+    ];
+    const manifest = dataset.manifest?.["sourceAttribution"];
+    const metadata = dataset.metadata?.["sourceAttribution"];
+    return [topLevel, manifest, metadata].filter(
+      (value): value is unknown => value !== null && value !== undefined
     );
   }
 

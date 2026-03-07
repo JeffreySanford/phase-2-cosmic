@@ -1,15 +1,18 @@
+@import "../../../styles/tokens";
+@import "../../../styles/vibrant-theme";
+
 .app-sidebar {
   width: 240px;
-  background: #071028;
-  color: #cbd5e1;
+  background: linear-gradient(180deg, token(colors, surface-start), token(colors, surface-end));
+  color: token(colors, muted);
   height: calc(100vh - 96px);
-  padding: 1rem;
+  padding: token(spacing, lg);
   box-sizing: border-box;
   position: fixed;
   top: 56px;
   left: 0;
   overflow: auto;
-  transition: width 200ms ease;
+  transition: width token(transitions, medium) ease, background token(transitions, medium) ease;
   min-width: 0;
 }
 .app-sidebar.collapsed {
@@ -21,7 +24,7 @@
   margin: 0;
 }
 .app-sidebar nav li {
-  margin-bottom: 0.5rem;
+  margin-bottom: token(spacing, sm);
 }
 .app-sidebar button {
   width: 100%;
@@ -29,15 +32,18 @@
   background: transparent;
   border: 0;
   color: inherit;
-  padding: 0.5rem;
+  padding: token(spacing, sm);
   cursor: pointer;
   display: flex;
   align-items: center;
+  transition: background token(transitions, fast) ease, transform token(transitions, fast) ease;
 }
+
+.app-sidebar button:hover { transform: translateX(4px); background: rgba(255,255,255,0.02); }
 
 /* icon/label styling */
 .app-sidebar .icon {
-  margin-right: 0.5rem;
+  margin-right: token(spacing, sm);
   font-size: 1.25rem;
   flex: 0 0 auto;
 }
@@ -50,3 +56,21 @@
 .app-sidebar.collapsed .label {
   display: none;
 }
+
+/* small infographic chips for sidebar (statistics, quick metrics) */
+.app-sidebar .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.02);
+  border-radius: token(radii, sm);
+  color: token(colors, text);
+  font-size: 0.85rem;
+  margin-top: token(spacing, sm);
+}
+
+.app-sidebar .chip .value { font-weight: 600; color: token(colors, text); }
+
+/* active link indicator */
+.app-sidebar button.active { box-shadow: inset 4px 0 0 0 token(colors, accent-1); }

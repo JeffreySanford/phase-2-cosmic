@@ -1,4 +1,5 @@
 import { Component, Input } from "@angular/core";
+import { DataMode, DataSourceService } from "../../services/data-source.service";
 
 export type DisclaimerType = "modeling" | "demo" | "development" | "simulation";
 
@@ -23,8 +24,12 @@ export class DisclaimerBannerComponent {
   @Input() type: DisclaimerType = "modeling";
   @Input() message?: string;
   @Input() dismissible = true;
+  @Input() ready = true;
+  @Input() requireMockMode?: boolean;
 
   dismissed = false;
+
+  constructor(private readonly dataSource: DataSourceService) {}
 
   get defaultMessage(): string {
     switch (this.type) {
@@ -49,9 +54,30 @@ export class DisclaimerBannerComponent {
     return `disclaimer-banner disclaimer-banner--${this.type}`;
   }
 
+  get mode$() {
+    return this.dataSource.mode$;
+  }
+
+  isVisible(mode: DataMode | null): boolean {
+    if (this.dismissed || !this.ready) {
+      return false;
+    }
+    if (!this.needsMockMode()) {
+      return true;
+    }
+    return mode === "mock";
+  }
+
   dismiss(): void {
     if (this.dismissible) {
       this.dismissed = true;
     }
+  }
+
+  private needsMockMode(): boolean {
+    if (this.requireMockMode !== undefined) {
+      return this.requireMockMode;
+    }
+    return this.type === "demo" || this.type === "modeling" || this.type === "simulation";
   }
 }

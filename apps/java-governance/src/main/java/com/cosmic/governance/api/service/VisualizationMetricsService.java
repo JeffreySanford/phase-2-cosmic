@@ -6,15 +6,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 @Service
 public class VisualizationMetricsService {
     private final RestTemplate rest = new RestTemplate();
+    private final JobService jobService;
+    private final Deque<Map<String, Object>> queueDepthHistory = new ConcurrentLinkedDeque<>();
+    private static final int HISTORY_LIMIT = 40;
+
+    public VisualizationMetricsService(JobService jobService) {
+        this.jobService = jobService;
+    }
 
     @Value("${prometheus.baseUrl:}")
     private String prometheusBaseUrl;
 
     public Map<String, Object> getVisualizationMetrics() {
+        int queueDepth = currentQueueDepth();
+        double jobFailureRate = currentJobFailureRate();
+        List<Map<String, Object>> queueSeries = recordQueueDepthSample(queueDepth);
         // Try Prometheus if configured — build a shaped payload the frontend expects
         if (prometheusBaseUrl != null && !prometheusBaseUrl.isBlank()) {
             try {
@@ -185,8 +196,9 @@ public class VisualizationMetricsService {
 
                 Map<String, Object> payload = new HashMap<>();
                 payload.put("throughput", throughput);
-                payload.put("errorRate", 0.0);
-                payload.put("queueDepth", 0);
+                payload.put("errorRate", jobFailureRate);
+                payload.put("queueDepth", queueDepth);
+                payload.put("queueSeries", queueSeries);
                 payload.put("sparkline", spark);
                 payload.put("histogram", histogram);
                 payload.put("scatter", scatter);
@@ -203,8 +215,9 @@ public class VisualizationMetricsService {
         // Fallback synthetic payload matching frontend expectations
         Map<String, Object> payload = new HashMap<>();
         payload.put("throughput", 240.7);
-        payload.put("errorRate", 1.14);
-        payload.put("queueDepth", 45);
+        payload.put("errorRate", jobFailureRate > 0 ? jobFailureRate : 1.14);
+        payload.put("queueDepth", queueDepth > 0 ? queueDepth : 45);
+        payload.put("queueSeries", queueSeries);
 
         List<Map<String, Object>> spark = new ArrayList<>();
         long now = System.currentTimeMillis();
@@ -226,5 +239,39 @@ public class VisualizationMetricsService {
         out.put("source", "fallback");
         out.put("data", payload);
         return out;
+    }
+
+    private int currentQueueDepth() {
+        return jobService.list(null, com.cosmic.governance.api.model.JobState.QUEUED, 0, Integer.MAX_VALUE).size();
+    }
+
+    private double currentJobFailureRate() {
+        int failed = jobService.list(null, com.cosmic.governance.api.model.JobState.FAILED, 0, Integer.MAX_VALUE).size();
+        int total = jobService.listAll().size();
+        if (total <= 0) return 0.0;
+        return ((double) failed / (double) total) * 100.0;
+    }
+
+    private List<Map<String, Object>> recordQueueDepthSample(int queueDepth) {
+        long now = System.currentTimeMillis();
+        Map<String, Object> point = new HashMap<>();
+        point.put("t", now);
+        point.put("v", queueDepth);
+        queueDepthHistory.addLast(point);
+
+        while (queueDepthHistory.size() > HISTORY_LIMIT) {
+            queueDepthHistory.pollFirst();
+        }
+
+        if (queueDepthHistory.size() == 1) {
+            for (int i = HISTORY_LIMIT - 1; i >= 1; i--) {
+                Map<String, Object> seed = new HashMap<>();
+                seed.put("t", now - (i * 1000L));
+                seed.put("v", queueDepth);
+                queueDepthHistory.addFirst(seed);
+            }
+        }
+
+        return new ArrayList<>(queueDepthHistory);
     }
 }

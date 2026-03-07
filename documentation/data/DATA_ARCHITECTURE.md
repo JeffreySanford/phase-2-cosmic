@@ -325,6 +325,8 @@ Long-term (Post-PI):
 - Graph database (Neo4j or Postgres recursive CTE) for multi-hop lineage queries.
 - W3C PROV-DM compatible export for VO interoperability.
 
+> See also: [VO Integration](../data/VO_INTEGRATION.md) — guidance on TAP/DataLink/VOTable usage, ObsCore mapping, and caching recommendations for VO lookups.
+
 ## 8. Security and Access Control
 
 ### 8.1 Authentication

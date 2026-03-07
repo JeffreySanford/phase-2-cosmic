@@ -14,6 +14,7 @@ import {
   All,
 } from "@nestjs/common";
 import express from "express";
+import { createClient, RedisClientType } from "redis";
 import { createServer as createViteServer } from "vite";
 import { CommonEngine } from "@angular/ssr";
 import { join } from "path";
@@ -86,6 +87,23 @@ interface SsrOptions {
   isDev: boolean;
   viteServer?: any;
   commonEngine: CommonEngine;
+}
+
+// Redis client singleton (optional)
+let redisClient: RedisClientType | null = null;
+async function initRedisClient() {
+  const url = process.env["REDIS_URL"] || process.env["REDIS_URI"] || "redis://127.0.0.1:6379";
+  try {
+    const c: RedisClientType = createClient({ url });
+    c.on("error", (err: unknown) => console.warn("Redis client error:", err));
+    await c.connect();
+    redisClient = c;
+    console.log("Connected to Redis at", url);
+  } catch (e) {
+    // Not fatal — Redis is optional for caching
+    console.warn("Could not initialize Redis client:", e);
+    redisClient = null;
+  }
 }
 
 @Injectable()
@@ -831,7 +849,7 @@ export class AppController {
     const checkTcp = (
       host: string,
       port: number,
-      timeout = 3000
+      timeout = 1000
     ): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
       new Promise((resolve) => {
         const start = Date.now();
@@ -857,7 +875,7 @@ export class AppController {
 
     const checkHttp = async (
       url: string,
-      timeout = 3000
+      timeout = 1000
     ): Promise<{ ok: boolean; latencyMs: number; error?: string }> => {
       const start = Date.now();
       try {
@@ -873,68 +891,99 @@ export class AppController {
       }
     };
 
-    for (const s of services) {
-      let result: { ok: boolean; latencyMs: number; error?: string } = {
-        ok: false,
-        latencyMs: 0,
-        error: "not_checked",
-      };
-      let usedUrl = s.url;
+    const serviceResults = await Promise.all(
+      services.map(async (s) => {
+        let result: { ok: boolean; latencyMs: number; error?: string } = {
+          ok: false,
+          latencyMs: 0,
+          error: "not_checked",
+        };
+        let usedUrl = s.url;
 
-      try {
-        if (s.kind === "tcp") {
-          const [hostPart, portPart] = s.url.split(":");
-          const host = hostPart || "127.0.0.1";
-          const port = Number(portPart) || 0;
-          if (port > 0) {
-            result = await checkTcp(host, port, 3000);
-            // Try fallback if primary fails
+        try {
+          if (s.kind === "tcp") {
+            const [hostPart, portPart] = s.url.split(":");
+            const host = hostPart || "127.0.0.1";
+            const port = Number(portPart) || 0;
+            if (port > 0) {
+              result = await checkTcp(host, port, 1000);
+              if (!result.ok && s.fallbackUrl) {
+                const [fbHost, fbPort] = s.fallbackUrl.split(":");
+                const fbResult = await checkTcp(
+                  fbHost || "127.0.0.1",
+                  Number(fbPort) || port,
+                  1000
+                );
+                if (fbResult.ok) {
+                  result = fbResult;
+                  usedUrl = s.fallbackUrl;
+                }
+              }
+            }
+          } else {
+            result = await checkHttp(s.url, 1000);
             if (!result.ok && s.fallbackUrl) {
-              const [fbHost, fbPort] = s.fallbackUrl.split(":");
-              const fbResult = await checkTcp(
-                fbHost || "127.0.0.1",
-                Number(fbPort) || port,
-                3000
-              );
+              const fbResult = await checkHttp(s.fallbackUrl, 1000);
               if (fbResult.ok) {
                 result = fbResult;
                 usedUrl = s.fallbackUrl;
               }
             }
           }
-        } else {
-          result = await checkHttp(s.url, 3000);
-          // Try fallback if primary fails
-          if (!result.ok && s.fallbackUrl) {
-            const fbResult = await checkHttp(s.fallbackUrl, 3000);
-            if (fbResult.ok) {
-              result = fbResult;
-              usedUrl = s.fallbackUrl;
-            }
-          }
+
+          return {
+            name: s.name,
+            status: result.ok
+              ? result.latencyMs > 1000
+                ? "degraded"
+                : "healthy"
+              : "offline",
+            details: usedUrl,
+            error: result.error,
+            latencyMs: result.latencyMs,
+            icon: s.icon,
+          } as {
+            name: string;
+            status:
+              | "healthy"
+              | "degraded"
+              | "offline"
+              | "unknown"
+              | "starting"
+              | "stopping"
+              | "maintenance";
+            details?: string;
+            error?: string;
+            latencyMs?: number;
+            icon?: string;
+          };
+        } catch (e: any) {
+          return {
+            name: s.name,
+            status: "unknown",
+            details: usedUrl,
+            error: String(e),
+            icon: s.icon,
+          } as {
+            name: string;
+            status:
+              | "healthy"
+              | "degraded"
+              | "offline"
+              | "unknown"
+              | "starting"
+              | "stopping"
+              | "maintenance";
+            details?: string;
+            error?: string;
+            latencyMs?: number;
+            icon?: string;
+          };
         }
-        results.push({
-          name: s.name,
-          status: result.ok
-            ? result.latencyMs > 1000
-              ? "degraded"
-              : "healthy"
-            : "offline",
-          details: usedUrl,
-          error: result.error,
-          latencyMs: result.latencyMs,
-          icon: s.icon,
-        });
-      } catch (e: any) {
-        results.push({
-          name: s.name,
-          status: "unknown",
-          details: usedUrl,
-          error: String(e),
-          icon: s.icon,
-        });
-      }
-    }
+      })
+    );
+
+    results.push(...serviceResults);
 
     res.json(results);
   }
@@ -1022,7 +1071,7 @@ export class AppController {
     const checkTcp = (
       host: string,
       port: number,
-      timeout = 3000
+      timeout = 1000
     ): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
       new Promise((resolve) => {
         const start = Date.now();
@@ -1048,7 +1097,7 @@ export class AppController {
 
     const checkHttp = async (
       url: string,
-      timeout = 3000
+      timeout = 1000
     ): Promise<{ ok: boolean; latencyMs: number; error?: string }> => {
       const start = Date.now();
       try {
@@ -1077,13 +1126,13 @@ export class AppController {
         const host = hostPart || "127.0.0.1";
         const port = Number(portPart) || 0;
         if (port > 0) {
-          result = await checkTcp(host, port, 3000);
+          result = await checkTcp(host, port, 1000);
           if (!result.ok && service.fallbackUrl) {
             const [fbHost, fbPort] = service.fallbackUrl.split(":");
             const fbResult = await checkTcp(
               fbHost || "127.0.0.1",
               Number(fbPort) || port,
-              3000
+              1000
             );
             if (fbResult.ok) {
               result = fbResult;
@@ -1092,9 +1141,9 @@ export class AppController {
           }
         }
       } else {
-        result = await checkHttp(service.url, 3000);
+        result = await checkHttp(service.url, 1000);
         if (!result.ok && service.fallbackUrl) {
-          const fbResult = await checkHttp(service.fallbackUrl, 3000);
+          const fbResult = await checkHttp(service.fallbackUrl, 1000);
           if (fbResult.ok) {
             result = fbResult;
             usedUrl = service.fallbackUrl;
@@ -1143,6 +1192,36 @@ export class AppController {
         pctRaw as LoadProfilePct,
         smokeSeconds
       );
+      const topologyProfile = result as {
+        profilePct?: number;
+        workers?: number;
+        note?: string;
+      };
+      try {
+        const targetUrls = this.governanceBaseCandidates().map(
+          (b) => `${b}/api/v1/metrics/topology/runtime-profile`
+        );
+        await this.fetchWithFallback(
+          targetUrls,
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              profilePct: topologyProfile.profilePct ?? pctRaw,
+              workers: topologyProfile.workers ?? 0,
+              note: topologyProfile.note ?? "",
+            }),
+          },
+          3000
+        );
+      } catch (syncErr) {
+        console.warn(
+          "Failed to mirror runtime load profile to governance topology metrics:",
+          syncErr
+        );
+      }
       res.status(200).json(result);
     } catch (e: any) {
       console.error("Failed to set runtime load profile:", e);
@@ -1208,6 +1287,49 @@ export class AppController {
     }
   }
 
+  @Get("/api/v1/vo/cached-samples")
+  async getVoCachedSamples(@Res() res: Response): Promise<void> {
+    const key = "vo:cached:chanmaster";
+    try {
+      // Try Redis first
+      if (redisClient) {
+        try {
+          const cached = await redisClient.get(key);
+          if (cached) {
+            res.setHeader("Content-Type", "application/json; charset=utf-8");
+            res.send(cached);
+            return;
+          }
+        } catch (e) {
+          console.warn("Redis GET failed:", e);
+        }
+      }
+
+      // Not in cache — fetch lightweight VOTable summary from governance API (same as telemetry expects)
+      const baseCandidates = this.governanceBaseCandidates();
+      const urls = baseCandidates.map((b) => `${b}/api/v1/vo/votable?table=chanmaster&position=3c273`);
+      const upstream = await this.fetchWithFallback(urls, { method: "GET" }, 7000);
+      const txt = await upstream.text();
+      const ct = upstream.headers.get("content-type") || "application/json";
+
+      // Optionally cache the raw JSON string in Redis for short TTL
+      if (redisClient) {
+        try {
+          // store with short TTL (30 seconds)
+          await redisClient.set(key, txt, { EX: 30 });
+        } catch (e) {
+          console.warn("Redis SET failed:", e);
+        }
+      }
+
+      res.setHeader("Content-Type", ct);
+      res.status(upstream.status).send(txt);
+    } catch (e: any) {
+      console.error("Error fetching VO cached samples:", e);
+      res.status(502).json({ error: "vo_fetch_error", message: String(e) });
+    }
+  }
+
   @Get("/*path")
   async handleAll(@Req() req: Request, @Res() res: Response) {
     // Guard against SSR swallowing unhandled API routes.
@@ -1265,6 +1387,8 @@ async function bootstrap() {
   const nestPort = process.env["PORT"] || process.env["FRONTEND_PORT"] || 3000;
   const runtimeLoad = app.get(RuntimeLoadProfileService);
   app.enableShutdownHooks();
+  // initialize optional Redis client used for caching VO samples
+  await initRedisClient();
   await app.listen(nestPort);
   console.log("Nest SSR server listening on", nestPort);
 
@@ -1279,4 +1403,10 @@ async function bootstrap() {
   });
 }
 
-bootstrap().catch((e) => console.error(e));
+// Avoid starting the Nest HTTP server when running unit tests (Jest)
+if (typeof process !== "undefined" && process.env && process.env["JEST_WORKER_ID"] === undefined) {
+  bootstrap().catch((e) => console.error(e));
+} else {
+  // In test environments we skip starting the real HTTP server to avoid
+  // port conflicts and long-running background work.
+}

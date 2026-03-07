@@ -10,7 +10,7 @@
 
     <ng-container *ngIf="mode$ | async as mode">
       <span class="sep">|</span>
-      <span class="label">Mode: {{ mode }}</span>
+      <span class="label">Mode: {{ modeLabel(mode) }}</span>
     </ng-container>
 
     <ng-container *ngIf="(mode$ | async) === 'mock'">

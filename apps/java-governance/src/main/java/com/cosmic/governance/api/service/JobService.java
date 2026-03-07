@@ -319,6 +319,12 @@ public class JobService {
 
         // pick executor (explicit param 'executor' overrides; default to 'tacc' for ingest workflow)
         String executorName = "simulator";
+        boolean deferred = false;
+        if (params.containsKey("deferred")) {
+            Object dv = params.get("deferred");
+            if (dv instanceof Boolean) deferred = (Boolean) dv;
+            else deferred = "true".equalsIgnoreCase(String.valueOf(dv));
+        }
 
         // Publish job submitted event to control plane
         Map<String, Object> eventDetails = Map.of(
@@ -333,7 +339,7 @@ public class JobService {
         else if (request.workflow() != null && request.workflow().equalsIgnoreCase("ingest")) executorName = "tacc";
 
         JobExecutor exec = executorMap.getOrDefault(executorName, executorMap.get("simulator"));
-        if (exec != null) {
+        if (!deferred && exec != null) {
             exec.execute(record, redisTemplate);
         }
         return toResponse(record);
@@ -425,25 +431,72 @@ public class JobService {
         return true;
     }
 
+    public boolean attachArtifact(String jobId, Map<String, Object> artifact) {
+        String key = KEY_PREFIX + jobId + ":artifacts";
+        try {
+            if (redisTemplate != null) {
+                // push onto a list so multiple artifacts can be attached
+                redisTemplate.opsForList().rightPush(key, artifact);
+            } else {
+                // in-memory fallback: maintain a List<Object>
+                Object o = inMemoryStore.get(key);
+                java.util.List<Object> list;
+                if (o instanceof java.util.List) {
+                    list = (java.util.List<Object>) o;
+                } else {
+                    list = new java.util.ArrayList<>();
+                }
+                list.add(artifact);
+                inMemoryStore.put(key, list);
+            }
+            recordAudit("artifact attached " + jobId + " " + artifact.toString());
+            return true;
+        } catch (Exception ex) {
+            log.error("Failed to attach artifact for job {}: {}", jobId, ex.toString());
+            return false;
+        }
+    }
+
     public List<Map<String, String>> getArtifacts(String jobId) {
         String key = KEY_PREFIX + jobId + ":artifacts";
-        Object o = redisTemplate.opsForValue().get(key);
-        if (o instanceof Map) {
-            // single artifact stored as map
-            @SuppressWarnings("unchecked")
-            Map<String, String> m = (Map<String, String>) o;
-            return List.of(m);
-        }
-        if (o instanceof String) {
-            try {
-                @SuppressWarnings("unchecked")
-                Map<String, String> m = objectMapper.readValue((String) o, Map.class);
-                return List.of(m);
-            } catch (Exception ignored) {
+        try {
+            if (redisTemplate != null) {
+                java.util.List<Object> items = redisTemplate.opsForList().range(key, 0, -1);
+                if (items == null || items.isEmpty()) return List.of();
+                return items.stream().map(it -> {
+                    if (it instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, String> m = (Map<String, String>) it;
+                        return m;
+                    }
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, String> m = objectMapper.convertValue(it, Map.class);
+                        return m;
+                    } catch (Exception ex) {
+                        return java.util.Collections.<String, String>emptyMap();
+                    }
+                }).collect(Collectors.toList());
+            } else {
+                Object o = inMemoryStore.get(key);
+                if (o instanceof java.util.List) {
+                    @SuppressWarnings("unchecked")
+                    java.util.List<Object> items = (java.util.List<Object>) o;
+                    return items.stream().map(it -> {
+                        if (it instanceof Map) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, String> m = (Map<String, String>) it;
+                            return m;
+                        }
+                        return java.util.Collections.<String, String>emptyMap();
+                    }).collect(Collectors.toList());
+                }
                 return List.of();
             }
+        } catch (Exception ex) {
+            log.debug("Failed to read artifacts for {}: {}", jobId, ex.toString());
+            return List.of();
         }
-        return List.of();
     }
 
     public List<JobStatusResponse> listAll() {

@@ -44,6 +44,7 @@ import { PageStateModule } from "./shared/page-state/page-state.module";
 import { StatusBandModule } from "./shared/status-band/status-band.module";
 import { DisclaimerBannerModule } from "./shared/disclaimer-banner/disclaimer-banner.module";
 import { ProvenancePanelModule } from "./shared/provenance-panel/provenance-panel.module";
+import { ExternalSourcesComponent } from "./shared/external-sources/external-sources.component";
 
 @NgModule({
   declarations: [
@@ -68,6 +69,7 @@ import { ProvenancePanelModule } from "./shared/provenance-panel/provenance-pane
     JobsSubmitDialogComponent,
     JobsLineageEditorComponent,
     DatasetsComponent,
+    ExternalSourcesComponent,
     JobEventsComponent,
   ],
   imports: [

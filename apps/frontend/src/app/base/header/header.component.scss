@@ -1,20 +1,23 @@
+
+@import "../../../styles/tokens";
+@import "../../../styles/vibrant-theme";
+
 .app-header {
   height: 56px;
   box-sizing: border-box;
-  padding: 0 0.25em;
+  padding: 0 0.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #0f172a;
-  color: #fff;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+  background: linear-gradient(90deg, token(colors, surface-start), token(colors, surface-end));
+  color: token(colors, text);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 40;
-  border-radius: 6px;
-  /* ensure children cannot push past the container */
+  border-radius: token(radii, sm);
   min-width: 0;
   overflow: hidden;
 }
@@ -22,7 +25,7 @@
 .app-header .left {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: token(spacing, md);
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -40,21 +43,44 @@
   color: inherit;
   font-size: 1.25rem;
   cursor: pointer;
+  transition: transform token(transitions, fast) ease;
 }
+
+.menu-btn:active { transform: scale(0.98); }
 .brand {
-  font-weight: 600; /* prevent long names from overflowing */
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* subtle animated accent next to brand */
+.brand .dot {
+  width: 10px;
+  height: 10px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, token(colors, accent-1), token(colors, accent-2));
+  $brand-mix: mix(token(colors, accent-1), token(colors, accent-2), 50%);
+  box-shadow: 0 6px 18px rgba($brand-mix, 0.12);
+  animation: brand-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes brand-pulse {
+  0% { transform: scale(1); opacity: 0.96 }
+  50% { transform: scale(1.18); opacity: 1 }
+  100% { transform: scale(1); opacity: 0.96 }
 }
 .user-btn {
-  background: linear-gradient(145deg, #0c4a6e, #0369a1) !important;
-  border: 1px solid rgba(103, 232, 249, 0.45) !important;
-  color: #e0fbff !important;
+  @include accent-glow(token(colors, accent-2), token(colors, accent-3));
+  border: 1px solid rgba(103, 232, 249, 0.28) !important;
+  color: token(colors, text) !important;
   font-size: 1.05rem;
   cursor: pointer;
   min-width: 44px;
-  transition: transform 140ms ease, box-shadow 160ms ease;
+  transition: transform token(transitions, fast) ease, box-shadow token(transitions, medium) ease;
 }
 
 .user-btn:hover {

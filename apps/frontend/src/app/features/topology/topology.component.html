@@ -1,21 +1,19 @@
 <div class="view-container">
   <app-disclaimer-banner 
     type="modeling" 
+    [ready]="initialLoadSettled"
     message="Topology visualization includes both infrastructure and ngVLA array segment modeling for demonstration purposes.">
   </app-disclaimer-banner>
 
   <div class="toolbar">
-    <h1>Topology</h1>
+    <div class="title-group">
+      <h1>Topology</h1>
+      <div class="rate-display" aria-live="polite">Total: {{ aggCurrentMBps }} MB/s</div>
+    </div>
     <div class="actions">
-      <button (click)="refresh()">Refresh</button>
-      <div class="mode-toggle" style="display:inline-flex; align-items:center; margin-left:12px;">
-      <button (click)="setMode('live')" [class.active]="showMode === 'live'">Live</button>
-      <button (click)="setMode('max')" [class.active]="showMode === 'max'" style="margin-left:6px;">Max</button>
-        <div class="mode-value" style="margin-left:8px; font-size:0.9rem;">
-          <span *ngIf="showMode === 'live'">Total: {{ aggCurrentMBps }} MB/s</span>
-          <span *ngIf="showMode === 'max'">Total: {{ aggMaxMBps }} MB/s</span>
-        </div>
-        <button title="Topology settings" (click)="toggleSettings()" style="margin-left:12px;">⚙️</button>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button (click)="refresh()">Refresh</button>
+        <button title="Topology settings" (click)="toggleSettings()">⚙️</button>
       </div>
     </div>
 
@@ -46,7 +44,7 @@
       </span>
     </p>
     <p class="source-chip" [attr.data-source]="topologySource">
-      Source: {{ topologySource === 'unavailable' ? 'live unavailable' : topologySource }}
+      Source: {{ topologySource === 'live' ? 'Live Data' : topologySource === 'mock' ? 'Mock Data' : 'Live Unavailable' }}
     </p>
     <div *ngIf="loading" class="loading">Loading topology…</div>
     <div *ngIf="lastError" class="error">{{ lastError }}</div>

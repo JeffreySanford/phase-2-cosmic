@@ -38,6 +38,7 @@ export class MockDataService {
       errorRate: number;
       queueDepth: number;
       sparkline: Array<{ t: number; v: number }>;
+      queueSeries: Array<{ t: number; v: number }>;
       histogram: number[];
       scatter: Array<{ x: number; y: number }>;
     };
@@ -51,19 +52,25 @@ export class MockDataService {
     const histogram = Array.from({ length: 10 }).map(() =>
       Math.floor(rand(0, 50) * s)
     );
+    const queueSeries = Array.from({ length: 40 }).map((_, i) => ({
+      t: now - (40 - i) * 1000,
+      v: Math.max(0, Math.round(rand(2, 48) * s)),
+    }));
     const scatter = Array.from({ length: 60 }).map(() => ({
       x: Math.random() * 100 * s,
       y: Math.random() * 100 * s,
     }));
     const throughput =
       Math.round((sparkline[sparkline.length - 1].v || 0) * 10) / 10;
+    const queueDepth = queueSeries[queueSeries.length - 1]?.v ?? 0;
     return of({
       source: "mock",
       data: {
         throughput,
         errorRate: +(Math.random() * 2).toFixed(2),
-        queueDepth: Math.round(rand(0, 50) * s),
+        queueDepth,
         sparkline,
+        queueSeries,
         histogram,
         scatter,
       },

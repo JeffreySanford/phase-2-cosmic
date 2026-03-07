@@ -8,15 +8,19 @@ import {
   HttpClientTestingModule,
   HttpTestingController,
 } from "@angular/common/http/testing";
-import { Component } from "@angular/core";
+import { Component, Input } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { TopologyComponent } from "./topology.component";
 import { PageStateModule } from "../../shared/page-state/page-state.module";
 import { DataSourceService } from "../../services/data-source.service";
+import { LoadProfileService } from "../../services/load-profile.service";
 import { MockDataService } from "../../services/mock-data.service";
+import { of } from "rxjs";
 
 @Component({ selector: "app-disclaimer-banner", template: "" })
-class DisclaimerBannerStubComponent {}
+class DisclaimerBannerStubComponent {
+  @Input() ready = true;
+}
 
 describe("TopologyComponent", () => {
   let component: TopologyComponent;
@@ -32,6 +36,10 @@ describe("TopologyComponent", () => {
         {
           provide: MockDataService,
           useValue: { topologyMetricsForLinks: jest.fn() },
+        },
+        {
+          provide: LoadProfileService,
+          useValue: { current: 50, profile$: of(50) },
         },
       ],
     }).compileComponents();

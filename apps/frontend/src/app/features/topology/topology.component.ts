@@ -3,12 +3,17 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  OnInit,
   OnDestroy,
   ViewChild,
 } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
+import {
+  LoadProfilePct,
+  LoadProfileService,
+} from "../../services/load-profile.service";
 import { MatDialog } from "@angular/material/dialog";
 import {
   TopologyInfoDialogComponent,
@@ -105,7 +110,7 @@ type TopologyMetricsResponse = Record<string, TopologyMetricPoint> & {
   templateUrl: "./topology.component.html",
   styleUrls: ["./topology.component.scss"],
 })
-export class TopologyComponent implements AfterViewInit, OnDestroy {
+export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild("graph", { static: true }) graphEl!: ElementRef<HTMLDivElement>;
 
   private svg?: D3Selection | null;
@@ -122,6 +127,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   // mission‑closure metrics
   public timingDriftNs?: number;
   public rfiEventRate?: number;
+  public initialLoadSettled = false;
   // Configurable capacity settings
   public showSettings = false;
   public defaultPerChannelMBps = 1250; // default per-channel capacity (MB/s)
@@ -130,11 +136,13 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   // live polling controls (exposed in UI)
   public pollIntervalSec = 5;
   public sensitivityPct = 5; // percent change threshold to animate
+  public profilePct: LoadProfilePct = 10;
   // last rendered topology (kept so settings UI can auto-populate)
   private lastNodes: TopoNode[] = [];
   private lastLinks: TopoLink[] = [];
   // live polling interval id
   private livePollInterval: number | null = null;
+  private profileSub?: { unsubscribe: () => void };
   // friendly per-link form entries for settings UI
   public perLinkEntries: Array<{
     key: string;
@@ -151,8 +159,24 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
     private http: HttpClient,
     private dialog: MatDialog,
     private dataSource: DataSourceService,
-    private mock: MockDataService
+    private mock: MockDataService,
+    private loadProfile: LoadProfileService
   ) {}
+
+  ngOnInit(): void {
+    this.profilePct = this.loadProfile.current;
+    this.syncProfileControls(this.profilePct);
+    this.profileSub = this.loadProfile.profile$.subscribe((pct) => {
+      this.profilePct = pct;
+      this.syncProfileControls(pct);
+      if (this.lastLinks.length > 0) {
+        this.render(this.lastNodes, this.lastLinks, true);
+        if (this.showMode === "live") {
+          this.restartLivePoll();
+        }
+      }
+    });
+  }
 
   private safeId(s: string): string {
     return "path_" + s.replace(/[^a-zA-Z0-9_-]/g, "_");
@@ -261,6 +285,314 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
     this.render(this.lastNodes, this.lastLinks, true);
   }
 
+  private syncProfileControls(pct: LoadProfilePct): void {
+    switch (pct) {
+      case 10:
+        this.pollIntervalSec = 8;
+        this.sensitivityPct = 10;
+        break;
+      case 25:
+        this.pollIntervalSec = 5;
+        this.sensitivityPct = 8;
+        break;
+      case 50:
+        this.pollIntervalSec = 3;
+        this.sensitivityPct = 6;
+        break;
+      case 100:
+        this.pollIntervalSec = 1;
+        this.sensitivityPct = 4;
+        break;
+    }
+  }
+
+  private restartLivePoll(): void {
+    if (this.showMode === "live") {
+      this.startLivePoll();
+    }
+  }
+
+  private loadScale(): number {
+    return this.profilePct / 100;
+  }
+
+  private linkActivityBias(key: string): number {
+    const hash = Array.from(key).reduce(
+      (acc, char) => acc + char.charCodeAt(0),
+      0
+    );
+    return 0.45 + (hash % 45) / 100;
+  }
+
+  private syntheticLatencyMs(l: TopoLink): number {
+    const channels = Number(l.value ?? 1) || 1;
+    return Math.round(8 + channels * 4 + this.loadScale() * 14);
+  }
+
+  private syntheticErrorRate(l: TopoLink): string {
+    const channels = Number(l.value ?? 1) || 1;
+    return `${(channels * 0.01 + this.loadScale() * 0.08).toFixed(2)}%`;
+  }
+
+  private normalizeTopologyMetricsResponse(
+    res: TopologyMetricsResponse | Record<string, unknown> | null | undefined
+  ): Record<string, TopologyMetricPoint> {
+    const normalized: Record<string, TopologyMetricPoint> = {};
+    const source = res as Record<string, unknown>;
+    if (!source || typeof source !== "object") {
+      return normalized;
+    }
+
+    this.mergeMetricMap(normalized, source);
+
+    const links = source["links"];
+    if (links && typeof links === "object") {
+      this.mergeMetricMap(normalized, links as Record<string, unknown>);
+    }
+
+    const payload = source["payload"] as
+      | { data?: { result?: Array<Record<string, unknown>> } }
+      | undefined;
+    const results = payload?.data?.result;
+    if (Array.isArray(results)) {
+      for (const entry of results) {
+        const metric = (entry["metric"] || {}) as Record<string, unknown>;
+        const link = String(
+          metric["link"] ??
+            this.composeLinkKey(
+              metric["source"] as string | undefined,
+              metric["target"] as string | undefined
+            ) ??
+            ""
+        );
+        if (!link) continue;
+        const value = entry["value"] as [number, string] | undefined;
+        const parsed = Number(value?.[1] ?? 0);
+        normalized[link] = {
+          currentMBps: Math.max(0, parsed / (1024 * 1024)),
+          maxMBps: normalized[link]?.maxMBps,
+        };
+      }
+    }
+
+    return normalized;
+  }
+
+  private mergeMetricMap(
+    target: Record<string, TopologyMetricPoint>,
+    source: Record<string, unknown>
+  ): void {
+    for (const [key, value] of Object.entries(source)) {
+      if (
+        key === "source" ||
+        key === "payload" ||
+        key === "links" ||
+        key === "timing_drift_ns" ||
+        key === "rfi_event_rate"
+      ) {
+        continue;
+      }
+      if (!value || typeof value !== "object") {
+        continue;
+      }
+      const metric = value as Record<string, unknown>;
+      const currentMBps = Number(metric["currentMBps"]);
+      const maxMBps = Number(metric["maxMBps"]);
+      if (!Number.isFinite(currentMBps) && !Number.isFinite(maxMBps)) {
+        continue;
+      }
+      target[key] = {
+        currentMBps: Number.isFinite(currentMBps) ? currentMBps : 0,
+        maxMBps: Number.isFinite(maxMBps) ? maxMBps : undefined,
+      };
+    }
+  }
+
+  private applyMetricToLink(
+    ln: TopoLink,
+    metrics?: Record<string, TopologyMetricPoint>
+  ): boolean {
+    const metric = this.metricForLink(metrics, ln);
+    if (!metric) return false;
+    const stats = this.statsRef(ln)._stats ?? ({} as LinkStats);
+    this.populateStatsFromMetric(stats, metric);
+    stats.latencyMs = this.syntheticLatencyMs(ln);
+    stats.errorRate = this.syntheticErrorRate(ln);
+    this.statsRef(ln)._stats = stats;
+    return true;
+  }
+
+  private populateStatsFromMetric(
+    stats: LinkStats,
+    metric: TopologyMetricPoint
+  ): void {
+    stats.throughputMBpsCurrent = metric.currentMBps;
+    if (metric.maxMBps !== undefined) {
+      stats.throughputMBpsMax = metric.maxMBps;
+    }
+    const current = Math.round(stats.throughputMBpsCurrent ?? 0);
+    const max = Math.round(
+      stats.throughputMBpsMax ?? stats.throughputMBpsCurrent ?? 0
+    );
+    const pct = Math.round(
+      ((stats.throughputMBpsCurrent ?? 0) / Math.max(1, max || 1)) * 100
+    );
+    stats.throughput = `${current} MB/s (max ${max} MB/s)`;
+    stats.throughputPct = `${pct}%`;
+    stats.throughputPctNumeric = pct;
+  }
+
+  private metricForLink(
+    metrics: Record<string, TopologyMetricPoint> | undefined,
+    link: TopoLink
+  ): TopologyMetricPoint | null {
+    const key = this.getLinkKey(link);
+    if (metrics?.[key]) {
+      return metrics[key];
+    }
+    for (const alias of this.linkAliases(key)) {
+      if (metrics?.[alias]) {
+        return metrics[alias];
+      }
+    }
+
+    const channels = Number(link.value ?? 1) || 1;
+    const maxMBps = Math.round(
+      channels *
+        (Number(this.perLinkCapacity[key] ?? this.defaultPerChannelMBps) ||
+          this.defaultPerChannelMBps)
+    );
+    return {
+      currentMBps: Math.round(
+        maxMBps *
+          Math.min(1, Math.max(0.04, this.loadScale() * this.linkActivityBias(key)))
+      ),
+      maxMBps,
+    };
+  }
+
+  private linkAliases(key: string): string[] {
+    const replacements: Record<string, string[]> = {
+      "dg-main": ["generator"],
+      backend: ["governance"],
+      "java-governance": ["governance"],
+    };
+    const aliases = new Set<string>();
+    const [source, target] = key.split("->");
+    const sourceVariants = [source, ...(replacements[source] ?? [])];
+    const targetVariants = [target, ...(replacements[target] ?? [])];
+    for (const s of sourceVariants) {
+      for (const t of targetVariants) {
+        aliases.add(`${s}->${t}`);
+      }
+    }
+    return Array.from(aliases).filter((alias) => alias !== key);
+  }
+
+  private composeLinkKey(
+    source?: string,
+    target?: string
+  ): string | undefined {
+    if (!source || !target) return undefined;
+    return `${source}->${target}`;
+  }
+
+  private linkUtilization(stats?: LinkStats): number {
+    return Number(
+      stats?.throughputPctNumeric ??
+        ((stats?.throughputMBpsCurrent ?? 0) /
+          Math.max(1, stats?.throughputMBpsMax ?? 1)) *
+          100
+    );
+  }
+
+  private particleCountForStats(stats?: LinkStats): number {
+    const util = this.linkUtilization(stats);
+    if (util >= 90) return 5;
+    if (util >= 70) return 4;
+    if (util >= 45) return 3;
+    if (util >= 20) return 2;
+    return 1;
+  }
+
+  private particleDurationSec(stats?: LinkStats): number {
+    const util = this.linkUtilization(stats);
+    return Math.max(0.45, 4.8 - util / 22);
+  }
+
+  private particleRadius(stats?: LinkStats): number {
+    const util = this.linkUtilization(stats);
+    if (util >= 90) return 5.5;
+    if (util >= 60) return 4.8;
+    if (util >= 30) return 4.2;
+    return 3.6;
+  }
+
+  private particleColor(stats?: LinkStats): string {
+    const util = this.linkUtilization(stats);
+    if (util >= 90) return "#2563eb";
+    if (util >= 65) return "#1d4ed8";
+    if (util >= 35) return "#3b82f6";
+    return "#60a5fa";
+  }
+
+  private syncParticlesForLink(
+    svgEl: SVGSVGElement,
+    key: string,
+    stats?: LinkStats
+  ): void {
+    const desiredCount = this.particleCountForStats(stats);
+    const durationSec = this.particleDurationSec(stats);
+    const radius = this.particleRadius(stats);
+    const fill = this.particleColor(stats);
+    const existing = Array.from(
+      svgEl.querySelectorAll(`.flow-particle[data-key="${key}"]`)
+    ) as SVGCircleElement[];
+
+    existing.slice(desiredCount).forEach((node) => node.remove());
+
+    for (let i = existing.length; i < desiredCount; i++) {
+      const particle = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "circle"
+      );
+      particle.setAttribute("class", "flow-particle");
+      particle.setAttribute("data-key", key);
+
+      const anim = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "animateMotion"
+      );
+      anim.setAttribute("repeatCount", "indefinite");
+      anim.setAttribute("rotate", "auto");
+      anim.setAttribute("begin", `${(i * durationSec) / desiredCount}s`);
+      const mpath = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "mpath"
+      );
+      mpath.setAttribute("href", `#${this.safeId(key)}`);
+      anim.appendChild(mpath);
+      particle.appendChild(anim);
+      svgEl.appendChild(particle);
+    }
+
+    const particles = Array.from(
+      svgEl.querySelectorAll(`.flow-particle[data-key="${key}"]`)
+    ) as SVGCircleElement[];
+    particles.forEach((particle, index) => {
+      particle.setAttribute("r", `${radius}`);
+      particle.setAttribute("fill", fill);
+      particle.setAttribute("opacity", `${Math.max(0.38, 0.95 - index * 0.12)}`);
+      const animEl = particle.querySelector(
+        "animateMotion"
+      ) as SVGAnimateElement | null;
+      if (animEl) {
+        animEl.setAttribute("dur", `${durationSec}s`);
+        animEl.setAttribute("begin", `${(index * durationSec) / desiredCount}s`);
+      }
+    });
+  }
+
   // Fetch metrics from backend Prometheus adapter at /api/metrics/topology
   // Expected shape: { "source->target": { currentMBps: number, maxMBps?: number } }
   private fetchMetrics() {
@@ -269,31 +601,11 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
       this.mock
         .topologyMetricsForLinks(keys)
         .subscribe((res: TopologyMetricsResponse) => {
+          const metrics = this.normalizeTopologyMetricsResponse(res);
           this.captureMissionMetrics(res);
           let changed = false;
           for (const ln of this.lastLinks ?? []) {
-            const key = this.getLinkKey(ln);
-            const m = res[key];
-            if (m) {
-              const stats = this.statsRef(ln)._stats ?? ({} as LinkStats);
-              stats.throughputMBpsCurrent = m.currentMBps;
-              if (m.maxMBps) stats.throughputMBpsMax = m.maxMBps;
-              stats.throughput = `${Math.round(
-                stats.throughputMBpsCurrent ?? 0
-              )} MB/s (max ${Math.round(
-                stats.throughputMBpsMax ?? stats.throughputMBpsCurrent ?? 0
-              )} MB/s)`;
-              stats.throughputPct = `${Math.round(
-                ((stats.throughputMBpsCurrent ?? 0) /
-                  Math.max(
-                    1,
-                    stats.throughputMBpsMax || stats.throughputMBpsCurrent || 1
-                  )) *
-                  100
-              )}%`;
-              this.statsRef(ln)._stats = stats;
-              changed = true;
-            }
+            changed = this.applyMetricToLink(ln, metrics) || changed;
           }
           if (changed) this.render(this.lastNodes, this.lastLinks, true);
         });
@@ -302,31 +614,11 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
 
     this.http.get<TopologyMetricsResponse>("/api/metrics/topology").subscribe(
       (res) => {
+        const metrics = this.normalizeTopologyMetricsResponse(res);
         this.captureMissionMetrics(res);
         let changed = false;
         for (const ln of this.lastLinks ?? []) {
-          const key = this.getLinkKey(ln);
-          const m = res[key];
-          if (m) {
-            const stats = this.statsRef(ln)._stats ?? ({} as LinkStats);
-            stats.throughputMBpsCurrent = m.currentMBps;
-            if (m.maxMBps) stats.throughputMBpsMax = m.maxMBps;
-            stats.throughput = `${Math.round(
-              stats.throughputMBpsCurrent ?? 0
-            )} MB/s (max ${Math.round(
-              stats.throughputMBpsMax ?? stats.throughputMBpsCurrent ?? 0
-            )} MB/s)`;
-            stats.throughputPct = `${Math.round(
-              ((stats.throughputMBpsCurrent ?? 0) /
-                Math.max(
-                  1,
-                  stats.throughputMBpsMax || stats.throughputMBpsCurrent || 1
-                )) *
-                100
-            )}%`;
-            this.statsRef(ln)._stats = stats;
-            changed = true;
-          }
+          changed = this.applyMetricToLink(ln, metrics) || changed;
         }
         if (changed) {
           // re-render to update visuals; avoid triggering another metrics fetch
@@ -349,6 +641,8 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.simulation?.stop();
     window.removeEventListener("resize", this.onResize);
+    this.profileSub?.unsubscribe();
+    this.stopLivePoll();
   }
 
   private async initSvg() {
@@ -455,7 +749,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
       .enter()
       .append("line")
       .attr("data-key", (ln: TopoLink) => this.getLinkKey(ln))
-      .attr("stroke", "#bdbdbd")
+      .attr("stroke", "rgba(148, 163, 184, 0.34)")
       .attr("stroke-width", (d: TopoLink) =>
         d.value ? Math.max(1, Math.log(d.value + 1)) : 1
       );
@@ -523,30 +817,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
         );
         for (const ln of links) {
           const key = this.getLinkKey(ln);
-          const particle = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "circle"
-          );
-          particle.setAttribute("r", "4");
-          particle.setAttribute("fill", "#00d4ff");
-          particle.setAttribute("class", "flow-particle");
-          particle.setAttribute("data-key", key);
-
-          const anim = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "animateMotion"
-          );
-          anim.setAttribute("dur", "3s");
-          anim.setAttribute("repeatCount", "indefinite");
-          const mpath = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "mpath"
-          );
-          // use href attribute to reference the path id
-          mpath.setAttribute("href", `#${this.safeId(key)}`);
-          anim.appendChild(mpath);
-          particle.appendChild(anim);
-          svgEl.appendChild(particle);
+          this.syncParticlesForLink(svgEl, key, this.statsRef(ln)._stats);
         }
       }
     } catch (e) {
@@ -580,12 +851,18 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
         if (d.group === "infra") return "#90caf9"; // Blue for infrastructure
         return "#ffd54f"; // Yellow for application nodes
       })
-      .attr("stroke", "#374151");
+      .attr("stroke", "#0f172a");
     node
       .append("text")
       .attr("x", 18)
       .attr("y", 4)
       .attr("font-size", 12)
+      .attr("fill", "#f8fafc")
+      .attr("font-weight", 600)
+      .attr("paint-order", "stroke")
+      .attr("stroke", "rgba(2, 6, 23, 0.9)")
+      .attr("stroke-width", 3)
+      .attr("stroke-linejoin", "round")
       .text((d: TopoNode) => d.label ?? d.id);
 
     this.simulation = d3
@@ -636,30 +913,8 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
           if (svgEl) {
             for (const ln of links) {
               const key = this.getLinkKey(ln);
-              const particle = svgEl.querySelector(
-                `.flow-particle[data-key="${key}"]`
-              ) as SVGCircleElement | null;
-              if (!particle) continue;
-              // Ensure particle follows path via animateMotion (no manual cx/cy)
-              // adjust speed based on utilization if stats available
               const stats = this.statsRef(ln)._stats;
-              const util = Number(
-                stats?.throughputPctNumeric ??
-                  (stats &&
-                  stats.throughputMBpsCurrent &&
-                  stats.throughputMBpsMax
-                    ? Math.round(
-                        ((stats.throughputMBpsCurrent ?? 0) /
-                          Math.max(1, stats.throughputMBpsMax ?? 1)) *
-                          100
-                      )
-                    : 10)
-              );
-              const durSec = Math.max(0.6, 5 - util / 20);
-              const animEl = particle.querySelector(
-                "animateMotion"
-              ) as SVGAnimateElement | null;
-              if (animEl) animEl.setAttribute("dur", `${durSec}s`);
+              this.syncParticlesForLink(svgEl, key, stats);
             }
           }
         } catch (e) {
@@ -704,8 +959,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   }
 
   private startLivePoll() {
-    // already polling
-    if (this.livePollInterval != null) return;
+    this.stopLivePoll();
     // immediate poll
     this.pollMetricsAndAnimate();
     // poll every pollIntervalSec seconds
@@ -723,32 +977,25 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   }
 
   private pollMetricsAndAnimate() {
+    if (this.dataSource.mode === "mock") {
+      this.fetchMetrics();
+      return;
+    }
     this.http.get<TopologyMetricsResponse>("/api/metrics/topology").subscribe(
       (res) => {
         this.lastError = null;
+        const metrics = this.normalizeTopologyMetricsResponse(res);
         this.captureMissionMetrics(res);
         for (const ln of this.lastLinks ?? []) {
           const key = this.getLinkKey(ln);
           const prev = this.statsRef(ln)._stats;
-          const m = res[key];
+          const m = this.metricForLink(metrics, ln);
           if (m) {
             const stats = prev ?? ({} as LinkStats);
             const prevVal = Number(stats.throughputMBpsCurrent ?? 0);
-            stats.throughputMBpsCurrent = m.currentMBps;
-            if (m.maxMBps) stats.throughputMBpsMax = m.maxMBps;
-            stats.throughput = `${Math.round(
-              stats.throughputMBpsCurrent ?? 0
-            )} MB/s (max ${Math.round(
-              stats.throughputMBpsMax ?? stats.throughputMBpsCurrent ?? 0
-            )} MB/s)`;
-            stats.throughputPct = `${Math.round(
-              ((stats.throughputMBpsCurrent ?? 0) /
-                Math.max(
-                  1,
-                  stats.throughputMBpsMax || stats.throughputMBpsCurrent || 1
-                )) *
-                100
-            )}%`;
+            this.populateStatsFromMetric(stats, m);
+            stats.latencyMs = this.syntheticLatencyMs(ln);
+            stats.errorRate = this.syntheticErrorRate(ln);
             this.statsRef(ln)._stats = stats;
             // animate if change significant by percentage of max or sensitivityPct
             const maxVal = Number(stats.throughputMBpsMax ?? 1);
@@ -760,26 +1007,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
                 "svg"
               ) as SVGSVGElement | null;
               if (svgEl) {
-                const particle = svgEl.querySelector(
-                  `.flow-particle[data-key="${key}"]`
-                ) as SVGCircleElement | null;
-                if (particle) {
-                  const util = Number(
-                    stats.throughputPctNumeric ??
-                      (stats.throughputMBpsCurrent && stats.throughputMBpsMax
-                        ? Math.round(
-                            ((stats.throughputMBpsCurrent ?? 0) /
-                              Math.max(1, stats.throughputMBpsMax ?? 1)) *
-                              100
-                          )
-                        : 10)
-                  );
-                  const durSec = Math.max(0.6, 5 - util / 20);
-                  const animEl = particle.querySelector(
-                    "animateMotion"
-                  ) as SVGAnimateElement | null;
-                  if (animEl) animEl.setAttribute("dur", `${durSec}s`);
-                }
+                this.syncParticlesForLink(svgEl, key, stats);
               }
             } catch {
               return;
@@ -790,6 +1018,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
             }
           }
         }
+        this.render(this.lastNodes, this.lastLinks, true);
       },
       () => {
         this.lastError =
@@ -942,30 +1171,11 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
   }
 
   private linkStats(l: TopoLink): LinkStats {
-    // realistic synthetic stats for demo; replace with real metrics from the backend when available
-    // Interpretation: `l.value` is treated as number of parallel channels/links.
-    // Determine per-channel MB/s from per-link override or default configuration.
-    const channels = Number(l.value ?? 1) || 1;
-    const linkKey = this.getLinkKey(l);
-    const perChannelMBps =
-      Number(this.perLinkCapacity[linkKey] ?? this.defaultPerChannelMBps) ||
-      1250;
-    const maxMBps = Math.round(channels * perChannelMBps);
-    // current observed throughput: random demo between 20% and 90% of theoretical max
-    const currentMBps = Math.round(maxMBps * (0.2 + Math.random() * 0.7));
-    const pct = Math.round((currentMBps / Math.max(1, maxMBps)) * 100);
-
-    return {
-      // human-readable
-      throughput: `${currentMBps} MB/s (max ${maxMBps} MB/s)`,
-      throughputPct: `${pct}%`,
-      latencyMs: Math.round(10 + channels * 5),
-      errorRate: `${(channels * 0.01).toFixed(2)}%`,
-      // numeric fields (used for coloring/aggregation)
-      throughputMBpsCurrent: currentMBps,
-      throughputMBpsMax: maxMBps,
-      throughputPctNumeric: pct,
-    };
+    const stats = {} as LinkStats;
+    this.populateStatsFromMetric(stats, this.metricForLink(undefined, l)!);
+    stats.latencyMs = this.syntheticLatencyMs(l);
+    stats.errorRate = this.syntheticErrorRate(l);
+    return stats;
   }
 
   private dragstarted(event: D3DragEvent, d: TopoNode) {
@@ -1006,6 +1216,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
       this.hasTopologyData = true;
       this.render(this.mockNodes(), this.mockLinks());
       this.loading = false;
+      this.initialLoadSettled = true;
       return;
     }
 
@@ -1014,18 +1225,20 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
         (res) => {
           this.topologySource = "live";
           this.hasTopologyData = true;
-          this.render(res.nodes ?? [], res.links ?? []);
-          this.loading = false;
-        },
-        () => {
-          this.topologySource = "unavailable";
-          this.hasTopologyData = false;
-          this.clearGraph();
-          this.lastError =
-            "Live topology data is unavailable. Retry when the topology API is online.";
-          this.loading = false;
-        }
-      );
+        this.render(res.nodes ?? [], res.links ?? []);
+        this.loading = false;
+        this.initialLoadSettled = true;
+      },
+      () => {
+        this.topologySource = "unavailable";
+        this.hasTopologyData = false;
+        this.clearGraph();
+        this.lastError =
+          "Live topology data is unavailable. Retry when the topology API is online.";
+        this.loading = false;
+        this.initialLoadSettled = true;
+      }
+    );
       return;
     }
 
@@ -1035,6 +1248,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
         this.hasTopologyData = true;
         this.render(res.nodes ?? [], res.links ?? []);
         this.loading = false;
+        this.initialLoadSettled = true;
       },
       () => {
         this.topologySource = "unavailable";
@@ -1043,6 +1257,7 @@ export class TopologyComponent implements AfterViewInit, OnDestroy {
         this.lastError =
           "Live topology data is unavailable. Switch to mock mode or retry when the topology API is online.";
         this.loading = false;
+        this.initialLoadSettled = true;
       }
     );
   }

@@ -20,6 +20,7 @@ export class VisualizationComponent implements OnInit, OnDestroy {
   queueDepth = 0;
 
   sparklineData: TimePoint[] = [];
+  queueSeriesData: TimePoint[] = [];
   histogramData: number[] = [];
   scatterData: Array<{ x: number; y: number }> = [];
 
@@ -55,6 +56,10 @@ export class VisualizationComponent implements OnInit, OnDestroy {
       t: now - (40 - i) * 1000,
       v: Math.random() * 60 + 20,
     }));
+    this.queueSeriesData = Array.from({ length: 40 }).map((_, i) => ({
+      t: now - (40 - i) * 1000,
+      v: Math.round(Math.random() * 50),
+    }));
     this.histogramData = Array.from({ length: 10 }).map(() =>
       Math.floor(Math.random() * 20)
     );
@@ -67,9 +72,9 @@ export class VisualizationComponent implements OnInit, OnDestroy {
 
   recomputeAggregates() {
     const last = this.sparklineData[this.sparklineData.length - 1];
+    const lastQueue = this.queueSeriesData[this.queueSeriesData.length - 1];
     this.throughput = last ? Math.round(last.v * 10) / 10 : 0;
-    this.errorRate = +(Math.random() * 2).toFixed(2);
-    this.queueDepth = Math.max(0, Math.round(Math.random() * 50));
+    this.queueDepth = lastQueue ? Math.max(0, Math.round(lastQueue.v)) : 0;
   }
 
   get sparklinePointsSmall(): string {
@@ -88,6 +93,35 @@ export class VisualizationComponent implements OnInit, OnDestroy {
     return d
       .map((p, i) => `${(i / len) * 600},${160 - (p.v / 100) * 140}`)
       .join(" ");
+  }
+
+  get throughputComparePoints(): string {
+    const series = this.sparklineData;
+    if (!series.length) return "";
+    const max = Math.max(...series.map((point) => point.v), 1);
+    const len = Math.max(series.length - 1, 1);
+    return series
+      .map((point, index) => {
+        const x = (index / len) * 280;
+        const y = 108 - (point.v / max) * 92;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      })
+      .join(" ");
+  }
+
+  get queueAreaPoints(): string {
+    const queueSeries = this.queueSeriesData.map((point) => point.v);
+    if (!queueSeries.length) return "0,108 280,108 280,108 0,108";
+    const max = Math.max(...queueSeries, 1);
+    const len = Math.max(queueSeries.length - 1, 1);
+    const topEdge = queueSeries
+      .map((value, index) => {
+        const x = (index / len) * 280;
+        const y = 108 - (value / max) * 68;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      })
+      .join(" ");
+    return `0,108 ${topEdge} 280,108`;
   }
 
   startLive() {
@@ -116,6 +150,10 @@ export class VisualizationComponent implements OnInit, OnDestroy {
         this.errorRate = +body.errorRate;
         this.queueDepth = +body.queueDepth;
         this.sparklineData = body.sparkline.map((p) => ({ t: +p.t, v: +p.v }));
+        this.queueSeriesData = (body.queueSeries || []).map((p) => ({
+          t: +p.t,
+          v: +p.v,
+        }));
         this.histogramData = body.histogram.map((n) => +n);
         this.scatterData = body.scatter.map((p) => ({ x: +p.x, y: +p.y }));
         this.recomputeAggregates();
@@ -130,6 +168,7 @@ export class VisualizationComponent implements OnInit, OnDestroy {
         errorRate?: number;
         queueDepth?: number;
         sparkline?: Array<{ t: number; v: number }>;
+        queueSeries?: Array<{ t: number; v: number }>;
         histogram?: number[];
         scatter?: Array<{ x: number; y: number }>;
       };
@@ -138,6 +177,7 @@ export class VisualizationComponent implements OnInit, OnDestroy {
         errorRate?: number;
         queueDepth?: number;
         sparkline?: Array<{ t: number; v: number }>;
+        queueSeries?: Array<{ t: number; v: number }>;
         histogram?: number[];
         scatter?: Array<{ x: number; y: number }>;
       };
@@ -161,6 +201,13 @@ export class VisualizationComponent implements OnInit, OnDestroy {
 
           if (Array.isArray(body.sparkline)) {
             this.sparklineData = body.sparkline.map((p) => ({
+              t: +p.t,
+              v: +p.v,
+            }));
+          }
+
+          if (Array.isArray(body.queueSeries)) {
+            this.queueSeriesData = body.queueSeries.map((p) => ({
               t: +p.t,
               v: +p.v,
             }));

@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from "@angular/core";
-import { HttpErrorResponse } from "@angular/common/http";
+import { HttpErrorResponse, HttpClient } from "@angular/common/http";
 import {
   JobsService,
   JobStatus,
@@ -26,6 +26,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   jobs: JobStatus[] = [];
   loading = false;
   error: string | null = null;
+  initialLoadSettled = false;
   // filter UI
   filterVisible = false;
   filterWorkflow: string | null = null;
@@ -40,13 +41,16 @@ export class JobsComponent implements OnInit, OnDestroy {
   private logsSub: Subscription | null = null;
 
   selectedJob: JobStatus | null = null;
+  expandedJobId: string | null = null;
   logs: string[] = [];
   artifacts: { name: string; url: string }[] = [];
+  externalSources: Array<any> = [];
 
   constructor(
     private jobsSvc: JobsService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -62,10 +66,12 @@ export class JobsComponent implements OnInit, OnDestroy {
             this.error = this.errMsg(result.error);
           }
           this.loading = false;
+          this.initialLoadSettled = true;
         },
         (err) => {
           this.error = this.errMsg(err);
           this.loading = false;
+          this.initialLoadSettled = true;
         }
       );
 
@@ -125,7 +131,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
     this.snackBar.open("Submitting 5 sample jobs…", undefined, {
-      duration: 3000,
+      duration: 10000,
     });
     const submissions: Promise<unknown>[] = [];
     for (let i = 1; i <= 5; i++) {
@@ -160,7 +166,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         this.snackBar.open(
           `Submitted ${ok} jobs${failed ? `, ${failed} failed` : ""}`,
           undefined,
-          { duration: 4000 }
+          { duration: 10000 }
         );
       }
     );
@@ -174,7 +180,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         this.snackBar.open(
           `Released ${res.released} deferred jobs`,
           undefined,
-          { duration: 3000 }
+          { duration: 10000 }
         );
         this.jobsSvc.invalidateList();
       },
@@ -183,7 +189,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         this.snackBar.open(
           `Failed to release deferred jobs: ${this.errMsg(err)}`,
           undefined,
-          { duration: 5000 }
+          { duration: 10000 }
         );
       }
     );
@@ -215,7 +221,13 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   view(job: JobStatus) {
+    if (this.expandedJobId === job.jobId) {
+      this.collapseJob();
+      return;
+    }
+
     this.selectedJob = job;
+    this.expandedJobId = job.jobId;
 
     // use the shared hot observable that polls a single job status
     this.pollSub?.unsubscribe();
@@ -230,6 +242,36 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.startLogPolling(job.jobId);
   }
 
+  collapseJob() {
+    this.pollSub?.unsubscribe();
+    this.logsSub?.unsubscribe();
+    this.selectedJob = null;
+    this.expandedJobId = null;
+    this.logs = [];
+    this.artifacts = [];
+    this.externalSources = [];
+  }
+
+  isExpanded(job: JobStatus): boolean {
+    return this.expandedJobId === job.jobId;
+  }
+
+  isDeferred(job: JobStatus): boolean {
+    const params = job.parameters;
+    const deferred = params?.["deferred"];
+    return deferred === true || String(deferred).toLowerCase() === "true";
+  }
+
+  stepsCount(job: JobStatus): number {
+    const s = (job as any)["steps"];
+    return Array.isArray(s) ? s.length : 0;
+  }
+
+  artifactsCount(job: JobStatus): number {
+    const a = (job as any)["artifacts"];
+    return Array.isArray(a) ? a.length : 0;
+  }
+
   saveLineage() {
     const selectedJob = this.selectedJob;
     if (!selectedJob) return;
@@ -238,7 +280,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       .subscribe(
         () => {
           this.snackBar.open("Lineage saved successfully", undefined, {
-            duration: 2000,
+            duration: 10000,
           });
           // Invalidate cache to ensure fresh data on next poll
           this.jobsSvc.invalidateJob(selectedJob.jobId);
@@ -247,7 +289,7 @@ export class JobsComponent implements OnInit, OnDestroy {
           this.snackBar.open(
             "Failed to save lineage: " + error.message,
             undefined,
-            { duration: 3000 }
+            { duration: 10000 }
           );
         }
       );
@@ -288,14 +330,14 @@ export class JobsComponent implements OnInit, OnDestroy {
       () => {
         // remove from UI list and clear selected
         this.jobs = this.jobs.filter((j) => j.jobId !== id);
-        this.selectedJob = null;
-        this.snackBar.open("Job removed", undefined, { duration: 2000 });
+        this.collapseJob();
+        this.snackBar.open("Job removed", undefined, { duration: 10000 });
       },
       (e) =>
         this.snackBar.open(
           `Failed to remove job: ${this.errMsg(e)}`,
           undefined,
-          { duration: 4000 }
+          { duration: 10000 }
         )
     );
   }
@@ -331,6 +373,29 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.jobsSvc.artifacts(id).subscribe(
       (a) => (this.artifacts = a || []),
       (e) => (this.error = this.errMsg(e))
+    );
+    // also fetch any JSON artifact that may contain external-source metadata
+    this.externalSources = [];
+    this.jobsSvc.artifacts(id).subscribe(
+      (a) => {
+        (a || [])
+          .filter((af) => af && af.name && af.name.endsWith('.json'))
+          .forEach((af) => {
+            try {
+              this.http.get<any>(af.url).subscribe(
+                (body) => {
+                  if (body && (body.type === 'external-source' || body.type === 'external-sources' || body.provider)) {
+                    this.externalSources.push(body);
+                  }
+                },
+                () => null
+              );
+            } catch (err) {
+              // ignore
+            }
+          });
+      },
+      () => null
     );
   }
 

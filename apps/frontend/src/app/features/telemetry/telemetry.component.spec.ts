@@ -18,9 +18,11 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatButtonModule } from "@angular/material/button";
 import { MatTabsModule } from "@angular/material/tabs";
 import { MatIconModule } from "@angular/material/icon";
+import { MatExpansionModule } from "@angular/material/expansion";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { TelemetryService } from "../../services/telemetry.service";
 import { LoadProfileService } from "../../services/load-profile.service";
+import { VoService } from "../../services/vo.service";
 import { ActivatedRoute } from "@angular/router";
 import { BehaviorSubject, Observable, of } from "rxjs";
 
@@ -57,6 +59,7 @@ describe("TelemetryComponent", () => {
         MatSelectModule,
         MatButtonModule,
         MatTabsModule,
+        MatExpansionModule,
         MatIconModule,
         NoopAnimationsModule,
       ],
@@ -81,6 +84,10 @@ describe("TelemetryComponent", () => {
         {
           provide: ActivatedRoute,
           useValue: mockActivatedRoute,
+        },
+        {
+          provide: VoService,
+          useValue: { getServices: jest.fn(() => of({})) },
         },
       ],
     }).compileComponents();

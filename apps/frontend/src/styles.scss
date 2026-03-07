@@ -2,12 +2,24 @@
 
 /* Angular Material theme */
 @use "./styles/material-theme" as *;
+@use "./styles/vibrant-theme" as *;
+
+/* Expose key token colors as CSS custom properties so runtime JS (charts) can match theme */
+:root {
+  --color-text: #{token(colors, text)};
+  --color-muted: #{token(colors, muted)};
+  --color-accent-1: #{token(colors, accent-1)};
+  --color-accent-2: #{token(colors, accent-2)};
+  --color-accent-3: #{token(colors, accent-3)};
+  --color-surface-start: #{token(colors, surface-start)};
+  --color-surface-end: #{token(colors, surface-end)};
+}
 
 /* Basic app defaults */
 body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
-  background: #071028;
+  background: token(colors, surface-start);
 }
 /* Keep overlays above routed content (menus/dialogs/tooltips/snackbars). */
 .cdk-overlay-container {
@@ -46,7 +58,7 @@ app-root {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #071028;
+  background: token(colors, surface-start);
 }
 
 /* ensure both the custom element wrapper and the <main> inside behave as full-height flex containers */
@@ -59,7 +71,7 @@ main.app-mainstage {
   min-width: 0;
   padding-top: 0;
   margin-top: 0;
-  background: #071028;
+  background: token(colors, surface-start);
 }
 
 /* make direct children of the main stage (route host elements) stretch to fill the stage */
@@ -89,11 +101,11 @@ app-mainstage > * {
 .mat-mdc-menu-panel.profile-menu-panel,
 .profile-menu-panel,
 .cdk-overlay-pane .profile-menu-panel {
-  --mat-menu-container-color: #0b1220;
-  --mdc-menu-container-color: #0b1220;
+  --mat-menu-container-color: token(colors, surface-start);
+  --mdc-menu-container-color: token(colors, surface-start);
   border: 1px solid #22c55e !important;
   border-radius: 8px;
-  background: #0b1220 !important;
+  background: token(colors, surface-start) !important;
   box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.35),
     0 8px 24px rgba(34, 197, 94, 0.25), 0 0 18px rgba(34, 197, 94, 0.25) !important;
 }

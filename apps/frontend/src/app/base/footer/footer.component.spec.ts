@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { MatMenuModule } from "@angular/material/menu";
+import { Router } from "@angular/router";
 import { FooterComponent } from "./footer.component";
 import { LoadProfileService } from "../../services/load-profile.service";
 import { DataSourceService } from "../../services/data-source.service";
@@ -21,9 +22,15 @@ describe("FooterComponent", () => {
     } as unknown as LoadProfileService;
 
     const mockDataSource = {
+      mode: "live",
       mode$: of("live"),
       setMode: jest.fn(),
     } as unknown as DataSourceService;
+
+    const mockRouter = {
+      url: "/topology",
+      events: of(),
+    } as unknown as Router;
 
     await TestBed.configureTestingModule({
       declarations: [FooterComponent],
@@ -31,6 +38,7 @@ describe("FooterComponent", () => {
       providers: [
         { provide: LoadProfileService, useValue: mockLoadProfile },
         { provide: DataSourceService, useValue: mockDataSource },
+        { provide: Router, useValue: mockRouter },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(FooterComponent);

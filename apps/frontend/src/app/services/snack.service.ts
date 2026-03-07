@@ -30,7 +30,7 @@ export class SnackService {
     }
   }
 
-  private open(message: string, panelClass: string, duration = 6000) {
+  private open(message: string, panelClass: string, duration = 10000) {
     const cfg: MatSnackBarConfig = {
       duration,
       horizontalPosition: "center",
@@ -40,15 +40,15 @@ export class SnackService {
     this.snackBar.open(message, undefined, cfg);
   }
 
-  showSuccess(message: string, duration = 5000) {
+  showSuccess(message: string, duration = 10000) {
     this.open(message, "snack-success", duration);
   }
 
-  showInfo(message: string, duration = 6000) {
+  showInfo(message: string, duration = 10000) {
     this.open(message, "snack-info", duration);
   }
 
-  showError(message: string, duration = 8000) {
+  showError(message: string, duration = 10000) {
     this.open(message, "snack-error", duration);
   }
 }

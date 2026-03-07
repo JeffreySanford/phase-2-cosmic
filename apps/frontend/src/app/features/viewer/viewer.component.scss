@@ -11,6 +11,9 @@
   min-height: 0; /* allow parent flex to control size */
 }
 
+@import "../../../styles/tokens";
+@import "../../../styles/vibrant-theme";
+
 /* Ensure the component host element itself stretches when placed inside route hosts
    or other flex containers. This prevents the host from collapsing to zero height. */
 :host {
@@ -37,14 +40,21 @@
 /* loader is now placed inside the aladin container so it tracks the actual
    viewer element. the container itself is positioned absolutely within
    viewer-root. */
-#aladin-lite .loading {
+@at-root #aladin-lite .loading {
   position: absolute;
   left: 0.5rem;
   top: 0.5rem;
-  background: rgba(255, 255, 255, 0.9);
+  @extend %vibrant-card;
   padding: 6px 10px;
-  border-radius: 4px;
-  color: #333;
+  border-radius: 6px;
+  color: #002a33;
   font-size: 13px;
   z-index: 9999;
+  animation: pulseEase 2.4s ease-in-out infinite;
+}
+
+@keyframes pulseEase {
+  0% { transform: translateY(0); box-shadow: 0 6px 18px rgba(11,85,104,0.12); }
+  50% { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(11,85,104,0.22); }
+  100% { transform: translateY(0); box-shadow: 0 6px 18px rgba(11,85,104,0.12); }
 }

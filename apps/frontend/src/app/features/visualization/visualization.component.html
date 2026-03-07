@@ -62,9 +62,23 @@
     </div>
 
     <div class="panel panel-small">
-      <h3>Correlation — Jobs vs Ingest</h3>
-      <div class="scatter">
-        <div *ngFor="let p of scatterData" class="dot" [style.left.%]="p.x" [style.top.%]="p.y"></div>
+      <h3>Throughput vs Queue Depth</h3>
+      <div class="compare-chart" aria-label="Throughput compared with queue depth">
+        <svg class="compare-svg" viewBox="0 0 280 120" preserveAspectRatio="none">
+          <line class="grid-line" x1="0" y1="24" x2="280" y2="24"></line>
+          <line class="grid-line" x1="0" y1="60" x2="280" y2="60"></line>
+          <line class="grid-line" x1="0" y1="96" x2="280" y2="96"></line>
+          <polygon class="queue-area" [attr.points]="queueAreaPoints"></polygon>
+          <polyline
+            class="throughput-line"
+            [attr.points]="throughputComparePoints"
+            fill="none"
+          ></polyline>
+        </svg>
+        <div class="compare-legend">
+          <span class="legend throughput">Throughput</span>
+          <span class="legend queue">Queue Depth</span>
+        </div>
       </div>
     </div>
 

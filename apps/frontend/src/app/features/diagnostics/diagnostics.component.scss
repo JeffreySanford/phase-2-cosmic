@@ -1,3 +1,6 @@
+@use "../../../styles/_tokens" as tokens;
+@use "../../../styles/_vibrant-theme" as *;
+
 :host {
   display: flex;
   flex-direction: column;
@@ -20,6 +23,47 @@
 
 .view-header {
   flex-shrink: 0;
+}
+
+/* Improve contrast and use vibrant accents for headers and tabs */
+.view-header h1 {
+  margin: 0 0 0.5rem 0;
+  color: #00e5ff; /* vibrant cyan */
+  text-shadow: 0 1px 0 rgba(token(colors, text), 0.45);
+}
+
+.lead {
+  margin-bottom: 0.75rem;
+  color: #e6f7ff; /* light, high-contrast */
+}
+
+.last-updated, .polling-interval {
+  color: #d7f0ff;
+}
+
+/* Material tab styling: make tab bar more vibrant and readable */
+::ng-deep .mat-mdc-tab-list {
+  background: linear-gradient(90deg,#04293a 0%, #0b5568 100%);
+  border-radius: 8px;
+  padding: 6px;
+}
+
+::ng-deep .mat-mdc-tab-label {
+  color: rgba(255,255,255,0.9);
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background 200ms ease, color 200ms ease, transform 150ms ease;
+}
+
+::ng-deep .mat-mdc-tab-label.mat-mdc-tab-label-active {
+  background: linear-gradient(90deg,#ff6b6b 0%, #7b61ff 100%);
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(123,97,255,0.18);
+}
+
+::ng-deep .mat-mdc-tab-label:hover {
+  background: rgba(255,255,255,0.03);
 }
 
 .tabs-container {
@@ -62,16 +106,16 @@
 
 .lead {
   margin-bottom: 0.75rem;
-  color: rgba(0, 0, 0, 0.8);
+  color: token(colors, text);
 }
 .status {
-  color: #555;
+  color: token(colors, muted);
 }
 .error {
   color: #a00;
 }
 .muted {
-  color: #666;
+  color: token(colors, muted);
   font-size: 0.9rem;
 }
 .specs {
@@ -139,7 +183,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px rgba(token(colors, text), 0.12);
   }
 
   &.tile-healthy {
@@ -148,7 +192,7 @@
   }
   &.tile-degraded {
     background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-    color: #000;
+    color: token(colors, text);
   }
   &.tile-offline {
     background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
@@ -228,10 +272,10 @@
 }
 .last-updated {
   font-size: 0.85rem;
-  color: rgba(0, 0, 0, 0.6);
+  color: rgba(token(colors, text), 0.6);
 }
 .polling-interval {
   font-size: 0.8rem;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(token(colors, text), 0.5);
   font-style: italic;
 }

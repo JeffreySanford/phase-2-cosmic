@@ -10,6 +10,7 @@ import {
 import { ActivatedRoute } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { TelemetryService } from "../../services/telemetry.service";
+import { VoService, VoServices } from "../../services/vo.service";
 import { BehaviorSubject, Subscription, timer, NEVER, from, of } from "rxjs";
 import { switchMap, map, catchError } from "rxjs/operators";
 import { LoadProfileService } from "../../services/load-profile.service";
@@ -110,6 +111,14 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   };
   selectedVizTab = 0;
   recentSamples: Array<{ time: string; valueHuman: string; pct: number }> = [];
+  // Prometheus-derived recent samples (kept separate from VO samples)
+  prometheusSamples: Array<{ time: string; valueHuman: string; pct: number }> = [];
+  // VO services metadata (if configured)
+  voServices?: VoServices | null = null;
+  // raw parsed VO rows (if any)
+  voRows: Array<Record<string, string>> = [];
+  // Hot observable (BehaviorSubject) that holds the latest VO samples
+  voSamples$ = new BehaviorSubject<Array<{ time: string; valueHuman: string; pct: number }>>([]);
   private gaugeCap = 1;
 
   private pollSub?: Subscription;
@@ -127,7 +136,8 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     @Inject(TelemetryService) private telemetry: TelemetryService,
     @Inject(LoadProfileService) private loadProfile: LoadProfileService,
     private route: ActivatedRoute,
-    private http: HttpClient
+    private http: HttpClient,
+    public voService: VoService
   ) {}
 
   ngOnInit(): void {
@@ -153,6 +163,20 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         this.fetchPulsarStatus();
         this.fetchRabbitMQStatus();
       });
+
+    // VO samples are provided by VoService voSamples$ (hot observable)
+
+    // fetch VO service metadata (tap/dataLink urls) when available
+    this.voService.getServices().subscribe(
+      (s) => {
+        this.voServices = s;
+        // wire local observable to service's hot observable so template can async-pipe it
+        this.voSamples$ = this.voService.voSamples$ as BehaviorSubject<any>;
+      },
+      () => {
+        this.voServices = null;
+      }
+    );
   }
 
   ngAfterViewInit(): void {
@@ -160,6 +184,15 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       this.initGauge();
       this.ensureVizInitialized();
     });
+  }
+
+  private cssVar(name: string, fallback = ""): string {
+    try {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name);
+      return (v || fallback).trim();
+    } catch {
+      return fallback;
+    }
   }
 
   ngOnDestroy(): void {
@@ -298,13 +331,13 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       .append("path")
       .attr("class", "line")
       .attr("fill", "none")
-      .attr("stroke", "#3f51b5")
+      .attr("stroke", this.cssVar('--color-accent-2', '#7b61ff'))
       .attr("stroke-width", 2);
     this.svg
       .append("path")
       .attr("class", "ma")
       .attr("fill", "none")
-      .attr("stroke", "#ff9800")
+      .attr("stroke", this.cssVar('--color-accent-1', '#ff6b6b'))
       .attr("stroke-width", 1.5)
       .style("stroke-dasharray", "4 2");
     // tooltip/focus group
@@ -313,7 +346,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       .select("g.focus")
       .append("circle")
       .attr("r", 3)
-      .attr("fill", "#ff5722");
+      .attr("fill", this.cssVar('--color-accent-3', '#00e5ff'));
     this.svg
       .select("g.focus")
       .append("text")
@@ -499,12 +532,12 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.gaugeGroup
       .append("path")
       .attr("class", "gauge-bg")
-      .attr("fill", "#e0e0e0");
+      .attr("fill", this.cssVar('--color-muted', '#e0e0e0'));
     // foreground arc
     this.gaugeGroup
       .append("path")
       .attr("class", "gauge-arc")
-      .attr("fill", "#4caf50");
+      .attr("fill", this.cssVar('--color-accent-1', '#ff6b6b'));
     // label
     this.gaugeGroup
       .append("text")
@@ -613,7 +646,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       .attr("y", (d: Bin) => y(d.length))
       .attr("width", (d: Bin) => Math.max(1, x(d.x1) - x(d.x0) - 1))
       .attr("height", (d: Bin) => h - margin.bottom - y(d.length))
-      .attr("fill", "#7dd3fc");
+      .attr("fill", this.cssVar('--color-accent-3', '#00e5ff'));
     g.exit().remove();
 
     this.histSvg.selectAll("g.hist-x-axis").remove();
@@ -747,11 +780,11 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private updateRecentSamples(points: Array<{ t: number; v: number }>) {
     if (!points?.length) {
-      this.recentSamples = [];
+      this.prometheusSamples = [];
       return;
     }
     const max = Math.max(1, ...points.map((p) => p.v));
-    this.recentSamples = points
+    this.prometheusSamples = points
       .slice(-12)
       .reverse()
       .map((p) => ({
@@ -824,5 +857,93 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         };
       }
     );
+  }
+
+  // Public refresh helpers used by the Overview expansion panels
+  refreshPulsarDetails(): void {
+    this.fetchPulsarStatus();
+  }
+
+  refreshRabbitDetails(): void {
+    this.fetchRabbitMQStatus();
+  }
+
+  /**
+   * Fetch a lightweight VOTable summary from the governance API and map
+   * it into the recentSamples format used by the UI. This is defensive:
+   * if VO data is not available we simply keep the existing Prometheus samples.
+   */
+  private fetchVoSamples(): void {
+    // Only attempt VO fetch when VO services are configured
+    if (!this.voServices || (!this.voServices.tapUrl && !this.voServices.dataLinkUrl)) return;
+    const url = "/api/v1/vo/votable?table=chanmaster&position=3c273";
+    this.http.get<{ fields?: string[]; rows?: any[]; links?: any[] }>(url).subscribe(
+      (res) => {
+        const fields = res?.fields || [];
+        const rows = res?.rows || [];
+        this.voRows = [];
+        const parsed: Array<{ time: string; valueHuman: string; pct: number }> = [];
+        for (const r of rows) {
+          let rec: Record<string, string> = {};
+          if (Array.isArray(r)) {
+            for (let i = 0; i < r.length; i++) {
+              const key = fields[i] ?? `col${i}`;
+              rec[key] = String(r[i] ?? "");
+            }
+          } else if (typeof r === "object" && r !== null) {
+            rec = Object.fromEntries(Object.entries(r).map(([k, v]) => [k, String(v ?? "")]));
+          }
+          this.voRows.push(rec);
+        }
+
+        // Heuristic mapping: pick first column as time-like and second as numeric value if present
+        const sampleRecs = this.voRows.map((rec) => {
+          const keys = Object.keys(rec);
+          const timeVal = rec["time"] ?? rec["timestamp"] ?? (keys.length ? rec[keys[0]] : new Date().toLocaleTimeString());
+          const valueRaw = rec["value"] ?? rec["flux"] ?? rec["mag"] ?? (keys.length > 1 ? rec[keys[1]] : "0");
+          const n = Number(String(valueRaw).replace(/[^0-9.+-eE]/g, "")) || 0;
+          return { time: String(timeVal), value: n };
+        });
+
+        const max = Math.max(1, ...sampleRecs.map((s) => s.value));
+        for (const s of sampleRecs) {
+          parsed.push({ time: s.time, valueHuman: this.humanRate(s.value), pct: Math.min(100, Math.max(0, (s.value / max) * 100)) });
+        }
+
+        if (parsed.length) {
+          // Publish VO-derived samples to the hot observable instead of overwriting Prometheus samples
+          this.voSamples$.next(parsed.slice(0, 50).reverse());
+        }
+      },
+      () => {
+        // ignore VO fetch errors
+      }
+    );
+  }
+
+  // convenience getters for template
+  // Prometheus sample accessors (used by the Prometheus tile)
+  get firstFive(): Array<{ time: string; valueHuman: string; pct: number }> {
+    return this.prometheusSamples.slice(0, 5);
+  }
+
+  get remainingSamples(): Array<{ time: string; valueHuman: string; pct: number }> {
+    return this.prometheusSamples.slice(5);
+  }
+
+  getRabbitQueuesCount(): number {
+    try {
+      return Object.keys(this.rabbitMQStatus.queues || {}).length;
+    } catch {
+      return 0;
+    }
+  }
+
+  getRabbitExchangesCount(): number {
+    try {
+      return Object.keys(this.rabbitMQStatus.exchanges || {}).length;
+    } catch {
+      return 0;
+    }
   }
 }

@@ -18,6 +18,7 @@ log() {
 log "[start-all] script started, logging to ${LOG_FILE}"
 
 COMPOSE_FILE=docker/dev-compose.yml
+DEFAULT_BUILD_SERVICES="java-governance data-generator java-ingest"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$REPO_ROOT/.env"
@@ -44,29 +45,57 @@ if [ -n "${DOCKER_PAT:-}" ]; then
 	echo "${DOCKER_PAT}" | docker login --username "${DOCKER_USER}" --password-stdin || log "[start-all] Docker login failed (ignored)"
 fi
 
-log "[start-all] Ensuring docker images are up-to-date (will rebuild if necessary)..."
-# Behavior options (env vars):
-#  SKIP_BUILD=true     -> skip docker build entirely
-#  BUILD_SERVICES="s1 s2" -> build only the listed services
-#  NO_PULL=true        -> do not pull base images (omit --pull)
+FAST_START="${FAST_START:-true}"
+SKIP_BUILD_EFFECTIVE="${SKIP_BUILD:-}"
+NO_PULL_EFFECTIVE="${NO_PULL:-}"
+BUILD_SERVICES_EFFECTIVE="${BUILD_SERVICES:-}"
 
-if [ "${SKIP_BUILD:-false}" = "true" ]; then
-	log "[start-all] SKIP_BUILD=true; skipping docker build."
+if [ -z "$SKIP_BUILD_EFFECTIVE" ]; then
+	if [ "$FAST_START" = "true" ]; then
+		SKIP_BUILD_EFFECTIVE="true"
+	else
+		SKIP_BUILD_EFFECTIVE="false"
+	fi
+fi
+
+if [ -z "$NO_PULL_EFFECTIVE" ]; then
+	if [ "$FAST_START" = "true" ]; then
+		NO_PULL_EFFECTIVE="true"
+	else
+		NO_PULL_EFFECTIVE="false"
+	fi
+fi
+
+if [ -z "$BUILD_SERVICES_EFFECTIVE" ] && [ "$FAST_START" != "true" ] && [ "${BUILD_ALL:-false}" != "true" ]; then
+	BUILD_SERVICES_EFFECTIVE="$DEFAULT_BUILD_SERVICES"
+fi
+
+log "[start-all] Build strategy: FAST_START=${FAST_START} SKIP_BUILD=${SKIP_BUILD_EFFECTIVE} NO_PULL=${NO_PULL_EFFECTIVE} BUILD_ALL=${BUILD_ALL:-false} BUILD_SERVICES=${BUILD_SERVICES_EFFECTIVE:-<none>}"
+log "[start-all] Ensuring docker images are up-to-date when requested..."
+# Behavior options (env vars):
+#  FAST_START=true         -> default dev path: skip compose build and avoid pulls
+#  SKIP_BUILD=true|false   -> explicit override
+#  BUILD_SERVICES="s1 s2"  -> build only the listed services
+#  BUILD_ALL=true          -> build all services
+#  NO_PULL=true|false      -> explicit pull policy override
+
+if [ "$SKIP_BUILD_EFFECTIVE" = "true" ]; then
+	log "[start-all] Skipping docker build for fast startup."
 else
 	if [ "${BUILD_ALL:-false}" = "true" ]; then
 		log "[start-all] BUILD_ALL=true; building all services (ignoring BUILD_SERVICES)."
-		BUILD_SERVICES=""
+		BUILD_SERVICES_EFFECTIVE=""
 	fi
-	if [ -n "${BUILD_SERVICES:-}" ]; then
-		log "[start-all] Building only services: ${BUILD_SERVICES}"
-		if [ "${NO_PULL:-false}" = "true" ]; then
-			docker compose -f "$COMPOSE_FILE" build --parallel $BUILD_SERVICES
+	if [ -n "${BUILD_SERVICES_EFFECTIVE:-}" ]; then
+		log "[start-all] Building only services: ${BUILD_SERVICES_EFFECTIVE}"
+		if [ "$NO_PULL_EFFECTIVE" = "true" ]; then
+			docker compose -f "$COMPOSE_FILE" build --parallel $BUILD_SERVICES_EFFECTIVE
 		else
-			docker compose -f "$COMPOSE_FILE" build --pull --parallel $BUILD_SERVICES
+			docker compose -f "$COMPOSE_FILE" build --pull --parallel $BUILD_SERVICES_EFFECTIVE
 		fi
 	else
 		log "[start-all] Building all services"
-		if [ "${NO_PULL:-false}" = "true" ]; then
+		if [ "$NO_PULL_EFFECTIVE" = "true" ]; then
 			docker compose -f "$COMPOSE_FILE" build --parallel
 		else
 			docker compose -f "$COMPOSE_FILE" build --pull --parallel

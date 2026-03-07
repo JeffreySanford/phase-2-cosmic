@@ -1,6 +1,6 @@
 <mat-card>
   <mat-card-title>Datasets</mat-card-title>
-  <app-disclaimer-banner type="demo" [dismissible]="true"></app-disclaimer-banner>
+  <app-disclaimer-banner type="demo" [dismissible]="true" [ready]="initialLoadSettled"></app-disclaimer-banner>
   <mat-card-content>
     <div style="display:flex; gap:8px; margin-bottom:8px;">
       <mat-form-field appearance="fill">
@@ -15,18 +15,18 @@
     </div>
 
     <div *ngIf="datasets.length === 0">No datasets yet</div>
-    <mat-list>
-      <mat-list-item *ngFor="let d of datasets">
-        <div style="width:100%;">
-          <div style="display:flex; width:100%; justify-content:space-between;">
-            <div>
-              <div><strong>{{ d.name }}</strong></div>
-              <div style="color:rgba(0,0,0,0.6)">{{ d.description }}</div>
-            </div>
-            <div style="color:rgba(0,0,0,0.6)">{{ d.createdAt | date:'short' }}</div>
+
+    <div class="dataset-grid">
+      <div class="dataset-card" *ngFor="let d of datasets">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div><strong>{{ d.name }}</strong></div>
+            <div class="muted">{{ d.description }}</div>
           </div>
-          
-          <!-- Provenance linkage panel -->
+          <div class="muted">{{ d.createdAt | date:'short' }}</div>
+        </div>
+
+        <div style="margin-top:8px;">
           <app-provenance-panel 
             [datasetId]="d.id"
             [provenance]="{
@@ -39,7 +39,11 @@
             }">
           </app-provenance-panel>
         </div>
-      </mat-list-item>
-    </mat-list>
+
+        <div style="margin-top:8px;">
+          <app-external-sources [sources]="externalSourcesFor(d)"></app-external-sources>
+        </div>
+      </div>
+    </div>
   </mat-card-content>
 </mat-card>

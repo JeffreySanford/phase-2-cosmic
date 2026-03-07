@@ -1,0 +1,26 @@
+<div class="external-sources" *ngIf="hasSources">
+  <h4>External Sources</h4>
+  <div *ngFor="let s of sources" class="external-source">
+    <div class="meta">
+      <div><strong>{{ titleFor(s) }}</strong></div>
+      <div class="muted">{{ urlFor(s) }}</div>
+    </div>
+    <div *ngIf="rowsFor(s).length">
+      <table class="sample-table">
+        <thead>
+          <tr>
+            <th *ngFor="let k of fieldsFor(s)">{{ k }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of rowsFor(s)">
+            <td *ngFor="let k of fieldsFor(s)">{{ displayValue(r, k) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="linksFor(s).length" class="links">
+      <a *ngFor="let l of linksFor(s)" href="{{ l }}" target="_blank" rel="noopener">{{ l }}</a>
+    </div>
+  </div>
+</div>

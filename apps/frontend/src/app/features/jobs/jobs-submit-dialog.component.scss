@@ -12,6 +12,10 @@ mat-form-field {
   margin-top: 8px;
 }
 
+.muted {
+  color: token(colors, muted);
+}
+
 .public-sources {
   font-size: 0.9rem;
   ul {

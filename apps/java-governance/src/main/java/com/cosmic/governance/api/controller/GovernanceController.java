@@ -6,6 +6,7 @@ import com.cosmic.governance.api.dto.JobStatusResponse;
 import com.cosmic.governance.api.dto.JobSubmitRequest;
 import com.cosmic.governance.api.dto.JobSubmitResponse;
 import com.cosmic.governance.api.service.JobService;
+import com.cosmic.governance.api.service.JobScenarioService;
 import com.cosmic.governance.api.service.DatasetService;
 import com.cosmic.governance.api.dto.DatasetRequest;
 import com.cosmic.governance.api.dto.DatasetResponse;
@@ -36,6 +37,7 @@ import org.springframework.beans.factory.annotation.Value;
 @RequestMapping("/api/v1")
 public class GovernanceController {
     private final JobService jobService;
+    private final JobScenarioService jobScenarioService;
     private final com.cosmic.governance.api.service.SchemaService schemaService;
     private final DatasetService datasetService;
     private final RabbitTemplate rabbitTemplate;
@@ -43,8 +45,9 @@ public class GovernanceController {
     @Value("${pulsar.admin.url:http://localhost:8085}")
     private String pulsarAdminUrl;
 
-    public GovernanceController(JobService jobService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService, RabbitTemplate rabbitTemplate) {
+    public GovernanceController(JobService jobService, JobScenarioService jobScenarioService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService, RabbitTemplate rabbitTemplate) {
         this.jobService = jobService;
+        this.jobScenarioService = jobScenarioService;
         this.schemaService = schemaService;
         this.datasetService = datasetService;
         this.rabbitTemplate = rabbitTemplate;
@@ -160,6 +163,14 @@ public class GovernanceController {
                 return ResponseEntity.ok(arts);
             }
 
+            @PostMapping("/jobs/{id}/artifacts")
+            public ResponseEntity<?> postJobArtifact(@PathVariable("id") String id,
+                                                     @RequestBody Map<String, Object> artifact) {
+                boolean ok = jobService.attachArtifact(id, artifact);
+                if (ok) return ResponseEntity.ok(Map.of("status", "attached"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "job_not_found_or_attach_failed", "id", id));
+            }
+
             @GetMapping("/jobs/{id}/artifacts/{name}")
             public ResponseEntity<String> artifactContent(@PathVariable("id") String id, @PathVariable("name") String name) {
                 // try to serve a file from local artifact store
@@ -244,6 +255,23 @@ public class GovernanceController {
         public ResponseEntity<?> releaseDeferredSamples() {
             int released = jobService.releaseDeferredJobs();
             return ResponseEntity.ok(Map.of("released", released));
+        }
+
+        @PostMapping("/admin/sample-jobs")
+        public ResponseEntity<?> seedSampleJobs(@RequestBody(required = false) Map<String, Object> body) {
+            int deferredCount = 5;
+            int ingestCount = 5;
+            if (body != null) {
+                try {
+                    Object dv = body.get("deferredCount");
+                    if (dv != null) deferredCount = Math.max(0, Integer.parseInt(String.valueOf(dv)));
+                    Object iv = body.get("ingestCount");
+                    if (iv != null) ingestCount = Math.max(0, Integer.parseInt(String.valueOf(iv)));
+                } catch (NumberFormatException ex) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "invalid_seed_counts"));
+                }
+            }
+            return ResponseEntity.ok(jobScenarioService.seedSampleJobs(deferredCount, ingestCount));
         }
 
             @PostMapping("/datasets")

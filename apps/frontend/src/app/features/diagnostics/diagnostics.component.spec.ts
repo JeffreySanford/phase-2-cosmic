@@ -21,6 +21,7 @@ class DisclaimerBannerStubComponent {
   @Input() dismissible?: boolean;
   @Input() type?: string;
   @Input() message?: string;
+  @Input() ready?: boolean;
 }
 import {
   HttpClientTestingModule,

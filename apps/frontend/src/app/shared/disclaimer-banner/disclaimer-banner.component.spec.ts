@@ -1,15 +1,30 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { DisclaimerBannerComponent } from "./disclaimer-banner.component";
 import { CommonModule } from "@angular/common";
+import { DataSourceService } from "../../services/data-source.service";
+import { BehaviorSubject } from "rxjs";
 
 describe("DisclaimerBannerComponent", () => {
   let component: DisclaimerBannerComponent;
   let fixture: ComponentFixture<DisclaimerBannerComponent>;
+  let mode$: BehaviorSubject<"live" | "mock">;
 
   beforeEach(async () => {
+    mode$ = new BehaviorSubject<"live" | "mock">("mock");
     await TestBed.configureTestingModule({
       declarations: [DisclaimerBannerComponent],
       imports: [CommonModule],
+      providers: [
+        {
+          provide: DataSourceService,
+          useValue: {
+            mode$: mode$.asObservable(),
+            get mode() {
+              return mode$.value;
+            },
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DisclaimerBannerComponent);
@@ -191,6 +206,39 @@ describe("DisclaimerBannerComponent", () => {
 
       component.type = "simulation";
       expect(component.defaultMessage.toLowerCase()).toContain("simul");
+    });
+
+    it("hides demo/modeling banners in live mode by default", () => {
+      mode$.next("live");
+      component.type = "demo";
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector(".disclaimer-banner")).toBeFalsy();
+    });
+
+    it("shows banner only after ready becomes true", () => {
+      component.type = "demo";
+      component.ready = false;
+      fixture.detectChanges();
+
+      let compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector(".disclaimer-banner")).toBeFalsy();
+
+      component.ready = true;
+      fixture.detectChanges();
+      compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector(".disclaimer-banner")).toBeTruthy();
+    });
+
+    it("can be forced visible in live mode when requireMockMode is false", () => {
+      mode$.next("live");
+      component.type = "modeling";
+      component.requireMockMode = false;
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector(".disclaimer-banner")).toBeTruthy();
     });
   });
 

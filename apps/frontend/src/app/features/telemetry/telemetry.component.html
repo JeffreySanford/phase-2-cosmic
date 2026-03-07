@@ -1,89 +1,189 @@
 <mat-card>
   <mat-card-title>Data Generator Telemetry</mat-card-title>
   <mat-card-content>
-    <div class="controls">
-      <mat-form-field appearance="outline">
-        <mat-label>Metric</mat-label>
-        <mat-select (selectionChange)="setMetric($event.value)" [value]="metric$.value">
-          <mat-option *ngFor="let m of metricOptions" [value]="m.id">{{ m.label }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Polling</mat-label>
-        <mat-select (selectionChange)="setPolling($event.value)" [value]="'5s'">
-          <mat-option value="live">Live (1s)</mat-option>
-          <mat-option value="5s">5s</mat-option>
-          <mat-option value="15s">15s</mat-option>
-          <mat-option value="60s">60s</mat-option>
-          <mat-option value="off">Paused</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Time Range</mat-label>
-        <mat-select (selectionChange)="setRangeSec($event.value)" [value]="300">
-          <mat-option [value]="300">5 minutes</mat-option>
-          <mat-option [value]="900">15 minutes</mat-option>
-          <mat-option [value]="3600">1 hour</mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    <p>Current: <strong>{{ formatCurrentValue(currentValue) }}</strong></p>
-    <div class="stats">
-      <mat-card class="stat-card">
-        <mat-card-title>Current Value</mat-card-title>
-        <mat-card-content>
-          <div class="big">{{ formatCurrentValue(currentValue) }}</div>
-        </mat-card-content>
-      </mat-card>
-      <mat-card class="stat-card">
-        <mat-card-title>{{ rateCardTitle }}</mat-card-title>
-        <mat-card-content>
-          <div class="gauge-container" #gauge></div>
-          <div class="big">{{ currentRateHuman }}</div>
-        </mat-card-content>
-      </mat-card>
-      <mat-card class="stat-card">
-        <mat-card-title>Stats (range)</mat-card-title>
-        <mat-card-content>
-          <div>Min: <strong>{{ formatStat(stats.min) }}</strong></div>
-          <div>Avg: <strong>{{ formatStat(stats.avg) }}</strong></div>
-          <div>Max: <strong>{{ formatStat(stats.max) }}</strong></div>
-          <div>P95: <strong>{{ formatStat(stats.p95) }}</strong></div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-    <div class="controls-row">
-      <button mat-stroked-button color="primary" (click)="exportCsv()">Export CSV</button>
-      <span class="last-updated">Last: {{ lastUpdated ? (lastUpdated | date:'medium') : 'n/a' }}</span>
-    </div>
-
-    <!-- pulsar status prototype -->
-    <app-pulsar-status [status]="pulsarStatus"></app-pulsar-status>
-    <app-rabbitmq-status [status]="rabbitMQStatus"></app-rabbitmq-status>
+    <!-- Move controls and summary into an Overview tab to free vertical space for the charts -->
     <mat-tab-group [(selectedIndex)]="selectedVizTab" (selectedIndexChange)="onVizTabChanged()">
+      <mat-tab label="Overview">
+        <div class="controls">
+          <mat-form-field appearance="outline">
+            <mat-label>Metric</mat-label>
+            <mat-select (selectionChange)="setMetric($event.value)" [value]="metric$.value">
+              <mat-option *ngFor="let m of metricOptions" [value]="m.id">{{ m.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Polling</mat-label>
+            <mat-select (selectionChange)="setPolling($event.value)" [value]="'5s'">
+              <mat-option value="live">Live (1s)</mat-option>
+              <mat-option value="5s">5s</mat-option>
+              <mat-option value="15s">15s</mat-option>
+              <mat-option value="60s">60s</mat-option>
+              <mat-option value="off">Paused</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Time Range</mat-label>
+            <mat-select (selectionChange)="setRangeSec($event.value)" [value]="300">
+              <mat-option [value]="300">5 minutes</mat-option>
+              <mat-option [value]="900">15 minutes</mat-option>
+              <mat-option [value]="3600">1 hour</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <p>Current: <strong>{{ formatCurrentValue(currentValue) }}</strong></p>
+        <div class="stats">
+          <mat-card class="stat-card">
+            <mat-card-title>Current Value</mat-card-title>
+            <mat-card-content>
+              <div class="big">{{ formatCurrentValue(currentValue) }}</div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card">
+            <mat-card-title>{{ rateCardTitle }}</mat-card-title>
+            <mat-card-content>
+              <div class="gauge-container" #gauge></div>
+              <div class="big">{{ currentRateHuman }}</div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card">
+            <mat-card-title>Stats (range)</mat-card-title>
+            <mat-card-content>
+              <div>Min: <strong>{{ formatStat(stats.min) }}</strong></div>
+              <div>Avg: <strong>{{ formatStat(stats.avg) }}</strong></div>
+              <div>Max: <strong>{{ formatStat(stats.max) }}</strong></div>
+              <div>P95: <strong>{{ formatStat(stats.p95) }}</strong></div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+        <div class="controls-row">
+          <button mat-stroked-button color="primary" (click)="exportCsv()">Export CSV</button>
+          <span class="last-updated">Last: {{ lastUpdated ? (lastUpdated | date:'medium') : 'n/a' }}</span>
+        </div>
+
+        <!-- pulsar / rabbit status: collapsible overview tiles -->
+        <mat-accordion class="status-accordion">
+          <mat-expansion-panel (opened)="refreshPulsarDetails()">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                Pulsar — Brokers: {{ pulsarStatus.brokers }} · Topics: {{ pulsarStatus.topics }} · Partitions: {{ pulsarStatus.partitions }}
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="status-details">
+              <div class="status-summary">
+                <div>Brokers: <strong>{{ pulsarStatus.brokers }}</strong></div>
+                <div>Topics: <strong>{{ pulsarStatus.topics }}</strong></div>
+                <div>Partitions: <strong>{{ pulsarStatus.partitions }}</strong></div>
+              </div>
+              <div class="status-actions">
+                <button mat-stroked-button (click)="refreshPulsarDetails()">Refresh</button>
+              </div>
+              <details>
+                <summary>Verbose details</summary>
+                <pre>{{ pulsarStatus | json }}</pre>
+              </details>
+            </div>
+          </mat-expansion-panel>
+
+          <mat-expansion-panel (opened)="refreshRabbitDetails()">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                RabbitMQ — Status: {{ rabbitMQStatus.status }} · Connection: {{ rabbitMQStatus.connection }} · Queues: {{ getRabbitQueuesCount() }} · Exchanges: {{ getRabbitExchangesCount() }}
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="status-details">
+              <div class="status-summary">
+                <div>Status: <strong>{{ rabbitMQStatus.status }}</strong></div>
+                <div>Connection: <strong>{{ rabbitMQStatus.connection }}</strong></div>
+                <div>Queues: <strong>{{ getRabbitQueuesCount() }}</strong></div>
+                <div>Exchanges: <strong>{{ getRabbitExchangesCount() }}</strong></div>
+              </div>
+              <div class="status-actions">
+                <button mat-stroked-button (click)="refreshRabbitDetails()">Refresh</button>
+              </div>
+              <details>
+                <summary>Verbose details</summary>
+                <pre>{{ rabbitMQStatus | json }}</pre>
+              </details>
+            </div>
+          </mat-expansion-panel>
+        </mat-accordion>
+      </mat-tab>
       <mat-tab label="Trend">
         <div class="chart" #chart></div>
       </mat-tab>
       <mat-tab label="Distribution">
         <div class="hist" #hist></div>
       </mat-tab>
-      <mat-tab label="Recent Samples">
-        <div class="samples" *ngIf="recentSamples.length; else noSamples">
-          <div class="sample-row" *ngFor="let s of recentSamples">
-            <div class="sample-head">
-              <span class="sample-time">{{ s.time }}</span>
-              <span class="sample-value">{{ s.valueHuman }}</span>
+      <mat-tab label="External Data">
+        <div *ngIf="(prometheusSamples.length || (voSamples$ | async)?.length); else noSamples">
+          <div class="samples-container">
+            <div class="samples-tile">
+              <div class="samples-title">Recent Samples (Prometheus)</div>
+              <div class="samples-top">
+                <div class="sample-row" *ngFor="let s of firstFive">
+                  <div class="sample-head">
+                    <span class="sample-time">{{ s.time }}</span>
+                    <span class="sample-value">{{ s.valueHuman }}</span>
+                  </div>
+                  <div class="sample-bar">
+                    <span [style.width.%]="s.pct"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="samples-scroll" *ngIf="remainingSamples.length">
+                <div class="sample-row" *ngFor="let s of remainingSamples">
+                  <div class="sample-head">
+                    <span class="sample-time">{{ s.time }}</span>
+                    <span class="sample-value">{{ s.valueHuman }}</span>
+                  </div>
+                  <div class="sample-bar">
+                    <span [style.width.%]="s.pct"></span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="sample-bar">
-              <span [style.width.%]="s.pct"></span>
+
+            <div class="samples-tile vo-tile">
+              <div class="samples-title">VO Samples</div>
+              <div *ngIf="voService.voLoading$ | async; else voDataLoading">
+                <div class="empty-note">Loading VO samples…</div>
+              </div>
+              <ng-template #voDataLoading>
+                <div *ngIf="(voSamples$ | async) as voSamples">
+                  <div class="samples-top">
+                    <div class="sample-row" *ngFor="let s of voSamples.slice(0,5)">
+                    <div class="sample-head">
+                      <span class="sample-time">{{ s.time }}</span>
+                      <span class="sample-value">{{ s.valueHuman }}</span>
+                    </div>
+                    <div class="sample-bar">
+                      <span [style.width.%]="s.pct"></span>
+                    </div>
+                  </div>
+                </div>
+
+                  <div class="samples-scroll" *ngIf="voSamples.length > 5">
+                  <div class="sample-row" *ngFor="let s of voSamples.slice(5)">
+                    <div class="sample-head">
+                      <span class="sample-time">{{ s.time }}</span>
+                      <span class="sample-value">{{ s.valueHuman }}</span>
+                    </div>
+                    <div class="sample-bar">
+                      <span [style.width.%]="s.pct"></span>
+                    </div>
+                  </div>
+                  </div>
+                </div>
+              </ng-template>
             </div>
           </div>
         </div>
         <ng-template #noSamples>
-          <p class="empty-note">No samples available yet.</p>
+          <p class="empty-note">No external data available yet.</p>
         </ng-template>
       </mat-tab>
     </mat-tab-group>

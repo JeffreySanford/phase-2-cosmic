@@ -7,6 +7,7 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatButtonModule } from "@angular/material/button";
 import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { MatTabsModule } from "@angular/material/tabs";
+import { MatExpansionModule } from "@angular/material/expansion";
 
 import { TelemetryComponent } from "./telemetry.component";
 import { PulsarStatusComponent } from "./pulsar-status/pulsar-status.component";
@@ -28,6 +29,7 @@ import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.compo
     MatButtonModule,
     MatSlideToggleModule,
     MatTabsModule,
+    MatExpansionModule,
   ],
   exports: [TelemetryComponent, PulsarStatusComponent, RabbitMQStatusComponent],
 })

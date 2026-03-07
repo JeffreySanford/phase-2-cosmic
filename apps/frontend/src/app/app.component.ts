@@ -1,6 +1,7 @@
 import { Component } from "@angular/core";
 import { Router } from "@angular/router";
 import { SidebarService } from "./base/sidebar/sidebar.service";
+import { StartupWarmService } from "./services/startup-warm.service";
 
 @Component({
   selector: "app-root",
@@ -11,7 +12,13 @@ export class AppComponent {
   title = "frontend";
   sidebarCollapsed = false;
 
-  constructor(private router: Router, private sidebarService: SidebarService) {}
+  constructor(
+    private router: Router,
+    private sidebarService: SidebarService,
+    private startupWarm: StartupWarmService
+  ) {
+    this.startupWarm.warm();
+  }
 
   sidebarToggle() {
     this.sidebarCollapsed = !this.sidebarCollapsed;

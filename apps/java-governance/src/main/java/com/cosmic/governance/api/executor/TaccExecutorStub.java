@@ -29,6 +29,9 @@ public class TaccExecutorStub implements JobExecutor {
     @Override
     public void execute(JobRecord record, RedisTemplate<String, Object> redisTemplate) {
         String jobKey = "job:" + record.getJobId();
+        int complexity = complexity(record);
+        int submitDelaySeconds = Math.max(1, complexity);
+        int completionDelaySeconds = Math.max(3, 2 + (complexity * 2));
         // simulate network submission delay
         EXEC.schedule(() -> {
             Object o = redisTemplate.opsForValue().get(jobKey);
@@ -41,9 +44,10 @@ public class TaccExecutorStub implements JobExecutor {
             newParams.put("externalJobId", "tacc-" + UUID.randomUUID());
             newParams.put("executor", name());
             newParams.put("submittedTo", "https://tacc.example/sim");
+            newParams.put("complexity", complexity);
             r.setParameters(newParams);
             redisTemplate.opsForValue().set(jobKey, r);
-            redisTemplate.opsForList().rightPush(jobKey + ":logs", "TACC: submitted job to remote API");
+            redisTemplate.opsForList().rightPush(jobKey + ":logs", "TACC: submitted job to remote API (complexity=" + complexity + ")");
 
             // simulate remote work and artifact creation
             EXEC.schedule(() -> {
@@ -56,7 +60,7 @@ public class TaccExecutorStub implements JobExecutor {
                 p2.put("completedAt", Instant.now().toString());
                 r2.setParameters(p2);
                 redisTemplate.opsForValue().set(jobKey, r2);
-                redisTemplate.opsForList().rightPush(jobKey + ":logs", "TACC: remote job completed");
+                redisTemplate.opsForList().rightPush(jobKey + ":logs", "TACC: remote job completed (complexity=" + complexity + ")");
                 String artKey = jobKey + ":artifacts";
                 String name = "tacc-output.txt";
                 var artifact = Map.of("name", name, "url", "/api/v1/jobs/" + r2.getJobId() + "/artifacts/" + name);
@@ -67,7 +71,19 @@ public class TaccExecutorStub implements JobExecutor {
                     java.nio.file.Path file = base.resolve(name);
                     java.nio.file.Files.writeString(file, "TACC stub artifact for job " + r2.getJobId() + "\nOK\n");
                 } catch (Exception ignored) {}
-            }, 4, TimeUnit.SECONDS);
-        }, 2, TimeUnit.SECONDS);
+            }, completionDelaySeconds, TimeUnit.SECONDS);
+        }, submitDelaySeconds, TimeUnit.SECONDS);
+    }
+
+    private int complexity(JobRecord record) {
+        try {
+            Map<String, Object> params = record.getParameters();
+            if (params == null) return 2;
+            Object raw = params.get("complexity");
+            if (raw == null) return 2;
+            return Math.max(1, Math.min(5, Integer.parseInt(String.valueOf(raw))));
+        } catch (Exception ignored) {
+            return 2;
+        }
     }
 }

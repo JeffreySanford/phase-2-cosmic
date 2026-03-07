@@ -4,6 +4,7 @@ import { map } from "rxjs/operators";
 import { Observable } from "rxjs";
 import { DataSourceService } from "./data-source.service";
 import { MockDataService } from "./mock-data.service";
+import { RequestCacheService } from "./request-cache.service";
 
 // Prometheus helper. Uses the frontend proxy at `/api/proxy/prometheus` so
 // the browser doesn't need direct CORS access to the Prometheus server.
@@ -14,7 +15,8 @@ export class TelemetryService {
   constructor(
     private http: HttpClient,
     private dataSource: DataSourceService,
-    private mock: MockDataService
+    private mock: MockDataService,
+    private cache: RequestCacheService
   ) {}
 
   queryInstant(metric: string): Observable<number> {
@@ -22,16 +24,19 @@ export class TelemetryService {
       return this.mock.telemetryInstant(metric);
     }
     const params = new HttpParams().set("query", metric);
-    return this.http.get(this.proxy, { params, responseType: "text" }).pipe(
-      map((txt) => {
-        try {
-          const res = JSON.parse(String(txt));
-          const val = res?.data?.result?.[0]?.value?.[1];
-          return val ? Number(val) : 0;
-        } catch {
-          return 0;
-        }
-      })
+    const key = `telemetry:instant:${metric}`;
+    return this.cache.getOrCreate(key, 1500, () =>
+      this.http.get(this.proxy, { params, responseType: "text" }).pipe(
+        map((txt) => {
+          try {
+            const res = JSON.parse(String(txt));
+            const val = res?.data?.result?.[0]?.value?.[1];
+            return val ? Number(val) : 0;
+          } catch {
+            return 0;
+          }
+        })
+      )
     );
   }
 
@@ -50,14 +55,17 @@ export class TelemetryService {
       .set("start", String(start))
       .set("end", String(end))
       .set("step", String(step));
-    return this.http.get(this.proxy, { params, responseType: "text" }).pipe(
-      map((txt) => {
-        try {
-          return JSON.parse(String(txt));
-        } catch {
-          return {};
-        }
-      })
+    const key = `telemetry:range:${metric}:${start}:${end}:${step}`;
+    return this.cache.getOrCreate(key, 2500, () =>
+      this.http.get(this.proxy, { params, responseType: "text" }).pipe(
+        map((txt) => {
+          try {
+            return JSON.parse(String(txt));
+          } catch {
+            return {};
+          }
+        })
+      )
     );
   }
 
@@ -80,14 +88,17 @@ export class TelemetryService {
       .set("start", String(start))
       .set("end", String(end))
       .set("step", String(step));
-    return this.http.get(this.proxy, { params, responseType: "text" }).pipe(
-      map((txt) => {
-        try {
-          return JSON.parse(String(txt));
-        } catch {
-          return {};
-        }
-      })
+    const key = `telemetry:range-rate:${metric}:${window}:${start}:${end}:${step}`;
+    return this.cache.getOrCreate(key, 2500, () =>
+      this.http.get(this.proxy, { params, responseType: "text" }).pipe(
+        map((txt) => {
+          try {
+            return JSON.parse(String(txt));
+          } catch {
+            return {};
+          }
+        })
+      )
     );
   }
 
@@ -101,12 +112,14 @@ export class TelemetryService {
     if (this.dataSource.mode === "mock") {
       return this.mock.getPulsarStatus();
     }
-    return this.http.get<{
-      brokers: number;
-      topics: number;
-      partitions: number;
-      status: string;
-      lastUpdated: string;
-    }>("/api/v1/pulsar/status");
+    return this.cache.getOrCreate("telemetry:pulsar-status", 5000, () =>
+      this.http.get<{
+        brokers: number;
+        topics: number;
+        partitions: number;
+        status: string;
+        lastUpdated: string;
+      }>("/api/v1/pulsar/status")
+    );
   }
 }

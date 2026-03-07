@@ -81,6 +81,8 @@ Operationalizing trust
 - Define provenance schema and required attributes for SRDP creation.
 - Preserve external/public source citations (`sourceName`, `providerName`, `citationUrl`, retrieval/access timestamp) as first-class trust metadata.
 
+For VO-specific guidance (TAP/DataLink/VOTable parsing, ObsCore mapping, and frontend integration examples) see [VO Integration](../data/VO_INTEGRATION.md).
+
 - Enforce minimal provenance checklists in the Governance API before allowing any SRDP to be promoted to public or shared status.
 
 - Implement cryptographic signing for manifests and integrate hash anchors with long-term archival stores.

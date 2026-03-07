@@ -5,6 +5,7 @@ import {
   NgZone,
   OnDestroy,
 } from "@angular/core";
+import { NavigationEnd, Router } from "@angular/router";
 import {
   LoadProfilePct,
   LoadProfileService,
@@ -14,6 +15,7 @@ import {
   DataMode,
 } from "../../services/data-source.service";
 import { MatSlideToggleChange } from "@angular/material/slide-toggle";
+import { filter, Subscription } from "rxjs";
 
 @Component({
   selector: "app-footer",
@@ -34,13 +36,23 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
 
   private resizeObserver?: ResizeObserver;
   private readonly onWindowResize = () => this.updateFooterHeightVar();
+  private routerSub?: Subscription;
+  private currentUrl = "";
 
   constructor(
     private loadProfile: LoadProfileService,
     private readonly el: ElementRef<HTMLElement>,
     private readonly zone: NgZone,
-    private readonly dataSource: DataSourceService
-  ) {}
+    private readonly dataSource: DataSourceService,
+    private readonly router: Router
+  ) {
+    this.currentUrl = this.router.url || "";
+    this.routerSub = this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event) => {
+        this.currentUrl = (event as NavigationEnd).urlAfterRedirects;
+      });
+  }
 
   setMode(m: DataMode) {
     this.dataSource.setMode(m);
@@ -79,6 +91,7 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
       window.removeEventListener("resize", this.onWindowResize);
     }
     this.resizeObserver?.disconnect();
+    this.routerSub?.unsubscribe();
   }
 
   get profile$() {
@@ -91,6 +104,16 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
 
   setProfile(pct: LoadProfilePct): void {
     this.loadProfile.setProfile(pct);
+  }
+
+  modeLabel(mode: DataMode | null | undefined): string {
+    if (mode === "mock") return "Mock Data";
+    if (this.isTopologyRoute()) return "Live Data";
+    return "Live";
+  }
+
+  private isTopologyRoute(): boolean {
+    return this.currentUrl.startsWith("/topology");
   }
 
   private findFooterElement(): HTMLElement | null {
