@@ -6,32 +6,31 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.awaitility.Awaitility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ExecutionException;
 
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.common.errors.TopicExistsException;
-
-@SpringBootTest(properties = {"spring.main.allow-bean-definition-overriding=true"})
+@SpringBootTest(properties = {
+    "spring.main.allow-bean-definition-overriding=true",
+    "spring.kafka.consumer.auto-offset-reset=earliest"
+})
 public class KafkaIngestListenerIntegrationTest {
 
     // If USE_HOST_KAFKA=true, tests will use host Kafka (e.g., localhost:9092).
@@ -67,8 +66,40 @@ public class KafkaIngestListenerIntegrationTest {
     @Autowired
     private JobService jobService;
 
+    @Autowired
+    private KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry;
+
+    private static String resolveBootstrapServers() {
+        return (kafka != null) ? kafka.getBootstrapServers() : System.getenv().getOrDefault("HOST_KAFKA_BOOTSTRAP", "localhost:9092");
+    }
+
+    private static boolean isKafkaReachable(String bootstrapServers) {
+        String candidate = bootstrapServers.split(",")[0].trim();
+        if (candidate.contains("://")) {
+            candidate = candidate.substring(candidate.indexOf("://") + 3);
+        }
+        String[] hostPort = candidate.split(":");
+        if (hostPort.length != 2) {
+            return false;
+        }
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(hostPort[0], Integer.parseInt(hostPort[1])), 1500);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     @Test
     public void testIdempotentIngestAndDlqForwarding() throws Exception {
+        Assumptions.assumeTrue(
+            kafka != null || "true".equalsIgnoreCase(System.getenv("USE_HOST_KAFKA")),
+            "Kafka integration test requires either Testcontainers Kafka or USE_HOST_KAFKA=true"
+        );
+
+        String bootstrapServers = resolveBootstrapServers();
+        Assumptions.assumeTrue(isKafkaReachable(bootstrapServers), "Kafka broker not available for integration test");
+
         // valid payload with a unique requestId to avoid collisions with other tests
         String requestId = java.util.UUID.randomUUID().toString();
         String datasetId = "ds-" + java.util.UUID.randomUUID().toString().substring(0,8);
@@ -82,26 +113,18 @@ public class KafkaIngestListenerIntegrationTest {
 
         String payload = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(payloadObj);
 
-        // Ensure topics exist when brokers do not auto-create them (CI / Testcontainers fallbacks)
-        String bootstrapForAdmin = (kafka != null) ? kafka.getBootstrapServers() : System.getenv().getOrDefault("HOST_KAFKA_BOOTSTRAP", "localhost:9092");
-        Map<String, Object> adminProps = new HashMap<>();
-        adminProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapForAdmin);
-        try (AdminClient admin = AdminClient.create(adminProps)) {
-            try {
-                var t1 = new NewTopic("phase2-events", 1, (short) 1);
-                var t2 = new NewTopic("phase2-events-dlq", 1, (short) 1);
-                admin.createTopics(List.of(t1, t2)).all().get(10, TimeUnit.SECONDS);
-            } catch (ExecutionException e) {
-                if (e.getCause() instanceof TopicExistsException) {
-                    // ok - topic already present
-                } else {
-                    throw e;
-                }
-            }
-        }
+        Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted(() ->
+            Assertions.assertTrue(
+                kafkaListenerEndpointRegistry.getListenerContainers().stream()
+                    .allMatch(container -> container.isRunning()
+                        && container.getAssignedPartitions() != null
+                        && !container.getAssignedPartitions().isEmpty()),
+                "Kafka listener containers should be assigned before producing test messages"
+            )
+        );
 
         // send first time and wait for listener to process (allow a slightly longer timeout)
-        kafkaTemplate.send("phase2-events", payload).get();
+        kafkaTemplate.send("phase2-events", payload).get(10, TimeUnit.SECONDS);
         Awaitility.await().atMost(java.time.Duration.ofSeconds(30)).untilAsserted(() -> {
             var list = jobService.listAll();
             Assertions.assertTrue(list.stream().anyMatch(j -> datasetId.equals(j.datasetId()) && "ingest".equalsIgnoreCase(j.workflow())),
@@ -109,7 +132,7 @@ public class KafkaIngestListenerIntegrationTest {
         });
 
         // send duplicate and ensure original still present
-        kafkaTemplate.send("phase2-events", payload).get();
+        kafkaTemplate.send("phase2-events", payload).get(10, TimeUnit.SECONDS);
         Awaitility.await().atMost(java.time.Duration.ofSeconds(15)).untilAsserted(() -> {
             var list2 = jobService.listAll();
                 Assertions.assertTrue(list2.stream().anyMatch(j -> datasetId.equals(j.datasetId()) && "ingest".equalsIgnoreCase(j.workflow())),
@@ -118,12 +141,11 @@ public class KafkaIngestListenerIntegrationTest {
 
         // send invalid payload (non-json) to trigger DLQ forwarding
         String bad = "not-a-json";
-        kafkaTemplate.send("phase2-events", bad).get();
+        kafkaTemplate.send("phase2-events", bad).get(10, TimeUnit.SECONDS);
 
         // consume DLQ topic to verify message forwarded
         Properties props = new Properties();
-        String dlqBootstrap = (kafka != null) ? kafka.getBootstrapServers() : System.getenv().getOrDefault("HOST_KAFKA_BOOTSTRAP", "localhost:9092");
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, dlqBootstrap);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "test-dlq-consumer");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
@@ -131,12 +153,17 @@ public class KafkaIngestListenerIntegrationTest {
 
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
             consumer.subscribe(List.of("phase2-events-dlq"));
-            ConsumerRecords<String, String> recs = consumer.poll(Duration.ofSeconds(10));
-            boolean foundBad = false;
-            for (var r : recs.records("phase2-events-dlq")) {
-                if (bad.equals(r.value())) { foundBad = true; break; }
-            }
-            Assertions.assertTrue(foundBad, "Invalid messages should be forwarded to DLQ topic");
+            Awaitility.await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> {
+                ConsumerRecords<String, String> recs = consumer.poll(Duration.ofSeconds(2));
+                boolean foundBad = false;
+                for (var r : recs.records("phase2-events-dlq")) {
+                    if (bad.equals(r.value())) {
+                        foundBad = true;
+                        break;
+                    }
+                }
+                Assertions.assertTrue(foundBad, "Invalid messages should be forwarded to DLQ topic");
+            });
         }
     }
 }

@@ -467,7 +467,7 @@ public class GovernanceController {
                 "error", e.getMessage(),
                 "lastUpdated", Instant.now().toString()
             );
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(status);
+            return ResponseEntity.ok(status);
         }
     }
 

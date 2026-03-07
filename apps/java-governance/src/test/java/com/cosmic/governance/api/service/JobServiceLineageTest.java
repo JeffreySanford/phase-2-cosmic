@@ -34,8 +34,8 @@ class JobServiceLineageTest {
         JobSubmitRequest request = new JobSubmitRequest(
             "test-workflow",
             "test-dataset",
-            Map.of("parentJobId", "parent-123"),
             Map.of("param1", "value1"),
+            Map.of("parentJobId", "parent-123"),
             null,
             "test-user"
         );
@@ -66,7 +66,7 @@ class JobServiceLineageTest {
         // Verify version was incremented
         Optional<JobStatusResponse> status = service.get(jobId);
         assertThat(status).isPresent();
-        assertThat(status.get().version()).isEqualTo(1); // Initial version 0, updated to 1
+        assertThat(status.get().version()).isEqualTo(2); // Submit persists at version 1, lineage update increments to 2
     }
 
     @Test
@@ -82,7 +82,7 @@ class JobServiceLineageTest {
         // Create a job
         JobSubmitRequest request = new JobSubmitRequest(
             "test-workflow",
-            null,
+            "test-dataset",
             null,
             Map.of(),
             null,
