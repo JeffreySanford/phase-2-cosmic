@@ -6,6 +6,10 @@ This document explains in detail what the Governance Docker container provides f
 
 The Governance container runs the `java-governance` Spring Boot application which implements the Governance API used by the frontend and other services. It exposes HTTP endpoints for job submission, dataset management, OpenAPI documentation, and health/metrics endpoints used for monitoring. It also integrates with messaging and storage systems (Redis, Kafka, Pulsar, RabbitMQ, MinIO) to perform audits, job dispatching, and telemetry.
 
+## Image Is Source-of-Truth
+
+The Governance service is now distributed and maintained as a docker image (`phase2/java-governance`). The repository no longer relies on a local `apps/java-governance` module for CI or development builds. CI and local compose stacks should pull/run the published image. If you need to build a local image for development, build it elsewhere and publish or tag it as `phase2/java-governance:dev` so the compose stacks can consume it.
+
 ## Core Responsibilities
 
 - Serve the Governance REST API and OpenAPI documentation.

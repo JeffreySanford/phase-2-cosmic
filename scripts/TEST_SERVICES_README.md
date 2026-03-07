@@ -227,7 +227,7 @@ Description: In-memory data store for caching and session management
 **Purpose:** Java Spring Boot governance service  
 **Depends on:** Redis  
 **Port:** 8082 (internal 8080)  
-**Built from:** apps/java-governance/Dockerfile  
+**Built from:** phase2/java-governance Docker image (canonical)  
 **Health Check:** /actuator/health endpoint  
 **Common Issues:**
 

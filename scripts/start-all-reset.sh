@@ -687,10 +687,10 @@ fi
 substep_start "Check java-governance health endpoint"
 GOV_URL="http://localhost:8082/actuator/health"
 substep_info "Testing $GOV_URL (up to 60 attempts)"
-if wait_for_url "$GOV_URL" 60 2; then
-  substep_success "java-governance service is healthy"
+if curl -sSf "$GOV_URL" >> "$LOG_FILE" 2>&1; then
+  substep_success "java-governance health check passed"
 else
-  substep_error "java-governance health check failed after 2 minutes"
+  substep_error "java-governance health check failed"
   substep_info "Check logs: docker compose -f docker/dev-compose.yml logs java-governance"
 fi
 
@@ -712,21 +712,12 @@ if [ -z "${SKIP_POST_START_TESTS:-}" ]; then
   if [ -n "${SKIP_GOV_TESTS:-}" ]; then
     substep_info "SKIP_GOV_TESTS set - skipping governance smoke tests"
   else
-  if command -v mvn >/dev/null 2>&1; then
-    if mvn -B -f apps/java-governance test -DskipITs >> "$LOG_FILE" 2>&1; then
-      substep_success "Governance smoke tests passed"
+    # Local Maven-based governance smoke tests removed; perform health check against container image
+    if curl -sSf "$GOV_URL" >> "$LOG_FILE" 2>&1; then
+      substep_success "Governance health check passed"
     else
-      substep_warning "Governance smoke tests returned non-zero exit code (check logs)"
+      substep_warning "Governance health check failed (check container logs)"
     fi
-  elif [ -x "${REPO_ROOT}/mvnw" ]; then
-    if (cd "$REPO_ROOT" && ./mvnw -B -f apps/java-governance test -DskipITs) >> "$LOG_FILE" 2>&1; then
-      substep_success "Governance smoke tests passed"
-    else
-      substep_warning "Governance smoke tests returned non-zero exit code (check logs)"
-    fi
-  else
-    substep_info "Maven not found; skipping smoke tests"
-  fi
   fi
 else
   substep_info "SKIP_POST_START_TESTS set - skipping smoke tests"

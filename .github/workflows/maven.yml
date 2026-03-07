@@ -23,8 +23,15 @@ jobs:
           cache: "maven"
 
       - name: Run tests for `apps/java-governance`
-        working-directory: ./apps/java-governance
-        run: mvn -B test
+        # Governance tests are run against the canonical docker image; verify container health instead
+        run: |
+          docker compose -f docker/dev-compose.yml pull java-governance || true
+          docker compose -f docker/dev-compose.yml up -d --force-recreate --no-deps java-governance
+          for i in {1..30}; do
+            if curl -sSf http://localhost:8082/actuator/health; then exit 0; fi
+            sleep 5
+          done
+          echo "java-governance failed to become healthy" && docker compose -f docker/dev-compose.yml logs java-governance || true ; exit 1
 
       - name: Run tests for `tools/java-ingest`
         working-directory: ./tools/java-ingest
@@ -54,9 +61,8 @@ jobs:
           java-version: "17"
           cache: "maven"
 
-      - name: Build `apps/java-governance`
-        working-directory: ./apps/java-governance
-        run: mvn -B package
+      - name: Governance image is canonical (skip local package)
+        run: echo "Skipping local build; governance service is provided via docker image"
 
       - name: Build `tools/java-ingest`
         working-directory: ./tools/java-ingest

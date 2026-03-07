@@ -355,7 +355,7 @@ test_java_ingest() {
 # Purpose: Java Spring Boot service for governance and control operations
 # Port: 8082 (mapped from internal 8080)
 # Dependencies: Redis (caching and sessions)
-# Built from: apps/java-governance/Dockerfile
+# Built from: phase2/java-governance Docker image (canonical)
 # Health Check: Spring Boot Actuator health endpoint
 # ===========================================================================
 test_java_governance() {

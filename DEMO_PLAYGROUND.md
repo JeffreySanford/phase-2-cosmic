@@ -17,8 +17,9 @@ workstation with as few dependencies as possible.
 1. Build (or pull) the required container images. From repository root run:
 
    ```bash
-   # build governance & ingest images (will also install parent POM)
-   docker build -f apps/java-governance/Dockerfile -t phase2/java-governance:local apps/java-governance
+   # Pull the canonical governance image (the repo no longer contains the local module)
+   docker pull phase2/java-governance:dev || true
+   # Build the ingest image locally if needed
    docker build -f tools/java-ingest/Dockerfile -t phase2/java-ingest:local tools/java-ingest
 
    # frontend is built via pnpm

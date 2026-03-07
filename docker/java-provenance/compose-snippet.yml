@@ -1,0 +1,14 @@
+# Compose snippet for java-provenance service (reference only)
+java-provenance:
+  image: phase2/java-provenance:dev
+  ports:
+    - "8090:8080"
+  environment:
+    - SPRING_REDIS_HOST=redis
+    - SPRING_REDIS_PORT=6379
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+    interval: 10s
+    timeout: 5s
+    retries: 5

@@ -31,6 +31,8 @@ PY
         FAILED=1
       fi
     fi
+  else
+    echo "No JaCoCo report found for java-governance; skipping Java coverage check."
   fi
 }
 

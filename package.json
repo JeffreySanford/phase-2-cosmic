@@ -11,7 +11,7 @@
     "lint:yaml": "node ./scripts/yamllint-runner.js",
     "format:check:changed": "pnpm exec prettier --check \"**/*.{ts,tsx,js,jsx,json,md,scss,yml,yaml}\"",
     "test:libs": "pnpm nx run ui-theme:test",
-    "docker:test-runner": "cross-env PNPM_STORE_DIR=./pnpm-store sh -c \"corepack enable || true; corepack prepare pnpm@latest --activate || true; mkdir -p $PNPM_STORE_DIR && pnpm install --frozen-lockfile --store-dir=$PNPM_STORE_DIR --ignore-scripts && (git rev-parse --verify origin/main >/dev/null 2>&1 && pnpm nx affected --target=test --base=origin/main --parallel=false || pnpm nx run-many --target=test --all --parallel=false) && mvn -f apps/java-governance/pom.xml clean verify -Pwith-containers && pnpm run e2e-smoke\"",
+    "docker:test-runner": "cross-env PNPM_STORE_DIR=./pnpm-store sh -c \"corepack enable || true; corepack prepare pnpm@latest --activate || true; mkdir -p $PNPM_STORE_DIR && pnpm install --frozen-lockfile --store-dir=$PNPM_STORE_DIR --ignore-scripts && (git rev-parse --verify origin/main >/dev/null 2>&1 && pnpm nx affected --target=test --base=origin/main --parallel=false || pnpm nx run-many --target=test --all --parallel=false) && docker compose -f docker/dev-compose.yml pull java-governance || true && docker compose -f docker/dev-compose.yml up -d --force-recreate --no-deps java-governance && for i in {1..30}; do if curl -sSf http://localhost:8082/actuator/health; then break; fi; sleep 5; done && pnpm run e2e-smoke\"",
     "openapi-validate": "node tools/validate-openapi.mjs",
     "unit-test": "pnpm nx run-many --target=test --all --configuration=ci --parallel=false",
     "unit-test:coverage": "pnpm nx run-many --target=test --all --configuration=ci --codeCoverage --parallel=false",

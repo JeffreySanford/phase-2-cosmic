@@ -212,9 +212,8 @@ services:
       retries: 5
 
   java-governance:
-    build:
-      context: ../apps/java-governance
-      dockerfile: Dockerfile
+    # Use the published/dockerized image as the source-of-truth for the governance service.
+    # Local source build removed; ensure image is published to the registry or built externally.
     image: phase2/java-governance:dev
     ports:
       - "8082:8080"
