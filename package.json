@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start:all": "sh ./scripts/start-all.sh",
-    "serve:ssr": "pnpm exec tsx --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts",
+    "serve:ssr": "pnpm exec tsx --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts",
     "start:all:reset": "node ./tools/run-with-logs.js \"sh ./scripts/start-all-reset.sh\" start-all-reset",
     "lint": "cross-env NX_NO_CLOUD=true pnpm nx run-many --target=lint --projects=frontend-e2e,frontend,ui-theme --parallel=false && pnpm run lint:docker && pnpm run lint:yaml",
     "lint:docker": "node ./scripts/hadolint-runner.js",

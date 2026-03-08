@@ -1542,6 +1542,55 @@ export class AppController {
       return;
     }
 
+    // Dev-mode alert mocks — Java AlertController is not running locally.
+    // These must live here because @All("/api/v1/*path") is registered before
+    // the individual @Get/@Post alert methods and shadows them in NestJS routing.
+    const path = (req as any).path as string;
+    const method = (req.method || "GET").toUpperCase();
+    if (path === "/api/v1/alerts/slo" && method === "GET") {
+      res.json({
+        alertIngestedTotal: 0,
+        alertLatencyMsP50: 0,
+        alertLatencyMsP95: 0,
+        alertLatencyMsP99: 0,
+        dlqDepth: 0,
+        replaysTotal: 0,
+        measuredAt: new Date().toISOString(),
+      });
+      return;
+    }
+    if (path === "/api/v1/alerts/dlq" && method === "GET") {
+      res.json([]);
+      return;
+    }
+    if (path === "/api/v1/alerts/ingest" && method === "POST") {
+      const body = (req as any).body ?? {};
+      res.status(201).json({
+        id: `dev-${Date.now()}`,
+        eventType: body["eventType"] ?? "UNKNOWN",
+        severity: body["severity"] ?? "INFO",
+        sourceSystem: body["sourceSystem"] ?? "dev",
+        correlationId: body["correlationId"] ?? `dev-corr-${Date.now()}`,
+        message: body["message"] ?? "",
+        issuedAt: new Date().toISOString(),
+        replayed: false,
+        tags: body["tags"] ?? [],
+      });
+      return;
+    }
+    if (path === "/api/v1/alerts/dlq/replay-all" && method === "POST") {
+      res.json(0);
+      return;
+    }
+    if (path.startsWith("/api/v1/alerts/dlq/replay/") && method === "POST") {
+      res.status(404).json({ error: "alert_not_found" });
+      return;
+    }
+    if (path === "/api/v1/alerts/dlq" && method === "POST") {
+      res.status(201).end();
+      return;
+    }
+
     const baseCandidates = this.governanceBaseCandidates();
     const targetUrls = baseCandidates.map((b) => `${b}${req.originalUrl}`);
     try {
@@ -1674,62 +1723,6 @@ export class AppController {
     };
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.json(samples);
-  }
-
-  @Get("/api/v1/alerts/slo")
-  getAlertSlo(@Res() res: Response): void {
-    // Dev-mode mock: returns a plausible SLO snapshot so the Alert SLO tab
-    // renders without running the Java backend.
-    res.json({
-      alertIngestedTotal: 0,
-      alertLatencyMsP50: 0,
-      alertLatencyMsP95: 0,
-      alertLatencyMsP99: 0,
-      dlqDepth: 0,
-      replaysTotal: 0,
-      measuredAt: new Date().toISOString(),
-    });
-  }
-
-  @Get("/api/v1/alerts/dlq")
-  getAlertDlq(@Res() res: Response): void {
-    // Dev-mode mock: empty DLQ.
-    res.json([]);
-  }
-
-  @Post("/api/v1/alerts/ingest")
-  postAlertIngest(@Req() req: Request, @Res() res: Response): void {
-    // Dev-mode mock: echo the request body back as if stored.
-    const body = (req as unknown as import("express").Request).body ?? {};
-    res.status(201).json({
-      id: `dev-${Date.now()}`,
-      eventType: body["eventType"] ?? "UNKNOWN",
-      severity: body["severity"] ?? "INFO",
-      sourceSystem: body["sourceSystem"] ?? "dev",
-      correlationId: body["correlationId"] ?? `dev-corr-${Date.now()}`,
-      message: body["message"] ?? "",
-      issuedAt: new Date().toISOString(),
-      replayed: false,
-      tags: body["tags"] ?? [],
-    });
-  }
-
-  @Post("/api/v1/alerts/dlq/replay-all")
-  replayAllDlq(@Res() res: Response): void {
-    // Dev-mode mock: nothing in DLQ, so 0 replayed.
-    res.json(0);
-  }
-
-  @Post("/api/v1/alerts/dlq/replay/:alertId")
-  replayDlqAlert(@Res() res: Response): void {
-    // Dev-mode mock: no DLQ entries, always 404.
-    res.status(404).json({ error: "alert_not_found" });
-  }
-
-  @Post("/api/v1/alerts/dlq")
-  postAlertDlq(@Res() res: Response): void {
-    // Dev-mode mock: accept the push, return 201.
-    res.status(201).end();
   }
 
   @Get("/api/v1/broker-events")
