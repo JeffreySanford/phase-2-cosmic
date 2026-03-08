@@ -1667,6 +1667,49 @@ export class AppController {
       });
       return;
     }
+    // ── VO services mock ─────────────────────────────────────────────────────
+    if (path === "/api/v1/vo/services" && method === "GET") {
+      res.json({
+        tapUrl: "https://heasarc.gsfc.nasa.gov/xamin/tap/sync",
+        dataLinkUrl: "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/datalink",
+      });
+      return;
+    }
+    // ── Jobs mocks ───────────────────────────────────────────────────────────
+    if (path === "/api/v1/jobs" && method === "GET") {
+      res.json([]);
+      return;
+    }
+    if (path.match(/^\/api\/v1\/jobs\/[^/]+$/) && method === "GET") {
+      const jobId = path.split("/").pop() ?? "unknown";
+      res.status(404).json({ error: "job_not_found", id: jobId });
+      return;
+    }
+    if (path === "/api/v1/jobs" && method === "POST") {
+      const body = (req as any).body ?? {};
+      res.status(201).json({
+        jobId: "job-" + Math.random().toString(36).slice(2, 10),
+        status: "QUEUED",
+        queuedAt: new Date().toISOString(),
+        workflow: body["workflow"] ?? "unknown",
+      });
+      return;
+    }
+    if (path === "/api/v1/jobs/types" && method === "GET") {
+      res.json(["ingest", "export", "calibrate", "archive", "validate"]);
+      return;
+    }
+    // ── Admin dispatch mock ──────────────────────────────────────────────────
+    if (path === "/api/v1/admin/dispatch" && method === "GET") {
+      res.json({ intervalSeconds: 5, scannedCount: 0, dispatchedCount: 0 });
+      return;
+    }
+    if (path === "/api/v1/admin/dispatch" && method === "POST") {
+      const body = (req as any).body ?? {};
+      const intervalSeconds = Number(body["intervalSeconds"] ?? 5);
+      res.json({ intervalSeconds });
+      return;
+    }
     const targetUrls = baseCandidates.map((b) => `${b}${req.originalUrl}`);
     try {
       const headers = new Headers();
