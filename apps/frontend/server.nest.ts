@@ -1590,6 +1590,24 @@ export class AppController {
       res.status(201).end();
       return;
     }
+    if (path === "/api/v1/broker-events" && method === "GET") {
+      const r = res as unknown as import("express").Response;
+      r.setHeader("Content-Type", "text/event-stream");
+      r.setHeader("Cache-Control", "no-cache");
+      r.setHeader("Connection", "keep-alive");
+      r.setHeader("X-Accel-Buffering", "no");
+      r.flushHeaders();
+      const sendEvent = (type: string, payload: Record<string, unknown>) => {
+        const data = JSON.stringify({ type, payload });
+        r.write(`data: ${data}\n\n`);
+      };
+      sendEvent("connected", { source: "dev-mock", ts: Date.now() });
+      const timer = setInterval(() => {
+        sendEvent("heartbeat", { ts: Date.now() });
+      }, 15000);
+      r.on("close", () => clearInterval(timer));
+      return;
+    }
 
     const baseCandidates = this.governanceBaseCandidates();
     const targetUrls = baseCandidates.map((b) => `${b}${req.originalUrl}`);
@@ -1723,32 +1741,6 @@ export class AppController {
     };
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.json(samples);
-  }
-
-  @Get("/api/v1/broker-events")
-  brokerEventsSse(@Res() res: Response): void {
-    // Dev-mode SSE stream: sends a heartbeat every 15 s so BrokerEventsService
-    // connects cleanly without 404s or reconnect storms.
-    const r = res as unknown as import("express").Response;
-    r.setHeader("Content-Type", "text/event-stream");
-    r.setHeader("Cache-Control", "no-cache");
-    r.setHeader("Connection", "keep-alive");
-    r.setHeader("X-Accel-Buffering", "no");
-    r.flushHeaders();
-
-    const sendEvent = (type: string, payload: Record<string, unknown>) => {
-      const data = JSON.stringify({ type, payload });
-      r.write(`data: ${data}\n\n`);
-    };
-
-    // send an immediate connected event
-    sendEvent("connected", { source: "dev-mock", ts: Date.now() });
-
-    const timer = setInterval(() => {
-      sendEvent("heartbeat", { ts: Date.now() });
-    }, 15000);
-
-    r.on("close", () => clearInterval(timer));
   }
 
   @Get("/*path")
