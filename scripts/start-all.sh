@@ -117,6 +117,25 @@ fi
 
 log "[start-all] Compose started. Launching local dev servers (SSR + frontend dev server)."
 export FRONTEND_PORT=${FRONTEND_PORT:-4000}
+
+# Kill any stale process already bound to the SSR port (e.g. a leftover tsx
+# --watch instance from a previous run) so the new server can bind cleanly.
+if command -v powershell.exe &>/dev/null; then
+	_ssr_pid=$(powershell.exe -NoProfile -Command "
+		(Get-NetTCPConnection -LocalPort $FRONTEND_PORT -State Listen -ErrorAction SilentlyContinue).OwningProcess |
+		Where-Object { \$_ -match '^\d+$' } | Select-Object -First 1" 2>/dev/null | tr -d '[:space:]')
+	if [ -n "$_ssr_pid" ]; then
+		log "[start-all] Killing stale PID $_ssr_pid on port $FRONTEND_PORT"
+		powershell.exe -NoProfile -Command "Stop-Process -Id $_ssr_pid -Force" 2>/dev/null || true
+	fi
+else
+	_ssr_pid=$(lsof -ti tcp:"$FRONTEND_PORT" 2>/dev/null || fuser "$FRONTEND_PORT/tcp" 2>/dev/null)
+	if [ -n "$_ssr_pid" ]; then
+		log "[start-all] Killing stale PID $_ssr_pid on port $FRONTEND_PORT"
+		kill -9 "$_ssr_pid" 2>/dev/null || true
+	fi
+fi
+
 pnpm exec concurrently --kill-others-on-fail "pnpm run serve:ssr" "pnpm nx serve frontend" 2>&1 | tee -a "$LOG_FILE"
 
 log "[start-all] finished"
