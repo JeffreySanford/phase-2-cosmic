@@ -131,6 +131,25 @@ function createEmbeddedJob(
   }
 }
 
+// Auto-progress jobs in dev mode so the UI shows a realistic lifecycle:
+//   QUEUED  → RUNNING   after ~5 s
+//   RUNNING → COMPLETED after ~12 s  (30 % chance each tick → FAILED instead)
+setInterval(() => {
+  const now = new Date().toISOString();
+  for (const job of embeddedJobStore.values()) {
+    const ageMs = Date.now() - new Date(job.updatedAt).getTime();
+    if (job.status === "QUEUED" && ageMs > 5_000) {
+      job.status = "RUNNING";
+      job.updatedAt = now;
+      job.logs.push(`${now} status=RUNNING`);
+    } else if (job.status === "RUNNING" && ageMs > 12_000) {
+      job.status = Math.random() < 0.15 ? "FAILED" : "COMPLETED";
+      job.updatedAt = now;
+      job.logs.push(`${now} status=${job.status}`);
+    }
+  }
+}, 2_500);
+
 type RuntimeProfileSpec = {
   workers: number;
   ratePerWorker: number;
