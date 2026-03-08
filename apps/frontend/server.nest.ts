@@ -131,24 +131,23 @@ function createEmbeddedJob(
   }
 }
 
-// Auto-progress jobs in dev mode so the UI shows a realistic lifecycle:
-//   QUEUED  → RUNNING   after ~5 s
-//   RUNNING → COMPLETED after ~12 s  (30 % chance each tick → FAILED instead)
-setInterval(() => {
+// Advance a job's status based on elapsed time so the UI shows a realistic
+// lifecycle without requiring a background timer.
+function advanceJobStatus(job: EmbeddedJobRecord): EmbeddedJobRecord {
+  if (job.status !== "QUEUED" && job.status !== "RUNNING") return job;
+  const ageMs = Date.now() - new Date(job.updatedAt).getTime();
   const now = new Date().toISOString();
-  for (const job of embeddedJobStore.values()) {
-    const ageMs = Date.now() - new Date(job.updatedAt).getTime();
-    if (job.status === "QUEUED" && ageMs > 5_000) {
-      job.status = "RUNNING";
-      job.updatedAt = now;
-      job.logs.push(`${now} status=RUNNING`);
-    } else if (job.status === "RUNNING" && ageMs > 12_000) {
-      job.status = Math.random() < 0.15 ? "FAILED" : "COMPLETED";
-      job.updatedAt = now;
-      job.logs.push(`${now} status=${job.status}`);
-    }
+  if (job.status === "QUEUED" && ageMs > 5_000) {
+    job.status = "RUNNING";
+    job.updatedAt = now;
+    job.logs.push(`${now} status=RUNNING`);
+  } else if (job.status === "RUNNING" && ageMs > 12_000) {
+    job.status = Math.random() < 0.15 ? "FAILED" : "COMPLETED";
+    job.updatedAt = now;
+    job.logs.push(`${now} status=${job.status}`);
   }
-}, 2_500);
+  return job;
+}
 
 type RuntimeProfileSpec = {
   workers: number;
@@ -1725,9 +1724,9 @@ export class AppController {
     }
     // ── Jobs mocks ───────────────────────────────────────────────────────────
     if (path === "/api/v1/jobs" && method === "GET") {
-      const jobs = Array.from(embeddedJobStore.values()).sort((a, b) =>
-        (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
-      );
+      const jobs = Array.from(embeddedJobStore.values())
+        .map((j) => advanceJobStatus(j))
+        .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
       res.json(jobs);
       return;
     }
@@ -1749,6 +1748,22 @@ export class AppController {
       res.json(["import", "ingest", "export", "diagnostics", "cleanup"]);
       return;
     }
+    if (path === "/api/v1/jobs/validate" && method === "POST") {
+      res.json({ valid: true });
+      return;
+    }
+    if (path.match(/^\/api\/v1\/jobs\/[^/]+\/logs$/) && method === "GET") {
+      const jobId = path.split("/").slice(-2)[0];
+      const job = embeddedJobStore.get(jobId);
+      res.json(job ? job.logs : []);
+      return;
+    }
+    if (path.match(/^\/api\/v1\/jobs\/[^/]+\/artifacts$/) && method === "GET") {
+      const jobId = path.split("/").slice(-2)[0];
+      const job = embeddedJobStore.get(jobId);
+      res.json(job ? job.artifacts : []);
+      return;
+    }
     if (path.match(/^\/api\/v1\/jobs\/[^/]+$/) && method === "GET") {
       const jobId = path.split("/").pop() ?? "unknown";
       const job = embeddedJobStore.get(jobId);
@@ -1756,7 +1771,7 @@ export class AppController {
         res.status(404).json({ error: "not_found", jobId });
         return;
       }
-      res.json(job);
+      res.json(advanceJobStatus(job));
       return;
     }
     if (path.match(/^\/api\/v1\/jobs\/[^/]+$/) && method === "DELETE") {
@@ -1773,9 +1788,15 @@ export class AppController {
         return;
       }
       const body = (req as any).body ?? {};
-      const targetStatus = (body["targetStatus"] as string | undefined) ?? "RUNNING";
-      job.status = targetStatus as EmbeddedJobRecord["status"];
+      const nextStatus = String(
+        (body["targetStatus"] as string | undefined) ||
+        (body["state"] as string | undefined) ||
+        (body["newState"] as string | undefined) ||
+        "RUNNING"
+      );
+      job.status = nextStatus as EmbeddedJobRecord["status"];
       job.updatedAt = new Date().toISOString();
+      job.logs.push(`${job.updatedAt} status=${nextStatus}`);
       embeddedJobStore.set(jobId, job);
       res.json(job);
       return;
