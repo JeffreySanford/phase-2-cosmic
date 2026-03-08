@@ -57,6 +57,20 @@ const embeddedJobStore = new Map<string, EmbeddedJobRecord>();
 /** Inline JSON content for dev-mock artifact files, keyed by the artifact URL path. */
 const artifactContentStore = new Map<string, unknown>();
 let embeddedJobCounter = 0;
+let mockScanCount = 0;
+let mockDispatchCount = 0;
+let mockDispatchIntervalSeconds = 5;
+// Simulate the scanner ticking: every N seconds count all QUEUED→RUNNING transitions.
+setInterval(() => {
+  mockScanCount += 1;
+  for (const job of embeddedJobStore.values()) {
+    const prev = job.status;
+    advanceJobStatus(job);
+    if (prev === "QUEUED" && (job.status === "RUNNING" || job.status === "COMPLETED")) {
+      mockDispatchCount += 1;
+    }
+  }
+}, mockDispatchIntervalSeconds * 1000);
 
 function createEmbeddedJobId(): string {
   embeddedJobCounter += 1;
@@ -768,19 +782,21 @@ export class AppController {
 
     if (method === "GET" && path === "/api/v1/admin/dispatch") {
       return sendJson(200, {
-        intervalSeconds: 30,
-        scannedCount: embeddedJobStore.size,
-        dispatchedCount: embeddedJobStore.size,
+        intervalSeconds: mockDispatchIntervalSeconds,
+        scannedCount: mockScanCount,
+        dispatchedCount: mockDispatchCount,
       });
     }
 
     if (method === "POST" && path === "/api/v1/admin/dispatch") {
+      const newInterval = Number(
+        (req.body as { intervalSeconds?: number })?.intervalSeconds || mockDispatchIntervalSeconds
+      );
+      if (newInterval > 0) mockDispatchIntervalSeconds = newInterval;
       return sendJson(200, {
-        intervalSeconds: Number(
-          (req.body as { intervalSeconds?: number })?.intervalSeconds || 30
-        ),
-        scannedCount: embeddedJobStore.size,
-        dispatchedCount: embeddedJobStore.size,
+        intervalSeconds: mockDispatchIntervalSeconds,
+        scannedCount: mockScanCount,
+        dispatchedCount: mockDispatchCount,
       });
     }
 
@@ -1829,6 +1845,39 @@ export class AppController {
       });
       return;
     }
+    if (path === "/api/v1/telemetry/infrastructure" && method === "GET") {
+      res.json({
+        measuredAt: new Date().toISOString(),
+        source: "mock",
+        services: {
+          redis: {
+            source: "mock",
+            opsPerSec: 42,
+            ingressBytesPerSec: 4096,
+            egressBytesPerSec: 6144,
+            connectedClients: 3,
+            memoryUsedBytes: 1572864,
+          },
+          rabbitmq: {
+            source: "mock",
+            queueDepth: 8,
+            readyMessages: 5,
+            unackedMessages: 3,
+            publishRatePerSec: 6,
+            deliverRatePerSec: 5,
+            consumers: 2,
+          },
+          minio: {
+            source: "mock",
+            ingressBytesPerSec: 1048576,
+            egressBytesPerSec: 524288,
+            requestsPerSec: 12,
+            errorRatePerSec: 0,
+          },
+        },
+      });
+      return;
+    }
     // ── VO services mock ─────────────────────────────────────────────────────
     if (path === "/api/v1/vo/services" && method === "GET") {
       res.json({
@@ -1953,13 +2002,14 @@ export class AppController {
     }
     // ── Admin dispatch mock ──────────────────────────────────────────────────
     if (path === "/api/v1/admin/dispatch" && method === "GET") {
-      res.json({ intervalSeconds: 5, scannedCount: 0, dispatchedCount: 0 });
+      res.json({ intervalSeconds: mockDispatchIntervalSeconds, scannedCount: mockScanCount, dispatchedCount: mockDispatchCount });
       return;
     }
     if (path === "/api/v1/admin/dispatch" && method === "POST") {
       const body = (req as any).body ?? {};
-      const intervalSeconds = Number(body["intervalSeconds"] ?? 5);
-      res.json({ intervalSeconds });
+      const newInterval = Number(body["intervalSeconds"] ?? mockDispatchIntervalSeconds);
+      if (newInterval > 0) mockDispatchIntervalSeconds = newInterval;
+      res.json({ intervalSeconds: mockDispatchIntervalSeconds, scannedCount: mockScanCount, dispatchedCount: mockDispatchCount });
       return;
     }
     const targetUrls = this.governanceBaseCandidates().map((b) => `${b}${req.originalUrl}`);

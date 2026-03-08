@@ -186,6 +186,10 @@ export class JobsComponent implements OnInit, OnDestroy {
       );
 
     this.loadDispatchConfig();
+    // Poll dispatch counts every 5 seconds so Scanned/Dispatched stay live.
+    interval(5000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.loadDispatchConfig());
   }
 
   reload() {
