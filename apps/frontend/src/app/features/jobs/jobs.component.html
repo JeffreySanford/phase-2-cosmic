@@ -17,6 +17,27 @@
       </div>
     </div>
 
+    <div class="scanner-bar">
+      <mat-icon class="scanner-bar__icon">radar</mat-icon>
+      <span class="scanner-bar__label">Dispatch Scanner</span>
+      <span class="scanner-bar__value">{{ scannerIntervalSeconds ?? 5 }}s</span>
+      <input
+        type="range"
+        min="1"
+        max="60"
+        step="1"
+        class="scanner-bar__range"
+        [(ngModel)]="scannerIntervalSeconds"
+        (change)="setScannerInterval()"
+        aria-label="Scan interval in seconds"
+      />
+      <span class="scanner-bar__counts">
+        <span class="scanner-bar__stat">Scanned <strong>{{ scannedCount }}</strong></span>
+        <span class="scanner-bar__sep">·</span>
+        <span class="scanner-bar__stat">Dispatched <strong>{{ dispatchedCount }}</strong></span>
+      </span>
+    </div>
+
     <div *ngIf="filterVisible" class="filter-panel">
       <h4>Filter Jobs</h4>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -261,12 +282,6 @@
       <p>No jobs found. Click <strong>Add five jobs</strong> to queue 5 demo jobs and watch them process.</p>
     </div>
 
-    <div class="scanner-config" style="margin-top:12px;">
-      <h4>Dispatch Scanner</h4>
-      <div>Interval (seconds): <input type="number" [(ngModel)]="scannerIntervalSeconds" style="width:80px;"/></div>
-      <div style="margin-top:6px;"><button mat-stroked-button (click)="setScannerInterval()">Set Interval</button></div>
-      <div style="margin-top:8px;">Scanned: {{ scannedCount }} — Dispatched: {{ dispatchedCount }}</div>
-    </div>
   </mat-card-content>
 </mat-card>
 </div>
