@@ -39,6 +39,68 @@ type TopologyLink = {
   target: string;
   value?: number;
 };
+type EmbeddedJobRecord = {
+  jobId: string;
+  workflow: string;
+  datasetId?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  requestedBy?: string;
+  lineage?: Record<string, unknown>;
+  parameters?: Record<string, unknown>;
+  logs: string[];
+  artifacts: Array<{ name: string; url: string }>;
+};
+
+const embeddedJobStore = new Map<string, EmbeddedJobRecord>();
+let embeddedJobCounter = 0;
+
+function createEmbeddedJobId(): string {
+  embeddedJobCounter += 1;
+  return `e2e-job-${Date.now()}-${embeddedJobCounter}`;
+}
+
+function createEmbeddedJob(
+  payload: Record<string, unknown>
+): EmbeddedJobRecord {
+  const now = new Date().toISOString();
+  const jobId = createEmbeddedJobId();
+  const requestedBy =
+    typeof payload["requestedBy"] === "string"
+      ? (payload["requestedBy"] as string)
+      : undefined;
+  const parameters =
+    payload["parameters"] && typeof payload["parameters"] === "object"
+      ? ({ ...(payload["parameters"] as Record<string, unknown>) } as Record<
+          string,
+          unknown
+        >)
+      : {};
+
+  if (requestedBy === "ui-sample") {
+    parameters["deferred"] = true;
+  }
+
+  return {
+    jobId,
+    workflow: String(payload["workflow"] || "import"),
+    datasetId: payload["datasetId"]
+      ? String(payload["datasetId"])
+      : "embedded-dataset",
+    status: "QUEUED",
+    createdAt: now,
+    updatedAt: now,
+    requestedBy,
+    lineage:
+      payload["lineage"] && typeof payload["lineage"] === "object"
+        ? { ...(payload["lineage"] as Record<string, unknown>) }
+        : {},
+    parameters,
+    logs: [`${now} job created`, `${now} status=QUEUED`],
+    artifacts: [],
+  };
+}
 
 type RuntimeProfileSpec = {
   workers: number;
@@ -477,6 +539,198 @@ export class AppController {
     return Array.from(new Set(out));
   }
 
+  private useEmbeddedE2eBackend(): boolean {
+    return process.env["USE_EMBEDDED_E2E_BACKEND"] === "true";
+  }
+
+  private embeddedPrometheusPayload(query: string) {
+    const value =
+      query.includes("sum(up)") || query.includes('up{job="data-generator"}')
+        ? "1"
+        : query.includes("generator_bytes_produced_total")
+        ? "524288"
+        : query.includes("generator_records_produced_total")
+        ? "120"
+        : query.includes("process_cpu_seconds_total")
+        ? "17.5"
+        : "1";
+
+    return {
+      status: "success",
+      data: {
+        resultType: "vector",
+        result: [
+          {
+            metric: {},
+            value: [Math.floor(Date.now() / 1000), value],
+          },
+        ],
+      },
+    };
+  }
+
+  private embeddedTopologyMetrics() {
+    const jobs = Array.from(embeddedJobStore.values());
+    return {
+      profilePct: 25,
+      workers: 2,
+      note: "embedded-e2e-backend",
+      counts: {
+        queued: jobs.filter((job) => job.status === "QUEUED").length,
+        running: jobs.filter((job) => job.status === "RUNNING").length,
+        completed: jobs.filter((job) => job.status === "COMPLETED").length,
+      },
+    };
+  }
+
+  private tryHandleEmbeddedGovernance(req: Request, res: Response): boolean {
+    if (!this.useEmbeddedE2eBackend()) {
+      return false;
+    }
+
+    const path = req.path || req.originalUrl || "";
+    const method = (req.method || "GET").toUpperCase();
+    const sendJson = (statusCode: number, body: unknown) => {
+      res.status(statusCode).json(body);
+      return true;
+    };
+
+    if (method === "GET" && path === "/api/v1/public-sources") {
+      return sendJson(200, [
+        {
+          name: "Embedded Sample Source",
+          url: "https://example.invalid/embedded-source",
+        },
+      ]);
+    }
+
+    if (method === "GET" && path === "/api/v1/admin/dispatch") {
+      return sendJson(200, {
+        intervalSeconds: 30,
+        scannedCount: embeddedJobStore.size,
+        dispatchedCount: embeddedJobStore.size,
+      });
+    }
+
+    if (method === "POST" && path === "/api/v1/admin/dispatch") {
+      return sendJson(200, {
+        intervalSeconds: Number(
+          (req.body as { intervalSeconds?: number })?.intervalSeconds || 30
+        ),
+        scannedCount: embeddedJobStore.size,
+        dispatchedCount: embeddedJobStore.size,
+      });
+    }
+
+    if (method === "POST" && path === "/api/v1/admin/release-deferred") {
+      let released = 0;
+      for (const job of embeddedJobStore.values()) {
+        if (job.parameters?.["deferred"] === true) {
+          job.parameters["deferred"] = false;
+          job.status = "COMPLETED";
+          job.updatedAt = new Date().toISOString();
+          job.logs.push(`${job.updatedAt} status=COMPLETED`);
+          released += 1;
+        }
+      }
+      return sendJson(200, { released });
+    }
+
+    if (method === "GET" && path === "/api/v1/jobs/types") {
+      return sendJson(200, [
+        "import",
+        "ingest",
+        "export",
+        "diagnostics",
+        "cleanup",
+      ]);
+    }
+
+    if (method === "POST" && path === "/api/v1/jobs/validate") {
+      return sendJson(200, { valid: true });
+    }
+
+    if (method === "GET" && path === "/api/v1/jobs") {
+      const jobs = Array.from(embeddedJobStore.values()).sort((a, b) =>
+        b.createdAt.localeCompare(a.createdAt)
+      );
+      return sendJson(200, jobs);
+    }
+
+    if (method === "POST" && path === "/api/v1/jobs") {
+      const payload =
+        req.body && typeof req.body === "object"
+          ? (req.body as Record<string, unknown>)
+          : {};
+      const job = createEmbeddedJob(payload);
+      embeddedJobStore.set(job.jobId, job);
+      const statusCode = payload["requestedBy"] ? 202 : 201;
+      return sendJson(statusCode, {
+        jobId: job.jobId,
+        status: job.status,
+        queuedAt: job.createdAt,
+      });
+    }
+
+    const pathMatch = path.match(/^\/api\/v1\/jobs\/([^/]+)(?:\/(.+))?$/);
+    if (!pathMatch) {
+      return false;
+    }
+
+    const jobId = decodeURIComponent(pathMatch[1]);
+    const suffix = pathMatch[2] || "";
+    const job = embeddedJobStore.get(jobId);
+
+    if (!job) {
+      return sendJson(404, { error: "not_found", jobId });
+    }
+
+    if (method === "GET" && !suffix) {
+      return sendJson(200, job);
+    }
+
+    if (method === "DELETE" && !suffix) {
+      embeddedJobStore.delete(jobId);
+      res.status(204).send();
+      return true;
+    }
+
+    if (method === "POST" && suffix === "transition") {
+      const body =
+        req.body && typeof req.body === "object"
+          ? (req.body as Record<string, unknown>)
+          : {};
+      const nextState = String(body["newState"] || body["state"] || "QUEUED");
+      job.status = nextState;
+      job.updatedAt = new Date().toISOString();
+      job.logs.push(`${job.updatedAt} status=${nextState}`);
+      return sendJson(200, job);
+    }
+
+    if (method === "GET" && suffix === "lineage") {
+      return sendJson(200, job.lineage || {});
+    }
+
+    if (method === "PUT" && suffix === "lineage") {
+      job.lineage =
+        req.body && typeof req.body === "object"
+          ? { ...(req.body as Record<string, unknown>) }
+          : {};
+      job.updatedAt = new Date().toISOString();
+      return sendJson(200, job.lineage);
+    }
+
+    if (method === "GET" && suffix === "logs") {
+      return sendJson(200, job.logs);
+    }
+
+    if (method === "GET" && suffix === "artifacts") {
+      return sendJson(200, job.artifacts);
+    }
+
+    return false;
+  }
+
   private async fetchWithTimeout(
     url: string,
     init: RequestInit,
@@ -575,6 +829,11 @@ export class AppController {
 
   @Get("/api/metrics/topology")
   async proxyTopologyMetrics(@Res() res: Response): Promise<void> {
+    if (this.useEmbeddedE2eBackend()) {
+      res.status(200).json(this.embeddedTopologyMetrics());
+      return;
+    }
+
     const targetUrls = this.governanceBaseCandidates().map(
       (b) => `${b}/api/v1/metrics/topology`
     );
@@ -608,6 +867,13 @@ export class AppController {
       res.status(403).json({ error: "forbidden" });
       return;
     }
+
+    if (this.useEmbeddedE2eBackend()) {
+      const query = String(req.query?.["query"] || "sum(up)");
+      res.status(200).json(this.embeddedPrometheusPayload(query));
+      return;
+    }
+
     const prom = process.env["PROMETHEUS_URL"] || "http://127.0.0.1:9090";
     // Build search params robustly from req.query (arrays, numbers, etc.)
     const qp = new URLSearchParams();
@@ -1272,6 +1538,10 @@ export class AppController {
     @Req() req: Request,
     @Res() res: Response
   ): Promise<void> {
+    if (this.tryHandleEmbeddedGovernance(req, res)) {
+      return;
+    }
+
     const baseCandidates = this.governanceBaseCandidates();
     const targetUrls = baseCandidates.map((b) => `${b}${req.originalUrl}`);
     try {
