@@ -1609,7 +1609,39 @@ export class AppController {
       return;
     }
 
-    const baseCandidates = this.governanceBaseCandidates();
+    // Dev-mode commissioning mocks (Java CommissioningController not running locally).
+    const COMMISSIONING_SCENARIOS = [
+      { id: "antenna_calibration", name: "Antenna Calibration", type: "aiv",
+        description: "Validates antenna calibration parameters including pointing model, noise temperature, and efficiency at target frequencies.",
+        requiredParameters: ["antennaId", "targetFrequencyMHz", "pointingModelVersion"] },
+      { id: "timing_sync", name: "Timing Synchronisation", type: "aiv",
+        description: "Validates that all array elements are synchronised to the timing reference within the accepted drift window.",
+        requiredParameters: ["referenceElementId", "maxDriftNs", "syncProtocol"] },
+      { id: "rfi_baseline", name: "RFI Baseline Survey", type: "aiv",
+        description: "Validates the RFI environment baseline against the expected spectral occupancy thresholds for science operations.",
+        requiredParameters: ["siteId", "frequencyRangeMHz", "maxOccupancyPercent"] },
+    ];
+    if (path === "/api/v1/commissioning/scenarios" && method === "GET") {
+      res.json(COMMISSIONING_SCENARIOS);
+      return;
+    }
+    if (path === "/api/v1/commissioning/validate" && method === "POST") {
+      const body = (req as any).body ?? {};
+      const scenarioId: string = body["scenarioId"] ?? "";
+      const scenario = COMMISSIONING_SCENARIOS.find(s => s.id === scenarioId);
+      if (!scenario) {
+        res.status(404).json({ scenarioId, scenarioName: null, pass: false,
+          failures: [`scenario_not_found: ${scenarioId}`], validatedAt: new Date().toISOString() });
+        return;
+      }
+      const params: Record<string, unknown> = body["parameters"] ?? {};
+      const failures = scenario.requiredParameters
+        .filter(p => params[p] == null)
+        .map(p => `missing_required_parameter: ${p}`);
+      res.json({ scenarioId: scenario.id, scenarioName: scenario.name,
+        pass: failures.length === 0, failures, validatedAt: new Date().toISOString() });
+      return;
+    }
     const targetUrls = baseCandidates.map((b) => `${b}${req.originalUrl}`);
     try {
       const headers = new Headers();
