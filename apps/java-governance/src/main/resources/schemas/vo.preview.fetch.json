@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "vo.preview.fetch parameters",
+  "type": "object",
+  "required": ["provider", "previewUrl"],
+  "properties": {
+    "provider":    { "type": "string", "minLength": 1 },
+    "previewUrl":  { "type": "string", "minLength": 1 },
+    "liveMode":    { "type": "boolean" }
+  },
+  "additionalProperties": true
+}

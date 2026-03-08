@@ -186,6 +186,129 @@
           <p class="empty-note">No external data available yet.</p>
         </ng-template>
       </mat-tab>
+
+      <!-- ── Alert SLO Tab ─────────────────────────────────────────── -->
+      <mat-tab label="Alert SLO">
+        <div class="tab-content">
+
+          <!-- Loading spinner -->
+          <div *ngIf="alertSloLoading" class="alert-loading">
+            <mat-spinner diameter="32"></mat-spinner>
+            <span>Fetching alert SLO metrics…</span>
+          </div>
+
+          <!-- Error banner -->
+          <div *ngIf="alertSloError" class="alert-error-banner">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ alertSloError }}</span>
+          </div>
+
+          <!-- SLO Metric Cards -->
+          <div *ngIf="alertSlo && !alertSloLoading" class="slo-grid">
+            <div class="slo-card">
+              <div class="slo-label">
+                <mat-icon>notifications</mat-icon> Ingested Total
+              </div>
+              <div class="slo-value">{{ alertSlo.alertIngestedTotal }}</div>
+            </div>
+            <div class="slo-card">
+              <div class="slo-label">
+                <mat-icon>timer</mat-icon> Latency p50
+              </div>
+              <div class="slo-value">{{ alertSlo.alertLatencyMsP50 | number:'1.1-1' }} ms</div>
+            </div>
+            <div class="slo-card">
+              <div class="slo-label">
+                <mat-icon>timer</mat-icon> Latency p95
+              </div>
+              <div class="slo-value">{{ alertSlo.alertLatencyMsP95 | number:'1.1-1' }} ms</div>
+            </div>
+            <div class="slo-card">
+              <div class="slo-label">
+                <mat-icon>timer</mat-icon> Latency p99
+              </div>
+              <div class="slo-value">{{ alertSlo.alertLatencyMsP99 | number:'1.1-1' }} ms</div>
+            </div>
+            <div class="slo-card" [class.slo-warn]="alertSlo.dlqDepth > 10">
+              <div class="slo-label">
+                <mat-icon>inbox</mat-icon> DLQ Depth
+              </div>
+              <div class="slo-value">{{ alertSlo.dlqDepth }}</div>
+            </div>
+            <div class="slo-card">
+              <div class="slo-label">
+                <mat-icon>replay</mat-icon> Replays Total
+              </div>
+              <div class="slo-value">{{ alertSlo.replaysTotal }}</div>
+            </div>
+          </div>
+
+          <!-- DLQ Table + Replay Controls -->
+          <div class="dlq-section" *ngIf="!alertSloLoading">
+            <div class="dlq-header">
+              <span class="dlq-title">
+                <mat-icon>inbox</mat-icon> Dead Letter Queue
+                <span class="dlq-count" *ngIf="alertDlq.length > 0">({{ alertDlq.length }})</span>
+              </span>
+              <button mat-stroked-button color="warn"
+                      *ngIf="alertDlq.length > 0"
+                      (click)="replayAllFromDlq()"
+                      aria-label="Replay all DLQ alerts">
+                <mat-icon>replay</mat-icon> Replay All
+              </button>
+              <button mat-stroked-button (click)="fetchAlertSlo()"
+                      aria-label="Refresh alert SLO">
+                <mat-icon>refresh</mat-icon> Refresh
+              </button>
+            </div>
+
+            <div *ngIf="alertDlq.length === 0" class="empty-note">
+              No alerts in the Dead Letter Queue.
+            </div>
+
+            <table *ngIf="alertDlq.length > 0" class="dlq-table" role="table">
+              <thead>
+                <tr>
+                  <th scope="col">Event Type</th>
+                  <th scope="col">Severity</th>
+                  <th scope="col">Source</th>
+                  <th scope="col">Correlation ID</th>
+                  <th scope="col">Issued At</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let alert of alertDlq">
+                  <td>{{ alert.eventType }}</td>
+                  <td>
+                    <span class="severity-badge"
+                          [class.sev-critical]="alert.severity === 'CRITICAL'"
+                          [class.sev-warning]="alert.severity === 'WARNING'"
+                          [class.sev-info]="alert.severity === 'INFO'">
+                      {{ alert.severity }}
+                    </span>
+                  </td>
+                  <td>{{ alert.sourceSystem }}</td>
+                  <td class="correlation-id">{{ alert.correlationId }}</td>
+                  <td>{{ alert.issuedAt | date:'HH:mm:ss' }}</td>
+                  <td>
+                    <button mat-icon-button color="primary"
+                            (click)="replayFromDlq(alert.id)"
+                            [attr.aria-label]="'Replay alert ' + alert.id"
+                            title="Replay this alert">
+                      <mat-icon>replay</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="slo-measured-at" *ngIf="alertSlo">
+            Measured at {{ alertSlo.measuredAt | date:'HH:mm:ss' }}
+          </div>
+        </div>
+      </mat-tab>
     </mat-tab-group>
   </mat-card-content>
 </mat-card>

@@ -131,6 +131,16 @@ describe("TelemetryComponent", () => {
       queues: {},
       exchanges: {},
     });
+    httpMock.expectOne("/api/v1/alerts/slo").flush({
+      alertIngestedTotal: 0,
+      alertLatencyMsP50: 0,
+      alertLatencyMsP95: 0,
+      alertLatencyMsP99: 0,
+      dlqDepth: 0,
+      replaysTotal: 0,
+      measuredAt: new Date().toISOString(),
+    });
+    httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
 
     expect(component.pulsarStatus.brokers).toBe(2);
     expect(component.pulsarStatus.topics).toBe(10);
@@ -157,6 +167,16 @@ describe("TelemetryComponent", () => {
       queues: { "test-queue": {} },
       exchanges: { "test-exchange": {} },
     });
+    httpMock.expectOne("/api/v1/alerts/slo").flush({
+      alertIngestedTotal: 0,
+      alertLatencyMsP50: 0,
+      alertLatencyMsP95: 0,
+      alertLatencyMsP99: 0,
+      dlqDepth: 0,
+      replaysTotal: 0,
+      measuredAt: new Date().toISOString(),
+    });
+    httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
 
     expect(component.rabbitMQStatus.status).toBe("connected");
     expect(component.rabbitMQStatus.connection).toBe("connected");
@@ -177,6 +197,16 @@ describe("TelemetryComponent", () => {
       queues: {},
       exchanges: {},
     });
+    httpMock.expectOne("/api/v1/alerts/slo").flush({
+      alertIngestedTotal: 0,
+      alertLatencyMsP50: 0,
+      alertLatencyMsP95: 0,
+      alertLatencyMsP99: 0,
+      dlqDepth: 0,
+      replaysTotal: 0,
+      measuredAt: new Date().toISOString(),
+    });
+    httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
 
     expect(component.pulsarStatus.brokers).toBe(0);
     expect(component.pulsarStatus.topics).toBe(0);
@@ -197,10 +227,65 @@ describe("TelemetryComponent", () => {
 
     const rabbitReq = httpMock.expectOne("/api/v1/rabbitmq/status");
     rabbitReq.error(new ErrorEvent("connection failed"));
+    httpMock.expectOne("/api/v1/alerts/slo").flush({
+      alertIngestedTotal: 0,
+      alertLatencyMsP50: 0,
+      alertLatencyMsP95: 0,
+      alertLatencyMsP99: 0,
+      dlqDepth: 0,
+      replaysTotal: 0,
+      measuredAt: new Date().toISOString(),
+    });
+    httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
 
     expect(component.rabbitMQStatus.status).toBe("error");
     expect(component.rabbitMQStatus.connection).toBe("error");
     expect(component.rabbitMQStatus.error).toBe("Connection failed");
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it("should populate alertSlo from API response", fakeAsync(() => {
+    fixture.detectChanges();
+    tick(6000);
+
+    httpMock.expectOne("/api/v1/pulsar/status").flush({ brokers: 1, topics: 1, partitions: 1 });
+    httpMock.expectOne("/api/v1/rabbitmq/status").flush({
+      status: "unknown", connection: "unknown", queues: {}, exchanges: {},
+    });
+    httpMock.expectOne("/api/v1/alerts/slo").flush({
+      alertIngestedTotal: 42,
+      alertLatencyMsP50: 12.5,
+      alertLatencyMsP95: 45.0,
+      alertLatencyMsP99: 98.3,
+      dlqDepth: 3,
+      replaysTotal: 1,
+      measuredAt: "2025-01-01T00:00:00Z",
+    });
+    httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
+
+    expect(component.alertSlo).not.toBeNull();
+    expect(component.alertSlo?.alertIngestedTotal).toBe(42);
+    expect(component.alertSlo?.dlqDepth).toBe(3);
+    expect(component.alertSloLoading).toBe(false);
+    expect(component.alertSloError).toBeNull();
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it("should set alertSloError when alert SLO endpoint fails", fakeAsync(() => {
+    fixture.detectChanges();
+    tick(6000);
+
+    httpMock.expectOne("/api/v1/pulsar/status").flush({ brokers: 1, topics: 1, partitions: 1 });
+    httpMock.expectOne("/api/v1/rabbitmq/status").flush({
+      status: "unknown", connection: "unknown", queues: {}, exchanges: {},
+    });
+    httpMock.expectOne("/api/v1/alerts/slo").error(new ErrorEvent("alert-slo-error"));
+    httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
+
+    expect(component.alertSloError).toBe("Alert SLO endpoint unavailable");
+    expect(component.alertSloLoading).toBe(false);
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));

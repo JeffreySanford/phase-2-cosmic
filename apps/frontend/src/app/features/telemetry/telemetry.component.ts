@@ -47,6 +47,28 @@ type VoTableResponse = {
   links?: unknown[];
 };
 
+type AlertSloMetrics = {
+  alertIngestedTotal: number;
+  alertLatencyMsP50: number;
+  alertLatencyMsP95: number;
+  alertLatencyMsP99: number;
+  dlqDepth: number;
+  replaysTotal: number;
+  measuredAt: string;
+};
+
+type TransientAlert = {
+  id: string;
+  eventType: string;
+  severity: string;
+  sourceSystem: string;
+  correlationId: string;
+  message: string;
+  issuedAt: string;
+  replayed: boolean;
+  tags: string[];
+};
+
 @Component({
   selector: "app-telemetry",
   templateUrl: "./telemetry.component.html",
@@ -109,6 +131,12 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     exchanges: {},
   };
   lastUpdated: number | null = null;
+
+  // Alert SLO state
+  alertSlo: AlertSloMetrics | null = null;
+  alertDlq: TransientAlert[] = [];
+  alertSloLoading = false;
+  alertSloError: string | null = null;
   stats: { min: number; max: number; avg: number; p95: number } = {
     min: 0,
     max: 0,
@@ -169,6 +197,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         this.fetchRangeAndRender();
         this.fetchPulsarStatus();
         this.fetchRabbitMQStatus();
+        this.fetchAlertSlo();
       });
 
     // VO samples are provided by VoService voSamples$ (hot observable)
@@ -976,5 +1005,38 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch {
       return 0;
     }
+  }
+
+  fetchAlertSlo(): void {
+    this.alertSloLoading = true;
+    this.alertSloError = null;
+    this.http.get<AlertSloMetrics>('/api/v1/alerts/slo').subscribe(
+      (slo) => {
+        this.alertSlo = slo;
+        this.alertSloLoading = false;
+      },
+      () => {
+        this.alertSloError = 'Alert SLO endpoint unavailable';
+        this.alertSloLoading = false;
+      }
+    );
+    this.http.get<TransientAlert[]>('/api/v1/alerts/dlq').subscribe(
+      (dlq) => { this.alertDlq = dlq; },
+      () => { this.alertDlq = []; }
+    );
+  }
+
+  replayFromDlq(alertId: string): void {
+    this.http.post<TransientAlert>(`/api/v1/alerts/dlq/replay/${alertId}`, {}).subscribe(
+      () => { this.fetchAlertSlo(); },
+      () => { this.alertSloError = `Replay failed for alert ${alertId}`; }
+    );
+  }
+
+  replayAllFromDlq(): void {
+    this.http.post<number>('/api/v1/alerts/dlq/replay-all', {}).subscribe(
+      () => { this.fetchAlertSlo(); },
+      () => { this.alertSloError = 'Replay-all failed'; }
+    );
   }
 }

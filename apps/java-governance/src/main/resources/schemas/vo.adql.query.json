@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "vo.adql.query parameters",
+  "type": "object",
+  "required": ["provider", "tapUrl", "adql"],
+  "properties": {
+    "provider":   { "type": "string", "minLength": 1 },
+    "tapUrl":     { "type": "string", "minLength": 1 },
+    "adql":       { "type": "string", "minLength": 1 },
+    "limit":      { "type": "integer", "minimum": 1 },
+    "asyncQuery": { "type": "boolean" },
+    "liveMode":   { "type": "boolean" }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "vo.product.fetch parameters",
+  "type": "object",
+  "required": ["provider", "productUrl"],
+  "properties": {
+    "provider":          { "type": "string", "minLength": 1 },
+    "productUrl":        { "type": "string", "minLength": 1 },
+    "expectedMimeType":  { "type": "string" },
+    "liveMode":          { "type": "boolean" }
+  },
+  "additionalProperties": true
+}

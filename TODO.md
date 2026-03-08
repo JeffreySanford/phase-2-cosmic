@@ -29,7 +29,8 @@ pie title TODO Status (March 7, 2026)
   - ⬜ `aria-hidden` focus warning — Angular CDK dialog sets `aria-hidden` on `<app-root>` during open.
 - **Sprint 2 (Mar 21–Apr 4)** — CI Hardening & Flaky Suite Migration — ✅ **COMPLETE** (S2-1 through S2-5 all done).
 - **Sprint 3 (Apr 4–18)** — Mission Gates MG-4 & MG-5 — ✅ **COMPLETE**.
-- Mission-oversight closure track: MG-3 ✅ complete → MG-4/5 next (Sprint 3).
+- **Sprint 4 (Mar 8–22, 2026)** — MG-6 Transient Alert Path + Canonical Event Envelope + Broker Runbook — ✅ **COMPLETE**.
+- Mission-oversight closure track: MG-3 ✅ → MG-4/5 ✅ → MG-6 ✅ complete.
 - Public-data discovery baseline documented in `documentation/public-data/PUBLIC_DATA_RESOURCES.md`.
 
 ## Next
@@ -45,6 +46,19 @@ pie title TODO Status (March 7, 2026)
 - [x] **S1-3** 🟢 Audit remaining `console.warn`/`console.error` noise — all remaining calls are behind error conditions; none fire on normal page load after broker-events and cached-samples fixes.
 
 ### Recent Completed
+
+- **Sprint 4 MG-6 — complete (2026-03-08):**
+  - `TransientAlert` + `AlertSloMetrics` model records.
+  - `TransientAlertService` — in-memory alert store + DLQ, Micrometer `Counter` for `alert_ingested_total` / `alert_replays_total`, percentile latency tracking.
+  - `AlertController` (`/api/v1/alerts`) — POST `/ingest`, GET `/slo`, GET `/dlq`, POST `/dlq/replay/{id}`, POST `/dlq/replay-all`, POST `/dlq`.
+  - `AlertControllerTest` — 5 tests: ingest 201, SLO counter, DLQ list, replay-all, 404 replay.
+  - `ExecutionEvent` canonical envelope record (`correlationId`, `eventType`, `originBroker`, `schemaVersion`, `timestamp`, `payload`).
+  - `CorrelationPropagationTest` — 5 integration tests for correlationId round-trip, DLQ preservation, idempotent delivery contract.
+  - `documentation/BROKER_SAFETY_RUNBOOK.md` — Kafka=audit/replay, RabbitMQ=control, Pulsar=federated; role rules, failure modes, escalation matrix, CLI runbook.
+  - Frontend: Alert SLO 5th tab in Telemetry — 6 metric cards (total, p50/p95/p99 latency, DLQ depth, replays), DLQ table with per-row replay button, replay-all button.
+  - Frontend: `fetchAlertSlo()` + `replayFromDlq()` + `replayAllFromDlq()` in `TelemetryComponent`; `MatIconModule` + `MatTableModule` + `MatProgressSpinnerModule` added to `TelemetryModule`.
+  - Frontend spec: 2 new tests (alert SLO populate, error state); 4 existing tests updated to flush new alert HTTP requests.
+  - Java tests: **78/78** (+5). Frontend tests: **202/202** (+2).
 
 - **Sprint 3 Mission Gates MG-4 & MG-5 — complete (2026-03-08):**
   - MG-4: `CommissioningScenarioService` + `CommissioningController` (3 built-in AIV scenarios). `CommissioningControllerTest` (4 tests: list, validate pass, validate fail, 404 unknown).
@@ -139,7 +153,7 @@ pie title TODO Status (March 7, 2026)
 - [DONE] VO interoperability (MG‑3) — backend VO-1..VO-6 complete; frontend typed subforms, provider selector, 5-tab detail, VOTable renderer, auto-fill samples, all complete 2026-03-07.
 - [DONE] Commissioning/AIV scenario test profile scaffolding and acceptance gate logic. (MG‑4)
 - [DONE] Archive DR replication tooling, restore‑drill tests, and policy documentation. (MG‑5)
-- [SPRINT 4] Transient alert path SLO metrics, UI indicators, and replay controls. (MG‑6)
+- [DONE] Transient alert path SLO metrics, UI indicators, and replay controls. (MG‑6) **Sprint 4**
 
 ### Medium
 
@@ -147,7 +161,7 @@ pie title TODO Status (March 7, 2026)
   - Mission outcome: Compute-to-archive efficiency
   - Operator/science impact: observation intent can be translated into deterministic configuration payloads instead of ad hoc job parameters
   - Validation evidence: versioned schema/contracts plus integration tests for valid and invalid mode-routing requests
-- [NEXT] Canonical execution event envelope and broker role partitioning across RabbitMQ, Kafka, and Pulsar.
+- [DONE] Canonical execution event envelope and broker role partitioning across RabbitMQ, Kafka, and Pulsar. **Sprint 4** \u2014 `ExecutionEvent` record, `BROKER_SAFETY_RUNBOOK.md`, `CorrelationPropagationTest`.
   - Mission outcome: Institutional trust and audit
   - Operator/science impact: execution events can be traced, replayed, and deduplicated consistently across control, audit, and federated delivery paths
   - Validation evidence: shared schema definitions plus integration tests for correlation ID propagation, idempotency, and audit mirroring

@@ -1,6 +1,25 @@
 @import "../../../styles/tokens";
 @import "../../../styles/vibrant-theme";
 
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.jobs-view {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 0 1rem;
+  box-sizing: border-box;
+}
+
+.jobs-view mat-card {
+  margin-bottom: calc(var(--app-footer-height, 48px) + 0.75rem);
+}
+
 .toolbar {
   display: flex;
   gap: 8px;
@@ -133,7 +152,7 @@
 .meta {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 12px 14px;
   cursor: pointer;
   gap: 8px;
@@ -146,20 +165,32 @@
 
 .meta-left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.meta-left > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
   min-width: 0;
 }
 
 .meta-right {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  align-self: flex-start;
   gap: 6px;
   flex-shrink: 0;
+  margin-top: -4px;
 }
 
 .details-toggle {
   min-width: 0;
+  align-self: flex-start;
 }
 
 .workflow-dot {
@@ -168,29 +199,33 @@
   border-radius: 50%;
   flex-shrink: 0;
   box-shadow: 0 0 8px currentColor;
+  margin-top: 4px;
 }
 
 .job-card .title {
-  font-weight: 700;
+  font-weight: 500;
   font-size: 0.95rem;
+  line-height: 1.15;
+  margin: 0;
   color: token(colors, text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .job-id {
   opacity: 0.65;
   font-size: 0.78rem;
+  line-height: 1.15;
+  margin: 0;
   font-family: monospace;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .chevron {
   opacity: 0.55;
   font-size: 20px;
+  margin-top: 0;
   transition: transform token(transitions, fast) ease;
 }
 

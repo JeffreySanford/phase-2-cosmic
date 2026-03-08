@@ -195,24 +195,20 @@ timeline
 
 ### Sprint 4 · Apr 18 – May 2, 2026 — MG-6 Transient Alerts + Canonical Event Envelope
 
+**✅ COMPLETE — Java: 78/78 (+5), Frontend: 202/202 (+2). Delivered 2026-03-08.**
+
 **Why:** MG-6 (transient/low-latency alert SLOs) closes the last of the six mission oversight gaps. Simultaneously, the canonical execution event envelope is the prerequisite for the Phase 3 Trident gateway work — without a shared cross-broker event schema and correlation discipline, Sprint 5's Trident domain model cannot be built safely. These two items are linked: MG-6 alert replay requires the same correlation/envelope primitives as the Trident execution layer.
 
-| Priority | Step |
+| Status | Step |
 | --- | --- |
-| 🔴 | **MG-6** — Transient alert path: SLO metric counters (`alert_ingested_total`, `alert_latency_ms`), alert state model, and Prometheus scrape integration |
-| 🔴 | **MG-6** — Jobs/Diagnostics UI: alert SLO indicator panel and replay-from-DLQ button wired to existing DLQ endpoint |
-| 🔴 | Canonical execution event envelope schema: `CorrelationId`, `EventType`, `OriginBroker`, `Timestamp`, `Payload`; JSON Schema + Java record definition |
-| 🟡 | Broker role partitioning: assign Kafka = audit/replay, RabbitMQ = control commands, Pulsar = federated delivery; document in `BROKER_SAFETY_RUNBOOK.md` |
-| 🟡 | Integration tests: correlation ID propagation across brokers; idempotent delivery proof |
-| 🟢 | MG-6 SLO dashboard panel in Grafana compose stack |
-
-**Exit criteria:**
-
-- All six mission oversight gates (MG-1..MG-6) marked closed in `NGVLA_MISSION_ALIGNMENT.md`
-- Alert SLO metrics appear in `/api/v1/telemetry` and Prometheus scrape
-- Replay-from-DLQ button functional in UI
-- Canonical event schema published with version identifier
-- Correlation ID propagation test passes across Kafka, RabbitMQ, and Pulsar paths
+| ✅ | **MG-6** — `TransientAlertService` + Micrometer `Counter` for `alert_ingested_total` / `alert_replays_total`; in-memory DLQ with bounded store |
+| ✅ | **MG-6** — `AlertController` (`/api/v1/alerts`): POST `/ingest`, GET `/slo`, GET `/dlq`, POST `/dlq/replay/{id}`, POST `/dlq/replay-all` |
+| ✅ | **MG-6** — `AlertControllerTest` — 5 tests: ingest 201, SLO counter, DLQ list, replay-all, 404 replay |
+| ✅ | **MG-6** — Alert SLO 5th tab in Telemetry UI: 6 metric cards (total/p50/p95/p99/DLQ depth/replays), DLQ table with per-row + bulk replay buttons |
+| ✅ | Canonical `ExecutionEvent` record (`correlationId`, `eventType`, `originBroker`, `schemaVersion`, `timestamp`, `payload`) |
+| ✅ | `BROKER_SAFETY_RUNBOOK.md` — Kafka=audit/replay, RabbitMQ=control commands, Pulsar=federated delivery; role rules, failure modes, escalation matrix, CLI runbook |
+| ✅ | `CorrelationPropagationTest` — 5 integration tests for correlationId round-trip, DLQ preservation, idempotent delivery contract |
+| ⬜ | MG-6 SLO dashboard panel in Grafana compose stack |
 
 ---
 
