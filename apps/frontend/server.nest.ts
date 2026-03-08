@@ -99,6 +99,12 @@ type RedisClientOps = {
 // Redis client singleton (optional)
 let redisClient: RedisClientOps | null = null;
 async function initRedisClient() {
+  if (process.env["DISABLE_REDIS_CLIENT"] === "true") {
+    console.log("Redis client disabled by environment");
+    redisClient = null;
+    return;
+  }
+
   const url =
     process.env["REDIS_URL"] ||
     process.env["REDIS_URI"] ||
@@ -1400,7 +1406,10 @@ async function bootstrap() {
   expressInstance.use(express.static(browserDistFolder));
 
   // If dev, create vite server and attach middlewares for SSR
-  if (process.env["NODE_ENV"] !== "production") {
+  if (
+    process.env["NODE_ENV"] !== "production" &&
+    process.env["DISABLE_NEST_VITE_DEV_SERVER"] !== "true"
+  ) {
     try {
       const vite = await createViteServer({
         root: process.cwd(),
