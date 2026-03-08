@@ -318,48 +318,25 @@ export class JobsComponent implements OnInit, OnDestroy {
       duration: 10000,
     });
 
-    // Step 1: prune all current jobs from storage
-    const deletions = this.jobs.map((j) =>
-      this.jobsSvc
-        .deleteJob(j.jobId)
-        .toPromise()
-        .catch(() => null)
-    );
-
-    Promise.allSettled(deletions).then(() => {
-      this.jobs = [];
-
-      // Step 2: submit the 5 unique VO sample jobs
-      const submissions: Promise<unknown>[] = this.SAMPLE_JOB_REQUESTS.map(
-        (req) =>
-          this.jobsSvc
-            .submitJob(req)
-            .toPromise()
-            .then((created) => {
-              if (created && created.jobId) {
-                const jobId = created.jobId;
-                // Step 3: auto-start each queued job immediately
-                this.jobsSvc.transition(jobId, "RUNNING").subscribe(
-                  (updated) => {
-                    if (updated) {
-                      this.jobs = [
-                        updated,
-                        ...this.jobs.filter((j) => j.jobId !== jobId),
-                      ];
-                    } else {
-                      this.jobsSvc
-                        .get(jobId)
-                        .subscribe(
-                          (full) =>
-                            (this.jobs = [
-                              full,
-                              ...this.jobs.filter((j) => j.jobId !== jobId),
-                            ])
-                        );
-                    }
-                  },
-                  () => {
-                    // transition failed — still show the queued job
+    // Submit the 5 unique VO sample jobs without pruning existing jobs first,
+    // so the current list remains visible while the new ones are queued.
+    const submissions: Promise<unknown>[] = this.SAMPLE_JOB_REQUESTS.map(
+      (req) =>
+        this.jobsSvc
+          .submitJob(req)
+          .toPromise()
+          .then((created) => {
+            if (created && created.jobId) {
+              const jobId = created.jobId;
+              // Auto-start each queued job immediately
+              this.jobsSvc.transition(jobId, "RUNNING").subscribe(
+                (updated) => {
+                  if (updated) {
+                    this.jobs = [
+                      updated,
+                      ...this.jobs.filter((j) => j.jobId !== jobId),
+                    ];
+                  } else {
                     this.jobsSvc
                       .get(jobId)
                       .subscribe(
@@ -370,26 +347,38 @@ export class JobsComponent implements OnInit, OnDestroy {
                           ])
                       );
                   }
-                );
-              }
-            })
-            .catch((e) => (this.error = this.errMsg(e)))
-      );
+                },
+                () => {
+                  // transition failed — still show the queued job
+                  this.jobsSvc
+                    .get(jobId)
+                    .subscribe(
+                      (full) =>
+                        (this.jobs = [
+                          full,
+                          ...this.jobs.filter((j) => j.jobId !== jobId),
+                        ])
+                    );
+                }
+              );
+            }
+          })
+          .catch((e) => (this.error = this.errMsg(e)))
+    );
 
-      Promise.allSettled(submissions).then(
-        (results: PromiseSettledResult<unknown>[]) => {
-          this.loading = false;
-          this.jobsSvc.invalidateList();
-          const ok = results.filter((r) => r.status === "fulfilled").length;
-          const failed = results.length - ok;
-          this.snackBar.open(
-            `Submitted ${ok} jobs${failed ? `, ${failed} failed` : ""}`,
-            undefined,
-            { duration: 10000 }
-          );
-        }
-      );
-    });
+    Promise.allSettled(submissions).then(
+      (results: PromiseSettledResult<unknown>[]) => {
+        this.loading = false;
+        this.jobsSvc.invalidateList();
+        const ok = results.filter((r) => r.status === "fulfilled").length;
+        const failed = results.length - ok;
+        this.snackBar.open(
+          `Submitted ${ok} jobs${failed ? `, ${failed} failed` : ""}`,
+          undefined,
+          { duration: 10000 }
+        );
+      }
+    );
   }
 
   releaseDeferred() {
