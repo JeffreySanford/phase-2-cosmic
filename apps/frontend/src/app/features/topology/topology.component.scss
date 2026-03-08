@@ -14,6 +14,18 @@
   justify-content: space-between;
 }
 
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 0.5rem;
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .title-group {
   display: flex;
   align-items: center;
@@ -48,6 +60,11 @@
   padding: 6px 10px;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.settings-toggle {
+  min-width: 40px;
+  text-align: center;
 }
 
 .topology-graph {

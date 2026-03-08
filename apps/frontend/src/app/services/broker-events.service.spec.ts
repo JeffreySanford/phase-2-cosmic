@@ -27,6 +27,7 @@ describe("BrokerEventsService", () => {
 
   beforeEach(() => {
     // stub global EventSource so tests don't open real connections
+    MockEventSource.lastUrl = null;
     originalEventSource = window.EventSource;
     Object.defineProperty(window, "EventSource", {
       configurable: true,
@@ -63,21 +64,18 @@ describe("BrokerEventsService", () => {
   });
 
   it("should open SSE connection and forward messages", (done) => {
-    // grab the mock EventSource constructor
     const Mock = window.EventSource as unknown as typeof MockEventSource;
     expect(Mock).toBeDefined();
-    // constructor should have been called with the correct URL
-    expect(Mock.lastUrl).toEqual("/api/v1/broker-events");
-    // assume service constructor already created one instance
-    const instance = (service as unknown as { source?: MockEventSource })
-      .source;
-    expect(instance).toBeInstanceOf(Mock);
-    // subscribe and then simulate event
+    expect(Mock.lastUrl).toBeNull();
+
     const msg: BrokerEvent = { type: "evt", payload: { foo: 1 } };
     service.events.subscribe((e) => {
       expect(e).toEqual(msg);
       done();
     });
+
+    expect(Mock.lastUrl).toEqual("/api/v1/broker-events");
+    const instance = (service as unknown as { source?: MockEventSource }).source;
     expect(instance).toBeDefined();
     instance?.emit(JSON.stringify(msg));
   });

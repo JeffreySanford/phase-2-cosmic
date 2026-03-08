@@ -21,6 +21,8 @@ declare global {
 export class BrokerEventsService implements OnDestroy {
   private events$ = new Subject<BrokerEvent>();
   private source?: EventSource;
+  private connectionAttempted = false;
+  private unavailableLogged = false;
 
   constructor() {
     // expose helper for end-to-end tests to simulate incoming events and flush any pending events
@@ -36,33 +38,13 @@ export class BrokerEventsService implements OnDestroy {
         delete w.__pendingBrokerEvents;
       }
     }
-
-    // open SSE connection when service is instantiated (guarded)
-    try {
-      const url = "/api/v1/broker-events";
-      this.source = new EventSource(url);
-      this.source.onmessage = (e) => {
-        try {
-          const parsed: BrokerEvent = JSON.parse(e.data);
-          this.events$.next(parsed);
-        } catch (err) {
-          console.error("failed to parse broker event", err, e.data);
-        }
-      };
-      this.source.onerror = (err) => {
-        console.error("broker events SSE error", err);
-        // optionally try reconnect logic here
-      };
-    } catch (err) {
-      // some browsers or test environments may not support EventSource
-      console.warn("broker events SSE not available", err);
-    }
   }
 
   /**
    * Observable stream of broker events.
    */
   get events(): Observable<BrokerEvent> {
+    this.ensureConnected();
     return this.events$.asObservable();
   }
 
@@ -75,5 +57,40 @@ export class BrokerEventsService implements OnDestroy {
 
   ngOnDestroy(): void {
     this.source?.close();
+  }
+
+  private ensureConnected(): void {
+    if (this.connectionAttempted || typeof window === "undefined") {
+      return;
+    }
+
+    this.connectionAttempted = true;
+    try {
+      const url = "/api/v1/broker-events";
+      this.source = new EventSource(url);
+      this.source.onmessage = (e) => {
+        try {
+          const parsed: BrokerEvent = JSON.parse(e.data);
+          this.events$.next(parsed);
+        } catch (err) {
+          console.error("failed to parse broker event", err, e.data);
+        }
+      };
+      this.source.onerror = () => {
+        this.source?.close();
+        this.source = undefined;
+        if (!this.unavailableLogged) {
+          this.unavailableLogged = true;
+          console.warn(
+            "broker events SSE unavailable; continuing without live broker updates"
+          );
+        }
+      };
+    } catch (err) {
+      if (!this.unavailableLogged) {
+        this.unavailableLogged = true;
+        console.warn("broker events SSE not available", err);
+      }
+    }
   }
 }

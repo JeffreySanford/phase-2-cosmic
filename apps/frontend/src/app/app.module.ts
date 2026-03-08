@@ -6,7 +6,10 @@ import { MatCardModule } from "@angular/material/card";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatSelectModule } from "@angular/material/select";
 import { MatButtonModule } from "@angular/material/button";
+import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatSlideToggleModule } from "@angular/material/slide-toggle";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatTooltipModule } from "@angular/material/tooltip";
 import { LayoutModule } from "@angular/cdk/layout";
 import { RouterModule } from "@angular/router";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
@@ -19,7 +22,6 @@ import { HttpClientModule } from "@angular/common/http";
 
 import { AppComponent } from "./app.component";
 import { APP_INITIALIZER } from "@angular/core";
-import { BrokerEventsService } from "./services/broker-events.service";
 import { DataSourceService } from "./services/data-source.service";
 import { appRoutes } from "./app.routes";
 import { UiThemeComponent } from "ui-theme";
@@ -83,7 +85,9 @@ import { ExternalSourcesComponent } from "./shared/external-sources/external-sou
     MatFormFieldModule,
     MatSelectModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatSlideToggleModule,
+    MatProgressSpinnerModule,
     LayoutModule,
     RouterModule.forRoot(appRoutes),
     HttpClientModule,
@@ -95,6 +99,7 @@ import { ExternalSourcesComponent } from "./shared/external-sources/external-sou
     MatCardModule,
     MatDialogModule,
     MatTabsModule,
+    MatTooltipModule,
     PageStateModule,
     StatusBandModule,
     DisclaimerBannerModule,
@@ -108,21 +113,18 @@ import { ExternalSourcesComponent } from "./shared/external-sources/external-sou
     },
     {
       provide: APP_INITIALIZER,
-      useFactory:
-        (dataSource: DataSourceService, broker: BrokerEventsService) => () => {
-          try {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get("mode") === "mock") {
-              dataSource.setMode("mock");
-            }
-          } catch {
-            // ignore
+      useFactory: (dataSource: DataSourceService) => () => {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get("mode") === "mock") {
+            dataSource.setMode("mock");
           }
-          // ensure broker service is instantiated early so test helper is present
-          void broker;
-          return Promise.resolve();
-        },
-      deps: [DataSourceService, BrokerEventsService],
+        } catch {
+          // ignore
+        }
+        return Promise.resolve();
+      },
+      deps: [DataSourceService],
       multi: true,
     },
   ],

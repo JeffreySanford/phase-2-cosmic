@@ -11,9 +11,9 @@
       <div class="rate-display" aria-live="polite">Total: {{ aggCurrentMBps }} MB/s</div>
     </div>
     <div class="actions">
-      <div style="display:flex; align-items:center; gap:12px;">
+      <div class="actions-row">
         <button (click)="refresh()">Refresh</button>
-        <button title="Topology settings" (click)="toggleSettings()">⚙️</button>
+        <button class="settings-toggle" title="Topology settings" (click)="toggleSettings()">⚙️</button>
       </div>
     </div>
 
