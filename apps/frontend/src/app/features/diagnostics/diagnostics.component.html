@@ -97,5 +97,32 @@
         </section>
       </div>
     </mat-tab>
+
+    <mat-tab label="Mission Gates">
+      <div class="tab-content">
+        <section class="commissioning-section">
+          <h2>Commissioning / AIV Scenarios (MG-4)</h2>
+          <p class="muted">Registered commissioning acceptance scenarios for ngVLA AIV readiness gate.</p>
+          <div *ngIf="commissioningLoading" class="status">Loading scenarios…</div>
+          <div *ngIf="commissioningError" class="error">{{ commissioningError }}</div>
+          <div class="tiles-grid" *ngIf="!commissioningLoading && !commissioningError">
+            <mat-card class="tile tile-online" *ngFor="let s of commissioningScenarios">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>task_alt</mat-icon>
+                  {{ s.name }}
+                </div>
+                <div class="tile-status">{{ s.type }}</div>
+              </div>
+              <div class="tile-body">{{ s.description }}</div>
+              <div class="tile-meta">
+                Required: {{ s.requiredParameters.join(', ') }}
+              </div>
+            </mat-card>
+            <p *ngIf="commissioningScenarios.length === 0" class="muted">No commissioning scenarios registered.</p>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
   </mat-tab-group>
 </div>

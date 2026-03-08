@@ -28,6 +28,7 @@ pie title TODO Status (March 7, 2026)
   - ⬜ `GET /api/v1/broker-events` SSE 404 — SSE stream not yet resolving in dev.
   - ⬜ `aria-hidden` focus warning — Angular CDK dialog sets `aria-hidden` on `<app-root>` during open.
 - **Sprint 2 (Mar 21–Apr 4)** — CI Hardening & Flaky Suite Migration — ✅ **COMPLETE** (S2-1 through S2-5 all done).
+- **Sprint 3 (Apr 4–18)** — Mission Gates MG-4 & MG-5 — ✅ **COMPLETE**.
 - Mission-oversight closure track: MG-3 ✅ complete → MG-4/5 next (Sprint 3).
 - Public-data discovery baseline documented in `documentation/public-data/PUBLIC_DATA_RESOURCES.md`.
 
@@ -44,6 +45,13 @@ pie title TODO Status (March 7, 2026)
 - [x] **S1-3** 🟢 Audit remaining `console.warn`/`console.error` noise — all remaining calls are behind error conditions; none fire on normal page load after broker-events and cached-samples fixes.
 
 ### Recent Completed
+
+- **Sprint 3 Mission Gates MG-4 & MG-5 — complete (2026-03-08):**
+  - MG-4: `CommissioningScenarioService` + `CommissioningController` (3 built-in AIV scenarios). `CommissioningControllerTest` (4 tests: list, validate pass, validate fail, 404 unknown).
+  - MG-4: Diagnostics "Mission Gates" tab showing scenario tiles + 2 new spec tests.
+  - MG-5: `ArchiveDrService` with `ReplicationPolicy` + `RestoreDrillResult` models. `ArchiveDrRestoreDrillTest` (5 tests: create, get, list, drill pass, drill unknown).
+  - MG-5: `documentation/mission-closure/MG-5-DR-POLICY.md` — operator runbook, RPO/RTO, tier table, alerting.
+  - Java tests: **73/73**. Frontend tests: **200/200**.
 
 - **Sprint 2 CI Hardening — complete (2026-04-04):**
   - S2-1: Cypress cache fix — `e2e`/`e2e-ci` cache disabled; binary cache in `e2e.yml`.
@@ -108,6 +116,13 @@ pie title TODO Status (March 7, 2026)
   - Operator/science impact: frontend now displays real-time messaging broker health status without 503 errors
   - Validation evidence: `/api/v1/rabbitmq/status` and `/api/v1/pulsar/status` return healthy JSON responses; frontend diagnostics page shows broker status
 
+### Up Next — Sprint 3 (Apr 4–18, 2026)
+
+- [x] **MG-4** 🔴 `CommissioningScenarioService` + `CommissioningController`: `GET /api/v1/commissioning/scenarios`, `POST /api/v1/commissioning/validate` — 3 built-in AIV scenarios (antenna calibration, timing sync, RFI baseline). `CommissioningControllerTest` 4 tests.
+- [x] **MG-4** 🟡 Commissioning status panel on Diagnostics page — "Mission Gates" tab displays scenario tiles with required params; 2 new spec tests. Frontend: **200/200**.
+- [x] **MG-5** 🔴 `ArchiveDrService` + `ReplicationPolicy` + `RestoreDrillResult` models — `createPolicy`, `getPolicy`, `listPolicies`, `drillRestore`. `ArchiveDrRestoreDrillTest` 5 tests. Java: **73/73**.
+- [x] **MG-5** 🟡 `documentation/mission-closure/MG-5-DR-POLICY.md` — RPO/RTO targets, tier classification, restore-drill procedure, operator runbook, alerting table.
+
 ### Up Next — Sprint 2 (Mar 21 – Apr 4, 2026)
 
 - [x] **S2-1** 🔴 Cypress runtime/cache remediation — `e2e`+`e2e-ci` targets set `"cache": false`; Cypress binary cache added to `e2e.yml`.
@@ -122,8 +137,8 @@ pie title TODO Status (March 7, 2026)
   - All three brokers included in topology API and rendered equally with consistent descriptions.
 - ngVLA timing integrity and RFI/EMC observability tracks. _(schema extended, basic audits & UI metrics implemented; quality‑gate enforcement added with unit, controller and e2e tests; Prometheus counter `etl_quality_gate_failures_total` added and audit events published to control plane for persistence)_
 - [DONE] VO interoperability (MG‑3) — backend VO-1..VO-6 complete; frontend typed subforms, provider selector, 5-tab detail, VOTable renderer, auto-fill samples, all complete 2026-03-07.
-- [SPRINT 3] Commissioning/AIV scenario test profile scaffolding and acceptance gate logic. (MG‑4)
-- [SPRINT 3] Archive DR replication tooling, restore‑drill tests, and policy documentation. (MG‑5)
+- [DONE] Commissioning/AIV scenario test profile scaffolding and acceptance gate logic. (MG‑4)
+- [DONE] Archive DR replication tooling, restore‑drill tests, and policy documentation. (MG‑5)
 - [SPRINT 4] Transient alert path SLO metrics, UI indicators, and replay controls. (MG‑6)
 
 ### Medium

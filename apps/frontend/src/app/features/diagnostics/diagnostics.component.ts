@@ -8,6 +8,7 @@ import { Subscription } from "rxjs";
 import { switchMap } from "rxjs/operators";
 import { interval } from "rxjs";
 import {
+  CommissioningScenario,
   DiagnosticsIndex,
   DockerServiceStatus,
   PulsarStatus,
@@ -39,6 +40,9 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   initialLoadSettled = false;
   // VO services
   // external-source preview removed from diagnostics; see Datasets / Viewer instead
+  commissioningScenarios: CommissioningScenario[] = [];
+  commissioningLoading = false;
+  commissioningError: string | null = null;
   private pollSubscription?: Subscription;
   private pollingMsSubscription?: Subscription;
 
@@ -56,6 +60,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     this.fetchPulsarStatus();
     this.fetchRabbitMQStatus();
     this.fetchTimingMetrics();
+    this.fetchCommissioningScenarios();
     this.startPolling();
   }
 
@@ -117,6 +122,50 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     // intentionally left blank - diagnostics no longer queries VO services
   }
   // intentionally left blank - diagnostics no longer fetches VO summaries
+
+  fetchCommissioningScenarios(): void {
+    this.commissioningLoading = true;
+    this.commissioningError = null;
+    if (this.dataSource.mode === "mock") {
+      this.commissioningScenarios = [
+        {
+          id: "antenna_calibration",
+          name: "Antenna Calibration",
+          type: "aiv",
+          description: "Mock: validates antenna calibration parameters.",
+          requiredParameters: ["antennaId", "targetFrequencyMHz", "pointingModelVersion"],
+        },
+        {
+          id: "timing_sync",
+          name: "Timing Synchronisation",
+          type: "aiv",
+          description: "Mock: validates timing reference synchronisation.",
+          requiredParameters: ["referenceElementId", "maxDriftNs", "syncProtocol"],
+        },
+        {
+          id: "rfi_baseline",
+          name: "RFI Baseline Survey",
+          type: "aiv",
+          description: "Mock: validates RFI environment baseline.",
+          requiredParameters: ["siteId", "frequencyRangeMHz", "maxOccupancyPercent"],
+        },
+      ];
+      this.commissioningLoading = false;
+      return;
+    }
+    this.http
+      .get<CommissioningScenario[]>("/api/v1/commissioning/scenarios")
+      .subscribe(
+        (res) => {
+          this.commissioningScenarios = res;
+          this.commissioningLoading = false;
+        },
+        (err) => {
+          this.commissioningError = String(err?.message || err);
+          this.commissioningLoading = false;
+        }
+      );
+  }
 
   fetchIndex() {
     this.loading = true;

@@ -174,20 +174,22 @@ timeline
 
 | Priority | Step |
 | --- | --- |
-| 🔴 | **MG-4** — Create commissioning/AIV scenario test profile: define scenario fixtures (antenna calibration, timing sync, RFI baseline), scaffold `CommissioningScenarioService` and acceptance gate logic |
-| 🔴 | **MG-4** — Controller endpoint `GET /api/v1/commissioning/scenarios` + `POST /api/v1/commissioning/validate`; controller and service unit tests |
-| 🔴 | **MG-5** — Archive DR replication tooling: `ArchiveDrService`, replication policy model, and restore-drill integration test using Testcontainers |
-| 🟡 | **MG-5** — DR policy documentation: `documentation/mission-closure/MG-5-DR-POLICY.md`, operator runbook for replicate/restore/verify cycle |
-| 🟡 | **MG-4** — Commissioning status badge/panel on Diagnostics page (scenario pass/fail surface) |
+| ✅ | **MG-4** — `CommissioningScenarioService` + 3 built-in AIV scenarios (antenna calibration, timing sync, RFI baseline) |
+| ✅ | **MG-4** — `GET /api/v1/commissioning/scenarios` + `POST /api/v1/commissioning/validate`; `CommissioningControllerTest` 4 tests |
+| ✅ | **MG-5** — `ArchiveDrService` + `ReplicationPolicy` + `RestoreDrillResult`; `ArchiveDrRestoreDrillTest` 5 tests |
+| ✅ | **MG-5** — `documentation/mission-closure/MG-5-DR-POLICY.md` with RPO/RTO, tier table, restore runbook, alerting |
+| ✅ | **MG-4** — Commissioning "Mission Gates" tab on Diagnostics page; 2 new spec tests |
 | 🟢 | Cross-link MG-4 and MG-5 into `NGVLA_MISSION_ALIGNMENT.md` with exit criteria |
 
 **Exit criteria:**
 
-- `POST /api/v1/commissioning/validate` returns pass/fail for a scenario fixture payload
-- DR restore-drill Testcontainers test passes in CI  
-- DR policy doc and runbook published under `documentation/mission-closure/`
-- Commissioning status panel visible on Diagnostics page
-- MG-4 and MG-5 marked closed in mission alignment docs
+- ✅ `POST /api/v1/commissioning/validate` returns pass/fail for a scenario fixture payload
+- ✅ DR restore-drill Testcontainers test passes in CI
+- ✅ DR policy doc and runbook published under `documentation/mission-closure/`
+- ✅ Commissioning status panel visible on Diagnostics page
+- ⬜ MG-4 and MG-5 marked closed in mission alignment docs (Sprint 4 cross-link)
+
+**Sprint 3 COMPLETE — Java: 73/73, Frontend: 200/200.**
 
 ---
 

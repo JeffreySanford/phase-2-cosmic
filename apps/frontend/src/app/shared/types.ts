@@ -27,3 +27,11 @@ export interface DockerServiceStatus {
   latencyMs?: number;
   icon?: string;
 }
+
+export interface CommissioningScenario {
+  id: string;
+  name: string;
+  type: string;
+  description: string;
+  requiredParameters: string[];
+}

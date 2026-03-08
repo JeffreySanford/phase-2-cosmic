@@ -138,6 +138,11 @@ describe("DiagnosticsComponent", () => {
     } catch {
       // ignore absence
     }
+    try {
+      httpMock.expectOne("/api/v1/commissioning/scenarios").flush([]);
+    } catch {
+      // ignore absence
+    }
     httpMock.verify();
     logSpy.mockRestore();
   });
@@ -309,5 +314,48 @@ describe("DiagnosticsComponent", () => {
     expect(comp.rabbitMQStatus.status).toBe("unavailable");
     expect(comp.rabbitMQStatus.connection).toBe("error");
     expect(comp.rabbitMQStatus.error).toBeDefined();
+  });
+
+  it("fetches commissioning scenarios on init", () => {
+    fixture.detectChanges();
+    httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
+    httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
+
+    const commReq = httpMock.expectOne("/api/v1/commissioning/scenarios");
+    commReq.flush([
+      {
+        id: "antenna_calibration",
+        name: "Antenna Calibration",
+        type: "aiv",
+        description: "Validates antenna calibration parameters.",
+        requiredParameters: ["antennaId", "targetFrequencyMHz", "pointingModelVersion"],
+      },
+      {
+        id: "timing_sync",
+        name: "Timing Synchronisation",
+        type: "aiv",
+        description: "Validates timing reference synchronisation.",
+        requiredParameters: ["referenceElementId", "maxDriftNs", "syncProtocol"],
+      },
+    ]);
+
+    expect(comp.commissioningScenarios.length).toBe(2);
+    expect(comp.commissioningScenarios[0].id).toBe("antenna_calibration");
+    expect(comp.commissioningScenarios[1].id).toBe("timing_sync");
+    expect(comp.commissioningLoading).toBe(false);
+    expect(comp.commissioningError).toBeNull();
+  });
+
+  it("handles commissioning scenarios fetch error gracefully", () => {
+    fixture.detectChanges();
+    httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
+    httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
+
+    const commReq = httpMock.expectOne("/api/v1/commissioning/scenarios");
+    commReq.error(new ErrorEvent("service unavailable"));
+
+    expect(comp.commissioningScenarios.length).toBe(0);
+    expect(comp.commissioningLoading).toBe(false);
+    expect(comp.commissioningError).toBeDefined();
   });
 });
