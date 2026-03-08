@@ -11,31 +11,28 @@
       <button mat-raised-button class="btn-filter" (click)="toggleFilter()">Filter</button>
       <button mat-raised-button class="btn-clear" (click)="clearCompleted()">Clear completed</button>
       <mat-checkbox [(ngModel)]="showCompleted" color="primary">Show completed</mat-checkbox>
+      <span class="scanner-inline">
+        <mat-icon class="scanner-inline__icon">radar</mat-icon>
+        <span class="scanner-inline__label">Scanner</span>
+        <span class="scanner-inline__value">{{ scannerIntervalSeconds ?? 5 }}s</span>
+        <input
+          type="range"
+          min="1"
+          max="60"
+          step="1"
+          class="scanner-inline__range"
+          [(ngModel)]="scannerIntervalSeconds"
+          (change)="setScannerInterval()"
+          aria-label="Scan interval in seconds"
+        />
+        <span class="scanner-inline__stat">Scanned&nbsp;<strong>{{ scannedCount }}</strong></span>
+        <span class="scanner-inline__sep">·</span>
+        <span class="scanner-inline__stat">Dispatched&nbsp;<strong>{{ dispatchedCount }}</strong></span>
+      </span>
       <span class="spacer"></span>
       <div *ngIf="loading" class="loading-inline">
         <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
       </div>
-    </div>
-
-    <div class="scanner-bar">
-      <mat-icon class="scanner-bar__icon">radar</mat-icon>
-      <span class="scanner-bar__label">Dispatch Scanner</span>
-      <span class="scanner-bar__value">{{ scannerIntervalSeconds ?? 5 }}s</span>
-      <input
-        type="range"
-        min="1"
-        max="60"
-        step="1"
-        class="scanner-bar__range"
-        [(ngModel)]="scannerIntervalSeconds"
-        (change)="setScannerInterval()"
-        aria-label="Scan interval in seconds"
-      />
-      <span class="scanner-bar__counts">
-        <span class="scanner-bar__stat">Scanned <strong>{{ scannedCount }}</strong></span>
-        <span class="scanner-bar__sep">·</span>
-        <span class="scanner-bar__stat">Dispatched <strong>{{ dispatchedCount }}</strong></span>
-      </span>
     </div>
 
     <div *ngIf="filterVisible" class="filter-panel">
