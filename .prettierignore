@@ -6,3 +6,4 @@
 .angular
 pnpm-lock.yaml
 pnpm-store
+apps/java-governance/target
