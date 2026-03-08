@@ -102,6 +102,35 @@ function createEmbeddedJob(
   };
 }
 
+// Seed the embedded job store with realistic dev-mode jobs so the Jobs view
+// is populated immediately without requiring a running Java backend.
+{
+  const _now = Date.now();
+  const _seed = (
+    workflow: string,
+    status: string,
+    datasetId: string,
+    minsAgo: number
+  ): EmbeddedJobRecord => {
+    const createdAt = new Date(_now - minsAgo * 60_000).toISOString();
+    const j = createEmbeddedJob({ workflow, datasetId, requestedBy: "dev-seed" });
+    j.status = status;
+    j.createdAt = createdAt;
+    j.updatedAt = createdAt;
+    j.logs = [`${createdAt} job created`, `${createdAt} status=${status}`];
+    return j;
+  };
+  for (const j of [
+    _seed("import",        "COMPLETED", "ds-2026-alpha-001", 120),
+    _seed("vo.cone-search", "COMPLETED", "ds-2026-alpha-002",  90),
+    _seed("ingest",         "RUNNING",   "ds-2026-alpha-003",  45),
+    _seed("export",         "QUEUED",    "ds-2026-alpha-004",  10),
+    _seed("diagnostics",    "FAILED",    "ds-2026-alpha-005",  60),
+  ]) {
+    embeddedJobStore.set(j.jobId, j);
+  }
+}
+
 type RuntimeProfileSpec = {
   workers: number;
   ratePerWorker: number;
@@ -1677,26 +1706,59 @@ export class AppController {
     }
     // ── Jobs mocks ───────────────────────────────────────────────────────────
     if (path === "/api/v1/jobs" && method === "GET") {
-      res.json([]);
-      return;
-    }
-    if (path.match(/^\/api\/v1\/jobs\/[^/]+$/) && method === "GET") {
-      const jobId = path.split("/").pop() ?? "unknown";
-      res.status(404).json({ error: "job_not_found", id: jobId });
+      const jobs = Array.from(embeddedJobStore.values()).sort((a, b) =>
+        (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+      );
+      res.json(jobs);
       return;
     }
     if (path === "/api/v1/jobs" && method === "POST") {
-      const body = (req as any).body ?? {};
+      const payload =
+        (req as any).body && typeof (req as any).body === "object"
+          ? ((req as any).body as Record<string, unknown>)
+          : {};
+      const job = createEmbeddedJob(payload);
+      embeddedJobStore.set(job.jobId, job);
       res.status(201).json({
-        jobId: "job-" + Math.random().toString(36).slice(2, 10),
-        status: "QUEUED",
-        queuedAt: new Date().toISOString(),
-        workflow: body["workflow"] ?? "unknown",
+        jobId: job.jobId,
+        status: job.status,
+        queuedAt: job.createdAt,
       });
       return;
     }
     if (path === "/api/v1/jobs/types" && method === "GET") {
-      res.json(["ingest", "export", "calibrate", "archive", "validate"]);
+      res.json(["import", "ingest", "export", "diagnostics", "cleanup"]);
+      return;
+    }
+    if (path.match(/^\/api\/v1\/jobs\/[^/]+$/) && method === "GET") {
+      const jobId = path.split("/").pop() ?? "unknown";
+      const job = embeddedJobStore.get(jobId);
+      if (!job) {
+        res.status(404).json({ error: "not_found", jobId });
+        return;
+      }
+      res.json(job);
+      return;
+    }
+    if (path.match(/^\/api\/v1\/jobs\/[^/]+$/) && method === "DELETE") {
+      const jobId = path.split("/").pop() ?? "unknown";
+      embeddedJobStore.delete(jobId);
+      res.status(204).send();
+      return;
+    }
+    if (path.match(/^\/api\/v1\/jobs\/[^/]+\/transition$/) && method === "POST") {
+      const jobId = path.split("/").slice(-2)[0];
+      const job = embeddedJobStore.get(jobId);
+      if (!job) {
+        res.status(404).json({ error: "not_found", jobId });
+        return;
+      }
+      const body = (req as any).body ?? {};
+      const targetStatus = (body["targetStatus"] as string | undefined) ?? "RUNNING";
+      job.status = targetStatus as EmbeddedJobRecord["status"];
+      job.updatedAt = new Date().toISOString();
+      embeddedJobStore.set(jobId, job);
+      res.json(job);
       return;
     }
     // ── Admin dispatch mock ──────────────────────────────────────────────────
@@ -1710,7 +1772,7 @@ export class AppController {
       res.json({ intervalSeconds });
       return;
     }
-    const targetUrls = baseCandidates.map((b) => `${b}${req.originalUrl}`);
+    const targetUrls = this.governanceBaseCandidates().map((b) => `${b}${req.originalUrl}`);
     try {
       const headers = new Headers();
       Object.entries(req.headers || {}).forEach(([k, v]) => {
