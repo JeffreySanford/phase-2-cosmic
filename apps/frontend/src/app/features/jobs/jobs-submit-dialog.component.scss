@@ -31,3 +31,48 @@ mat-form-field {
   gap: 8px;
   margin-top: 16px;
 }
+
+/* VO auto-fill bar */
+.vo-autofill-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 4px;
+
+  .vo-sample-hint {
+    font-size: 0.82rem;
+    color: #666;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* VO reactive subform */
+.vo-form {
+  display: block;
+  margin-top: 8px;
+
+  mat-form-field {
+    margin-bottom: 8px;
+  }
+
+  .coord-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+
+    mat-form-field {
+      flex: 1 1 120px;
+      min-width: 100px;
+    }
+  }
+
+  mat-checkbox {
+    display: block;
+    margin: 4px 0 12px 0;
+  }
+}

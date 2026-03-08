@@ -6,6 +6,7 @@ import { of, EMPTY } from "rxjs";
 import { HttpErrorResponse } from "@angular/common/http";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatSnackBarModule } from "@angular/material/snack-bar";
+import { MatCheckboxModule } from "@angular/material/checkbox";
 import { HttpClientTestingModule } from "@angular/common/http/testing";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
@@ -89,6 +90,7 @@ describe("JobsComponent", () => {
         HttpClientTestingModule,
         MatDialogModule,
         MatSnackBarModule,
+        MatCheckboxModule,
         FormsModule,
         ReactiveFormsModule,
       ],
@@ -176,5 +178,95 @@ describe("JobsComponent", () => {
       parameters: { deferred: true },
     } as JobStatus;
     expect(component.isDeferred(job)).toBe(true);
+  });
+
+  it("filteredJobs returns all jobs when showCompleted is true", () => {
+    component.jobs = [
+      { jobId: "a", workflow: "x", status: "COMPLETED" } as JobStatus,
+      { jobId: "b", workflow: "x", status: "QUEUED" } as JobStatus,
+      { jobId: "c", workflow: "x", status: "FAILED" } as JobStatus,
+    ];
+    component.showCompleted = true;
+    expect(component.filteredJobs.length).toBe(3);
+  });
+
+  it("filteredJobs hides terminal-state jobs when showCompleted is false", () => {
+    component.jobs = [
+      { jobId: "a", workflow: "x", status: "COMPLETED" } as JobStatus,
+      { jobId: "b", workflow: "x", status: "QUEUED" } as JobStatus,
+      { jobId: "c", workflow: "x", status: "FAILED" } as JobStatus,
+      { jobId: "d", workflow: "x", status: "CANCELED" } as JobStatus,
+      { jobId: "e", workflow: "x", status: "RUNNING" } as JobStatus,
+      { jobId: "f", workflow: "x", status: "TIMED_OUT" } as JobStatus,
+    ];
+    component.showCompleted = false;
+    const visible = component.filteredJobs;
+    expect(visible.length).toBe(2);
+    expect(visible.map((j) => j.jobId)).toEqual(["b", "e"]);
+  });
+
+  it("filteredJobs reflects live jobs from the service when showCompleted is false", () => {
+    // jobs loaded in ngOnInit via StubJobsService returns a single QUEUED job
+    component.showCompleted = false;
+    fixture.detectChanges();
+    expect(component.filteredJobs.length).toBe(1);
+    expect(component.filteredJobs[0].status).toBe("QUEUED");
+  });
+
+  it("clearCompleted removes terminal jobs via deleteJob and updates the list", () => {
+    component.jobs = [
+      { jobId: "done1", workflow: "x", status: "COMPLETED" } as JobStatus,
+      { jobId: "running", workflow: "x", status: "RUNNING" } as JobStatus,
+      { jobId: "done2", workflow: "x", status: "FAILED" } as JobStatus,
+    ];
+    const deleteSpy = jest
+      .spyOn(component["jobsSvc"], "deleteJob")
+      .mockReturnValue(of(undefined));
+    const snackSpy = jest.spyOn(component["snackBar"], "open");
+
+    component.clearCompleted();
+
+    expect(deleteSpy).toHaveBeenCalledTimes(2);
+    expect(deleteSpy).toHaveBeenCalledWith("done1");
+    expect(deleteSpy).toHaveBeenCalledWith("done2");
+    expect(component.jobs.length).toBe(1);
+    expect(component.jobs[0].jobId).toBe("running");
+    expect(snackSpy).toHaveBeenCalledWith(
+      "Cleared 2 completed job(s)",
+      undefined,
+      { duration: 5000 }
+    );
+  });
+
+  it("clearCompleted notifies when there are no completed jobs", () => {
+    component.jobs = [
+      { jobId: "running", workflow: "x", status: "RUNNING" } as JobStatus,
+    ];
+    const snackSpy = jest.spyOn(component["snackBar"], "open");
+    component.clearCompleted();
+    expect(snackSpy).toHaveBeenCalledWith(
+      "No completed jobs to clear",
+      undefined,
+      { duration: 3000 }
+    );
+  });
+
+  it("clearCompleted also collapses if the selected job is among the cleared ones", () => {
+    const selectedJob: JobStatus = {
+      jobId: "done1",
+      workflow: "x",
+      status: "COMPLETED",
+    } as JobStatus;
+    component.jobs = [selectedJob];
+    component.selectedJob = selectedJob;
+    component.expandedJobId = "done1";
+    jest
+      .spyOn(component["jobsSvc"], "deleteJob")
+      .mockReturnValue(of(undefined));
+
+    component.clearCompleted();
+
+    expect(component.selectedJob).toBeNull();
+    expect(component.expandedJobId).toBeNull();
   });
 });

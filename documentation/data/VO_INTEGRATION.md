@@ -324,14 +324,14 @@ Recommended chain patterns:
 - `vo.datalink.resolve`
 - `vo.product.fetch`
 
-2. image cutout chain
+1. image cutout chain
 
 - `vo.obscore.search`
 - `vo.datalink.resolve`
 - `vo.soda.cutout`
 - optional `vo.preview.fetch`
 
-3. catalog harvest chain
+1. catalog harvest chain
 
 - `vo.cone-search`
 - `vo.votable.fetch`

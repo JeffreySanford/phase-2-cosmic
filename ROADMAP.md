@@ -109,6 +109,154 @@ timeline
 - Ongoing tracks: testing coverage, documentation synchronization, messaging docs parity, quarterly performance benchmarks.
 - Ongoing tracks: execution-layer documentation alignment and broken-link normalization for canonical docs.
 
+---
+
+## Sprint Plan — PI-1 / PI-2 (Mar – May 2026)
+
+> 2-week sprints. PI-1 = Sprints 1–4 (Mar–Apr 2026). PI-2 = Sprints 5–6 (May 2026).
+> Priority legend: 🔴 High · 🟡 Medium · 🟢 Low
+
+---
+
+### Sprint 1 · Mar 7–21, 2026 — Console Stability & SSE Integration
+
+**Why:** Three live browser console errors degrade developer confidence and demo readiness today. The `broker-events` SSE 404 means operators receive no live job notifications despite the Kafka/RabbitMQ/Pulsar work being complete. The `vo/cached-samples` 404 fires a polling loop on every VO dialog open against a non-existent endpoint. The `aria-hidden` focus warning is an accessibility regression introduced by the Material dialog overlay. All three are cheap to fix and unblock clean demo runs.
+
+| Priority | Step |
+| --- | --- |
+| 🔴 | Add `GET /api/v1/broker-events` SSE endpoint (or ensure it is reachable via proxy) and add mock server handler so SSE stream resolves in dev |
+| 🔴 | Implement or stub `GET /api/v1/vo/cached-samples` in the Java backend (returns a curated list of sample VO payloads per workflow type); add mock server handler |
+| 🟡 | Fix `aria-hidden` focus trap — remove `aria-hidden="true"` from `<app-root>` while a dialog is open; use Angular CDK `inert` strategy instead |
+| 🟢 | Audit remaining `console.warn` / `console.error` noise and suppress or gate behind devMode flag |
+
+**Exit criteria:**
+
+- Browser console is clean on page load and on VO submit dialog open
+- Broker SSE stream connects and delivers at least one heartbeat/event in dev
+- VO dialog populates cached samples without 404
+- No `aria-hidden` warning on button focus
+- All 50 backend tests + 193 frontend tests continue to pass ✅ _(197 frontend / 53 Java as of 2026-03-07)_
+- Unit tests added for S1-1 (SSE headers, connected event, interval cleanup) and S1-2 (`ariaModal` provider) ✅
+- Jobs toolbar buttons all visible with distinct vibrant colors (`mat-raised-button` + MDC palette) ✅
+
+---
+
+### Sprint 2 · Mar 21 – Apr 4, 2026 — CI Hardening & Flaky Suite Migration (PI-1 Sprint 3/4)
+
+**Why:** PI-1 Sprint 3 target is flaky-suite migration; Sprint 4 is CI gating. Cypress has known cache/runtime issues that block e2e confidence in both local and CI runs. Without a stable PR gate, future feature merges carry unchecked regression risk. This sprint closes PI-1's testing goals and installs the quality gate that all subsequent sprints depend on.
+
+| Priority | Step |
+| --- | --- |
+| 🔴 | Cypress runtime/cache remediation — identify root cause, fix in `frontend-e2e` config; re-enable `datasets-provenance.cy.ts` in smoke path |
+| 🔴 | Add negative-path tests for RabbitMQ and Pulsar status endpoints (`/api/v1/rabbitmq/status`, `/api/v1/pulsar/status` when broker is down) |
+| 🔴 | Configure CI nightly lane: PR gate (unit + smoke e2e), nightly lane (full e2e + integration tests) |
+| 🟡 | Add job lifecycle edge-case coverage: manifest, lineage, retry, and cancel controller/service paths |
+| 🟡 | Enforce coverage thresholds (Java JaCoCo, frontend Istanbul) with pipeline failure on regression |
+| 🟢 | Publish JaCoCo HTML report as CI artifact; link from PR summary |
+
+**Exit criteria:**
+
+- `pnpm run e2e` completes cleanly in CI without cache errors
+- `datasets-provenance.cy.ts` is in the smoke lane and passes
+- PR gate blocks merges on unit test failure or coverage drop
+- Nightly lane runs full integration suite and publishes report
+- RabbitMQ/Pulsar negative-path tests added and green
+
+---
+
+### Sprint 3 · Apr 4–18, 2026 — Mission Closure MG-4 & MG-5
+
+**Why:** MG-3 (VO interoperability) closed on Mar 7. MG-4 (Commissioning/AIV readiness) and MG-5 (Archive DR replication) are the next open mission oversight gates. Commissioning scenario coverage proves the platform can model real observatory AIV readiness checks before data-taking begins. DR tooling ensures dataset survival under failure — a prerequisite for any production-adjacent review. Neither has a code baseline yet.
+
+| Priority | Step |
+| --- | --- |
+| 🔴 | **MG-4** — Create commissioning/AIV scenario test profile: define scenario fixtures (antenna calibration, timing sync, RFI baseline), scaffold `CommissioningScenarioService` and acceptance gate logic |
+| 🔴 | **MG-4** — Controller endpoint `GET /api/v1/commissioning/scenarios` + `POST /api/v1/commissioning/validate`; controller and service unit tests |
+| 🔴 | **MG-5** — Archive DR replication tooling: `ArchiveDrService`, replication policy model, and restore-drill integration test using Testcontainers |
+| 🟡 | **MG-5** — DR policy documentation: `documentation/mission-closure/MG-5-DR-POLICY.md`, operator runbook for replicate/restore/verify cycle |
+| 🟡 | **MG-4** — Commissioning status badge/panel on Diagnostics page (scenario pass/fail surface) |
+| 🟢 | Cross-link MG-4 and MG-5 into `NGVLA_MISSION_ALIGNMENT.md` with exit criteria |
+
+**Exit criteria:**
+
+- `POST /api/v1/commissioning/validate` returns pass/fail for a scenario fixture payload
+- DR restore-drill Testcontainers test passes in CI  
+- DR policy doc and runbook published under `documentation/mission-closure/`
+- Commissioning status panel visible on Diagnostics page
+- MG-4 and MG-5 marked closed in mission alignment docs
+
+---
+
+### Sprint 4 · Apr 18 – May 2, 2026 — MG-6 Transient Alerts + Canonical Event Envelope
+
+**Why:** MG-6 (transient/low-latency alert SLOs) closes the last of the six mission oversight gaps. Simultaneously, the canonical execution event envelope is the prerequisite for the Phase 3 Trident gateway work — without a shared cross-broker event schema and correlation discipline, Sprint 5's Trident domain model cannot be built safely. These two items are linked: MG-6 alert replay requires the same correlation/envelope primitives as the Trident execution layer.
+
+| Priority | Step |
+| --- | --- |
+| 🔴 | **MG-6** — Transient alert path: SLO metric counters (`alert_ingested_total`, `alert_latency_ms`), alert state model, and Prometheus scrape integration |
+| 🔴 | **MG-6** — Jobs/Diagnostics UI: alert SLO indicator panel and replay-from-DLQ button wired to existing DLQ endpoint |
+| 🔴 | Canonical execution event envelope schema: `CorrelationId`, `EventType`, `OriginBroker`, `Timestamp`, `Payload`; JSON Schema + Java record definition |
+| 🟡 | Broker role partitioning: assign Kafka = audit/replay, RabbitMQ = control commands, Pulsar = federated delivery; document in `BROKER_SAFETY_RUNBOOK.md` |
+| 🟡 | Integration tests: correlation ID propagation across brokers; idempotent delivery proof |
+| 🟢 | MG-6 SLO dashboard panel in Grafana compose stack |
+
+**Exit criteria:**
+
+- All six mission oversight gates (MG-1..MG-6) marked closed in `NGVLA_MISSION_ALIGNMENT.md`
+- Alert SLO metrics appear in `/api/v1/telemetry` and Prometheus scrape
+- Replay-from-DLQ button functional in UI
+- Canonical event schema published with version identifier
+- Correlation ID propagation test passes across Kafka, RabbitMQ, and Pulsar paths
+
+---
+
+### Sprint 5 · May 2–16, 2026 — Trident Domain Model & Gateway Contracts
+
+**Why:** Phase 3/5A Trident gateway integration is the next major architectural layer. Defining `SchedulingBlock`, `ExecutionBlock`, `SubarrayConfiguration`, `SpectralConfiguration`, and the FSP allocation model now unlocks the entire execution-layer API and mode-aware backend orchestration. Without versioned contracts first, subsequent executor and backend fan-out work will be built on shifting foundations. This sprint is contract-first to enable parallel downstream work.
+
+| Priority | Step |
+| --- | --- |
+| 🔴 | Define and version JSON Schemas for `SchedulingBlock`, `ExecutionBlock`, `SubarrayConfiguration`, `SpectralConfiguration`, `FspAllocationPlan` |
+| 🔴 | Java domain records for each entity; `SchemaService` extended with Trident schema builtins |
+| 🔴 | Gateway-side FSP allocator simulator: subarray contention detection, incompatible spectral plan rejection, finite-capacity guard; unit tests for all error paths |
+| 🟡 | Execution-layer API stub: `POST /api/v1/execution/plans` (validate), `POST /api/v1/execution/plans/{id}/apply` (apply with idempotency key) |
+| 🟡 | Mode-aware backend job template stubs: correlation, VLBI, pulsar-timing, pulsar-search — each returns a validated job template from a `SchedulingBlock` input |
+| 🟢 | Trident integration documentation: `documentation/trident/TRIDENT_GATEWAY.md` with contract schema versions and routing rules |
+
+**Exit criteria:**
+
+- All five Trident entity schemas versioned and resolvable by `SchemaService`
+- FSP allocator rejects contention and incompatible spectral plans with typed errors in tests
+- Execution plan API validates against schema and returns `planId`
+- Mode routing returns correct backend job template for each of four modes
+- Contract tests for all entities pass in Maven verify
+
+---
+
+### Sprint 6 · May 16–30, 2026 — Security Hardening & Phase 4 Auth Enforcement
+
+**Why:** Phase 4 security hardening is the final gap before this platform can support any production-adjacent demo or external review. `AuthFilter` currently runs in dev-permissive mode. Without enforced RBAC, replay protection, and an immutable audit trail, the institutional trust and audit mission outcome is only partially satisfied — the architecture is present but unenforced. This sprint moves from baseline scaffolding to enforced policy, and adds the rate-limiting layer that protects the job submission and ingest hotpaths.
+
+| Priority | Step |
+| --- | --- |
+| 🔴 | Upgrade `AuthFilter` from dev-permissive to enforced mode: validate JWT claims, enforce role-based policy rules (`OPERATOR`, `SCIENTIST`, `ADMIN`); negative-path auth tests for each role boundary |
+| 🔴 | Replay/idempotency protection on job submission (`POST /api/v1/jobs`) and execution apply endpoint — reject duplicate `idempotencyKey` with 409 |
+| 🔴 | Immutable audit log enforcement: job state transitions append-only; rewrite/delete of audit records returns 405; audit log integrity test |
+| 🟡 | Rate limiting on `POST /api/v1/jobs` and `/api/v1/ingest` (token bucket, configurable per-role limits) |
+| 🟡 | Security posture documentation update: `documentation/security/SECURITY_POSTURE.md` revised with enforcement status, threat model delta, and OWASP Top 10 mapping |
+| 🟢 | Frontend auth error handling: display 401/403 error states in Jobs and Diagnostics rather than silent failure or spinner hang |
+
+**Exit criteria:**
+
+- Requests with missing, malformed, or unauthorized JWTs receive 401/403 (not 200)
+- Duplicate `idempotencyKey` submissions return 409; no duplicate job records created
+- Audit log append-only constraint verified by test (PUT/DELETE return 405)
+- Rate limiting test demonstrates throttling at configured threshold
+- All new security paths covered by unit tests and at least one negative-path integration test
+- Security posture doc updated with OWASP coverage status
+
+---
+
 ## Completed
 
 - Phase 2 streaming-to-governance integration: Kafka, RabbitMQ, Pulsar ingest implementations, test matrix, DLQ safety and SSE endpoint ✅

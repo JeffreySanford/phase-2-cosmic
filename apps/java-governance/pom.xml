@@ -77,11 +77,15 @@
       </exclusions>
     </dependency>
     <!-- JSON Schema validation -->
-    <!-- JSON Schema validation: runtime reflection used; remove compile-time Everit dep to avoid build failures when artifact unavailable -->
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
       <version>20220320</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.erosb</groupId>
+      <artifactId>everit-json-schema</artifactId>
+      <version>1.14.4</version>
     </dependency>
     <!-- Kafka integration for ingest events -->
     <dependency>

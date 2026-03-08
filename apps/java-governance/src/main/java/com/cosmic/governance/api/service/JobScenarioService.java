@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class JobScenarioService {
     private static final List<String> SAMPLE_WORKFLOWS = List.of(
-            "validate", "transform", "archive", "snapshot", "analyze"
+            "ingest", "export", "reindex", "cleanup", "diagnostics"
     );
 
     private final JobService jobService;

@@ -16,6 +16,8 @@ describe("VoService", () => {
     });
     service = TestBed.inject(VoService);
     httpMock = TestBed.inject(HttpTestingController);
+    // Flush the constructor's one-shot cached-samples load
+    httpMock.expectOne("/api/v1/vo/cached-samples").flush({});
   });
 
   afterEach(() => {

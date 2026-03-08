@@ -6,61 +6,199 @@
   gap: 8px;
   align-items: center;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
+
+// ─── Toolbar button palette ─────────────────────────────────────────────────
+// Each button has a distinct vibrant color so all are clearly visible on the
+// white card background. Uses MDC protected-button CSS custom properties.
+.btn-new-job {
+  --mdc-protected-button-container-color: #1565c0;
+  --mdc-protected-button-label-text-color: #fff;
+}
+
+.btn-add-jobs {
+  --mdc-protected-button-container-color: #f57c00;
+  --mdc-protected-button-label-text-color: #fff;
+}
+
+.btn-refresh {
+  --mdc-protected-button-container-color: #2e7d32;
+  --mdc-protected-button-label-text-color: #fff;
+}
+
+.btn-deferred {
+  --mdc-protected-button-container-color: #6a1b9a;
+  --mdc-protected-button-label-text-color: #fff;
+}
+
+.btn-filter {
+  --mdc-protected-button-container-color: #00838f;
+  --mdc-protected-button-label-text-color: #fff;
+}
+
+.btn-clear {
+  --mdc-protected-button-container-color: #c62828;
+  --mdc-protected-button-label-text-color: #fff;
+}
+
 .spacer {
   flex: 1 1 auto;
 }
+
 .mono {
   font-family: monospace;
   font-size: 0.9rem;
 }
-.submit {
-  margin-top: 12px;
-}
-.submit .payload {
-  width: 100%;
-}
+
 .payload {
   white-space: pre-wrap;
 }
 
+// ─── Legend ──────────────────────────────────────────────────────────────────
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: token(radii, md);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.legend-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.6;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.legend-label {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+// ─── Job card grid ────────────────────────────────────────────────────────────
 .job-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: token(spacing, md);
 }
 
 .job-card {
   @extend %vibrant-card;
-  padding: token(spacing, md);
-  transition: transform token(transitions, fast) ease,
-    box-shadow token(transitions, medium) ease;
+  border-left: 4px solid #78909c; // default/fallback; overridden via [ngStyle]
+  border-radius: token(radii, md);
   display: flex;
   flex-direction: column;
-  gap: token(spacing, sm);
+  overflow: hidden;
+  transition: box-shadow token(transitions, medium) ease,
+    transform token(transitions, fast) ease;
 }
 
 .job-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 18px 40px rgba(2, 54, 70, 0.16);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
 }
 
-.job-card .meta {
+.job-card--expanded {
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+}
+
+// ─── Collapsed header ────────────────────────────────────────────────────────
+.meta {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: token(spacing, sm);
+  align-items: center;
+  padding: 12px 14px;
+  cursor: pointer;
+  gap: 8px;
+  user-select: none;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
 }
 
-.job-card .meta .status {
-  font-weight: 600;
-  color: token(colors, accent-3);
+.meta-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
-.job-card .job-id {
-  opacity: 0.72;
+.meta-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
+.details-toggle {
+  min-width: 0;
+}
+
+.workflow-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.job-card .title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: token(colors, text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.job-id {
+  opacity: 0.65;
+  font-size: 0.78rem;
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  opacity: 0.55;
+  font-size: 20px;
+  transition: transform token(transitions, fast) ease;
+}
+
+.job-card--expanded .chevron {
+  opacity: 0.85;
+}
+
+// ─── Status badges ───────────────────────────────────────────────────────────
 .status-block {
   display: flex;
   flex-direction: column;
@@ -68,18 +206,104 @@
   gap: 4px;
 }
 
+.status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+
+  &.status--queued {
+    background: rgba(255, 214, 0, 0.15);
+    color: #ffd600;
+    border: 1px solid rgba(255, 214, 0, 0.3);
+  }
+  &.status--running {
+    background: rgba(0, 188, 212, 0.15);
+    color: #00bcd4;
+    border: 1px solid rgba(0, 188, 212, 0.3);
+  }
+  &.status--completed {
+    background: rgba(0, 230, 118, 0.15);
+    color: #00e676;
+    border: 1px solid rgba(0, 230, 118, 0.3);
+  }
+  &.status--failed {
+    background: rgba(255, 23, 68, 0.15);
+    color: #ff1744;
+    border: 1px solid rgba(255, 23, 68, 0.3);
+  }
+  &.status--canceled {
+    background: rgba(120, 144, 156, 0.15);
+    color: #90a4ae;
+    border: 1px solid rgba(120, 144, 156, 0.3);
+  }
+  &.status--timed_out {
+    background: rgba(255, 145, 0, 0.15);
+    color: #ff9100;
+    border: 1px solid rgba(255, 145, 0, 0.3);
+  }
+}
+
 .deferred {
   border: 1px solid rgba(255, 190, 92, 0.4);
   border-radius: 999px;
   color: #d18a1b;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   padding: 2px 8px;
+}
+
+// ─── Expanded card body ───────────────────────────────────────────────────────
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: token(spacing, sm);
+  padding: 0 14px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  animation: fadeIn 0.18s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.shimmer {
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 188, 212, 0),
+    rgba(0, 188, 212, 0.5),
+    rgba(0, 188, 212, 0)
+  );
+  border-radius: 999px;
+  overflow: hidden;
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  margin-top: 8px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  margin-top: 8px;
 }
 
 .summary-item {
@@ -93,28 +317,10 @@
 }
 
 .summary-item .label {
-  opacity: 0.7;
-  font-size: 0.75rem;
+  opacity: 0.6;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.job-card .title {
-  font-weight: 700;
-  color: token(colors, text);
-}
-
-.shimmer {
-  height: 6px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.03),
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.03)
-  );
-  border-radius: 999px;
-  overflow: hidden;
-  animation: shimmer 1.6s linear infinite;
+  letter-spacing: 0.05em;
 }
 
 .job-actions {
@@ -124,8 +330,8 @@
 }
 
 .job-detail {
-  border-top: 1px solid rgba(2, 54, 70, 0.12);
-  margin-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin-top: 8px;
   padding-top: 10px;
 }
 
@@ -148,22 +354,38 @@
 
 .logs pre {
   margin: 0 0 6px;
+  font-size: 0.8rem;
+  opacity: 0.85;
 }
 
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
+// ─── Empty state ──────────────────────────────────────────────────────────────
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 20px;
+  opacity: 0.65;
+  text-align: center;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
   }
 }
 
+// ─── Filter panel ─────────────────────────────────────────────────────────────
+.filter-panel {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: token(radii, sm);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+// ─── Responsive ───────────────────────────────────────────────────────────────
 @media (max-width: 720px) {
-  .toolbar {
-    flex-wrap: wrap;
-  }
-
   .job-cards {
     grid-template-columns: 1fr;
   }
@@ -171,4 +393,89 @@
   .summary-grid {
     grid-template-columns: 1fr;
   }
+
+  .legend-items {
+    gap: 8px;
+  }
+}
+
+// ─── VOTable result grid ──────────────────────────────────────────────────────
+.section-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: token(colors, muted);
+  margin: 12px 0 6px;
+}
+
+.votable-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: token(radii, sm);
+  max-height: 320px;
+  overflow-y: auto;
+
+  .votable-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+
+    th {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 6px 10px;
+      text-align: left;
+      white-space: nowrap;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    td {
+      padding: 4px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      white-space: nowrap;
+      max-width: 240px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+}
+
+.product-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+    a {
+      color: token(colors, accent);
+      font-size: 0.85rem;
+    }
+  }
+}
+
+.mime-badge {
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: token(colors, muted);
+}
+
+.empty-inline {
+  color: token(colors, muted);
+  font-size: 0.85rem;
+  padding: 8px 0;
 }

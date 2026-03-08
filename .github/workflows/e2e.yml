@@ -26,6 +26,12 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
       - name: Enable corepack (pnpm)
         run: |
           corepack enable
@@ -41,6 +47,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-binary-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            cypress-binary-${{ runner.os }}-
+
       - name: Lint
         run: pnpm run lint
 
@@ -53,7 +67,9 @@ jobs:
           ./scripts/ci/preflight.sh
 
       - name: Unit tests
-        run: pnpm run unit-test
+        run: |
+          pnpm exec cross-env NX_NO_CLOUD=true pnpm nx run-many --target=test --projects=frontend,ui-theme --configuration=ci --parallel=false
+          mvn -f apps/java-governance/pom.xml -T 1C test
 
       - name: OpenAPI + fixture validation
         run: pnpm run openapi-validate

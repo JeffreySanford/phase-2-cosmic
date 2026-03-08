@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -55,6 +56,88 @@ public class VoController {
         if (tapUrl != null && !tapUrl.isBlank()) resp.put("tapUrl", tapUrl);
         if (dataLinkUrl != null && !dataLinkUrl.isBlank()) resp.put("dataLinkUrl", dataLinkUrl);
         return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/cached-samples")
+    public ResponseEntity<Map<String, Object>> cachedSamples() {
+        Map<String, Object> samples = new LinkedHashMap<>();
+        samples.put("vo.cone-search", sampleOf(
+                "provider", "SIMBAD",
+                "serviceUrl", "https://simbad.cds.unistra.fr/simbad/sim-tap/sync",
+                "target", "M42",
+                "ra", 83.8221,
+                "dec", -5.3911,
+                "radius", 0.5,
+                "format", "votable",
+                "liveMode", true,
+                "_description", "Cone search around Orion Nebula (M42), radius 0.5\u00b0"
+        ));
+        samples.put("vo.adql.query", sampleOf(
+                "provider", "HEASARC",
+                "tapUrl", "https://heasarc.gsfc.nasa.gov/xamin/tap/sync",
+                "adql", "SELECT TOP 10 target_name, ra, dec, exposure FROM chanmaster ORDER BY exposure DESC",
+                "limit", 10,
+                "liveMode", true,
+                "_description", "Top 10 longest Chandra observations (HEASARC TAP)"
+        ));
+        samples.put("vo.obscore.search", sampleOf(
+                "provider", "ESO",
+                "tapUrl", "https://archive.eso.org/tap_obs/sync",
+                "dataproductType", "image",
+                "spatialBoundsRa", 187.277915,
+                "spatialBoundsDec", 2.052389,
+                "spatialBoundsRadius", 0.5,
+                "limit", 20,
+                "liveMode", true,
+                "_description", "ESO ObsCore image search around quasar 3C 273 (r=0.5\u00b0)"
+        ));
+        samples.put("vo.votable.fetch", sampleOf(
+                "provider", "HEASARC",
+                "votableUrl", "https://heasarc.gsfc.nasa.gov/xamin/query?table=chanmaster&position=3c273&format=votable",
+                "format", "votable",
+                "liveMode", true,
+                "_description", "Chandra observations of quasar 3C 273 as VOTable"
+        ));
+        samples.put("vo.datalink.resolve", sampleOf(
+                "provider", "CADC",
+                "datalinkUrl", "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/datalink",
+                "datasetIdentifier", "ivo://cadc.nrc.ca/CFHT?2459817",
+                "liveMode", true,
+                "_description", "DataLink products for CFHT MegaCam observation 2459817"
+        ));
+        samples.put("vo.product.fetch", sampleOf(
+                "provider", "HEASARC",
+                "productUrl", "https://heasarc.gsfc.nasa.gov/FTP/chandra/data/byobsid/2/21843/primary/acisf21843N002_evt2.fits.gz",
+                "expectedMimeType", "application/fits",
+                "liveMode", true,
+                "_description", "Chandra ACIS event file \u2014 Cas A supernova remnant (obs 21843)"
+        ));
+        samples.put("vo.soda.cutout", sampleOf(
+                "provider", "CADC",
+                "sodaUrl", "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/soda",
+                "datasetIdentifier", "ivo://cadc.nrc.ca/CFHT?2459817",
+                "spatialBoundsRa", 187.277915,
+                "spatialBoundsDec", 2.052389,
+                "spatialBoundsRadius", 0.1,
+                "outputFormat", "fits",
+                "liveMode", true,
+                "_description", "CADC SODA cutout centered on 3C 273 (r=0.1\u00b0, CFHT obs 2459817)"
+        ));
+        samples.put("vo.preview.fetch", sampleOf(
+                "provider", "ESASky",
+                "previewUrl", "https://sky.esa.int/esasky-tap/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=votable&QUERY=SELECT+TOP+5+*+FROM+mv_xsa_obs+WHERE+target_name+LIKE+%2527%2525Crab%2525%2527",
+                "liveMode", true,
+                "_description", "ESASky XMM-Newton observations matching 'Crab' target (top 5)"
+        ));
+        return ResponseEntity.ok(samples);
+    }
+
+    private static Map<String, Object> sampleOf(Object... kvPairs) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (int i = 0; i + 1 < kvPairs.length; i += 2) {
+            map.put(String.valueOf(kvPairs[i]), kvPairs[i + 1]);
+        }
+        return map;
     }
 
     @GetMapping("/query")

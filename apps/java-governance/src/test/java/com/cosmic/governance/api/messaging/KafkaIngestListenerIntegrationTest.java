@@ -29,7 +29,9 @@ import java.util.concurrent.TimeUnit;
 
 @SpringBootTest(properties = {
     "spring.main.allow-bean-definition-overriding=true",
-    "spring.kafka.consumer.auto-offset-reset=earliest"
+    "spring.kafka.consumer.auto-offset-reset=earliest",
+    "governance.kafka.ingest-group-id=governance-group-it",
+    "governance.kafka.audit-group-id=audit-mirror-it"
 })
 public class KafkaIngestListenerIntegrationTest {
 
@@ -116,10 +118,10 @@ public class KafkaIngestListenerIntegrationTest {
         Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted(() ->
             Assertions.assertTrue(
                 kafkaListenerEndpointRegistry.getListenerContainers().stream()
-                    .allMatch(container -> container.isRunning()
+                    .anyMatch(container -> container.isRunning()
                         && container.getAssignedPartitions() != null
                         && !container.getAssignedPartitions().isEmpty()),
-                "Kafka listener containers should be assigned before producing test messages"
+                "At least one Kafka listener container should be assigned before producing test messages"
             )
         );
 

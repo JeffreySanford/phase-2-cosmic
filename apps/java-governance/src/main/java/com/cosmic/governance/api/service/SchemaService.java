@@ -24,7 +24,11 @@ public class SchemaService {
         }
         this.everitAvailable = available;
 
-        String[] builtins = new String[]{"ingest", "export", "reindex", "cleanup", "diagnostics"};
+        String[] builtins = new String[]{
+            "ingest", "export", "reindex", "cleanup", "diagnostics",
+            "vo.cone-search", "vo.adql.query", "vo.obscore.search", "vo.votable.fetch",
+            "vo.datalink.resolve", "vo.product.fetch", "vo.soda.cutout", "vo.preview.fetch"
+        };
         for (String t : builtins) {
             String path = "/schemas/" + t + ".json";
             try (InputStream is = getClass().getResourceAsStream(path)) {
@@ -59,7 +63,16 @@ public class SchemaService {
         if (s == null) return ValidationResult.ofNoSchema();
         if (!everitAvailable) return ValidationResult.ofNoSchema();
         try {
-            JSONObject obj = new JSONObject(payload == null ? "{}" : payload);
+            JSONObject obj;
+            if (payload == null) {
+                obj = new JSONObject();
+            } else if (payload instanceof java.util.Map<?, ?> m) {
+                obj = new JSONObject(m);
+            } else if (payload instanceof String str) {
+                obj = new JSONObject(str);
+            } else {
+                obj = new JSONObject(payload);
+            }
             Method validate = s.getClass().getMethod("validate", Object.class);
             validate.invoke(s, obj);
             return ValidationResult.ofValid();

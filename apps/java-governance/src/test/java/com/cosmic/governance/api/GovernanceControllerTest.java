@@ -309,4 +309,95 @@ class GovernanceControllerTest extends AbstractRedisTest {
                 .andExpect(jsonPath("$.status").isString())
                 .andExpect(jsonPath("$.lastUpdated").isString());
     }
+
+    // ── VO workflow submission tests ─────────────────────────────────────────
+
+    @Test
+    void submitVoConeSearchJobReturnsAccepted() throws Exception {
+        String body = """
+                {
+                  "workflow": "vo.cone-search",
+                  "datasetId": "vo-ds-01",
+                  "requestedBy": "tester",
+                  "parameters": {
+                    "provider": "CHANDRA",
+                    "serviceUrl": "https://cxc.cfa.harvard.edu/cgi-bin/browse/cone.pl"
+                  }
+                }
+                """;
+        mockMvc.perform(post("/api/v1/jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.jobId").isString())
+                .andExpect(jsonPath("$.status").value("QUEUED"));
+    }
+
+    @Test
+    void submitVoConeSearchMissingProviderReturnsBadRequest() throws Exception {
+        String body = """
+                {
+                  "workflow": "vo.cone-search",
+                  "datasetId": "vo-ds-02",
+                  "requestedBy": "tester",
+                  "parameters": {
+                    "serviceUrl": "https://cxc.cfa.harvard.edu/cgi-bin/browse/cone.pl"
+                  }
+                }
+                """;
+        mockMvc.perform(post("/api/v1/jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void submitVoAdqlQueryJobReturnsAccepted() throws Exception {
+        String body = """
+                {
+                  "workflow": "vo.adql.query",
+                  "datasetId": "vo-ds-03",
+                  "requestedBy": "tester",
+                  "parameters": {
+                    "provider": "ESAC",
+                    "tapUrl": "https://gea.esac.esa.int/tap-server/tap/sync",
+                    "adql": "SELECT TOP 10 * FROM gaiadr3.gaia_source"
+                  }
+                }
+                """;
+        mockMvc.perform(post("/api/v1/jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.jobId").isString());
+    }
+
+    @Test
+    void submitVoAdqlQueryMissingAdqlReturnsBadRequest() throws Exception {
+        String body = """
+                {
+                  "workflow": "vo.adql.query",
+                  "datasetId": "vo-ds-04",
+                  "requestedBy": "tester",
+                  "parameters": {
+                    "provider": "ESAC",
+                    "tapUrl": "https://gea.esac.esa.int/tap-server/tap/sync"
+                  }
+                }
+                """;
+        mockMvc.perform(post("/api/v1/jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void jobTypesIncludesVoWorkflows() throws Exception {
+        mockMvc.perform(get("/api/v1/jobs/types"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@=='vo.cone-search')]").exists())
+                .andExpect(jsonPath("$[?(@=='vo.adql.query')]").exists())
+                .andExpect(jsonPath("$[?(@=='vo.obscore.search')]").exists())
+                .andExpect(jsonPath("$[?(@=='vo.votable.fetch')]").exists());
+    }
 }

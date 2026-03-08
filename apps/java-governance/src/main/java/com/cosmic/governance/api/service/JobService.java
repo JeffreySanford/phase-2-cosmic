@@ -202,6 +202,7 @@ public class JobService {
                         var paramsObj = rec.getParameters() == null ? Map.<String, Object>of() : rec.getParameters();
                         if (paramsObj.containsKey("executor")) executorName = String.valueOf(paramsObj.get("executor"));
                         else if (rec.getWorkflow() != null && rec.getWorkflow().equalsIgnoreCase("ingest")) executorName = "tacc";
+                        else if (rec.getWorkflow() != null && rec.getWorkflow().startsWith("vo.")) executorName = "vo";
                         JobExecutor exec = executorMap.getOrDefault(executorName, executorMap.get("simulator"));
                         if (exec != null) {
                             log.info("Dispatching queued job {} to executor {}", rec.getJobId(), executorName);
@@ -338,6 +339,7 @@ public class JobService {
         Map<String, Object> paramsObj = request.parameters() == null ? Map.<String, Object>of() : Map.copyOf(request.parameters());
         if (paramsObj.containsKey("executor")) executorName = String.valueOf(paramsObj.get("executor"));
         else if (request.workflow() != null && request.workflow().equalsIgnoreCase("ingest")) executorName = "tacc";
+        else if (request.workflow() != null && request.workflow().startsWith("vo.")) executorName = "vo";
 
         JobExecutor exec = executorMap.getOrDefault(executorName, executorMap.get("simulator"));
         if (!deferred && exec != null) {
@@ -348,7 +350,10 @@ public class JobService {
 
     public List<String> types() {
         // canonical types exposed to the frontend
-        return List.of("import", "export", "reindex", "cleanup", "diagnostics", "ingest", "transform", "validate", "archive", "snapshot", "analyze", "train", "notify", "backup", "restore", "publish", "fetch", "scheduler", "custom");
+        return List.of(
+                "ingest", "export", "reindex", "cleanup", "diagnostics",
+                "vo.cone-search", "vo.adql.query", "vo.obscore.search", "vo.votable.fetch",
+                "vo.datalink.resolve", "vo.product.fetch", "vo.soda.cutout", "vo.preview.fetch");
     }
 
     public Optional<JobStatusResponse> get(String jobId) {

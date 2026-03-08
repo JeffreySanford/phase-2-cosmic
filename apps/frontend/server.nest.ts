@@ -1595,51 +1595,111 @@ export class AppController {
 
   @Get("/api/v1/vo/cached-samples")
   async getVoCachedSamples(@Res() res: Response): Promise<void> {
-    const key = "vo:cached:chanmaster";
-    try {
-      // Try Redis first
-      if (redisClient) {
-        try {
-          const cached = await redisClient.get(key);
-          if (cached) {
-            res.setHeader("Content-Type", "application/json; charset=utf-8");
-            res.send(cached);
-            return;
-          }
-        } catch (e) {
-          console.warn("Redis GET failed:", e);
-        }
-      }
+    // Return curated sample payloads keyed by VO workflow type.
+    // Used by the submit dialog auto-fill feature.
+    const samples: Record<string, Record<string, unknown>> = {
+      "vo.cone-search": {
+        provider: "SIMBAD",
+        serviceUrl: "https://simbad.cds.unistra.fr/simbad/sim-tap/sync",
+        target: "M42",
+        ra: 83.8221,
+        dec: -5.3911,
+        radius: 0.5,
+        format: "votable",
+        liveMode: true,
+        _description: "Cone search around Orion Nebula (M42), radius 0.5\u00b0",
+      },
+      "vo.adql.query": {
+        provider: "HEASARC",
+        tapUrl: "https://heasarc.gsfc.nasa.gov/xamin/tap/sync",
+        adql: "SELECT TOP 10 target_name, ra, dec, exposure FROM chanmaster ORDER BY exposure DESC",
+        limit: 10,
+        liveMode: true,
+        _description: "Top 10 longest Chandra observations (HEASARC TAP)",
+      },
+      "vo.obscore.search": {
+        provider: "ESO",
+        tapUrl: "https://archive.eso.org/tap_obs/sync",
+        dataproductType: "image",
+        spatialBoundsRa: 187.277915,
+        spatialBoundsDec: 2.052389,
+        spatialBoundsRadius: 0.5,
+        limit: 20,
+        liveMode: true,
+        _description: "ESO ObsCore image search around quasar 3C 273 (r=0.5\u00b0)",
+      },
+      "vo.votable.fetch": {
+        provider: "HEASARC",
+        votableUrl:
+          "https://heasarc.gsfc.nasa.gov/xamin/query?table=chanmaster&position=3c273&format=votable",
+        format: "votable",
+        liveMode: true,
+        _description: "Chandra observations of quasar 3C 273 as VOTable",
+      },
+      "vo.datalink.resolve": {
+        provider: "CADC",
+        datalinkUrl:
+          "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/datalink",
+        datasetIdentifier: "ivo://cadc.nrc.ca/CFHT?2459817",
+        liveMode: true,
+        _description: "DataLink products for CFHT MegaCam observation 2459817",
+      },
+      "vo.product.fetch": {
+        provider: "HEASARC",
+        productUrl:
+          "https://heasarc.gsfc.nasa.gov/FTP/chandra/data/byobsid/2/21843/primary/acisf21843N002_evt2.fits.gz",
+        expectedMimeType: "application/fits",
+        liveMode: true,
+        _description: "Chandra ACIS event file \u2014 Cas A supernova remnant (obs 21843)",
+      },
+      "vo.soda.cutout": {
+        provider: "CADC",
+        sodaUrl:
+          "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/soda",
+        datasetIdentifier: "ivo://cadc.nrc.ca/CFHT?2459817",
+        spatialBoundsRa: 187.277915,
+        spatialBoundsDec: 2.052389,
+        spatialBoundsRadius: 0.1,
+        outputFormat: "fits",
+        liveMode: true,
+        _description: "CADC SODA cutout centered on 3C 273 (r=0.1\u00b0, CFHT obs 2459817)",
+      },
+      "vo.preview.fetch": {
+        provider: "ESASky",
+        previewUrl:
+          "https://sky.esa.int/esasky-tap/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=votable&QUERY=SELECT+TOP+5+*+FROM+mv_xsa_obs+WHERE+target_name+LIKE+%2527%2525Crab%2525%2527",
+        liveMode: true,
+        _description: "ESASky XMM-Newton observations matching 'Crab' target (top 5)",
+      },
+    };
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.json(samples);
+  }
 
-      // Not in cache — fetch lightweight VOTable summary from governance API (same as telemetry expects)
-      const baseCandidates = this.governanceBaseCandidates();
-      const urls = baseCandidates.map(
-        (b) => `${b}/api/v1/vo/votable?table=chanmaster&position=3c273`
-      );
-      const upstream = await this.fetchWithFallback(
-        urls,
-        { method: "GET" },
-        7000
-      );
-      const txt = await upstream.text();
-      const ct = upstream.headers.get("content-type") || "application/json";
+  @Get("/api/v1/broker-events")
+  brokerEventsSse(@Res() res: Response): void {
+    // Dev-mode SSE stream: sends a heartbeat every 15 s so BrokerEventsService
+    // connects cleanly without 404s or reconnect storms.
+    const r = res as unknown as import("express").Response;
+    r.setHeader("Content-Type", "text/event-stream");
+    r.setHeader("Cache-Control", "no-cache");
+    r.setHeader("Connection", "keep-alive");
+    r.setHeader("X-Accel-Buffering", "no");
+    r.flushHeaders();
 
-      // Optionally cache the raw JSON string in Redis for short TTL
-      if (redisClient) {
-        try {
-          // store with short TTL (30 seconds)
-          await redisClient.set(key, txt, { EX: 30 });
-        } catch (e) {
-          console.warn("Redis SET failed:", e);
-        }
-      }
+    const sendEvent = (type: string, payload: Record<string, unknown>) => {
+      const data = JSON.stringify({ type, payload });
+      r.write(`data: ${data}\n\n`);
+    };
 
-      res.setHeader("Content-Type", ct);
-      res.status(upstream.status).send(txt);
-    } catch (e: any) {
-      console.error("Error fetching VO cached samples:", e);
-      res.status(502).json({ error: "vo_fetch_error", message: String(e) });
-    }
+    // send an immediate connected event
+    sendEvent("connected", { source: "dev-mock", ts: Date.now() });
+
+    const timer = setInterval(() => {
+      sendEvent("heartbeat", { ts: Date.now() });
+    }, 15000);
+
+    r.on("close", () => clearInterval(timer));
   }
 
   @Get("/*path")

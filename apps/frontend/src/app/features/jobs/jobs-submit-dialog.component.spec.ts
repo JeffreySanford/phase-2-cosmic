@@ -2,8 +2,9 @@ import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { JobsSubmitDialogComponent } from "./jobs-submit-dialog.component";
 import { JobsLineageEditorComponent } from "./jobs-lineage-editor.component";
 import { JobsService } from "../../services/jobs.service";
+import { VoService } from "../../services/vo.service";
 import { MatDialogRef, MAT_DIALOG_DATA } from "@angular/material/dialog";
-import { FormsModule } from "@angular/forms";
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { of } from "rxjs";
 import { MatDialogModule } from "@angular/material/dialog";
 import { HttpClientTestingModule } from "@angular/common/http/testing";
@@ -24,6 +25,15 @@ class StubJobsService {
   }
 }
 
+class StubVoService {
+  getServices() {
+    return of({ tapUrl: "", dataLinkUrl: "" });
+  }
+  getSampleForType(_type: string) {
+    return null;
+  }
+}
+
 describe("JobsSubmitDialogComponent", () => {
   let component: JobsSubmitDialogComponent;
   let fixture: ComponentFixture<JobsSubmitDialogComponent>;
@@ -37,6 +47,7 @@ describe("JobsSubmitDialogComponent", () => {
       declarations: [JobsSubmitDialogComponent, JobsLineageEditorComponent],
       imports: [
         FormsModule,
+        ReactiveFormsModule,
         HttpClientTestingModule,
         MatDialogModule,
         MatFormFieldModule,
@@ -48,6 +59,7 @@ describe("JobsSubmitDialogComponent", () => {
       ],
       providers: [
         { provide: JobsService, useClass: StubJobsService },
+        { provide: VoService, useClass: StubVoService },
         { provide: MatDialogRef, useValue: dialogRefSpy },
         { provide: MAT_DIALOG_DATA, useValue: {} },
       ],
@@ -61,7 +73,7 @@ describe("JobsSubmitDialogComponent", () => {
   });
 
   it("initializes with default workflow", () => {
-    expect(component.workflow).toBe("import");
+    expect(component.workflow).toBe("ingest");
   });
 
   it("loads public sources and displays them", () => {

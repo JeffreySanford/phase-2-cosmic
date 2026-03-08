@@ -5,36 +5,87 @@
 ## Status
 
 - Active execution backlog for PI-1 (March-April 2026).
-- Current focus: testing reliability, messaging parity, mission-closure gaps, and data-architecture hardening.
+- Sprint 1 (Mar 7–21): console stability + remaining VO polish — VO backend/frontend **complete**, auto-fill **complete**, clear-completed **complete**.
+- Up next: `broker-events` SSE 404 fix, `aria-hidden` a11y regression, then Sprint 2 CI hardening.
 
 ### Current Status Overview
 
 ```mermaid
-pie title TODO Status (March 2026)
-    "Completed" : 3
+pie title TODO Status (March 7, 2026)
+    "Completed" : 9
     "In Progress" : 2
-    "High Priority" : 4
+    "High Priority" : 3
     "Medium Priority" : 5
     "Low Priority" : 3
 ```
 
 ## Current
 
-- Sprint execution underway for Testcontainers scaffold, provenance E2E, and CI gating.
-- Messaging-fabric expansion planned across Kafka, RabbitMQ, and Pulsar paths.
-- ngVLA data-architecture alignment and mission-oversight closure tracks are defined and queued.
-- Public-data discovery baseline documented for `data.gov`, `NSF`, `NIST`, `NRAO`, and `VLA`.
-  See `documentation/public-data/PUBLIC_DATA_RESOURCES.md`.
-- Remaining frontend hardening is being folded into adjacent feature work rather
-  than run as a standalone pause. See `FRONTEND_HARDENING_TRACKER.md`.
+- **Sprint 1 (Mar 7–21)** — Console Stability & SSE Integration. Key items:
+  - ✅ `GET /api/v1/vo/cached-samples` — now returns curated VO payloads (Java + dev mock).
+  - ✅ VO auto-fill button in submit dialog with 8 real-data samples.
+  - ✅ Jobs view: clear-completed button + show/hide completed checkbox.
+  - ⬜ `GET /api/v1/broker-events` SSE 404 — SSE stream not yet resolving in dev.
+  - ⬜ `aria-hidden` focus warning — Angular CDK dialog sets `aria-hidden` on `<app-root>` during open.
+- **Sprint 2 (Mar 21–Apr 4)** — CI Hardening & Flaky Suite Migration (queued).
+- Mission-oversight closure track: MG-3 ✅ complete → MG-4/5 next (Sprint 3).
+- Public-data discovery baseline documented in `documentation/public-data/PUBLIC_DATA_RESOURCES.md`.
 
 ## Next
 
-### Immediate
+### Immediate — Sprint 1 (Mar 7–21, 2026)
 
-(none)
+**VO Jobs Initiative (MG-3) — ✅ COMPLETE as of 2026-03-07.** Full detail in Recent Completed.
+
+#### Remaining Sprint 1 items
+
+- [x] **S1-1** 🔴 Fix `GET /api/v1/broker-events` SSE 404 — added dev SSE mock handler in `server.nest.ts`; sends `connected` event on open + `heartbeat` every 15 s.
+- [x] **S1-2** 🟡 Fix `aria-hidden` focus warning — provided `MAT_DIALOG_DEFAULT_OPTIONS` with `ariaModal: true` in `app.module.ts`; CDK now uses `aria-modal` on the dialog element instead of hiding `<app-root>`.
+- [x] **S1-3** 🟢 Audit remaining `console.warn`/`console.error` noise — all remaining calls are behind error conditions; none fire on normal page load after broker-events and cached-samples fixes.
 
 ### Recent Completed
+
+- **Sprint 1 console stability + unit tests (2026-03-07):**
+  - `GET /api/v1/broker-events` SSE 404 — dev SSE mock added to `server.nest.ts` (connected + 15 s heartbeat).
+  - `aria-hidden` focus warning — `MAT_DIALOG_DEFAULT_OPTIONS { ariaModal: true }` added in `app.module.ts`.
+  - Console noise audit complete — all remaining calls are in error paths only.
+  - **Unit tests (S1-1):** 3 new tests in `server.nest.spec.ts` — SSE headers, connected event, interval clear on close.
+  - **Unit tests (S1-2):** 1 new test in `app.component.spec.ts` — `MAT_DIALOG_DEFAULT_OPTIONS` provides `ariaModal: true`.
+  - **Jobs toolbar:** all `mat-stroked-button` changed to `mat-raised-button` with 6 distinct vibrant MDC palette colors (blue/orange/green/purple/teal/red).
+  - Total frontend tests: **197/197** (was 193).
+
+- **Jobs view: clear completed + show/hide archived jobs** (completed 2026-03-07)
+  - `showCompleted` toggle (mat-checkbox) in jobs toolbar hides COMPLETED/FAILED/CANCELED/TIMED_OUT jobs
+  - `clearCompleted()` calls `DELETE /api/v1/jobs/{id}` for each terminal job and updates the list
+  - `filteredJobs` getter drives the `*ngFor` rendering so filter is instant/reactive
+  - "Clear completed" button added to toolbar alongside the checkbox
+  - 6 new unit tests in `jobs.component.spec.ts` covering filter logic, empty-list notification, delete calls, and collapsed-job cleanup
+  - Mission outcome: Human decision speed (operators keep a clean active-job view)
+  - Validation evidence: all 187 frontend tests pass; build clean
+
+- **VO auto-fill with curated real-data samples** (completed 2026-03-07)
+  - `VoController.java` `GET /api/v1/vo/cached-samples` returns 8 curated payloads with real public VO service URLs (SIMBAD, HEASARC, ESO, CADC, ESASky)
+  - `server.nest.ts` mirrors the same static map for dev mode
+  - `VoService.getSampleForType(type)` exposes per-type payloads (single one-shot load, no polling)
+  - "Fill sample" button in jobs submit dialog patches all VO form fields from the curated payload; shows description hint
+  - All 50 Java + 187 Angular tests pass; build clean
+
+- **VO Jobs Initiative — backend** (completed 2026-03-07)
+  - 8 JSON Schema files under `src/main/resources/schemas/` with required-field enforcement
+  - `SchemaService` loads all 8 VO schemas at startup; fixed Map→JSONObject payload conversion bug
+  - `VoJobExecutor` dispatches all 8 VO workflows with live HTTP + VOTable XML parsing
+  - `JobService` routes `vo.*` workflows to the VO executor; `types()` includes all 8 VO types
+  - 17-test `VoJobSchemaTest` + 5 new controller tests; 50/50 backend tests pass
+  - OpenAPI `JobSubmitRequest.workflow` enum extended with all 8 VO types
+  - Mission outcome: Reproducible science / Institutional trust and audit
+
+- **VO Jobs Initiative — frontend** (completed 2026-03-07)
+  - Typed Angular reactive subform for all 8 VO workflow types in submit dialog
+  - Provider selector populated from `GET /api/v1/vo/services`; per-provider URL auto-fill
+  - Job detail panel restructured from 2 tabs to 5 tabs: Summary | Parameters | Logs | Artifacts | Lineage
+  - VOTable result renderer in Artifacts tab: scrollable field/row grid + DataLink product links list
+  - Mission outcome: Human decision speed / Reproducible science
+  - Validation evidence: 187 frontend unit tests pass; build clean
 
 - Add token validation/claims extraction and production policy checks in `AuthFilter`.
   - Mission outcome: Institutional trust and audit
@@ -49,52 +100,23 @@ pie title TODO Status (March 2026)
   - Operator/science impact: frontend now displays real-time messaging broker health status without 503 errors
   - Validation evidence: `/api/v1/rabbitmq/status` and `/api/v1/pulsar/status` return healthy JSON responses; frontend diagnostics page shows broker status
 
-### NOW
+### Up Next — Sprint 2 (Mar 21 – Apr 4, 2026)
 
-- (completed) Scaffold and implement Provenance E2E test suite including `TestcontainersConfig` and `ProvenanceE2ETest` (now verifies manifest values and audit endpoint).
-
-  - Mission outcome: Observatory continuity
-  - Operator/science impact: verifies end-to-end metadata capture, increasing trust in processing pipelines
-  - Validation evidence: skeleton tests compile and run in CI; assertions against the in-memory audit log now included
-
-- (completed) Add backend `public-sources` API stub, service and controller tests, and documentation; openapi updated.
-
-  - Mission outcome: Human decision speed
-  - Operator/science impact: frontend components can consume a canonical list of external data sources without hard‑coding
-  - Validation evidence: `PublicDataServiceTest`, `GovernanceControllerTest` include coverage; `documentation/public-data` updated; e2e spec added to verify lineage/UI behavior
-
-- **Kafka/RabbitMQ/Pulsar ingest paths completed.**
-  - Mission outcome: Institutional trust and audit; control plane accepts streaming job events from any broker with idempotency and DLQ safety.
-  - Evidence: listener classes and integration tests for all three brokers; placeholders removed; SSE events flowing to frontend.
-
-### NEXT
-
-- [DONE] Quarterly review/update of `docuentation/ngvla/NGVLA_REFERENCES.md` performed (baseline update). Fixture/tests adjusted.
-
-- Phase 2 streaming-to-governance work:
-
-  - implement gateway consumers/producers for Kafka, RabbitMQ, and Pulsar **(completed)**
-  - ensure idempotent ingest with DLQ, replay, duplicate-delivery and interruption handling
-  - maintain shared, versioned contracts and parity tests across brokers
-  - draft operator runbooks for DLQ/replay and broker-interruption safety **(see `documentation/messaging/BROKER_SAFETY_RUNBOOK.md`)**
-  - Mission outcome: Reproducible science
-
-- Frontend may now build features around live ingest events or job notifications without
-  waiting for further backend broker work; topology parity already complete.
-  - Operator/science impact: ensures domain fidelity over PI cycles
-  - Validation evidence: integration tests for each broker now passing; runbook published
-  - Added `BrokerEventsService` SSE transport, `JobEventsComponent`, unit tests and new e2e spec verifying event receipt for both fake and real job lifecycles.
-  - Expanded contract/versioning tests on backend & frontend to guard JobTransitionRequest and event payload shapes; keep adding checks as schemas change.
+- [x] **S2-1** 🔴 Cypress runtime/cache remediation — `e2e`+`e2e-ci` targets set `"cache": false`; Cypress binary cache added to `e2e.yml`.
+- [x] **S2-2** 🔴 Negative-path tests for RabbitMQ and Pulsar status endpoints — `BrokerStatusTest.java` (3 tests: RabbitMQ healthy, RabbitMQ 503, Pulsar unavailable fallback). Total Java: 53/53.
+- [x] **S2-3** 🔴 CI PR gate: frontend unit tests (`frontend`, `ui-theme`) added to `ci.yml`; Cypress binary cache in `e2e.yml`.
+- [ ] **S2-4** 🟡 Job lifecycle edge-case coverage: manifest, lineage, retry, cancel controller/service paths.
+- [ ] **S2-5** 🟡 Enforce coverage thresholds (JaCoCo + Istanbul) with pipeline failure on regression.
 
 ### High
 
 - Topology/Visualization broker parity (Kafka + RabbitMQ + Pulsar). **(completed)**
   - All three brokers included in topology API and rendered equally with consistent descriptions.
 - ngVLA timing integrity and RFI/EMC observability tracks. _(schema extended, basic audits & UI metrics implemented; quality‑gate enforcement added with unit, controller and e2e tests; Prometheus counter `etl_quality_gate_failures_total` added and audit events published to control plane for persistence)_
-- [NEXT] VO interoperability service endpoint & contract tests; frontend link display; runbook stub. (MG‑3)
-- [NEXT] Commissioning/AIV scenario test profile scaffolding and acceptance gate logic. (MG‑4)
-- [NEXT] Archive DR replication tooling, restore‑drill tests, and policy documentation. (MG‑5)
-- [NEXT] Transient alert path SLO metrics, UI indicators, and replay controls. (MG‑6)
+- [DONE] VO interoperability (MG‑3) — backend VO-1..VO-6 complete; frontend typed subforms, provider selector, 5-tab detail, VOTable renderer, auto-fill samples, all complete 2026-03-07.
+- [SPRINT 3] Commissioning/AIV scenario test profile scaffolding and acceptance gate logic. (MG‑4)
+- [SPRINT 3] Archive DR replication tooling, restore‑drill tests, and policy documentation. (MG‑5)
+- [SPRINT 4] Transient alert path SLO metrics, UI indicators, and replay controls. (MG‑6)
 
 ### Medium
 

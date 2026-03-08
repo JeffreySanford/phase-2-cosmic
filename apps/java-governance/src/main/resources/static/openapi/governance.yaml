@@ -354,6 +354,20 @@ components:
         workflow:
           type: string
           minLength: 1
+          enum:
+            - ingest
+            - export
+            - reindex
+            - cleanup
+            - diagnostics
+            - vo.cone-search
+            - vo.adql.query
+            - vo.obscore.search
+            - vo.votable.fetch
+            - vo.datalink.resolve
+            - vo.product.fetch
+            - vo.soda.cutout
+            - vo.preview.fetch
         datasetId:
           type: string
           minLength: 1

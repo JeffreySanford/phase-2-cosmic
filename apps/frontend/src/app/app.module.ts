@@ -13,7 +13,7 @@ import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatMenuModule } from "@angular/material/menu";
 import { MatInputModule } from "@angular/material/input";
 import { MatIconModule } from "@angular/material/icon";
-import { MatDialogModule } from "@angular/material/dialog";
+import { MatDialogModule, MAT_DIALOG_DEFAULT_OPTIONS } from "@angular/material/dialog";
 import { MatTabsModule } from "@angular/material/tabs";
 import { HttpClientModule } from "@angular/common/http";
 
@@ -102,6 +102,10 @@ import { ExternalSourcesComponent } from "./shared/external-sources/external-sou
     TelemetryModule,
   ],
   providers: [
+    {
+      provide: MAT_DIALOG_DEFAULT_OPTIONS,
+      useValue: { ariaModal: true },
+    },
     {
       provide: APP_INITIALIZER,
       useFactory:

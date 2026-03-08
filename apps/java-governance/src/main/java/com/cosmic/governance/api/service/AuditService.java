@@ -24,7 +24,10 @@ public class AuditService {
     /**
      * Mirrors Kafka audit events to RabbitMQ for broader control-plane integration
      */
-    @KafkaListener(topics = "cosmic-audit", groupId = "audit-mirror")
+    @KafkaListener(
+        topics = "cosmic-audit",
+        groupId = "${governance.kafka.audit-group-id:audit-mirror}"
+    )
     public void mirrorAuditEvent(String message) {
         try {
             log.debug("Mirroring audit event to RabbitMQ: {}", message);

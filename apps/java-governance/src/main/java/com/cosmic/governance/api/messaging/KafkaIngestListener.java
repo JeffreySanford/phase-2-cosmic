@@ -25,7 +25,10 @@ public class KafkaIngestListener {
         this.validator = validator;
     }
 
-    @KafkaListener(topics = "phase2-events", groupId = "governance-group")
+    @KafkaListener(
+        topics = "phase2-events",
+        groupId = "${governance.kafka.ingest-group-id:governance-group}"
+    )
     public void onMessage(String payload) {
         try {
             // Expect payload to be a JSON object with fields for a job submit

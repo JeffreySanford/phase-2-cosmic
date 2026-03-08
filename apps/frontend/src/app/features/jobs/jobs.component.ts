@@ -7,8 +7,8 @@ import {
 } from "../../services/jobs.service";
 import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { interval, Subject, Subscription } from "rxjs";
-import { startWith, switchMap, takeUntil } from "rxjs/operators";
+import { forkJoin, interval, of, Subject, Subscription } from "rxjs";
+import { catchError, startWith, switchMap, takeUntil } from "rxjs/operators";
 import { JobsSubmitDialogComponent } from "./jobs-submit-dialog.component";
 
 type ErrorDetail = { ruleId?: string };
@@ -31,10 +31,103 @@ export class JobsComponent implements OnInit, OnDestroy {
   filterVisible = false;
   filterWorkflow: string | null = null;
   filterState: string | null = null;
+  // completed-job visibility
+  showCompleted = true;
+
+  readonly TERMINAL_STATUSES = new Set([
+    "COMPLETED",
+    "FAILED",
+    "CANCELED",
+    "TIMED_OUT",
+  ]);
   // scanner admin info
   scannerIntervalSeconds: number | null = null;
   scannedCount = 0;
   dispatchedCount = 0;
+
+  // Vibrant color map by workflow type
+  readonly WORKFLOW_COLORS: Record<string, string> = {
+    // General workflows
+    import: "#2979FF",
+    export: "#FF9100",
+    reindex: "#D500F9",
+    cleanup: "#FF1744",
+    diagnostics: "#00BCD4",
+    transform: "#1DE9B6",
+    archive: "#7C4DFF",
+    snapshot: "#FF80AB",
+    analyze: "#69F0AE",
+    train: "#EA80FC",
+    notify: "#FFD740",
+    backup: "#FF6E40",
+    restore: "#40C4FF",
+    publish: "#B2FF59",
+    fetch: "#FF6D00",
+    scheduler: "#E040FB",
+    // VO workflow family
+    "vo.cone-search": "#76FF03",
+    "vo.adql.query": "#FFD600",
+    "vo.obscore.search": "#00E676",
+    "vo.votable.fetch": "#FF4081",
+    "vo.datalink.resolve": "#FF6D00",
+    "vo.product.fetch": "#40C4FF",
+    "vo.soda.cutout": "#3D5AFE",
+    "vo.preview.fetch": "#F50057",
+  };
+
+  readonly LEGEND_ENTRIES: Array<{ label: string; color: string }> = [
+    { label: "Import", color: "#2979FF" },
+    { label: "Export", color: "#FF9100" },
+    { label: "Reindex", color: "#D500F9" },
+    { label: "Cleanup / Diagnostics", color: "#FF1744" },
+    { label: "VO: Cone Search", color: "#76FF03" },
+    { label: "VO: ADQL Query", color: "#FFD600" },
+    { label: "VO: ObsCore", color: "#00E676" },
+    { label: "VO: VOTable", color: "#FF4081" },
+    { label: "VO: DataLink", color: "#FF6D00" },
+    { label: "VO: Product Fetch", color: "#40C4FF" },
+    { label: "VO: SODA Cutout", color: "#3D5AFE" },
+    { label: "VO: Preview", color: "#F50057" },
+    { label: "Other", color: "#78909C" },
+  ];
+
+  getJobColor(job: JobStatus): string {
+    return this.WORKFLOW_COLORS[job.workflow] ?? "#78909C";
+  }
+
+  get filteredJobs(): JobStatus[] {
+    if (this.showCompleted) return this.jobs;
+    return this.jobs.filter((j) => !this.TERMINAL_STATUSES.has(j.status));
+  }
+
+  clearCompleted(): void {
+    const toRemove = this.jobs.filter((j) =>
+      this.TERMINAL_STATUSES.has(j.status)
+    );
+    if (!toRemove.length) {
+      this.snackBar.open("No completed jobs to clear", undefined, {
+        duration: 3000,
+      });
+      return;
+    }
+    const deletes$ = forkJoin(
+      toRemove.map((j) =>
+        this.jobsSvc.deleteJob(j.jobId).pipe(catchError(() => of(null)))
+      )
+    );
+    deletes$.subscribe(() => {
+      const removed = new Set(toRemove.map((j) => j.jobId));
+      this.jobs = this.jobs.filter((j) => !removed.has(j.jobId));
+      if (this.selectedJob && removed.has(this.selectedJob.jobId)) {
+        this.collapseJob();
+      }
+      this.snackBar.open(
+        `Cleared ${toRemove.length} completed job(s)`,
+        undefined,
+        { duration: 5000 }
+      );
+    });
+  }
 
   private destroy$ = new Subject<void>();
   private pollSub: Subscription | null = null;
@@ -45,6 +138,11 @@ export class JobsComponent implements OnInit, OnDestroy {
   logs: string[] = [];
   artifacts: { name: string; url: string }[] = [];
   externalSources: Array<Record<string, unknown>> = [];
+  voTableResult: {
+    fields: string[];
+    rows: unknown[][];
+    links: { accessUrl: string; semantics: string; contentType?: string }[];
+  } | null = null;
 
   constructor(
     private jobsSvc: JobsService,
@@ -127,49 +225,159 @@ export class JobsComponent implements OnInit, OnDestroy {
     });
   }
 
+  // 5 unique VO sample jobs representing the discovery → retrieval chain
+  private readonly SAMPLE_JOB_REQUESTS: JobSubmitRequest[] = [
+    {
+      workflow: "vo.cone-search",
+      datasetId: "heasarc-3c273",
+      requestedBy: "ui-sample",
+      lineage: { chain: "vo-discovery", step: 1 },
+      parameters: {
+        provider: "HEASARC",
+        serviceUrl: "https://heasarc.gsfc.nasa.gov/xamin/vo/cone",
+        target: "3C273",
+        radius: 0.1,
+        format: "votable",
+        liveMode: true,
+        mission: "ngvla-mvp",
+      },
+    },
+    {
+      workflow: "vo.adql.query",
+      datasetId: "nrao-chanmaster-tap",
+      requestedBy: "ui-sample",
+      lineage: { chain: "vo-discovery", step: 2 },
+      parameters: {
+        provider: "NRAO",
+        tapUrl: "https://data-query.nrao.edu/tap/sync",
+        adql: "SELECT TOP 100 * FROM chanmaster WHERE 1=CONTAINS(POINT('ICRS',ra,dec),CIRCLE('ICRS',187.277915,2.052389,0.1))",
+        limit: 100,
+        liveMode: true,
+        mission: "ngvla-mvp",
+      },
+    },
+    {
+      workflow: "vo.obscore.search",
+      datasetId: "obscore-m87-cube",
+      requestedBy: "ui-sample",
+      lineage: { chain: "vo-discovery", step: 3 },
+      parameters: {
+        provider: "NRAO",
+        tapUrl: "https://data-query.nrao.edu/tap/sync",
+        position: { ra: 187.7059, dec: 12.3911, radius: 0.2 },
+        dataproductType: "cube",
+        liveMode: true,
+        mission: "ngvla-mvp",
+      },
+    },
+    {
+      workflow: "vo.datalink.resolve",
+      datasetId: "datalink-ngvla-pilot",
+      requestedBy: "ui-sample",
+      lineage: { chain: "vo-retrieval", step: 1 },
+      parameters: {
+        provider: "NRAO",
+        datalinkUrl: "https://data-query.nrao.edu/datalink",
+        datasetIdentifier: "ngvla-pilot-ms-0001",
+        liveMode: true,
+        mission: "ngvla-mvp",
+      },
+    },
+    {
+      workflow: "vo.product.fetch",
+      datasetId: "product-ngvla-fits",
+      requestedBy: "ui-sample",
+      lineage: { chain: "vo-retrieval", step: 2 },
+      parameters: {
+        provider: "NRAO",
+        productUrl:
+          "https://data-query.nrao.edu/products/ngvla-pilot-ms-0001.fits",
+        expectedMimeType: "application/fits",
+        liveMode: true,
+        mission: "ngvla-mvp",
+      },
+    },
+  ];
+
   addFiveJobs() {
     this.loading = true;
     this.error = null;
-    this.snackBar.open("Submitting 5 sample jobs…", undefined, {
+    this.snackBar.open("Submitting 5 sample jobs...", undefined, {
       duration: 10000,
     });
-    const submissions: Promise<unknown>[] = [];
-    for (let i = 1; i <= 5; i++) {
-      const req: JobSubmitRequest = {
-        workflow: "import",
-        datasetId: `sample-ds-${Date.now()}-${i}`,
-        lineage: { parentJobId: `ui-sample-${i}` },
-        requestedBy: "ui-sample",
-        parameters: this.generateComplexParameters(i),
-      };
-      const p = this.jobsSvc
-        .submitJob(req)
+
+    // Step 1: prune all current jobs from storage
+    const deletions = this.jobs.map((j) =>
+      this.jobsSvc
+        .deleteJob(j.jobId)
         .toPromise()
-        .then((created) => {
-          if (created && created.jobId) {
-            // fetch full job record and prepend
-            this.jobsSvc
-              .get(created.jobId)
-              .subscribe((full) => (this.jobs = [full, ...this.jobs]));
-          }
-        })
-        .catch((e) => (this.error = this.errMsg(e)))
-        .finally(() => void 0);
-      submissions.push(p);
-    }
-    Promise.allSettled(submissions).then(
-      (results: PromiseSettledResult<unknown>[]) => {
-        this.loading = false;
-        this.jobsSvc.invalidateList();
-        const ok = results.filter((r) => r.status === "fulfilled").length;
-        const failed = results.length - ok;
-        this.snackBar.open(
-          `Submitted ${ok} jobs${failed ? `, ${failed} failed` : ""}`,
-          undefined,
-          { duration: 10000 }
-        );
-      }
+        .catch(() => null)
     );
+
+    Promise.allSettled(deletions).then(() => {
+      this.jobs = [];
+
+      // Step 2: submit the 5 unique VO sample jobs
+      const submissions: Promise<unknown>[] = this.SAMPLE_JOB_REQUESTS.map(
+        (req) =>
+          this.jobsSvc
+            .submitJob(req)
+            .toPromise()
+            .then((created) => {
+              if (created && created.jobId) {
+                const jobId = created.jobId;
+                // Step 3: auto-start each queued job immediately
+                this.jobsSvc.transition(jobId, "RUNNING").subscribe(
+                  (updated) => {
+                    if (updated) {
+                      this.jobs = [
+                        updated,
+                        ...this.jobs.filter((j) => j.jobId !== jobId),
+                      ];
+                    } else {
+                      this.jobsSvc
+                        .get(jobId)
+                        .subscribe(
+                          (full) =>
+                            (this.jobs = [
+                              full,
+                              ...this.jobs.filter((j) => j.jobId !== jobId),
+                            ])
+                        );
+                    }
+                  },
+                  () => {
+                    // transition failed — still show the queued job
+                    this.jobsSvc
+                      .get(jobId)
+                      .subscribe(
+                        (full) =>
+                          (this.jobs = [
+                            full,
+                            ...this.jobs.filter((j) => j.jobId !== jobId),
+                          ])
+                      );
+                  }
+                );
+              }
+            })
+            .catch((e) => (this.error = this.errMsg(e)))
+      );
+
+      Promise.allSettled(submissions).then(
+        (results: PromiseSettledResult<unknown>[]) => {
+          this.loading = false;
+          this.jobsSvc.invalidateList();
+          const ok = results.filter((r) => r.status === "fulfilled").length;
+          const failed = results.length - ok;
+          this.snackBar.open(
+            `Submitted ${ok} jobs${failed ? `, ${failed} failed` : ""}`,
+            undefined,
+            { duration: 10000 }
+          );
+        }
+      );
+    });
   }
 
   releaseDeferred() {
@@ -193,31 +401,6 @@ export class JobsComponent implements OnInit, OnDestroy {
         );
       }
     );
-  }
-
-  private generateComplexParameters(index: number): Record<string, unknown> {
-    // emulate NGVLA-like complex job parameters: observation window, antennas, frequency selection, provenance flags
-    const now = new Date().toISOString();
-    return {
-      mission: "ngvla-mvp",
-      observation: {
-        requestId: `sample-${now}-${index}`,
-        arraySegment:
-          index % 3 === 0 ? "SBA" : index % 3 === 1 ? "Main" : "Long Baseline",
-        antennaClass: index % 2 === 0 ? "18m" : "6m",
-        frequencyBandGHz: { low: 1.2, high: 50 + index },
-        startTime: now,
-        durationSeconds: 120 + index * 30,
-        pointing: { ra: 123.45 + index, dec: -23.45 + index },
-      },
-      provenance: {
-        capture: true,
-        includeRaw: false,
-        lineageTag: `sample-${index}`,
-      },
-      priority: index <= 2 ? "high" : "normal",
-      runtimeHints: { executor: "simulator" },
-    };
   }
 
   view(job: JobStatus) {
@@ -250,6 +433,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.logs = [];
     this.artifacts = [];
     this.externalSources = [];
+    this.voTableResult = null;
   }
 
   isExpanded(job: JobStatus): boolean {
@@ -374,8 +558,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       (a) => (this.artifacts = a || []),
       (e) => (this.error = this.errMsg(e))
     );
-    // also fetch any JSON artifact that may contain external-source metadata
+    // also fetch any JSON artifact that may contain external-source or VOTable metadata
     this.externalSources = [];
+    this.voTableResult = null;
     this.jobsSvc.artifacts(id).subscribe(
       (a) => {
         (a || [])
@@ -384,11 +569,30 @@ export class JobsComponent implements OnInit, OnDestroy {
             try {
               this.http.get<Record<string, unknown>>(af.url).subscribe(
                 (body) => {
+                  if (!body) return;
+                  // VOTable JSON result (fields + rows structure)
                   if (
-                    body &&
-                    (body["type"] === "external-source" ||
-                      body["type"] === "external-sources" ||
-                      body["provider"])
+                    !this.voTableResult &&
+                    Array.isArray(body["fields"]) &&
+                    Array.isArray(body["rows"])
+                  ) {
+                    this.voTableResult = {
+                      fields: body["fields"] as string[],
+                      rows: body["rows"] as unknown[][],
+                      links: Array.isArray(body["links"])
+                        ? (body["links"] as {
+                            accessUrl: string;
+                            semantics: string;
+                            contentType?: string;
+                          }[])
+                        : [],
+                    };
+                  }
+                  // external-source metadata
+                  if (
+                    body["type"] === "external-source" ||
+                    body["type"] === "external-sources" ||
+                    body["provider"]
                   ) {
                     this.externalSources.push(body);
                   }

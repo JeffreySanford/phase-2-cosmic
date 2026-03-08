@@ -161,3 +161,83 @@ describe("AppController diagnostics endpoints", () => {
     expect(obj.status).toBe("healthy"); // Mock socket connects successfully
   });
 });
+
+// ── S1-1: broker-events SSE endpoint ─────────────────────────────────────────
+
+interface SseResponse {
+  setHeader: jest.Mock;
+  flushHeaders: jest.Mock;
+  write: jest.Mock;
+  on: jest.Mock;
+}
+
+function createSseResponse(): SseResponse {
+  return {
+    setHeader: jest.fn(),
+    flushHeaders: jest.fn(),
+    write: jest.fn(),
+    on: jest.fn(),
+  };
+}
+
+describe("AppController brokerEventsSse (S1-1)", () => {
+  it("sets text/event-stream and no-cache headers then flushes", () => {
+    const ctrl = new AppController(
+      {} as ConstructorParameters<typeof AppController>[0],
+      {} as ConstructorParameters<typeof AppController>[1]
+    );
+    const res = createSseResponse();
+
+    ctrl.brokerEventsSse(res as unknown as import("express").Response);
+
+    expect(res.setHeader).toHaveBeenCalledWith(
+      "Content-Type",
+      "text/event-stream"
+    );
+    expect(res.setHeader).toHaveBeenCalledWith("Cache-Control", "no-cache");
+    expect(res.setHeader).toHaveBeenCalledWith("Connection", "keep-alive");
+    expect(res.flushHeaders).toHaveBeenCalled();
+  });
+
+  it("writes a connected event immediately with source=dev-mock", () => {
+    const ctrl = new AppController(
+      {} as ConstructorParameters<typeof AppController>[0],
+      {} as ConstructorParameters<typeof AppController>[1]
+    );
+    const res = createSseResponse();
+
+    ctrl.brokerEventsSse(res as unknown as import("express").Response);
+
+    expect(res.write).toHaveBeenCalledTimes(1);
+    const raw: string = res.write.mock.calls[0][0] as string;
+    expect(raw).toMatch(/^data: /);
+    const parsed = JSON.parse(raw.replace(/^data: /, "").trim()) as {
+      type: string;
+      payload: { source: string };
+    };
+    expect(parsed.type).toBe("connected");
+    expect(parsed.payload.source).toBe("dev-mock");
+  });
+
+  it("clears the heartbeat interval when the client disconnects", () => {
+    jest.useFakeTimers();
+    const ctrl = new AppController(
+      {} as ConstructorParameters<typeof AppController>[0],
+      {} as ConstructorParameters<typeof AppController>[1]
+    );
+    let closeHandler: (() => void) | null = null;
+    const res = createSseResponse();
+    res.on.mockImplementation((event: string, cb: () => void) => {
+      if (event === "close") closeHandler = cb;
+    });
+
+    ctrl.brokerEventsSse(res as unknown as import("express").Response);
+
+    expect(closeHandler).not.toBeNull();
+    const clearIntervalSpy = jest.spyOn(global, "clearInterval");
+    closeHandler!();
+    expect(clearIntervalSpy).toHaveBeenCalled();
+
+    jest.useRealTimers();
+  });
+});
