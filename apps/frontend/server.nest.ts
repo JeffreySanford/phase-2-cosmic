@@ -1676,6 +1676,62 @@ export class AppController {
     res.json(samples);
   }
 
+  @Get("/api/v1/alerts/slo")
+  getAlertSlo(@Res() res: Response): void {
+    // Dev-mode mock: returns a plausible SLO snapshot so the Alert SLO tab
+    // renders without running the Java backend.
+    res.json({
+      alertIngestedTotal: 0,
+      alertLatencyMsP50: 0,
+      alertLatencyMsP95: 0,
+      alertLatencyMsP99: 0,
+      dlqDepth: 0,
+      replaysTotal: 0,
+      measuredAt: new Date().toISOString(),
+    });
+  }
+
+  @Get("/api/v1/alerts/dlq")
+  getAlertDlq(@Res() res: Response): void {
+    // Dev-mode mock: empty DLQ.
+    res.json([]);
+  }
+
+  @Post("/api/v1/alerts/ingest")
+  postAlertIngest(@Req() req: Request, @Res() res: Response): void {
+    // Dev-mode mock: echo the request body back as if stored.
+    const body = (req as unknown as import("express").Request).body ?? {};
+    res.status(201).json({
+      id: `dev-${Date.now()}`,
+      eventType: body["eventType"] ?? "UNKNOWN",
+      severity: body["severity"] ?? "INFO",
+      sourceSystem: body["sourceSystem"] ?? "dev",
+      correlationId: body["correlationId"] ?? `dev-corr-${Date.now()}`,
+      message: body["message"] ?? "",
+      issuedAt: new Date().toISOString(),
+      replayed: false,
+      tags: body["tags"] ?? [],
+    });
+  }
+
+  @Post("/api/v1/alerts/dlq/replay-all")
+  replayAllDlq(@Res() res: Response): void {
+    // Dev-mode mock: nothing in DLQ, so 0 replayed.
+    res.json(0);
+  }
+
+  @Post("/api/v1/alerts/dlq/replay/:alertId")
+  replayDlqAlert(@Res() res: Response): void {
+    // Dev-mode mock: no DLQ entries, always 404.
+    res.status(404).json({ error: "alert_not_found" });
+  }
+
+  @Post("/api/v1/alerts/dlq")
+  postAlertDlq(@Res() res: Response): void {
+    // Dev-mode mock: accept the push, return 201.
+    res.status(201).end();
+  }
+
   @Get("/api/v1/broker-events")
   brokerEventsSse(@Res() res: Response): void {
     // Dev-mode SSE stream: sends a heartbeat every 15 s so BrokerEventsService
