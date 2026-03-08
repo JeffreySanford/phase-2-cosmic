@@ -470,13 +470,14 @@
   font-size: 16px;
   width: 16px;
   height: 16px;
-  &--fits    { color: #00e5ff; }
-  &--votable { color: #7b61ff; }
-  &--csv     { color: #69f0ae; }
-  &--json    { color: #ffd740; }
-  &--archive { color: #ff9100; }
-  &--preview { color: #ff80ab; }
-  &--other   { color: #90a4ae; }
+  &--fits     { color: #00e5ff; }
+  &--votable  { color: #7b61ff; }
+  &--csv      { color: #69f0ae; }
+  &--json     { color: #ffd740; }
+  &--archive  { color: #ff9100; }
+  &--preview  { color: #ff80ab; }
+  &--other    { color: #90a4ae; }
+  &--external { color: #40c4ff; }
 }
 
 .group-label { flex: 1 1 auto; }

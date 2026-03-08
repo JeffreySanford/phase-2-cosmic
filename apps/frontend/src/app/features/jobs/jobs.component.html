@@ -197,10 +197,6 @@
                       </ul>
                     </ng-container>
                   </ng-container>
-
-                  <div class="external-sources">
-                    <app-external-sources [sources]="externalSources" [compact]="false"></app-external-sources>
-                  </div>
                 </div>
               </mat-tab>
 
@@ -233,10 +229,17 @@
                       </div>
                     </div>
                   </ng-container>
+
+                  <ng-container *ngIf="externalSources.length > 0">
+                    <div class="product-group-header">
+                      <mat-icon class="group-icon group-icon--external">wifi</mat-icon>
+                      <span class="group-label">External Service Calls</span>
+                      <span class="group-count">{{ externalSources.length }}</span>
+                    </div>
+                    <app-external-sources [sources]="externalSources" [compact]="false"></app-external-sources>
+                  </ng-container>
                 </div>
               </mat-tab>
-
-              <!-- Tab 6: Lineage -->
               <mat-tab label="Lineage">
                 <div class="detail-body">
                   <app-jobs-lineage-editor

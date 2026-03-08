@@ -102,8 +102,13 @@ function createEmbeddedJob(
   };
 }
 
-// Return realistic artifacts for each workflow type once a job completes.
-function workflowArtifacts(
+// workflowArtifacts() removed — fake artifact URLs pointed at paths with no handler.
+// Real files are written by VoJobExecutor.java and registered under
+//   /api/v1/jobs/{id}/artifacts/{name}
+// Dev-mock jobs keep artifacts=[] so the UI shows an honest empty state.
+//
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _workflowArtifacts_removed(
   workflow: string,
   jobId: string
 ): EmbeddedJobRecord["artifacts"] {
@@ -183,9 +188,7 @@ function workflowArtifacts(
     j.createdAt = createdAt;
     j.updatedAt = createdAt;
     j.logs = [`${createdAt} job created`, `${createdAt} status=${status}`];
-    if (status === "COMPLETED" || status === "FAILED") {
-      j.artifacts = workflowArtifacts(workflow, j.jobId);
-    }
+    // Artifacts stay [] in dev-mock mode; real output files come from the Java backend.
     return j;
   };
   for (const j of [
@@ -213,9 +216,6 @@ function advanceJobStatus(job: EmbeddedJobRecord): EmbeddedJobRecord {
     job.status = Math.random() < 0.15 ? "FAILED" : "COMPLETED";
     job.updatedAt = now;
     job.logs.push(`${now} status=${job.status}`);
-    if (job.artifacts.length === 0) {
-      job.artifacts = workflowArtifacts(job.workflow, job.jobId);
-    }
   }
   return job;
 }
