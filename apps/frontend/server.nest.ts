@@ -54,6 +54,8 @@ type EmbeddedJobRecord = {
 };
 
 const embeddedJobStore = new Map<string, EmbeddedJobRecord>();
+/** Inline JSON content for dev-mock artifact files, keyed by the artifact URL path. */
+const artifactContentStore = new Map<string, unknown>();
 let embeddedJobCounter = 0;
 
 function createEmbeddedJobId(): string {
@@ -102,74 +104,108 @@ function createEmbeddedJob(
   };
 }
 
-// workflowArtifacts() removed — fake artifact URLs pointed at paths with no handler.
-// Real files are written by VoJobExecutor.java and registered under
-//   /api/v1/jobs/{id}/artifacts/{name}
-// Dev-mock jobs keep artifacts=[] so the UI shows an honest empty state.
-//
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function _workflowArtifacts_removed(
+// When a VO-type job completes in dev-mock mode, we synthesise an
+// "external-source" artifact so the Products tab and telemetry External Data
+// tab can show which VO service was called and what it returned.
+// This mirrors what VoJobExecutor.java writes to disk in real mode.
+function voExternalSourcePayload(
   workflow: string,
-  jobId: string
-): EmbeddedJobRecord["artifacts"] {
-  const base = `/api/v1/jobs/${jobId}/artifact-content`;
+  params: Record<string, unknown>,
+  _jobId: string
+): Record<string, unknown> | null {
   switch (workflow) {
     case "vo.cone-search":
-      return [
-        { name: "cone-search-3c273.votable.xml", url: `${base}/cone-search-3c273.votable.xml`, mimeType: "application/x-votable+xml", size: "42 KB" },
-        { name: "cone-search-3c273.csv",         url: `${base}/cone-search-3c273.csv`,         mimeType: "text/csv",                   size: "18 KB" },
-      ];
+    case "vo.scs":
+      return {
+        type: "external-source",
+        provider: String(params["provider"] ?? "HEASARC"),
+        sourceName: `Cone Search – ${params["target"] ?? "3C 273"} (r=${params["radius"] ?? 0.1}°)`,
+        accessUrl: String(params["serviceUrl"] ?? "https://heasarc.gsfc.nasa.gov/xamin/vo/cone"),
+        sampleFields: ["source_name", "ra", "dec", "flux_erg_s_cm2", "mission"],
+        sampleRows: [
+          ["3C273",      "187.2779", "2.0524", "1.62e-11", "Chandra/CXO"],
+          ["3C273_off1", "187.2960", "2.0714", "4.10e-14", "ROSAT/HRI"],
+          ["3C273_off2", "187.2610", "2.0341", "2.80e-14", "XMM-Newton"],
+        ],
+        links: [
+          {
+            accessUrl: `https://heasarc.gsfc.nasa.gov/xamin/vo/cone?target=${params["target"] ?? "3C273"}&radius=${params["radius"] ?? 0.1}&format=votable`,
+            semantics: "#this",
+            contentType: "application/x-votable+xml",
+          },
+        ],
+      };
     case "vo.adql.query":
-      return [
-        { name: "query-result.votable.xml", url: `${base}/query-result.votable.xml`, mimeType: "application/x-votable+xml", size: "128 KB" },
-        { name: "query-result.csv",         url: `${base}/query-result.csv`,         mimeType: "text/csv",                   size: "64 KB" },
-      ];
+      return {
+        type: "external-source",
+        provider: String(params["provider"] ?? "NRAO"),
+        sourceName: `ADQL Query – ${String(params["tapUrl"] ?? "unknown TAP").replace("https://", "")}`,
+        tapUrl: String(params["tapUrl"] ?? "https://data-query.nrao.edu/tap/sync"),
+        sampleFields: ["obs_id", "ra", "dec", "t_exptime", "dataproduct_type"],
+        sampleRows: [
+          ["VLASS1.1+J123049+122322", "187.706", "12.390",  "5.0",  "image"],
+          ["VLASS1.1+J123051+122344", "187.713", "12.395",  "5.0",  "image"],
+          ["VLASS1.1+J123052+122316", "187.718", "12.388", "10.0",  "image"],
+        ],
+        links: [],
+      };
     case "vo.obscore.search":
-      return [
-        { name: "obscore-m87-results.votable.xml", url: `${base}/obscore-m87-results.votable.xml`, mimeType: "application/x-votable+xml", size: "56 KB" },
-      ];
+      return {
+        type: "external-source",
+        provider: String(params["provider"] ?? "NRAO"),
+        sourceName: `ObsCore Search – M87 cubes (r=${(params["position"] as Record<string, unknown>)?.["radius"] ?? 0.2}°)`,
+        tapUrl: String(params["tapUrl"] ?? "https://data-query.nrao.edu/tap/sync"),
+        sampleFields: ["obs_id", "obs_title", "s_ra", "s_dec", "dataproduct_type"],
+        sampleRows: [
+          ["ALMA-M87-2017.1.00843", "M87 ALMA Band 6", "187.706", "12.391", "cube"],
+          ["EVLA-M87-13A-292",      "M87 JVLA L-band",  "187.705", "12.390", "cube"],
+        ],
+        links: [],
+      };
     case "vo.datalink.resolve":
-      return [
-        { name: "datalink-manifest.votable.xml",    url: `${base}/datalink-manifest.votable.xml`,    mimeType: "application/x-votable+xml", size: "12 KB"  },
-        { name: "ngvla-pilot-ms-0001.fits",          url: `${base}/ngvla-pilot-ms-0001.fits`,          mimeType: "application/fits",           size: "2.1 GB" },
-        { name: "ngvla-pilot-ms-0001.ms.tar.gz",     url: `${base}/ngvla-pilot-ms-0001.ms.tar.gz`,     mimeType: "application/x-tar",          size: "4.8 GB" },
-      ];
+      return {
+        type: "external-source",
+        provider: String(params["provider"] ?? "NRAO"),
+        sourceName: `DataLink – ${params["datasetIdentifier"] ?? "unknown dataset"}`,
+        accessUrl: String(params["datalinkUrl"] ?? "https://data-query.nrao.edu/datalink"),
+        sampleFields: ["ID", "access_url", "semantics", "content_type", "content_length"],
+        sampleRows: [
+          [String(params["datasetIdentifier"] ?? ""), "https://data-query.nrao.edu/products/ngvla-pilot-ms-0001.ms.tar", "#this",    "application/tar",  "3221225472"],
+          [String(params["datasetIdentifier"] ?? ""), "https://data-query.nrao.edu/products/ngvla-pilot-ms-0001.fits",   "#preview", "application/fits",  "104857600"],
+        ],
+        links: [],
+      };
     case "vo.product.fetch":
-      return [
-        { name: "ngvla-pilot-ms-0001.fits", url: `${base}/ngvla-pilot-ms-0001.fits`, mimeType: "application/fits", size: "2.1 GB" },
-      ];
-    case "vo.soda.cutout":
-      return [
-        { name: "cutout-result.fits",   url: `${base}/cutout-result.fits`,   mimeType: "application/fits", size: "512 KB" },
-        { name: "cutout-preview.png",   url: `${base}/cutout-preview.png`,   mimeType: "image/png",         size: "48 KB"  },
-      ];
-    case "vo.preview.fetch":
-      return [
-        { name: "preview.png", url: `${base}/preview.png`, mimeType: "image/png", size: "96 KB" },
-      ];
-    case "import":
-      return [
-        { name: "ingest-report.json",  url: `${base}/ingest-report.json`,  mimeType: "application/json", size: "8 KB" },
-        { name: "provenance.json",     url: `${base}/provenance.json`,     mimeType: "application/json", size: "3 KB" },
-      ];
-    case "ingest":
-      return [
-        { name: "ingest-manifest.json", url: `${base}/ingest-manifest.json`, mimeType: "application/json", size: "5 KB" },
-      ];
-    case "export":
-      return [
-        { name: "export-bundle.tar.gz",   url: `${base}/export-bundle.tar.gz`,   mimeType: "application/x-tar",  size: "1.3 GB" },
-        { name: "export-manifest.json",   url: `${base}/export-manifest.json`,   mimeType: "application/json",   size: "4 KB"   },
-      ];
-    case "diagnostics":
-      return [
-        { name: "diagnostics-report.json", url: `${base}/diagnostics-report.json`, mimeType: "application/json", size: "22 KB" },
-      ];
+      return {
+        type: "external-source",
+        provider: String(params["provider"] ?? "NRAO"),
+        sourceName: `Product Download – ${String(params["productUrl"] ?? "").split("/").pop() ?? "unknown"}`,
+        accessUrl: String(params["productUrl"] ?? ""),
+        sampleFields: ["keyword", "value", "comment"],
+        sampleRows: [
+          ["SIMPLE",   "T",     "file conforms to FITS standard"],
+          ["BITPIX",   "-32",   "4-byte IEEE floating-point values"],
+          ["NAXIS",    "4",     "number of data axes"],
+          ["NAXIS1",   "1024",  "RA axis length"],
+          ["TELESCOP", "ngVLA", "Next Generation Very Large Array"],
+        ],
+        links: [],
+      };
     default:
-      return [
-        { name: "job-output.json", url: `${base}/job-output.json`, mimeType: "application/json", size: "2 KB" },
-      ];
+      return null;
   }
+}
+
+/** Registers an external-source artifact for a completed VO job. */
+function registerVoArtifact(job: EmbeddedJobRecord): void {
+  if (job.artifacts.length > 0) return;   // already registered
+  const params = (job.parameters ?? {}) as Record<string, unknown>;
+  const payload = voExternalSourcePayload(job.workflow, params, job.jobId);
+  if (!payload) return;
+  const artifactName = "external-call.json";
+  const artifactUrl  = `/api/v1/jobs/${job.jobId}/artifacts/${artifactName}`;
+  job.artifacts = [{ name: artifactName, url: artifactUrl, mimeType: "application/json" }];
+  artifactContentStore.set(artifactUrl, payload);
 }
 
 // Seed the embedded job store with realistic dev-mode jobs so the Jobs view
@@ -189,6 +225,11 @@ function _workflowArtifacts_removed(
     j.updatedAt = createdAt;
     j.logs = [`${createdAt} job created`, `${createdAt} status=${status}`];
     // Artifacts stay [] in dev-mock mode; real output files come from the Java backend.
+    // Exception: seeded COMPLETED VO jobs get an external-source artifact so the
+    // Products tab shows something meaningful on first load.
+    if (status === "COMPLETED") {
+      registerVoArtifact(j);
+    }
     return j;
   };
   for (const j of [
@@ -216,6 +257,9 @@ function advanceJobStatus(job: EmbeddedJobRecord): EmbeddedJobRecord {
     job.status = Math.random() < 0.15 ? "FAILED" : "COMPLETED";
     job.updatedAt = now;
     job.logs.push(`${now} status=${job.status}`);
+    if (job.status === "COMPLETED") {
+      registerVoArtifact(job);
+    }
   }
   return job;
 }
@@ -1793,6 +1837,31 @@ export class AppController {
       });
       return;
     }
+    // Mock VOTable consumed by TelemetryComponent.fetchVoSamples() — returns
+    // sample HEASARC chanmaster rows for the 3C 273 field.
+    if (path.startsWith("/api/v1/vo/votable") && method === "GET") {
+      res.json({
+        fields: ["time", "source_name", "ra", "dec", "flux"],
+        rows: [
+          ["2026-01-15T06:12:00Z", "3C273",          "187.2779", "2.0524", "42.3"],
+          ["2026-01-22T11:34:00Z", "3C273_b",         "187.2960", "2.0714", "38.7"],
+          ["2026-01-29T08:55:00Z", "3C273_field_a",   "187.3101", "2.0841", "12.1"],
+          ["2026-02-05T15:07:00Z", "3C273_field_b",   "187.2601", "2.0394",  "9.4"],
+          ["2026-02-12T22:19:00Z", "3C273_field_c",   "187.2515", "2.0271",  "6.8"],
+          ["2026-02-19T03:43:00Z", "3C273_field_d",   "187.3021", "2.0657",  "5.3"],
+          ["2026-02-26T17:02:00Z", "3C273_field_e",   "187.2990", "2.0612",  "4.9"],
+          ["2026-03-04T12:31:00Z", "3C273_ngvla_ref", "187.2779", "2.0524", "44.1"],
+        ],
+        links: [
+          {
+            accessUrl: "https://heasarc.gsfc.nasa.gov/xamin/vo/cone?target=3C273&radius=0.1&format=votable",
+            semantics: "#this",
+            contentType: "application/x-votable+xml",
+          },
+        ],
+      });
+      return;
+    }
     // ── Jobs mocks ───────────────────────────────────────────────────────────
     if (path === "/api/v1/jobs" && method === "GET") {
       const jobs = Array.from(embeddedJobStore.values())
@@ -1827,6 +1896,16 @@ export class AppController {
       const jobId = path.split("/").slice(-2)[0];
       const job = embeddedJobStore.get(jobId);
       res.json(job ? job.logs : []);
+      return;
+    }
+    // Serve inline artifact content (registered by registerVoArtifact) keyed by URL path.
+    if (path.match(/^\/api\/v1\/jobs\/[^/]+\/artifacts\/[^/]+$/) && method === "GET") {
+      const content = artifactContentStore.get(path);
+      if (content === undefined) {
+        res.status(404).json({ error: "artifact_not_found", path });
+        return;
+      }
+      res.json(content);
       return;
     }
     if (path.match(/^\/api\/v1\/jobs\/[^/]+\/artifacts$/) && method === "GET") {
