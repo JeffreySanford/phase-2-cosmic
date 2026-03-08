@@ -807,3 +807,9 @@ button[mat-flat-button] {
   color: rgba(255, 255, 255, 0.4);
   text-align: right;
 }
+
+.slo-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}

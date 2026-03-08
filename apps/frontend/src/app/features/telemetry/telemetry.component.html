@@ -188,7 +188,17 @@
       </mat-tab>
 
       <!-- ── Alert SLO Tab ─────────────────────────────────────────── -->
-      <mat-tab label="Alert SLO">
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <span
+            [matBadge]="alertDlq.length"
+            [matBadgeHidden]="alertDlq.length === 0"
+            matBadgeColor="warn"
+            matBadgeSize="small"
+            matBadgeOverlap="false">
+            Alert SLO
+          </span>
+        </ng-template>
         <div class="tab-content">
 
           <!-- Loading spinner -->
@@ -243,30 +253,29 @@
             </div>
           </div>
 
-          <!-- DLQ Table + Replay Controls -->
-          <div class="dlq-section" *ngIf="!alertSloLoading">
+          <!-- Refresh button always visible -->
+          <div class="slo-actions" *ngIf="!alertSloLoading">
+            <button mat-stroked-button (click)="fetchAlertSlo()"
+                    aria-label="Refresh alert SLO">
+              <mat-icon>refresh</mat-icon> Refresh
+            </button>
+          </div>
+
+          <!-- DLQ Table + Replay Controls — only shown when DLQ is non-empty -->
+          <div class="dlq-section" *ngIf="!alertSloLoading && alertDlq.length > 0">
             <div class="dlq-header">
               <span class="dlq-title">
                 <mat-icon>inbox</mat-icon> Dead Letter Queue
-                <span class="dlq-count" *ngIf="alertDlq.length > 0">({{ alertDlq.length }})</span>
+                <span class="dlq-count">({{ alertDlq.length }})</span>
               </span>
               <button mat-stroked-button color="warn"
-                      *ngIf="alertDlq.length > 0"
                       (click)="replayAllFromDlq()"
                       aria-label="Replay all DLQ alerts">
                 <mat-icon>replay</mat-icon> Replay All
               </button>
-              <button mat-stroked-button (click)="fetchAlertSlo()"
-                      aria-label="Refresh alert SLO">
-                <mat-icon>refresh</mat-icon> Refresh
-              </button>
             </div>
 
-            <div *ngIf="alertDlq.length === 0" class="empty-note">
-              No alerts in the Dead Letter Queue.
-            </div>
-
-            <table *ngIf="alertDlq.length > 0" class="dlq-table" role="table">
+            <table class="dlq-table" role="table">
               <thead>
                 <tr>
                   <th scope="col">Event Type</th>

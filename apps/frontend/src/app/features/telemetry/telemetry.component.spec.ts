@@ -18,6 +18,9 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatButtonModule } from "@angular/material/button";
 import { MatTabsModule } from "@angular/material/tabs";
 import { MatIconModule } from "@angular/material/icon";
+import { MatBadgeModule } from "@angular/material/badge";
+import { MatTableModule } from "@angular/material/table";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { TelemetryService } from "../../services/telemetry.service";
@@ -61,6 +64,9 @@ describe("TelemetryComponent", () => {
         MatTabsModule,
         MatExpansionModule,
         MatIconModule,
+        MatBadgeModule,
+        MatTableModule,
+        MatProgressSpinnerModule,
         NoopAnimationsModule,
       ],
       declarations: [

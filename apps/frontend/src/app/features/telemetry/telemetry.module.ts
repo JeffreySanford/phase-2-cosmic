@@ -11,6 +11,7 @@ import { MatExpansionModule } from "@angular/material/expansion";
 import { MatIconModule } from "@angular/material/icon";
 import { MatTableModule } from "@angular/material/table";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatBadgeModule } from "@angular/material/badge";
 
 import { TelemetryComponent } from "./telemetry.component";
 import { PulsarStatusComponent } from "./pulsar-status/pulsar-status.component";
@@ -36,6 +37,7 @@ import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.compo
     MatIconModule,
     MatTableModule,
     MatProgressSpinnerModule,
+    MatBadgeModule,
   ],
   exports: [TelemetryComponent, PulsarStatusComponent, RabbitMQStatusComponent],
 })
