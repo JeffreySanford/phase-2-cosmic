@@ -427,8 +427,8 @@ public class JobService {
 
     public boolean attachManifest(String jobId, Map<String, Object> manifest) {
         Object o = getValue(KEY_PREFIX + jobId);
-        if (!(o instanceof JobRecord)) return false;
-        JobRecord rec = (JobRecord) o;
+        JobRecord rec = marshaller.toJobRecord(o);
+        if (rec == null) return false;
         rec.setManifest(manifest);
         rec.setUpdatedAt(Instant.now().toString());
         rec.setVersion(rec.getVersion() + 1);

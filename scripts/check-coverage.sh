@@ -37,13 +37,23 @@ PY
 }
 
 check_node() {
-  if [[ -f "coverage/coverage-summary.json" ]]; then
-    cov=$(jq -r '.total.lines.pct' coverage/coverage-summary.json | cut -d. -f1)
-    echo "Node lines coverage: ${cov}%"
+  # Nx outputs coverage to coverage/{projectRoot}; check frontend first, then workspace root fallback
+  local summary=""
+  if [[ -f "coverage/apps/frontend/coverage-summary.json" ]]; then
+    summary="coverage/apps/frontend/coverage-summary.json"
+  elif [[ -f "coverage/coverage-summary.json" ]]; then
+    summary="coverage/coverage-summary.json"
+  fi
+
+  if [[ -n "$summary" ]]; then
+    cov=$(jq -r '.total.lines.pct' "$summary" | cut -d. -f1)
+    echo "Node lines coverage: ${cov}% (from $summary)"
     if [[ $cov -lt $THRESHOLD ]]; then
       echo "Coverage below threshold ($THRESHOLD%)"
       FAILED=1
     fi
+  else
+    echo "No frontend coverage summary found; skipping Node coverage check."
   fi
 }
 

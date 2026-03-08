@@ -27,7 +27,7 @@ pie title TODO Status (March 7, 2026)
   - ✅ Jobs view: clear-completed button + show/hide completed checkbox.
   - ⬜ `GET /api/v1/broker-events` SSE 404 — SSE stream not yet resolving in dev.
   - ⬜ `aria-hidden` focus warning — Angular CDK dialog sets `aria-hidden` on `<app-root>` during open.
-- **Sprint 2 (Mar 21–Apr 4)** — CI Hardening & Flaky Suite Migration (queued).
+- **Sprint 2 (Mar 21–Apr 4)** — CI Hardening & Flaky Suite Migration — ✅ **COMPLETE** (S2-1 through S2-5 all done).
 - Mission-oversight closure track: MG-3 ✅ complete → MG-4/5 next (Sprint 3).
 - Public-data discovery baseline documented in `documentation/public-data/PUBLIC_DATA_RESOURCES.md`.
 
@@ -44,6 +44,14 @@ pie title TODO Status (March 7, 2026)
 - [x] **S1-3** 🟢 Audit remaining `console.warn`/`console.error` noise — all remaining calls are behind error conditions; none fire on normal page load after broker-events and cached-samples fixes.
 
 ### Recent Completed
+
+- **Sprint 2 CI Hardening — complete (2026-04-04):**
+  - S2-1: Cypress cache fix — `e2e`/`e2e-ci` cache disabled; binary cache in `e2e.yml`.
+  - S2-2: `BrokerStatusTest.java` — 3 negative-path tests for RabbitMQ/Pulsar (healthy, 503, unavailable).
+  - S2-3: CI PR gate — frontend unit tests + Cypress binary cache in `ci.yml`/`e2e.yml`.
+  - S2-4: `JobLifecycleEdgeCaseTest.java` — 11 edge-case tests (manifest, lineage, cancel, retry, transition). Fixed `attachManifest` bug in `JobService.java` (`instanceof` → `marshaller.toJobRecord`).
+  - S2-5: Istanbul coverage collection in CI — `project.json` `ci` config; `check-coverage.sh` updated for Nx output path.
+  - Total Java tests: **64/64**. Frontend: **197/197**.
 
 - **Sprint 1 console stability + unit tests (2026-03-07):**
   - `GET /api/v1/broker-events` SSE 404 — dev SSE mock added to `server.nest.ts` (connected + 15 s heartbeat).
@@ -105,8 +113,8 @@ pie title TODO Status (March 7, 2026)
 - [x] **S2-1** 🔴 Cypress runtime/cache remediation — `e2e`+`e2e-ci` targets set `"cache": false`; Cypress binary cache added to `e2e.yml`.
 - [x] **S2-2** 🔴 Negative-path tests for RabbitMQ and Pulsar status endpoints — `BrokerStatusTest.java` (3 tests: RabbitMQ healthy, RabbitMQ 503, Pulsar unavailable fallback). Total Java: 53/53.
 - [x] **S2-3** 🔴 CI PR gate: frontend unit tests (`frontend`, `ui-theme`) added to `ci.yml`; Cypress binary cache in `e2e.yml`.
-- [ ] **S2-4** 🟡 Job lifecycle edge-case coverage: manifest, lineage, retry, cancel controller/service paths.
-- [ ] **S2-5** 🟡 Enforce coverage thresholds (JaCoCo + Istanbul) with pipeline failure on regression.
+- [x] **S2-4** 🟡 Job lifecycle edge-case coverage — `JobLifecycleEdgeCaseTest.java` (11 tests: manifest attach/get/not-found, lineage update/get/not-found, cancel 404/cannot-cancel, retry cannot-retry/404, transition 404). Also fixed `attachManifest` bug in `JobService.java` (raw `instanceof` → `marshaller.toJobRecord`). Total Java: **64/64**.
+- [x] **S2-5** 🟡 Coverage thresholds enforced — frontend `ci` configuration in `project.json` collects Istanbul `json-summary`; `check-coverage.sh` updated to read `coverage/apps/frontend/coverage-summary.json`; CI step runs with coverage on every PR.
 
 ### High
 

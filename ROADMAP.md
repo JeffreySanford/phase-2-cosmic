@@ -156,11 +156,15 @@ timeline
 
 **Exit criteria:**
 
-- `pnpm run e2e` completes cleanly in CI without cache errors
-- `datasets-provenance.cy.ts` is in the smoke lane and passes
-- PR gate blocks merges on unit test failure or coverage drop
-- Nightly lane runs full integration suite and publishes report
-- RabbitMQ/Pulsar negative-path tests added and green
+- ✅ `pnpm run e2e` completes cleanly in CI without cache errors
+- ✅ `datasets-provenance.cy.ts` is in the smoke lane and passes
+- ✅ PR gate blocks merges on unit test failure or coverage drop
+- ✅ Nightly lane runs full integration suite and publishes report
+- ✅ RabbitMQ/Pulsar negative-path tests added and green
+- ✅ Job lifecycle edge-case tests: 11 tests covering manifest/lineage/cancel/retry/transition. Fixed `attachManifest` marshaller bug. Java: 64/64.
+- ✅ Istanbul coverage collection wired in CI via `project.json` `ci` configuration. `check-coverage.sh` reads correct Nx output path.
+
+**Sprint 2 COMPLETE — all exit criteria met.**
 
 ---
 

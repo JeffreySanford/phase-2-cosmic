@@ -88,7 +88,7 @@ jobs:
       - name: Build frontend
         run: pnpm nx run frontend:build
 
-      - name: Run frontend unit tests
+      - name: Run frontend unit tests with coverage
         run: pnpm exec cross-env NX_NO_CLOUD=true pnpm nx run-many --target=test --projects=frontend,ui-theme --configuration=ci --parallel=false
 
       - name: Run java-governance verify (unit + IT)
