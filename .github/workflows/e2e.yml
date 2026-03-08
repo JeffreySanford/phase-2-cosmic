@@ -47,6 +47,11 @@ jobs:
       - name: Format check
         run: pnpm run format:check:changed
 
+      - name: Run CI preflight (start/check Redis)
+        run: |
+          chmod +x ./scripts/ci/preflight.sh || true
+          ./scripts/ci/preflight.sh
+
       - name: Unit tests
         run: pnpm run unit-test
 
