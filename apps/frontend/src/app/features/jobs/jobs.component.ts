@@ -17,6 +17,17 @@ type ErrorBody = {
   details?: ErrorDetail[];
 };
 
+type ProductCategory = "fits" | "votable" | "csv" | "json" | "archive" | "preview" | "other";
+interface JobProduct {
+  name: string;
+  url: string;
+  mimeType: string;
+  category: ProductCategory;
+  label: string;
+  icon: string;
+  size?: string;
+}
+
 @Component({
   selector: "app-jobs",
   templateUrl: "./jobs.component.html",
@@ -137,6 +148,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   expandedJobId: string | null = null;
   logs: string[] = [];
   artifacts: { name: string; url: string }[] = [];
+  products: JobProduct[] = [];
   externalSources: Array<Record<string, unknown>> = [];
   voTableResult: {
     fields: string[];
@@ -432,6 +444,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.expandedJobId = null;
     this.logs = [];
     this.artifacts = [];
+    this.products = [];
     this.externalSources = [];
     this.voTableResult = null;
   }
@@ -553,9 +566,57 @@ export class JobsComponent implements OnInit, OnDestroy {
     );
   }
 
+  private classifyArtifact(a: { name: string; url: string; mimeType?: string; size?: string }): JobProduct {
+    const n = (a.name || "").toLowerCase();
+    const m = (a.mimeType || "").toLowerCase();
+    if (/\.fit(s|sz?)?$|\.fz$/.test(n) || m.includes("fits")) {
+      return { name: a.name, url: a.url, size: a.size, mimeType: m || "application/fits",            category: "fits",    label: "FITS Image / Cube",     icon: "image" };
+    }
+    if (/\.(votable|vot|xml)$/.test(n) || m.includes("votable") || m.includes("xml")) {
+      return { name: a.name, url: a.url, size: a.size, mimeType: m || "application/x-votable+xml",   category: "votable", label: "VOTable Catalog",       icon: "table_chart" };
+    }
+    if (/\.csv$/.test(n) || m.includes("csv")) {
+      return { name: a.name, url: a.url, size: a.size, mimeType: m || "text/csv",                    category: "csv",     label: "CSV Table",            icon: "grid_on" };
+    }
+    if (/\.json$/.test(n) || m.includes("json")) {
+      return { name: a.name, url: a.url, size: a.size, mimeType: m || "application/json",            category: "json",    label: "Report / Metadata",    icon: "code" };
+    }
+    if (/\.(tar\.gz|tar|zip|gz)$|\.ms\.tar/.test(n) || m.includes("tar") || m.includes("zip")) {
+      const isMs = /\.ms\.tar/.test(n);
+      return { name: a.name, url: a.url, size: a.size, mimeType: m || "application/x-tar",           category: "archive", label: isMs ? "Measurement Set" : "Data Archive", icon: "folder_zip" };
+    }
+    if (/\.(png|jpg|jpeg|svg|webp)$/.test(n) || m.startsWith("image/")) {
+      return { name: a.name, url: a.url, size: a.size, mimeType: m || "image/png",                   category: "preview", label: "Preview Image",        icon: "photo" };
+    }
+    return   { name: a.name, url: a.url, size: a.size, mimeType: m || "application/octet-stream",    category: "other",   label: "File",                 icon: "insert_drive_file" };
+  }
+
+  get productGroups(): Array<{ category: string; label: string; icon: string; items: JobProduct[] }> {
+    const ORDER: ProductCategory[] = ["fits", "votable", "csv", "json", "archive", "preview", "other"];
+    const map = new Map<ProductCategory, JobProduct[]>();
+    for (const p of this.products) {
+      if (!map.has(p.category)) map.set(p.category, []);
+      map.get(p.category)!.push(p);
+    }
+    return ORDER.filter((c) => map.has(c)).map((c) => ({
+      category: c,
+      label:    map.get(c)![0].label,
+      icon:     map.get(c)![0].icon,
+      items:    map.get(c)!,
+    }));
+  }
+
   fetchArtifacts(id: string) {
+    this.products = [];
+    this.externalSources = [];
+    this.voTableResult = null;  // reset before refetch
+    // single request, then classify each artifact by type
     this.jobsSvc.artifacts(id).subscribe(
-      (a) => (this.artifacts = a || []),
+      (rawList) => {
+        const a = (rawList || []) as Array<{ name: string; url: string; mimeType?: string; size?: string }>;
+        this.artifacts = a;
+        this.products = a.map((af) => this.classifyArtifact(af));
+      },
       (e) => (this.error = this.errMsg(e))
     );
     // also fetch any JSON artifact that may contain external-source or VOTable metadata

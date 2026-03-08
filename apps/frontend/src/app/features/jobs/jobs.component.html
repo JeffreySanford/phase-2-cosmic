@@ -204,7 +204,39 @@
                 </div>
               </mat-tab>
 
-              <!-- Tab 5: Lineage -->
+              <!-- Tab 5: Products -->
+              <mat-tab label="Products">
+                <div class="detail-body">
+                  <div *ngIf="products.length === 0" class="products-empty">
+                    <mat-icon>inventory_2</mat-icon>
+                    <span>No output products yet. Job must complete before products are available.</span>
+                  </div>
+                  <ng-container *ngFor="let group of productGroups">
+                    <div class="product-group-header">
+                      <mat-icon class="group-icon group-icon--{{ group.category }}">{{ group.icon }}</mat-icon>
+                      <span class="group-label">{{ group.label }}</span>
+                      <span class="group-count">{{ group.items.length }}</span>
+                    </div>
+                    <div class="product-grid">
+                      <div class="product-card product-card--{{ group.category }}" *ngFor="let p of group.items">
+                        <mat-icon class="product-type-icon product-type-icon--{{ p.category }}">{{ p.icon }}</mat-icon>
+                        <div class="product-info">
+                          <div class="product-name" [title]="p.name">{{ p.name }}</div>
+                          <div class="product-meta">
+                            <span *ngIf="p.size" class="product-size">{{ p.size }}</span>
+                            <span class="product-mime">{{ p.mimeType }}</span>
+                          </div>
+                        </div>
+                        <a mat-icon-button [href]="p.url" target="_blank" rel="noopener" matTooltip="Download {{ p.name }}">
+                          <mat-icon>download</mat-icon>
+                        </a>
+                      </div>
+                    </div>
+                  </ng-container>
+                </div>
+              </mat-tab>
+
+              <!-- Tab 6: Lineage -->
               <mat-tab label="Lineage">
                 <div class="detail-body">
                   <app-jobs-lineage-editor

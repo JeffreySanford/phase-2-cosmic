@@ -130,9 +130,11 @@
 }
 
 .job-card {
-  @extend %vibrant-card;
+  background: linear-gradient(135deg, #0d1f3c 0%, #0a1628 100%);
+  color: #e6f7ff;
   border-left: 4px solid #78909c; // default/fallback; overridden via [ngStyle]
   border-radius: token(radii, md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -141,11 +143,11 @@
 }
 
 .job-card:hover {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.09);
 }
 
 .job-card--expanded {
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.09);
 }
 
 // ─── Collapsed header ────────────────────────────────────────────────────────
@@ -432,6 +434,148 @@
   .legend-items {
     gap: 8px;
   }
+}
+
+// ─── Products tab ────────────────────────────────────────────────────────────
+.products-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.55;
+  padding: 24px 0;
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+}
+
+// ─── Product group header ─────────────────────────────────────────────────────
+.product-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 0 6px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 600;
+  opacity: 0.75;
+
+  &:first-of-type { margin-top: 8px; }
+}
+
+.group-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  &--fits    { color: #00e5ff; }
+  &--votable { color: #7b61ff; }
+  &--csv     { color: #69f0ae; }
+  &--json    { color: #ffd740; }
+  &--archive { color: #ff9100; }
+  &--preview { color: #ff80ab; }
+  &--other   { color: #90a4ae; }
+}
+
+.group-label { flex: 1 1 auto; }
+
+.group-count {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 1px 7px;
+  font-weight: 700;
+}
+
+// ─── Product card grid ────────────────────────────────────────────────────────
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+// category-specific left-border accent colours
+$product-colors: (
+  fits:    #00e5ff,
+  votable: #7b61ff,
+  csv:     #69f0ae,
+  json:    #ffd740,
+  archive: #ff9100,
+  preview: #ff80ab,
+  other:   #90a4ae,
+);
+
+.product-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left-width: 3px;
+  border-radius: token(radii, sm);
+  padding: 8px 10px;
+  transition: background token(transitions, fast) ease;
+
+  @each $cat, $color in $product-colors {
+    &--#{$cat} {
+      border-left-color: $color;
+      &:hover { background: rgba($color, 0.07); }
+    }
+  }
+}
+
+.product-type-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  opacity: 0.8;
+
+  @each $cat, $color in $product-colors {
+    &--#{$cat} { color: $color; }
+  }
+}
+
+.product-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.product-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e6f7ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.product-size {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.product-mime {
+  font-size: 0.68rem;
+  opacity: 0.5;
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
 }
 
 // ─── VOTable result grid ──────────────────────────────────────────────────────

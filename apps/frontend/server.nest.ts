@@ -50,7 +50,7 @@ type EmbeddedJobRecord = {
   lineage?: Record<string, unknown>;
   parameters?: Record<string, unknown>;
   logs: string[];
-  artifacts: Array<{ name: string; url: string }>;
+  artifacts: Array<{ name: string; url: string; mimeType?: string; size?: string }>;
 };
 
 const embeddedJobStore = new Map<string, EmbeddedJobRecord>();
@@ -102,6 +102,71 @@ function createEmbeddedJob(
   };
 }
 
+// Return realistic artifacts for each workflow type once a job completes.
+function workflowArtifacts(
+  workflow: string,
+  jobId: string
+): EmbeddedJobRecord["artifacts"] {
+  const base = `/api/v1/jobs/${jobId}/artifact-content`;
+  switch (workflow) {
+    case "vo.cone-search":
+      return [
+        { name: "cone-search-3c273.votable.xml", url: `${base}/cone-search-3c273.votable.xml`, mimeType: "application/x-votable+xml", size: "42 KB" },
+        { name: "cone-search-3c273.csv",         url: `${base}/cone-search-3c273.csv`,         mimeType: "text/csv",                   size: "18 KB" },
+      ];
+    case "vo.adql.query":
+      return [
+        { name: "query-result.votable.xml", url: `${base}/query-result.votable.xml`, mimeType: "application/x-votable+xml", size: "128 KB" },
+        { name: "query-result.csv",         url: `${base}/query-result.csv`,         mimeType: "text/csv",                   size: "64 KB" },
+      ];
+    case "vo.obscore.search":
+      return [
+        { name: "obscore-m87-results.votable.xml", url: `${base}/obscore-m87-results.votable.xml`, mimeType: "application/x-votable+xml", size: "56 KB" },
+      ];
+    case "vo.datalink.resolve":
+      return [
+        { name: "datalink-manifest.votable.xml",    url: `${base}/datalink-manifest.votable.xml`,    mimeType: "application/x-votable+xml", size: "12 KB"  },
+        { name: "ngvla-pilot-ms-0001.fits",          url: `${base}/ngvla-pilot-ms-0001.fits`,          mimeType: "application/fits",           size: "2.1 GB" },
+        { name: "ngvla-pilot-ms-0001.ms.tar.gz",     url: `${base}/ngvla-pilot-ms-0001.ms.tar.gz`,     mimeType: "application/x-tar",          size: "4.8 GB" },
+      ];
+    case "vo.product.fetch":
+      return [
+        { name: "ngvla-pilot-ms-0001.fits", url: `${base}/ngvla-pilot-ms-0001.fits`, mimeType: "application/fits", size: "2.1 GB" },
+      ];
+    case "vo.soda.cutout":
+      return [
+        { name: "cutout-result.fits",   url: `${base}/cutout-result.fits`,   mimeType: "application/fits", size: "512 KB" },
+        { name: "cutout-preview.png",   url: `${base}/cutout-preview.png`,   mimeType: "image/png",         size: "48 KB"  },
+      ];
+    case "vo.preview.fetch":
+      return [
+        { name: "preview.png", url: `${base}/preview.png`, mimeType: "image/png", size: "96 KB" },
+      ];
+    case "import":
+      return [
+        { name: "ingest-report.json",  url: `${base}/ingest-report.json`,  mimeType: "application/json", size: "8 KB" },
+        { name: "provenance.json",     url: `${base}/provenance.json`,     mimeType: "application/json", size: "3 KB" },
+      ];
+    case "ingest":
+      return [
+        { name: "ingest-manifest.json", url: `${base}/ingest-manifest.json`, mimeType: "application/json", size: "5 KB" },
+      ];
+    case "export":
+      return [
+        { name: "export-bundle.tar.gz",   url: `${base}/export-bundle.tar.gz`,   mimeType: "application/x-tar",  size: "1.3 GB" },
+        { name: "export-manifest.json",   url: `${base}/export-manifest.json`,   mimeType: "application/json",   size: "4 KB"   },
+      ];
+    case "diagnostics":
+      return [
+        { name: "diagnostics-report.json", url: `${base}/diagnostics-report.json`, mimeType: "application/json", size: "22 KB" },
+      ];
+    default:
+      return [
+        { name: "job-output.json", url: `${base}/job-output.json`, mimeType: "application/json", size: "2 KB" },
+      ];
+  }
+}
+
 // Seed the embedded job store with realistic dev-mode jobs so the Jobs view
 // is populated immediately without requiring a running Java backend.
 {
@@ -118,6 +183,9 @@ function createEmbeddedJob(
     j.createdAt = createdAt;
     j.updatedAt = createdAt;
     j.logs = [`${createdAt} job created`, `${createdAt} status=${status}`];
+    if (status === "COMPLETED" || status === "FAILED") {
+      j.artifacts = workflowArtifacts(workflow, j.jobId);
+    }
     return j;
   };
   for (const j of [
@@ -145,6 +213,9 @@ function advanceJobStatus(job: EmbeddedJobRecord): EmbeddedJobRecord {
     job.status = Math.random() < 0.15 ? "FAILED" : "COMPLETED";
     job.updatedAt = now;
     job.logs.push(`${now} status=${job.status}`);
+    if (job.artifacts.length === 0) {
+      job.artifacts = workflowArtifacts(job.workflow, job.jobId);
+    }
   }
   return job;
 }
