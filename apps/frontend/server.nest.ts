@@ -1642,6 +1642,31 @@ export class AppController {
         pass: failures.length === 0, failures, validatedAt: new Date().toISOString() });
       return;
     }
+    // ── Health / infra-status mocks ───────────────────────────────────────────
+    if (path === "/api/v1/health" && method === "GET") {
+      res.json({ status: "ok", service: "java-governance", timestamp: new Date().toISOString() });
+      return;
+    }
+    if (path === "/api/v1/pulsar/status" && method === "GET") {
+      res.json({
+        brokers: 3,
+        topics: 12,
+        partitions: 24,
+        status: "healthy",
+        lastUpdated: new Date().toISOString(),
+      });
+      return;
+    }
+    if (path === "/api/v1/rabbitmq/status" && method === "GET") {
+      res.json({
+        status: "healthy",
+        connection: "established",
+        queues: { audit: "cosmic.audit.queue", control: "cosmic.control.queue" },
+        exchanges: { audit: "cosmic.audit.exchange", control: "cosmic.control.exchange" },
+        lastUpdated: new Date().toISOString(),
+      });
+      return;
+    }
     const targetUrls = baseCandidates.map((b) => `${b}${req.originalUrl}`);
     try {
       const headers = new Headers();
