@@ -49,6 +49,7 @@ done
 echo "[redis-precache] Prepopulating sample jobs, logs and artifacts..."
 # create 5 sample jobs (marked deferred so they remain QUEUED until released)
 SAMPLED=0
+CREATED_IDS=""
 for n in 1 2 3 4 5; do
   ID="job-$(date +%s)-$n"
   NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -66,21 +67,16 @@ EOF
 )
   docker exec "$REDIS_CONTAINER" redis-cli SET "job:${ID}:artifacts" "${ART_JSON}" >/dev/null
   SAMPLED=$((SAMPLED+1))
+  CREATED_IDS="${CREATED_IDS} ${ID}"
 done
 
-echo "[redis-precache] Summary of precached data:"
-echo "[redis-precache] Total job keys: "
-docker exec "$REDIS_CONTAINER" redis-cli KEYS "job:*" | sed -n '1,50p' || true
+TOTAL_KEYS=$(docker exec "$REDIS_CONTAINER" redis-cli KEYS 'job:*' | wc -l | tr -d ' \t')
+echo "[redis-precache] Summary of precached data: ${TOTAL_KEYS} total job keys, ${SAMPLED} newly added."
 
-echo "[redis-precache] Listing first ${SAMPLED} job entries (GET):"
-if docker exec "$REDIS_CONTAINER" -- sh -c "true" >/dev/null 2>&1; then
-  docker exec "$REDIS_CONTAINER" sh -lc "for k in \$(redis-cli KEYS 'job:*' | sed -n '1,100p'); do echo '---' \$k; redis-cli GET \$k; done" | sed -n '1,400p' || true
-elif docker exec "$REDIS_CONTAINER" -- bash -c "true" >/dev/null 2>&1; then
-  docker exec "$REDIS_CONTAINER" bash -lc "for k in \$(redis-cli KEYS 'job:*' | sed -n '1,100p'); do echo '---' \$k; redis-cli GET \$k; done" | sed -n '1,400p' || true
-else
-  # fallback: list keys without executing shell loop inside container
-  docker exec "$REDIS_CONTAINER" redis-cli KEYS 'job:*' | sed -n '1,400p' || true
-fi
+echo "[redis-precache] Newly created jobs:"
+for id in $CREATED_IDS; do
+  echo "  job:${id}"
+done
 
 echo "[redis-precache] Precache complete. Added ${SAMPLED} jobs."
 

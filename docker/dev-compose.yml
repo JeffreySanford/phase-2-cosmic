@@ -78,9 +78,9 @@ services:
       - -c
       - |
         P='exposeBundlesMetricsInPrometheus'
-        grep -q "^${P}=" conf/standalone.conf \
-          && sed -i "s/^${P}=.*/${P}=true/" conf/standalone.conf \
-          || echo "${P}=true" >> conf/standalone.conf
+        grep -q "^$${P}=" conf/standalone.conf \
+          && sed -i "s/^$${P}=.*/$${P}=true/" conf/standalone.conf \
+          || echo "$${P}=true" >> conf/standalone.conf
         bin/pulsar standalone
     ports:
       - "6650:6650"
