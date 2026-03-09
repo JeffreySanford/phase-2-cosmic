@@ -1,3 +1,6 @@
+@use "../../../styles/tokens" as *;
+@use "../../../styles/vibrant-theme" as *;
+
 .viewer-root {
   position: relative;
   width: 100%;
@@ -10,9 +13,6 @@
   flex: 1 1 0;
   min-height: 0; /* allow parent flex to control size */
 }
-
-@import "../../../styles/tokens";
-@import "../../../styles/vibrant-theme";
 
 /* Ensure the component host element itself stretches when placed inside route hosts
    or other flex containers. This prevents the host from collapsing to zero height. */

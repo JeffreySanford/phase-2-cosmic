@@ -1,3 +1,7 @@
+@use "../../../styles/tokens" as *;
+@use "../../../styles/vibrant-theme" as *;
+@use "sass:color";
+
 :host {
   display: block;
   font-family: var(--font-family, "Inter", system-ui, -apple-system);
@@ -6,8 +10,6 @@
 .imported-tokens-placeholder {
 }
 
-@import "../../../styles/tokens";
-@import "../../../styles/vibrant-theme";
 .view-container {
   padding: 18px;
 }
@@ -230,13 +232,13 @@
 
 .legend.throughput::before {
   background: token(colors, accent-3);
-  $glow: mix(token(colors, accent-3), token(colors, accent-2), 40%);
+  $glow: color.mix(token(colors, accent-3), token(colors, accent-2), 40%);
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.25), 0 0 12px rgba($glow, 0.25);
 }
 
 .legend.queue::before {
   background: token(colors, accent-1);
-  $glowq: mix(token(colors, accent-1), token(colors, accent-2), 30%);
+  $glowq: color.mix(token(colors, accent-1), token(colors, accent-2), 30%);
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.25), 0 0 12px rgba($glowq, 0.18);
 }
 

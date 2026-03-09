@@ -1,4 +1,5 @@
-@import "tokens";
+@use "tokens" as *;
+@use "sass:color";
 
 /* Shared vibrant theme variables and helpers (shims to keep existing names) */
 $vibrant-accent-1: token(colors, accent-1) !default;
@@ -22,7 +23,7 @@ $vibrant-surface: linear-gradient(
 
 /* accent button mixin for small glows */
 @mixin accent-glow($c1, $c2) {
-  $glow: mix($c1, $c2, 50%);
+  $glow: color.mix($c1, $c2, 50%);
   background: linear-gradient(90deg, $c1 0%, $c2 100%);
   color: #fff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 18px rgba($glow, 0.18);

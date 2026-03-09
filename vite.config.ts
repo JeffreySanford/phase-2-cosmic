@@ -5,6 +5,12 @@ import tsconfigPaths from "vite-tsconfig-paths";
 // This keeps the browser from being blocked during local development.
 export default defineConfig({
   plugins: [tsconfigPaths()],
+  optimizeDeps: {
+    // Restrict dep-scanning to Angular source files only so Vite doesn't try
+    // to resolve build artifacts (polyfills.js, main.js) referenced in
+    // Playwright HTML reports under apps/frontend-e2e/logs/.
+    entries: ["apps/frontend/src/**/*.{ts,html}"],
+  },
   server: {
     allowedHosts: ["host.docker.internal"],
     proxy: {

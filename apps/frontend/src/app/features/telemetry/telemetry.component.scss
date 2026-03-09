@@ -1,3 +1,6 @@
+@use "../../../styles/tokens" as *;
+@use "../../../styles/vibrant-theme" as *;
+
 .controls {
   display: flex;
   justify-content: space-between;
@@ -6,9 +9,6 @@
   flex-wrap: wrap;
   margin-top: 1em;
 }
-
-@import "../../../styles/tokens";
-@import "../../../styles/vibrant-theme";
 
 /* Ensure the card content can scroll so bottom tabs remain reachable on small viewports */
 mat-card {

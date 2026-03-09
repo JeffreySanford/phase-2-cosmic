@@ -1,5 +1,6 @@
-@import "../../../styles/tokens";
-@import "../../../styles/vibrant-theme";
+@use "../../../styles/tokens" as *;
+@use "../../../styles/vibrant-theme" as *;
+@use "sass:color";
 
 .app-header {
   height: 56px;
@@ -72,7 +73,7 @@
     token(colors, accent-1),
     token(colors, accent-2)
   );
-  $brand-mix: mix(token(colors, accent-1), token(colors, accent-2), 50%);
+  $brand-mix: color.mix(token(colors, accent-1), token(colors, accent-2), 50%);
   box-shadow: 0 6px 18px rgba($brand-mix, 0.12);
   animation: brand-pulse 2.6s ease-in-out infinite;
 }

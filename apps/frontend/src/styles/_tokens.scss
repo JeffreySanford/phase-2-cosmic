@@ -1,3 +1,5 @@
+@use "sass:map";
+
 /* Central design tokens (Sass map) */
 $tokens: (
   colors: (
@@ -29,7 +31,7 @@ $tokens: (
 @function token($keys...) {
   $map: $tokens;
   @each $k in $keys {
-    $map: map-get($map, $k);
+    $map: map.get($map, $k);
     @if $map == null {
       @return null;
     }
