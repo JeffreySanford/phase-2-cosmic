@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Trident FspAllocationPlan",
+  "type": "object",
+  "required": ["planId","subarray","allocations"],
+  "properties": {
+    "planId": {"type": "string"},
+    "subarray": {"type": "string"},
+    "allocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["fspId","startTime","endTime"],
+        "properties": {
+          "fspId": {"type": "string"},
+          "startTime": {"type": "string", "format": "date-time"},
+          "endTime": {"type": "string", "format": "date-time"},
+          "params": {"type": "object", "additionalProperties": true}
+        }
+      }
+    }
+  }
+}

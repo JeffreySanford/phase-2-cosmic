@@ -2,6 +2,8 @@ package com.cosmic.governance.api.service;
 
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.everit.json.schema.Schema;
+import org.everit.json.schema.loader.SchemaLoader;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -29,6 +31,14 @@ public class SchemaService {
             "vo.cone-search", "vo.adql.query", "vo.obscore.search", "vo.votable.fetch",
             "vo.datalink.resolve", "vo.product.fetch", "vo.soda.cutout", "vo.preview.fetch"
         };
+        // include Trident schemas added in Sprint 1
+        String[] trident = new String[]{
+            "trident.scheduling-block",
+            "trident.execution-block",
+            "trident.subarray-configuration",
+            "trident.spectral-configuration",
+            "trident.fsp-allocation-plan"
+        };
         for (String t : builtins) {
             String path = "/schemas/" + t + ".json";
             try (InputStream is = getClass().getResourceAsStream(path)) {
@@ -36,13 +46,16 @@ public class SchemaService {
                 JSONObject raw = new JSONObject(new JSONTokener(is));
                 if (everitAvailable) {
                     try {
-                        Class<?> loaderClass = Class.forName("org.everit.json.schema.loader.SchemaLoader");
-                        Method load = loaderClass.getMethod("load", JSONObject.class);
-                        Object schema = load.invoke(null, raw);
+                        // remove explicit $schema declaration to avoid remote meta-schema resolution
+                        if (raw.has("$schema")) {
+                            raw.remove("$schema");
+                        }
+                        Schema schema = SchemaLoader.load(raw);
                         schemas.put(t, schema);
                     } catch (Exception ex) {
                         // if reflection fails, treat as no schema available
                         schemas.put(t, null);
+                        System.err.println("Failed to load schema " + t + ": " + ex.getMessage());
                     }
                 } else {
                     // store raw JSONObject for reference but mark validation as unavailable
@@ -50,6 +63,30 @@ public class SchemaService {
                 }
             } catch (Exception e) {
                 // ignore missing or invalid schemas
+            }
+        }
+        // Load any additional trident schemas
+        for (String t : trident) {
+            String path = "/schemas/" + t + ".json";
+            try (InputStream is = getClass().getResourceAsStream(path)) {
+                if (is == null) continue;
+                JSONObject raw = new JSONObject(new JSONTokener(is));
+                if (everitAvailable) {
+                    try {
+                        if (raw.has("$schema")) {
+                            raw.remove("$schema");
+                        }
+                        Schema schema = SchemaLoader.load(raw);
+                        schemas.put(t, schema);
+                    } catch (Exception ex) {
+                        schemas.put(t, null);
+                        System.err.println("Failed to load trident schema " + t + ": " + ex.getMessage());
+                    }
+                } else {
+                    schemas.put(t, raw);
+                }
+            } catch (Exception e) {
+                // ignore
             }
         }
     }
@@ -73,11 +110,24 @@ public class SchemaService {
             } else {
                 obj = new JSONObject(payload);
             }
-            Method validate = s.getClass().getMethod("validate", Object.class);
-            validate.invoke(s, obj);
-            return ValidationResult.ofValid();
+            // s should be an Everit Schema instance
+            if (s instanceof Schema schema) {
+                schema.validate(obj);
+                return ValidationResult.ofValid();
+            } else {
+                // unexpected type, treat as no schema
+                return ValidationResult.ofNoSchema();
+            }
         } catch (Exception e) {
-            return ValidationResult.ofInvalid(e.getMessage());
+            // capture full stacktrace for diagnostics
+            try (java.io.StringWriter sw = new java.io.StringWriter(); java.io.PrintWriter pw = new java.io.PrintWriter(sw)) {
+                e.printStackTrace(pw);
+                pw.flush();
+                String trace = sw.toString();
+                return ValidationResult.ofInvalid(trace);
+            } catch (Exception ex) {
+                return ValidationResult.ofInvalid(e.getMessage());
+            }
         }
     }
 

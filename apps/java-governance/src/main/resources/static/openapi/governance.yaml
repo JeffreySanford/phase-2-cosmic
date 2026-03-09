@@ -296,6 +296,16 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
+    SchedulingBlock:
+      $ref: '../../schemas/trident.scheduling-block.json'
+    ExecutionBlock:
+      $ref: '../../schemas/trident.execution-block.json'
+    SubarrayConfiguration:
+      $ref: '../../schemas/trident.subarray-configuration.json'
+    SpectralConfiguration:
+      $ref: '../../schemas/trident.spectral-configuration.json'
+    FspAllocationPlan:
+      $ref: '../../schemas/trident.fsp-allocation-plan.json'
     HealthResponse:
       type: object
       required:
@@ -398,6 +408,7 @@ components:
         queuedAt:
           type: string
           format: date-time
+
     JobStatusResponse:
       type: object
       required:
@@ -412,3 +423,79 @@ components:
         jobId:
           type: string
         workflow:
+          type: string
+          minLength: 1
+        datasetId:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum:
+            - QUEUED
+            - RUNNING
+            - COMPLETED
+            - FAILED
+            - CANCELED
+            - TIMED_OUT
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+        parameters:
+          type: object
+          additionalProperties: true
+        lineage:
+          type: object
+          additionalProperties: true
+        manifest:
+          type: object
+          additionalProperties: true
+        requestedBy:
+          type: string
+      additionalProperties: false
+    DatasetRequest:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        manifest:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    DatasetResponse:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        manifest:
+          type: object
+          additionalProperties: true
+      additionalProperties: false

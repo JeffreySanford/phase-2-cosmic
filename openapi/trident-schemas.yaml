@@ -1,0 +1,16 @@
+openapi: 3.0.3
+info:
+  title: Trident API Schemas (fragments)
+  version: 1.0.0
+components:
+  schemas:
+    SchedulingBlock:
+      $ref: './schemas/trident.scheduling-block.json'
+    ExecutionBlock:
+      $ref: './schemas/trident.execution-block.json'
+    SubarrayConfiguration:
+      $ref: './schemas/trident.subarray-configuration.json'
+    SpectralConfiguration:
+      $ref: './schemas/trident.spectral-configuration.json'
+    FspAllocationPlan:
+      $ref: './schemas/trident.fsp-allocation-plan.json'

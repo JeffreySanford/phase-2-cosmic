@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Trident SubarrayConfiguration",
+  "type": "object",
+  "required": ["id","antennas"],
+  "properties": {
+    "id": {"type": "string"},
+    "antennas": {"type": "array", "items": {"type": "string"}},
+    "mode": {"type": "string"},
+    "parameters": {"type": "object", "additionalProperties": true}
+  }
+}

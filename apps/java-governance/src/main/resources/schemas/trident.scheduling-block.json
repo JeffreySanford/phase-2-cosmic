@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Trident SchedulingBlock",
+  "type": "object",
+  "required": ["id","startTime","endTime","subarray"],
+  "properties": {
+    "id": {"type": "string"},
+    "startTime": {"type": "string", "format": "date-time"},
+    "endTime": {"type": "string", "format": "date-time"},
+    "subarray": {"type": "string"},
+    "metadata": {"type": "object", "additionalProperties": true}
+  }
+}

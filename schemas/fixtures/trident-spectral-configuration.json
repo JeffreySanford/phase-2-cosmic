@@ -1,0 +1,6 @@
+{
+  "band": "L",
+  "centerFrequencyHz": 1400000000,
+  "channelWidth": 1000,
+  "numChannels": 1024
+}

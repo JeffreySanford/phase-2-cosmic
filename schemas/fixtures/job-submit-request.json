@@ -1,11 +1,9 @@
 {
-  "workflow": "casa-imaging",
+  "workflow": "ingest",
   "datasetId": "VLASS_J1347+1217",
   "parameters": {
     "weighting": "briggs",
     "robust": "0.5"
   },
-  "lineage": { "parentJobId": "orig-1234" },
-  "manifest": { "job": "example", "version": 1 },
   "requestedBy": "ci-smoke"
 }

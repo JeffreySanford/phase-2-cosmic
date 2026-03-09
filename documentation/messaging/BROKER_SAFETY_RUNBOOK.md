@@ -1,5 +1,10 @@
 # Broker Safety & DLQ/Replay Runbook
 
+Canonical operator runbook: [../BROKER_SAFETY_RUNBOOK.md](../BROKER_SAFETY_RUNBOOK.md)
+
+This messaging-focused copy remains useful for implementation notes, but the
+root runbook above is the source of truth for DLQ/replay safety procedures.
+
 This runbook provides operators and developers guidance for maintaining a
 resilient streaming-to-governance integration across Kafka, RabbitMQ and
 Pulsar. It covers configuration, failure modes, and recovery procedures.

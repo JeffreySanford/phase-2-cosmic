@@ -140,6 +140,31 @@ Producer         →   Kafka audit   →   Audit consumer
 
 ## Operational Runbook Steps
 
+## Sprint 1 Baseline
+
+Sprint 1 establishes the minimum DLQ/replay safety baseline for the Trident PI.
+Before any replay or broker-side recovery action:
+
+1. Confirm the broker role is correct for the event you are handling.
+   Kafka is the replay source, RabbitMQ is ephemeral control, Pulsar is
+   federated delivery.
+2. Snapshot the failing payloads before mutation or replay.
+   For Kafka and Pulsar, capture topic, partition, offset/messageId, and
+   `correlationId`. For RabbitMQ, capture queue, routing key, and headers.
+3. Verify the payload matches the active schema or envelope contract before
+   resubmitting it.
+4. Replay in small batches first and confirm audit visibility before scaling up.
+5. Never replay control commands blindly from RabbitMQ DLQ into production
+   queues without confirming idempotency behavior.
+
+Operator checklist:
+
+- Kafka replay source verified
+- RabbitMQ control DLQ depth checked
+- Pulsar DLQ topic inspected
+- `correlationId` preserved in the candidate payload
+- downstream audit path observed after the first replayed sample
+
 ### Replay alerts from DLQ
 
 ```bash
@@ -199,3 +224,4 @@ pulsar-admin topics reset-cursor \
 | Date       | Author        | Change                                    |
 | ---------- | ------------- | ----------------------------------------- |
 | 2025-01-01 | Platform Team | Initial broker role partitioning document |
+| 2026-03-09 | Codex         | Added Sprint 1 DLQ/replay baseline guardrails and operator checklist |

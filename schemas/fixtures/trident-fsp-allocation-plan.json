@@ -1,0 +1,12 @@
+{
+  "planId": "plan-1",
+  "subarray": "sub-1",
+  "allocations": [
+    {
+      "fspId": "fsp-1",
+      "startTime": "2026-03-10T00:00:00Z",
+      "endTime": "2026-03-10T00:10:00Z",
+      "params": {}
+    }
+  ]
+}

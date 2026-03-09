@@ -18,7 +18,7 @@ describe("Jobs lineage end-to-end", () => {
     });
 
     cy.request("POST", "/api/v1/jobs", payload).then((resp) => {
-      expect(resp.status).to.equal(202);
+      expect(resp.status).to.equal(201);
       const jobId = resp.body.jobId;
       const jobRecord = {
         jobId,

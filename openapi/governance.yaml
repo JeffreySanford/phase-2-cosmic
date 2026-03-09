@@ -78,3 +78,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/JobStatusResponse"
+
+components:
+  schemas:
+    SchedulingBlock:
+      $ref: '../apps/java-governance/src/main/resources/schemas/trident.scheduling-block.json'
+    ExecutionBlock:
+      $ref: '../apps/java-governance/src/main/resources/schemas/trident.execution-block.json'
+    SubarrayConfiguration:
+      $ref: '../apps/java-governance/src/main/resources/schemas/trident.subarray-configuration.json'
+    SpectralConfiguration:
+      $ref: '../apps/java-governance/src/main/resources/schemas/trident.spectral-configuration.json'
+    FspAllocationPlan:
+      $ref: '../apps/java-governance/src/main/resources/schemas/trident.fsp-allocation-plan.json'

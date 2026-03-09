@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Trident ExecutionBlock",
+  "type": "object",
+  "required": ["id","schedulingBlockId","status"],
+  "properties": {
+    "id": {"type": "string"},
+    "schedulingBlockId": {"type": "string"},
+    "status": {"type": "string", "enum": ["PENDING","RUNNING","COMPLETED","FAILED"]},
+    "startedAt": {"type": ["string","null"], "format": "date-time"},
+    "finishedAt": {"type": ["string","null"], "format": "date-time"},
+    "result": {"type": "object", "additionalProperties": true}
+  }
+}

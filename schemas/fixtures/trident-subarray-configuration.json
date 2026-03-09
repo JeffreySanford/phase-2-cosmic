@@ -1,0 +1,6 @@
+{
+  "id": "sub-1",
+  "antennas": ["ant-1","ant-2"],
+  "mode": "standard",
+  "parameters": { "gain": 1.0 }
+}
