@@ -8,6 +8,10 @@
   </div>
   <div *ngIf="data.type === 'link'">
     <p><strong>Value:</strong> {{ data.value }}</p>
+    <p><strong>Metric source:</strong> {{ sourceLabel() }}</p>
+    <p *ngIf="data.stats?.confidencePct !== undefined">
+      <strong>Confidence:</strong> {{ data.stats?.confidencePct }}% ({{ confidenceLabel() }})
+    </p>
     <p><strong>Summary stats:</strong></p>
     <ul>
       <li *ngIf="data.stats?.throughput">Observed throughput: {{ data.stats?.throughput }}</li>
@@ -16,7 +20,7 @@
       <li *ngIf="data.stats?.errorRate">Error rate: {{ data.stats?.errorRate }}</li>
     </ul>
     <p><strong>What this represents</strong></p>
-    <p>This connection is a logical representation of data flow between two system components (for example: an array data generator to Kafka, or a processing service to object storage). The <em>Observed throughput</em> shows a sampled current rate and the parenthetical maximum capacity (theoretical), derived from assumed per-channel bandwidth.</p>
+    <p>This connection is a logical representation of data flow between two system components. When the metric source is <em>Live exporter metrics</em> or <em>Live admin API</em>, the observed values come from backend-fed live telemetry. Otherwise it is still a derived model used to preserve topology behavior where measured link telemetry is not available yet.</p>
     <p><strong>Detection and remediation</strong></p>
     <ul>
       <li *ngIf="isCritical()">

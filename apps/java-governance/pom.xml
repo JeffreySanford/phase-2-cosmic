@@ -109,6 +109,16 @@
       <artifactId>pulsar-client-admin</artifactId>
       <version>3.2.4</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.pulsar</groupId>
+      <artifactId>pulsar-client</artifactId>
+      <version>3.2.4</version>
+    </dependency>
+    <dependency>
+      <groupId>io.minio</groupId>
+      <artifactId>minio</artifactId>
+      <version>8.5.12</version>
+    </dependency>
   </dependencies>
 
   <build>

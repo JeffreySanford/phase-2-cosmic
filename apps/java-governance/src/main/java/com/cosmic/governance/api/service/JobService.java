@@ -17,6 +17,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 import java.time.Instant;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,7 @@ public class JobService {
     private final ObjectMapper objectMapper;
     private final RedisMarshaller marshaller;
     private final AuditService auditService;
+    private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
     // in-memory fallback store used when RedisTemplate is not available
     private final ConcurrentHashMap<String, Object> inMemoryStore = new ConcurrentHashMap<>();
 
@@ -65,10 +67,16 @@ public class JobService {
     private final AtomicLong dispatchedCount = new AtomicLong(0);
 
     public JobService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, @Autowired List<JobExecutor> executors, RedisMarshaller marshaller, AuditService auditService) {
+        this(redisTemplate, objectMapper, executors, marshaller, auditService, null);
+    }
+
+    @Autowired
+    public JobService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, List<JobExecutor> executors, RedisMarshaller marshaller, AuditService auditService, GovernanceRuntimeMetricsService governanceRuntimeMetricsService) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.marshaller = marshaller;
         this.auditService = auditService;
+        this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;
         if (executors != null) {
             for (JobExecutor e : executors) executorMap.put(e.name(), e);
         }
@@ -91,32 +99,133 @@ public class JobService {
     }
 
     private Object getValue(String key) {
+        Instant startedAt = Instant.now();
         try {
-            if (redisTemplate != null) return redisTemplate.opsForValue().get(key);
-        } catch (Throwable ignored) {}
-        return inMemoryStore.get(key);
+            if (redisTemplate != null) {
+                Object value = redisTemplate.opsForValue().get(key);
+                if (governanceRuntimeMetricsService != null) {
+                    governanceRuntimeMetricsService.recordRedisRead(
+                            "redis",
+                            keyspaceOf(key),
+                            value,
+                            true,
+                            Duration.between(startedAt, Instant.now())
+                    );
+                }
+                return value;
+            }
+        } catch (Throwable ignored) {
+            if (governanceRuntimeMetricsService != null) {
+                governanceRuntimeMetricsService.recordRedisRead(
+                        "redis",
+                        keyspaceOf(key),
+                        Map.of("key", key),
+                        false,
+                        Duration.between(startedAt, Instant.now())
+                );
+            }
+        }
+        Object value = inMemoryStore.get(key);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRedisRead(
+                    "memory",
+                    keyspaceOf(key),
+                    value,
+                    true,
+                    Duration.between(startedAt, Instant.now())
+            );
+        }
+        return value;
     }
 
     private void setValue(String key, Object value) {
+        Instant startedAt = Instant.now();
         try {
             if (redisTemplate != null) {
                 redisTemplate.opsForValue().set(key, value);
+                if (governanceRuntimeMetricsService != null) {
+                    governanceRuntimeMetricsService.recordRedisWrite(
+                            "redis",
+                            keyspaceOf(key),
+                            value,
+                            true,
+                            Duration.between(startedAt, Instant.now())
+                    );
+                }
                 return;
             }
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+            if (governanceRuntimeMetricsService != null) {
+                governanceRuntimeMetricsService.recordRedisWrite(
+                        "redis",
+                        keyspaceOf(key),
+                        value,
+                        false,
+                        Duration.between(startedAt, Instant.now())
+                );
+            }
+        }
         if (value == null) inMemoryStore.remove(key); else inMemoryStore.put(key, value);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRedisWrite(
+                    "memory",
+                    keyspaceOf(key),
+                    value,
+                    true,
+                    Duration.between(startedAt, Instant.now())
+            );
+        }
     }
 
     private java.util.List<Object> listRange(String key, long start, long end) {
+        Instant startedAt = Instant.now();
         try {
             if (redisTemplate != null) {
                 java.util.List<Object> list = redisTemplate.opsForList().range(key, start, end);
+                if (governanceRuntimeMetricsService != null) {
+                    governanceRuntimeMetricsService.recordRedisRead(
+                            "redis",
+                            keyspaceOf(key),
+                            list,
+                            true,
+                            Duration.between(startedAt, Instant.now())
+                    );
+                }
                 return list == null ? List.of() : list;
             }
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+            if (governanceRuntimeMetricsService != null) {
+                governanceRuntimeMetricsService.recordRedisRead(
+                        "redis",
+                        keyspaceOf(key),
+                        Map.of("key", key, "range", start + ":" + end),
+                        false,
+                        Duration.between(startedAt, Instant.now())
+                );
+            }
+        }
         Object o = inMemoryStore.get(key);
-        if (o instanceof java.util.List) return (java.util.List<Object>) o;
+        if (o instanceof java.util.List) {
+            if (governanceRuntimeMetricsService != null) {
+                governanceRuntimeMetricsService.recordRedisRead(
+                        "memory",
+                        keyspaceOf(key),
+                        o,
+                        true,
+                        Duration.between(startedAt, Instant.now())
+                );
+            }
+            return (java.util.List<Object>) o;
+        }
         return List.of();
+    }
+
+    private String keyspaceOf(String key) {
+        if (key == null || key.isBlank()) {
+            return "unknown";
+        }
+        int idx = key.indexOf(':');
+        return idx > 0 ? key.substring(0, idx) : key;
     }
 
     // Package-private helpers for tests to directly manipulate the backing store
@@ -161,10 +270,12 @@ public class JobService {
                     String execName = params != null && params.containsKey("executor") ? String.valueOf(params.get("executor")) : "simulator";
                     if ("simulator".equals(execName)) {
                         log.warn("Completing stale running job {} after restart", rec.getJobId());
+                        JobState previousState = rec.getState();
                         rec.setState(JobState.COMPLETED);
                         rec.setUpdatedAt(Instant.now().toString());
                         rec.setVersion(rec.getVersion() + 1);
                         setValue(k, rec);
+                        recordTerminalMetrics(rec, previousState, JobState.COMPLETED);
                     }
                 }
             }
@@ -207,6 +318,14 @@ public class JobService {
                         if (exec != null) {
                             log.info("Dispatching queued job {} to executor {}", rec.getJobId(), executorName);
                             dispatchedCount.incrementAndGet();
+                            if (governanceRuntimeMetricsService != null) {
+                                governanceRuntimeMetricsService.recordJobDispatch(rec.getWorkflow(), executorName);
+                                governanceRuntimeMetricsService.recordJobDispatchWait(
+                                        rec.getWorkflow(),
+                                        executorName,
+                                        durationBetween(rec.getCreatedAt(), Instant.now())
+                                );
+                            }
                             exec.execute(rec, redisTemplate);
                         } else {
                             log.warn("No executor available for '{}' when dispatching job {}", executorName, rec.getJobId());
@@ -258,6 +377,9 @@ public class JobService {
             }
         } catch (Exception ex) {
             log.error("Failed to release deferred jobs", ex);
+        }
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordDeferredRelease(released);
         }
         return released;
     }
@@ -317,6 +439,15 @@ public class JobService {
             auditSb.append(" lineage=").append(params.get("lineage").toString());
         }
         recordAudit(auditSb.toString());
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordJobSubmitted(request.workflow());
+            if (manifest != null) {
+                governanceRuntimeMetricsService.recordJobMetadataMutation("submit_manifest", manifest);
+            }
+            if (request.lineage() != null) {
+                governanceRuntimeMetricsService.recordJobMetadataMutation("submit_lineage", request.lineage());
+            }
+        }
 
         // pick executor (explicit param 'executor' overrides; default to 'tacc' for ingest workflow)
         String executorName = "simulator";
@@ -343,6 +474,14 @@ public class JobService {
 
         JobExecutor exec = executorMap.getOrDefault(executorName, executorMap.get("simulator"));
         if (!deferred && exec != null) {
+            if (governanceRuntimeMetricsService != null) {
+                governanceRuntimeMetricsService.recordJobDispatch(record.getWorkflow(), executorName);
+                governanceRuntimeMetricsService.recordJobDispatchWait(
+                        record.getWorkflow(),
+                        executorName,
+                        durationBetween(record.getCreatedAt(), Instant.now())
+                );
+            }
             exec.execute(record, redisTemplate);
         }
         return toResponse(record);
@@ -360,7 +499,12 @@ public class JobService {
         Object o = getValue(KEY_PREFIX + jobId);
         if (o == null) return Optional.empty();
         JobRecord rec = marshaller.toJobRecord(o);
-        if (rec != null) return Optional.of(toResponse(rec));
+        if (rec != null) {
+            if (governanceRuntimeMetricsService != null) {
+                governanceRuntimeMetricsService.recordOperatorRead("job_status", rec);
+            }
+            return Optional.of(toResponse(rec));
+        }
         return Optional.empty();
     }
 
@@ -369,12 +513,22 @@ public class JobService {
         try {
             var list = listRange(key, 0, -1);
             if (list == null) return List.of();
-            return list.stream().map(Object::toString).collect(Collectors.toList());
+            var logs = list.stream().map(Object::toString).collect(Collectors.toList());
+            if (governanceRuntimeMetricsService != null) {
+                governanceRuntimeMetricsService.recordOperatorRead("job_logs", logs);
+            }
+            return logs;
         } catch (org.springframework.data.redis.serializer.SerializationException ex) {
             // fallback: read raw bytes from Redis connection and decode as UTF-8 strings
             try {
                 Object o = getValue(key);
-                if (o instanceof List) return ((List<?>) o).stream().map(Object::toString).collect(Collectors.toList());
+                if (o instanceof List) {
+                    var logs = ((List<?>) o).stream().map(Object::toString).collect(Collectors.toList());
+                    if (governanceRuntimeMetricsService != null) {
+                        governanceRuntimeMetricsService.recordOperatorRead("job_logs", logs);
+                    }
+                    return logs;
+                }
             } catch (Exception ignored) {}
         }
         return List.of();
@@ -383,7 +537,14 @@ public class JobService {
     // manifest helpers ---------------------------------------------
     public Optional<Map<String, Object>> getManifest(String jobId) {
         Optional<JobStatusResponse> status = get(jobId);
-        return status.map(JobStatusResponse::manifest);
+        Optional<Map<String, Object>> result = status.map(JobStatusResponse::manifest);
+        result.ifPresent(manifest -> {
+            if (governanceRuntimeMetricsService != null) {
+                governanceRuntimeMetricsService.recordOperatorRead("job_manifest", manifest);
+                governanceRuntimeMetricsService.recordBusinessAction("manifest", "read", manifest);
+            }
+        });
+        return result;
     }
 
     /**
@@ -398,6 +559,9 @@ public class JobService {
         if (params != null && params.get("lineage") instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> lineage = (Map<String, Object>) params.get("lineage");
+            if (governanceRuntimeMetricsService != null) {
+                governanceRuntimeMetricsService.recordOperatorRead("job_lineage", lineage);
+            }
             return Optional.of(lineage);
         }
         return Optional.empty();
@@ -422,6 +586,9 @@ public class JobService {
         setValue(KEY_PREFIX + jobId, rec);
         // Record audit entry for lineage update
         recordAudit("job:" + jobId + " lineage updated to " + String.valueOf(lineage));
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordJobMetadataMutation("lineage_update", lineage);
+        }
         return true;
     }
 
@@ -434,6 +601,10 @@ public class JobService {
         rec.setVersion(rec.getVersion() + 1);
         setValue(KEY_PREFIX + jobId, rec);
         recordAudit("manifest attached " + jobId + " " + manifest.toString());
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordJobMetadataMutation("manifest_attach", manifest);
+            governanceRuntimeMetricsService.recordBusinessAction("manifest", "publish", manifest);
+        }
         return true;
     }
 
@@ -456,6 +627,11 @@ public class JobService {
                 inMemoryStore.put(key, list);
             }
             recordAudit("artifact attached " + jobId + " " + artifact.toString());
+            if (governanceRuntimeMetricsService != null) {
+                String workflow = get(jobId).map(JobStatusResponse::workflow).orElse("unknown");
+                String artifactName = artifact == null ? "unknown" : String.valueOf(artifact.getOrDefault("name", artifact.getOrDefault("type", "unknown")));
+                governanceRuntimeMetricsService.recordArtifactAttached(workflow, artifactName, artifact);
+            }
             return true;
         } catch (Exception ex) {
             log.error("Failed to attach artifact for job {}: {}", jobId, ex.toString());
@@ -465,11 +641,15 @@ public class JobService {
 
     public List<Map<String, String>> getArtifacts(String jobId) {
         String key = KEY_PREFIX + jobId + ":artifacts";
+        Instant startedAt = Instant.now();
         try {
             if (redisTemplate != null) {
                 java.util.List<Object> items = redisTemplate.opsForList().range(key, 0, -1);
-                if (items == null || items.isEmpty()) return List.of();
-                return items.stream().map(it -> {
+                if (items == null || items.isEmpty()) {
+                    recordArtifactRead("metadata_list", List.of(), true, Duration.between(startedAt, Instant.now()));
+                    return List.of();
+                }
+                var artifacts = items.stream().map(it -> {
                     if (it instanceof Map) {
                         @SuppressWarnings("unchecked")
                         Map<String, String> m = (Map<String, String>) it;
@@ -483,12 +663,17 @@ public class JobService {
                         return java.util.Collections.<String, String>emptyMap();
                     }
                 }).collect(Collectors.toList());
+                if (governanceRuntimeMetricsService != null) {
+                    governanceRuntimeMetricsService.recordOperatorRead("job_artifacts", artifacts);
+                }
+                recordArtifactRead("metadata_list", artifacts, true, Duration.between(startedAt, Instant.now()));
+                return artifacts;
             } else {
                 Object o = inMemoryStore.get(key);
                 if (o instanceof java.util.List) {
                     @SuppressWarnings("unchecked")
                     java.util.List<Object> items = (java.util.List<Object>) o;
-                    return items.stream().map(it -> {
+                    var artifacts = items.stream().map(it -> {
                         if (it instanceof Map) {
                             @SuppressWarnings("unchecked")
                             Map<String, String> m = (Map<String, String>) it;
@@ -496,17 +681,28 @@ public class JobService {
                         }
                         return java.util.Collections.<String, String>emptyMap();
                     }).collect(Collectors.toList());
+                    if (governanceRuntimeMetricsService != null) {
+                        governanceRuntimeMetricsService.recordOperatorRead("job_artifacts", artifacts);
+                    }
+                    recordArtifactRead("metadata_list", artifacts, true, Duration.between(startedAt, Instant.now()));
+                    return artifacts;
                 }
+                recordArtifactRead("metadata_list", List.of(), true, Duration.between(startedAt, Instant.now()));
                 return List.of();
             }
         } catch (Exception ex) {
             log.debug("Failed to read artifacts for {}: {}", jobId, ex.toString());
+            recordArtifactRead("metadata_list", Map.of("jobId", jobId), false, Duration.between(startedAt, Instant.now()));
             return List.of();
         }
     }
 
     public List<JobStatusResponse> listAll() {
         return list(null, null, 0, Integer.MAX_VALUE);
+    }
+
+    public void recordArtifactDelivery(String artifactKind, Object payload, boolean success, Duration duration) {
+        recordArtifactRead(artifactKind, payload, success, duration);
     }
     /**
      * Cancel a job if it is in a state that can still be aborted.
@@ -544,7 +740,7 @@ public class JobService {
         // Note: For small dev usage we use keys scan; in production use a proper index or sorted set.
         var keys = keys(KEY_PREFIX + "*");
         if (keys == null || keys.isEmpty()) return List.of();
-        return keys.stream()
+        var jobs = keys.stream()
                 // skip auxiliary keys (logs, artifacts, etc.) which use suffixes like ":logs" or ":artifacts"
                 .filter(k -> k != null && k.chars().filter(ch -> ch == ':').count() == 1)
             .map(k -> getValue(k))
@@ -564,6 +760,20 @@ public class JobService {
                 .limit(size <= 0 ? Integer.MAX_VALUE : size)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordOperatorRead("job_list", jobs);
+        }
+        return jobs;
+    }
+
+    public List<String> getAuditEntriesForJob(String jobId) {
+        var logs = getAuditLog().stream()
+                .filter(e -> e.contains(jobId))
+                .toList();
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordOperatorRead("job_audit", logs);
+        }
+        return logs;
     }
 
     // runtime config & metrics for the scanner
@@ -581,6 +791,66 @@ public class JobService {
         }
         scannerFuture = scanner.scheduleAtFixedRate(this::dispatchQueuedJobs, scannerIntervalSeconds, scannerIntervalSeconds, TimeUnit.SECONDS);
         log.info("Scanner interval updated to {} seconds", scannerIntervalSeconds);
+    }
+
+    SchedulerSnapshot schedulerSnapshot() {
+        int queued = 0;
+        int running = 0;
+        int deferred = 0;
+        int blocked = 0;
+        double totalQueueAgeMs = 0.0d;
+        double maxQueueAgeMs = 0.0d;
+        int queueAgeSamples = 0;
+
+        var keys = keys(KEY_PREFIX + "*");
+        if (keys == null || keys.isEmpty()) {
+            return new SchedulerSnapshot(0, 0, 0, 0, 0.0d, 0.0d, scannerIntervalSeconds);
+        }
+
+        Instant now = Instant.now();
+        for (String key : keys) {
+            if (key == null || key.chars().filter(ch -> ch == ':').count() != 1) {
+                continue;
+            }
+            try {
+                Object value = getValue(key);
+                JobRecord rec = marshaller.toJobRecord(value);
+                if (rec == null) {
+                    continue;
+                }
+                Map<String, Object> params = rec.getParameters() == null ? Map.of() : rec.getParameters();
+                boolean isDeferred = isDeferred(params);
+
+                if (rec.getState() == JobState.RUNNING) {
+                    running++;
+                    continue;
+                }
+                if (rec.getState() != JobState.QUEUED) {
+                    continue;
+                }
+
+                queued++;
+                double queueAgeMs = durationBetween(rec.getCreatedAt(), now).toMillis();
+                totalQueueAgeMs += queueAgeMs;
+                maxQueueAgeMs = Math.max(maxQueueAgeMs, queueAgeMs);
+                queueAgeSamples++;
+
+                if (isDeferred) {
+                    deferred++;
+                    continue;
+                }
+
+                String executorName = executorNameFor(rec);
+                if (!executorMap.containsKey(executorName) || executorMap.get(executorName) == null) {
+                    blocked++;
+                }
+            } catch (Exception ex) {
+                log.debug("Ignoring job {} during scheduler snapshot: {}", key, ex.toString());
+            }
+        }
+
+        double avgQueueAgeMs = queueAgeSamples == 0 ? 0.0d : totalQueueAgeMs / queueAgeSamples;
+        return new SchedulerSnapshot(queued, running, deferred, blocked, avgQueueAgeMs, maxQueueAgeMs, scannerIntervalSeconds);
     }
 
     public Optional<JobStatusResponse> transition(String jobId, JobState newState, Long expectedVersion) {
@@ -602,6 +872,10 @@ public class JobService {
         rec.setUpdatedAt(Instant.now().toString());
         rec.setVersion(rec.getVersion() + 1);
         setValue(key, rec);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordJobTransition(rec.getWorkflow(), current.toString(), newState.toString());
+        }
+        recordTerminalMetrics(rec, current, newState);
 
         // Publish job transition event to control plane
         Map<String, Object> eventDetails = Map.of(
@@ -624,10 +898,17 @@ public class JobService {
         try {
             if (redisTemplate != null) {
                 Boolean removed = redisTemplate.delete(key);
+                if (governanceRuntimeMetricsService != null && Boolean.TRUE.equals(removed)) {
+                    governanceRuntimeMetricsService.recordRedisWrite("redis", keyspaceOf(key), Map.of("deleted", key));
+                }
                 return removed != null && removed;
             }
         } catch (Throwable ignored) {}
-        return inMemoryStore.remove(key) != null;
+        Object removed = inMemoryStore.remove(key);
+        if (governanceRuntimeMetricsService != null && removed != null) {
+            governanceRuntimeMetricsService.recordRedisWrite("memory", keyspaceOf(key), Map.of("deleted", key));
+        }
+        return removed != null;
     }
 
     private boolean isValidTransition(JobState from, JobState to) {
@@ -637,6 +918,81 @@ public class JobService {
             case RUNNING -> to == JobState.COMPLETED || to == JobState.FAILED || to == JobState.CANCELED || to == JobState.TIMED_OUT;
             case COMPLETED, FAILED, CANCELED, TIMED_OUT -> false;
         };
+    }
+
+    private void recordTerminalMetrics(JobRecord rec, JobState fromState, JobState toState) {
+        if (governanceRuntimeMetricsService == null || rec == null || fromState == toState || !isTerminalState(toState)) {
+            return;
+        }
+        try {
+            Instant createdAt = Instant.parse(rec.getCreatedAt());
+            Instant finishedAt = Instant.parse(rec.getUpdatedAt());
+            governanceRuntimeMetricsService.recordJobTerminalState(
+                    rec.getWorkflow(),
+                    executorOf(rec),
+                    toState.name(),
+                    Duration.between(createdAt, finishedAt)
+            );
+        } catch (Exception ex) {
+            log.debug("Unable to record terminal runtime for job {}: {}", rec.getJobId(), ex.toString());
+        }
+    }
+
+    private Duration durationBetween(String startedAt, Instant finishedAt) {
+        try {
+            return Duration.between(Instant.parse(startedAt), finishedAt);
+        } catch (Exception ex) {
+            return Duration.ZERO;
+        }
+    }
+
+    private boolean isDeferred(Map<String, Object> params) {
+        if (params == null || !params.containsKey("deferred")) {
+            return false;
+        }
+        Object deferred = params.get("deferred");
+        if (deferred instanceof Boolean value) {
+            return value;
+        }
+        return "true".equalsIgnoreCase(String.valueOf(deferred));
+    }
+
+    private String executorNameFor(JobRecord rec) {
+        if (rec == null) {
+            return "simulator";
+        }
+        Map<String, Object> params = rec.getParameters() == null ? Map.of() : rec.getParameters();
+        if (params.containsKey("executor")) {
+            return String.valueOf(params.get("executor"));
+        }
+        if (rec.getWorkflow() != null && rec.getWorkflow().equalsIgnoreCase("ingest")) {
+            return "tacc";
+        }
+        if (rec.getWorkflow() != null && rec.getWorkflow().startsWith("vo.")) {
+            return "vo";
+        }
+        return "simulator";
+    }
+
+    private boolean isTerminalState(JobState state) {
+        return state == JobState.COMPLETED
+                || state == JobState.FAILED
+                || state == JobState.CANCELED
+                || state == JobState.TIMED_OUT;
+    }
+
+    private String executorOf(JobRecord rec) {
+        if (rec == null || rec.getParameters() == null) {
+            return "unknown";
+        }
+        Object executor = rec.getParameters().get("executor");
+        return executor == null ? "unknown" : String.valueOf(executor);
+    }
+
+    private void recordArtifactRead(String artifactKind, Object payload, boolean success, Duration duration) {
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordArtifactRead(artifactKind, payload, success, duration);
+        }
     }
 
     private JobStatusResponse toResponse(JobRecord record) {
@@ -661,4 +1017,14 @@ public class JobService {
                 record.getVersion()
         );
     }
+
+    record SchedulerSnapshot(
+            int queuedJobs,
+            int runningJobs,
+            int deferredJobs,
+            int blockedJobs,
+            double avgQueueAgeMs,
+            double maxQueueAgeMs,
+            int scannerIntervalSeconds
+    ) {}
 }

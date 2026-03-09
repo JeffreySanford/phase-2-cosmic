@@ -3,7 +3,9 @@ package com.cosmic.governance.api.service;
 import com.cosmic.governance.api.model.AlertSloMetrics;
 import com.cosmic.governance.api.model.TransientAlert;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,6 +22,7 @@ public class TransientAlertService {
 
     private final Counter alertIngestedCounter;
     private final Counter replaysCounter;
+    private final MeterRegistry meterRegistry;
 
     // In-memory DLQ store (finite bound, evict oldest on overflow)
     private static final int DLQ_MAX = 500;
@@ -33,11 +36,15 @@ public class TransientAlertService {
     private final AtomicLong replayTotal = new AtomicLong(0);
 
     public TransientAlertService(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
         this.alertIngestedCounter = Counter.builder("alert_ingested_total")
                 .description("Total transient alerts ingested")
                 .register(meterRegistry);
         this.replaysCounter = Counter.builder("alert_replays_total")
                 .description("Total alerts replayed from DLQ")
+                .register(meterRegistry);
+        Gauge.builder("alert_dlq_depth", dlqStore, List::size)
+                .description("Current transient alert DLQ depth")
                 .register(meterRegistry);
     }
 
@@ -73,6 +80,7 @@ public class TransientAlertService {
     }
 
     public Optional<TransientAlert> replayFromDlq(String alertId) {
+        long startedAt = System.nanoTime();
         for (TransientAlert a : dlqStore) {
             if (a.id().equals(alertId)) {
                 dlqStore.remove(a);
@@ -81,18 +89,22 @@ public class TransientAlertService {
                         a.correlationId(), a.message(), a.issuedAt(), true, a.tags());
                 replaysCounter.increment();
                 replayTotal.incrementAndGet();
+                recordReplayMetric("single", "success", 1, startedAt);
                 return Optional.of(replayed);
             }
         }
+        recordReplayMetric("single", "miss", 0, startedAt);
         return Optional.empty();
     }
 
     public int replayAllFromDlq() {
+        long startedAt = System.nanoTime();
         List<TransientAlert> pending = new ArrayList<>(dlqStore);
         dlqStore.clear();
         int count = pending.size();
         replaysCounter.increment(count);
         replayTotal.addAndGet(count);
+        recordReplayMetric("all", count > 0 ? "success" : "empty", count, startedAt);
         return count;
     }
 
@@ -122,5 +134,26 @@ public class TransientAlertService {
         Collections.sort(s);
         int index = (int) Math.ceil(pct / 100.0 * s.size()) - 1;
         return s.get(Math.max(0, Math.min(index, s.size() - 1)));
+    }
+
+    private void recordReplayMetric(String path, String result, int replayCount, long startedAtNanos) {
+        Counter.builder("alert_replay_attempts_total")
+                .description("Total transient alert replay attempts by path and outcome")
+                .tag("path", path)
+                .tag("result", result)
+                .register(meterRegistry)
+                .increment();
+        Counter.builder("alert_replay_items_total")
+                .description("Total transient alerts replayed by path and outcome")
+                .tag("path", path)
+                .tag("result", result)
+                .register(meterRegistry)
+                .increment(replayCount);
+        Timer.builder("alert_replay_duration_seconds")
+                .description("Transient alert replay duration by path and outcome")
+                .tag("path", path)
+                .tag("result", result)
+                .register(meterRegistry)
+                .record(System.nanoTime() - startedAtNanos, java.util.concurrent.TimeUnit.NANOSECONDS);
     }
 }

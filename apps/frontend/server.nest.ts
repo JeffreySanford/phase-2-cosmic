@@ -334,8 +334,584 @@ type RedisClientOps = {
   set(key: string, value: string, options: { EX: number }): Promise<unknown>;
 };
 
+const REDIS_CACHE_DURATION_BUCKETS = [
+  0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2,
+];
+const GOVERNANCE_PROXY_DURATION_BUCKETS = [
+  0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5,
+];
+const redisCacheRequestsTotal = { hit: 0, miss: 0, bypass: 0 };
+const redisCacheBytesServedTotal = { hit: 0, miss: 0, bypass: 0 };
+/**
+ * The following Redis-related metrics are global totals rather than being broken down by dimensions like route or result type, since the SSR sample endpoint is just one and we want to keep the instrumentation simple. In a production scenario with more extensive Redis usage, these should be expanded to include dimensional breakdowns as needed.
+ */
+let redisCacheBytesWrittenTotal = 0;
+let redisCacheReadErrorsTotal = 0;
+let redisCacheWriteErrorsTotal = 0;
+let redisClientConnected = 0;
+/** 
+ * The following in-memory metrics stores are keyed by dimension combinations (e.g. route+method+status class) and hold cumulative counts/sums for Prometheus exposition. This is a simplified approach suitable for a dev/test environment; production telemetry should use a proper metrics library and export directly to a monitoring system.
+ */
+const governanceProxyRequestsTotal: Record<string, number> = {};
+const governanceProxyResponseBytesTotal: Record<string, number> = {};
+const governanceProxyDurationBucketCounts: Record<string, number[]> = {};
+const governanceProxyDurationCount: Record<string, number> = {};
+const governanceProxyDurationSum: Record<string, number> = {};
+const prometheusProxyRequestsTotal: Record<string, number> = {};
+const prometheusProxyResponseBytesTotal: Record<string, number> = {};
+const prometheusProxyDurationBucketCounts: Record<string, number[]> = {};
+const prometheusProxyDurationCount: Record<string, number> = {};
+const prometheusProxyDurationSum: Record<string, number> = {};
+const frontendRequestsTotal: Record<string, number> = {};
+const frontendResponseBytesTotal: Record<string, number> = {};
+const frontendDurationBucketCounts: Record<string, number[]> = {};
+const frontendDurationCount: Record<string, number> = {};
+const frontendDurationSum: Record<string, number> = {};
+const frontendApiRequestsTotal: Record<string, number> = {};
+const frontendApiResponseBytesTotal: Record<string, number> = {};
+const frontendApiDurationBucketCounts: Record<string, number[]> = {};
+const frontendApiDurationCount: Record<string, number> = {};
+const frontendApiDurationSum: Record<string, number> = {};
+const redisCacheDurationBucketCounts = new Array(
+  REDIS_CACHE_DURATION_BUCKETS.length + 1
+).fill(0);
+let redisCacheDurationCount = 0;
+let redisCacheDurationSum = 0;
+
+function observeRedisCacheDuration(seconds: number): void {
+  redisCacheDurationCount += 1;
+  redisCacheDurationSum += seconds;
+  const idx = REDIS_CACHE_DURATION_BUCKETS.findIndex((bucket) => seconds <= bucket);
+  redisCacheDurationBucketCounts[
+    idx === -1 ? redisCacheDurationBucketCounts.length - 1 : idx
+  ] += 1;
+}
+
+function governanceProxyKey(route: string, method: string, statusClass: string): string {
+  return `${route}|${method}|${statusClass}`;
+}
+
+function frontendRequestKey(
+  routeGroup: string,
+  method: string,
+  statusClass: string
+): string {
+  return `${routeGroup}|${method}|${statusClass}`;
+}
+
+function frontendApiKey(
+  apiGroup: string,
+  method: string,
+  statusClass: string
+): string {
+  return `${apiGroup}|${method}|${statusClass}`;
+}
+
+function prometheusProxyKey(method: string, statusClass: string): string {
+  return `${method}|${statusClass}`;
+}
+
+function observeGovernanceProxyDuration(
+  route: string,
+  method: string,
+  statusClass: string,
+  seconds: number
+): void {
+  const key = governanceProxyKey(route, method, statusClass);
+  const buckets =
+    governanceProxyDurationBucketCounts[key] ??
+    new Array(GOVERNANCE_PROXY_DURATION_BUCKETS.length + 1).fill(0);
+  governanceProxyDurationBucketCounts[key] = buckets;
+  governanceProxyDurationCount[key] = (governanceProxyDurationCount[key] ?? 0) + 1;
+  governanceProxyDurationSum[key] = (governanceProxyDurationSum[key] ?? 0) + seconds;
+  const idx = GOVERNANCE_PROXY_DURATION_BUCKETS.findIndex(
+    (bucket) => seconds <= bucket
+  );
+  buckets[idx === -1 ? buckets.length - 1 : idx] += 1;
+}
+
+function recordGovernanceProxyMetrics(
+  route: string,
+  method: string,
+  status: number,
+  responseBytes: number,
+  durationSeconds: number
+): void {
+  const statusClass =
+    status >= 500 ? "5xx" : status >= 400 ? "4xx" : status >= 300 ? "3xx" : "2xx";
+  const key = governanceProxyKey(route, method.toUpperCase(), statusClass);
+  governanceProxyRequestsTotal[key] = (governanceProxyRequestsTotal[key] ?? 0) + 1;
+  governanceProxyResponseBytesTotal[key] =
+    (governanceProxyResponseBytesTotal[key] ?? 0) + Math.max(0, responseBytes);
+  observeGovernanceProxyDuration(route, method.toUpperCase(), statusClass, durationSeconds);
+}
+
+function observePrometheusProxyDuration(
+  method: string,
+  statusClass: string,
+  seconds: number
+): void {
+  const key = prometheusProxyKey(method, statusClass);
+  const buckets =
+    prometheusProxyDurationBucketCounts[key] ??
+    new Array(GOVERNANCE_PROXY_DURATION_BUCKETS.length + 1).fill(0);
+  prometheusProxyDurationBucketCounts[key] = buckets;
+  prometheusProxyDurationCount[key] = (prometheusProxyDurationCount[key] ?? 0) + 1;
+  prometheusProxyDurationSum[key] = (prometheusProxyDurationSum[key] ?? 0) + seconds;
+  const idx = GOVERNANCE_PROXY_DURATION_BUCKETS.findIndex(
+    (bucket) => seconds <= bucket
+  );
+  buckets[idx === -1 ? buckets.length - 1 : idx] += 1;
+}
+
+function recordPrometheusProxyMetrics(
+  method: string,
+  status: number,
+  responseBytes: number,
+  durationSeconds: number
+): void {
+  const statusClass =
+    status >= 500 ? "5xx" : status >= 400 ? "4xx" : status >= 300 ? "3xx" : "2xx";
+  const key = prometheusProxyKey(method.toUpperCase(), statusClass);
+  prometheusProxyRequestsTotal[key] = (prometheusProxyRequestsTotal[key] ?? 0) + 1;
+  prometheusProxyResponseBytesTotal[key] =
+    (prometheusProxyResponseBytesTotal[key] ?? 0) + Math.max(0, responseBytes);
+  observePrometheusProxyDuration(method.toUpperCase(), statusClass, durationSeconds);
+}
+
+function observeFrontendRequestDuration(
+  routeGroup: string,
+  method: string,
+  statusClass: string,
+  seconds: number
+): void {
+  const key = frontendRequestKey(routeGroup, method, statusClass);
+  const buckets =
+    frontendDurationBucketCounts[key] ??
+    new Array(GOVERNANCE_PROXY_DURATION_BUCKETS.length + 1).fill(0);
+  frontendDurationBucketCounts[key] = buckets;
+  frontendDurationCount[key] = (frontendDurationCount[key] ?? 0) + 1;
+  frontendDurationSum[key] = (frontendDurationSum[key] ?? 0) + seconds;
+  const idx = GOVERNANCE_PROXY_DURATION_BUCKETS.findIndex(
+    (bucket) => seconds <= bucket
+  );
+  buckets[idx === -1 ? buckets.length - 1 : idx] += 1;
+}
+
+function recordFrontendRequestMetrics(
+  routeGroup: string,
+  method: string,
+  status: number,
+  responseBytes: number,
+  durationSeconds: number
+): void {
+  const statusClass =
+    status >= 500 ? "5xx" : status >= 400 ? "4xx" : status >= 300 ? "3xx" : "2xx";
+  const key = frontendRequestKey(routeGroup, method.toUpperCase(), statusClass);
+  frontendRequestsTotal[key] = (frontendRequestsTotal[key] ?? 0) + 1;
+  frontendResponseBytesTotal[key] =
+    (frontendResponseBytesTotal[key] ?? 0) + Math.max(0, responseBytes);
+  observeFrontendRequestDuration(
+    routeGroup,
+    method.toUpperCase(),
+    statusClass,
+    durationSeconds
+  );
+}
+
+function observeFrontendApiDuration(
+  apiGroup: string,
+  method: string,
+  statusClass: string,
+  seconds: number
+): void {
+  const key = frontendApiKey(apiGroup, method, statusClass);
+  const buckets =
+    frontendApiDurationBucketCounts[key] ??
+    new Array(GOVERNANCE_PROXY_DURATION_BUCKETS.length + 1).fill(0);
+  frontendApiDurationBucketCounts[key] = buckets;
+  frontendApiDurationCount[key] = (frontendApiDurationCount[key] ?? 0) + 1;
+  frontendApiDurationSum[key] = (frontendApiDurationSum[key] ?? 0) + seconds;
+  const idx = GOVERNANCE_PROXY_DURATION_BUCKETS.findIndex(
+    (bucket) => seconds <= bucket
+  );
+  buckets[idx === -1 ? buckets.length - 1 : idx] += 1;
+}
+
+function recordFrontendApiMetrics(
+  apiGroup: string,
+  method: string,
+  status: number,
+  responseBytes: number,
+  durationSeconds: number
+): void {
+  const statusClass =
+    status >= 500 ? "5xx" : status >= 400 ? "4xx" : status >= 300 ? "3xx" : "2xx";
+  const key = frontendApiKey(apiGroup, method.toUpperCase(), statusClass);
+  frontendApiRequestsTotal[key] = (frontendApiRequestsTotal[key] ?? 0) + 1;
+  frontendApiResponseBytesTotal[key] =
+    (frontendApiResponseBytesTotal[key] ?? 0) + Math.max(0, responseBytes);
+  observeFrontendApiDuration(
+    apiGroup,
+    method.toUpperCase(),
+    statusClass,
+    durationSeconds
+  );
+}
+
+function classifyFrontendRoute(path: string): string {
+  if (!path || path === "/") return "landing";
+  const normalized = path.split("?")[0].toLowerCase();
+  if (normalized.startsWith("/dashboard")) return "dashboard";
+  if (normalized.startsWith("/telemetry")) return "telemetry";
+  if (normalized.startsWith("/topology")) return "topology";
+  if (normalized.startsWith("/jobs")) return "jobs";
+  if (normalized.startsWith("/viewer")) return "viewer";
+  if (normalized.startsWith("/datasets")) return "datasets";
+  if (normalized.startsWith("/diagnostics")) return "diagnostics";
+  if (normalized.startsWith("/settings")) return "settings";
+  return "other";
+}
+
+function classifyFrontendApiRoute(path: string): string {
+  if (!path) return "other";
+  const normalized = path.split("?")[0].toLowerCase();
+  if (normalized === "/api/v1/telemetry/infrastructure") return "telemetry";
+  if (normalized.startsWith("/api/v1/alerts")) return "alerts";
+  if (normalized.startsWith("/api/v1/broker-events")) return "broker_events";
+  if (normalized.startsWith("/api/v1/commissioning")) return "commissioning";
+  if (normalized.startsWith("/api/v1/health")) return "health";
+  if (normalized.startsWith("/api/v1/pulsar")) return "pulsar";
+  if (normalized.startsWith("/api/v1/rabbitmq")) return "rabbitmq";
+  if (normalized.startsWith("/api/v1/vo")) return "vo";
+  if (normalized.startsWith("/api/v1/jobs")) return "jobs";
+  if (normalized.startsWith("/api/v1/admin")) return "admin";
+  if (normalized.startsWith("/api/v1/public-sources")) return "public_sources";
+  return "other";
+}
+
+function renderPrometheusMetrics(): string {
+  const lines: string[] = [];
+  lines.push(
+    "# HELP frontend_ssr_redis_client_connected Whether the Nest SSR Redis client is connected.",
+    "# TYPE frontend_ssr_redis_client_connected gauge",
+    `frontend_ssr_redis_client_connected ${redisClientConnected}`
+  );
+
+  lines.push(
+    "# HELP frontend_ssr_redis_cache_requests_total Total Redis cache requests made by the Nest SSR VO sample endpoint.",
+    "# TYPE frontend_ssr_redis_cache_requests_total counter"
+  );
+  for (const [result, value] of Object.entries(redisCacheRequestsTotal)) {
+    lines.push(
+      `frontend_ssr_redis_cache_requests_total{result="${result}"} ${value}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_redis_cache_bytes_served_total Total response bytes served by the Nest SSR VO sample endpoint.",
+    "# TYPE frontend_ssr_redis_cache_bytes_served_total counter"
+  );
+  for (const [result, value] of Object.entries(redisCacheBytesServedTotal)) {
+    lines.push(
+      `frontend_ssr_redis_cache_bytes_served_total{result="${result}"} ${value}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_redis_cache_bytes_written_total Total bytes written into Redis by the Nest SSR VO sample endpoint.",
+    "# TYPE frontend_ssr_redis_cache_bytes_written_total counter",
+    `frontend_ssr_redis_cache_bytes_written_total ${redisCacheBytesWrittenTotal}`
+  );
+
+  lines.push(
+    "# HELP frontend_ssr_redis_cache_errors_total Total Redis cache read/write errors seen by Nest SSR.",
+    "# TYPE frontend_ssr_redis_cache_errors_total counter",
+    `frontend_ssr_redis_cache_errors_total{operation="read"} ${redisCacheReadErrorsTotal}`,
+    `frontend_ssr_redis_cache_errors_total{operation="write"} ${redisCacheWriteErrorsTotal}`
+  );
+
+  lines.push(
+    "# HELP frontend_ssr_redis_cache_request_duration_seconds Request duration for the Nest SSR VO sample endpoint.",
+    "# TYPE frontend_ssr_redis_cache_request_duration_seconds histogram"
+  );
+  let cumulative = 0;
+  REDIS_CACHE_DURATION_BUCKETS.forEach((bucket, index) => {
+    cumulative += redisCacheDurationBucketCounts[index];
+    lines.push(
+      `frontend_ssr_redis_cache_request_duration_seconds_bucket{le="${bucket}"} ${cumulative}`
+    );
+  });
+  cumulative +=
+    redisCacheDurationBucketCounts[redisCacheDurationBucketCounts.length - 1];
+  lines.push(
+    `frontend_ssr_redis_cache_request_duration_seconds_bucket{le="+Inf"} ${cumulative}`,
+    `frontend_ssr_redis_cache_request_duration_seconds_sum ${redisCacheDurationSum}`,
+    `frontend_ssr_redis_cache_request_duration_seconds_count ${redisCacheDurationCount}`
+  );
+
+  lines.push(
+    "# HELP frontend_ssr_governance_proxy_requests_total Total requests proxied from Nest SSR to java-governance.",
+    "# TYPE frontend_ssr_governance_proxy_requests_total counter"
+  );
+  for (const [key, value] of Object.entries(governanceProxyRequestsTotal)) {
+    const [route, method, statusClass] = key.split("|");
+    lines.push(
+      `frontend_ssr_governance_proxy_requests_total{route="${route}",method="${method}",status_class="${statusClass}"} ${value}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_governance_proxy_response_bytes_total Total response bytes returned by java-governance through Nest SSR.",
+    "# TYPE frontend_ssr_governance_proxy_response_bytes_total counter"
+  );
+  for (const [key, value] of Object.entries(governanceProxyResponseBytesTotal)) {
+    const [route, method, statusClass] = key.split("|");
+    lines.push(
+      `frontend_ssr_governance_proxy_response_bytes_total{route="${route}",method="${method}",status_class="${statusClass}"} ${value}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_governance_proxy_request_duration_seconds Duration of requests proxied from Nest SSR to java-governance.",
+    "# TYPE frontend_ssr_governance_proxy_request_duration_seconds histogram"
+  );
+  for (const key of Object.keys(governanceProxyDurationBucketCounts)) {
+    const [route, method, statusClass] = key.split("|");
+    const buckets = governanceProxyDurationBucketCounts[key];
+    let bucketCumulative = 0;
+    GOVERNANCE_PROXY_DURATION_BUCKETS.forEach((bucket, index) => {
+      bucketCumulative += buckets[index] ?? 0;
+      lines.push(
+        `frontend_ssr_governance_proxy_request_duration_seconds_bucket{route="${route}",method="${method}",status_class="${statusClass}",le="${bucket}"} ${bucketCumulative}`
+      );
+    });
+    bucketCumulative += buckets[buckets.length - 1] ?? 0;
+    lines.push(
+      `frontend_ssr_governance_proxy_request_duration_seconds_bucket{route="${route}",method="${method}",status_class="${statusClass}",le="+Inf"} ${bucketCumulative}`,
+      `frontend_ssr_governance_proxy_request_duration_seconds_sum{route="${route}",method="${method}",status_class="${statusClass}"} ${governanceProxyDurationSum[key] ?? 0}`,
+      `frontend_ssr_governance_proxy_request_duration_seconds_count{route="${route}",method="${method}",status_class="${statusClass}"} ${governanceProxyDurationCount[key] ?? 0}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_prometheus_proxy_requests_total Total requests proxied from Nest SSR to Prometheus.",
+    "# TYPE frontend_ssr_prometheus_proxy_requests_total counter"
+  );
+  for (const [key, value] of Object.entries(prometheusProxyRequestsTotal)) {
+    const [method, statusClass] = key.split("|");
+    lines.push(
+      `frontend_ssr_prometheus_proxy_requests_total{method="${method}",status_class="${statusClass}"} ${value}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_prometheus_proxy_response_bytes_total Total response bytes returned by Prometheus through Nest SSR.",
+    "# TYPE frontend_ssr_prometheus_proxy_response_bytes_total counter"
+  );
+  for (const [key, value] of Object.entries(prometheusProxyResponseBytesTotal)) {
+    const [method, statusClass] = key.split("|");
+    lines.push(
+      `frontend_ssr_prometheus_proxy_response_bytes_total{method="${method}",status_class="${statusClass}"} ${value}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_prometheus_proxy_request_duration_seconds Duration of requests proxied from Nest SSR to Prometheus.",
+    "# TYPE frontend_ssr_prometheus_proxy_request_duration_seconds histogram"
+  );
+  for (const key of Object.keys(prometheusProxyDurationBucketCounts)) {
+    const [method, statusClass] = key.split("|");
+    const buckets = prometheusProxyDurationBucketCounts[key];
+    let bucketCumulative = 0;
+    GOVERNANCE_PROXY_DURATION_BUCKETS.forEach((bucket, index) => {
+      bucketCumulative += buckets[index] ?? 0;
+      lines.push(
+        `frontend_ssr_prometheus_proxy_request_duration_seconds_bucket{method="${method}",status_class="${statusClass}",le="${bucket}"} ${bucketCumulative}`
+      );
+    });
+    bucketCumulative += buckets[buckets.length - 1] ?? 0;
+    lines.push(
+      `frontend_ssr_prometheus_proxy_request_duration_seconds_bucket{method="${method}",status_class="${statusClass}",le="+Inf"} ${bucketCumulative}`,
+      `frontend_ssr_prometheus_proxy_request_duration_seconds_sum{method="${method}",status_class="${statusClass}"} ${prometheusProxyDurationSum[key] ?? 0}`,
+      `frontend_ssr_prometheus_proxy_request_duration_seconds_count{method="${method}",status_class="${statusClass}"} ${prometheusProxyDurationCount[key] ?? 0}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_frontend_requests_total Total frontend-originated page requests handled by Nest SSR.",
+    "# TYPE frontend_ssr_frontend_requests_total counter"
+  );
+  for (const [key, value] of Object.entries(frontendRequestsTotal)) {
+    const [routeGroup, method, statusClass] = key.split("|");
+    lines.push(
+      `frontend_ssr_frontend_requests_total{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${value}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_frontend_response_bytes_total Total response bytes served by Nest SSR for frontend page requests.",
+    "# TYPE frontend_ssr_frontend_response_bytes_total counter"
+  );
+  for (const [key, value] of Object.entries(frontendResponseBytesTotal)) {
+    const [routeGroup, method, statusClass] = key.split("|");
+    lines.push(
+      `frontend_ssr_frontend_response_bytes_total{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${value}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_frontend_request_duration_seconds Duration of frontend page requests handled by Nest SSR.",
+    "# TYPE frontend_ssr_frontend_request_duration_seconds histogram"
+  );
+  for (const key of Object.keys(frontendDurationBucketCounts)) {
+    const [routeGroup, method, statusClass] = key.split("|");
+    const buckets = frontendDurationBucketCounts[key];
+    let bucketCumulative = 0;
+    GOVERNANCE_PROXY_DURATION_BUCKETS.forEach((bucket, index) => {
+      bucketCumulative += buckets[index] ?? 0;
+      lines.push(
+        `frontend_ssr_frontend_request_duration_seconds_bucket{route_group="${routeGroup}",method="${method}",status_class="${statusClass}",le="${bucket}"} ${bucketCumulative}`
+      );
+    });
+    bucketCumulative += buckets[buckets.length - 1] ?? 0;
+    lines.push(
+      `frontend_ssr_frontend_request_duration_seconds_bucket{route_group="${routeGroup}",method="${method}",status_class="${statusClass}",le="+Inf"} ${bucketCumulative}`,
+      `frontend_ssr_frontend_request_duration_seconds_sum{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${frontendDurationSum[key] ?? 0}`,
+      `frontend_ssr_frontend_request_duration_seconds_count{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${frontendDurationCount[key] ?? 0}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_frontend_api_requests_total Total frontend-originated API requests handled by Nest SSR.",
+    "# TYPE frontend_ssr_frontend_api_requests_total counter"
+  );
+  for (const [key, value] of Object.entries(frontendApiRequestsTotal)) {
+    const [apiGroup, method, statusClass] = key.split("|");
+    lines.push(
+      `frontend_ssr_frontend_api_requests_total{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${value}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_frontend_api_response_bytes_total Total response bytes served by Nest SSR for frontend-originated API requests.",
+    "# TYPE frontend_ssr_frontend_api_response_bytes_total counter"
+  );
+  for (const [key, value] of Object.entries(frontendApiResponseBytesTotal)) {
+    const [apiGroup, method, statusClass] = key.split("|");
+    lines.push(
+      `frontend_ssr_frontend_api_response_bytes_total{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${value}`
+    );
+  }
+
+  lines.push(
+    "# HELP frontend_ssr_frontend_api_request_duration_seconds Duration of frontend-originated API requests handled by Nest SSR.",
+    "# TYPE frontend_ssr_frontend_api_request_duration_seconds histogram"
+  );
+  for (const key of Object.keys(frontendApiDurationBucketCounts)) {
+    const [apiGroup, method, statusClass] = key.split("|");
+    const buckets = frontendApiDurationBucketCounts[key];
+    let bucketCumulative = 0;
+    GOVERNANCE_PROXY_DURATION_BUCKETS.forEach((bucket, index) => {
+      bucketCumulative += buckets[index] ?? 0;
+      lines.push(
+        `frontend_ssr_frontend_api_request_duration_seconds_bucket{api_group="${apiGroup}",method="${method}",status_class="${statusClass}",le="${bucket}"} ${bucketCumulative}`
+      );
+    });
+    bucketCumulative += buckets[buckets.length - 1] ?? 0;
+    lines.push(
+      `frontend_ssr_frontend_api_request_duration_seconds_bucket{api_group="${apiGroup}",method="${method}",status_class="${statusClass}",le="+Inf"} ${bucketCumulative}`,
+      `frontend_ssr_frontend_api_request_duration_seconds_sum{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${frontendApiDurationSum[key] ?? 0}`,
+      `frontend_ssr_frontend_api_request_duration_seconds_count{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${frontendApiDurationCount[key] ?? 0}`
+    );
+  }
+
+  return lines.join("\n") + "\n";
+}
+
 // Redis client singleton (optional)
 let redisClient: RedisClientOps | null = null;
+const VO_CACHED_SAMPLES_KEY = "frontend:ssr:vo-cached-samples:v1";
+const VO_CACHED_SAMPLES_TTL_SECONDS = 300;
+
+function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
+  return {
+    "vo.cone-search": {
+      provider: "SIMBAD",
+      serviceUrl: "https://simbad.cds.unistra.fr/simbad/sim-tap/sync",
+      target: "M42",
+      ra: 83.8221,
+      dec: -5.3911,
+      radius: 0.5,
+      format: "votable",
+      liveMode: true,
+      _description: "Cone search around Orion Nebula (M42), radius 0.5\u00b0",
+    },
+    "vo.adql.query": {
+      provider: "HEASARC",
+      tapUrl: "https://heasarc.gsfc.nasa.gov/xamin/tap/sync",
+      adql: "SELECT TOP 10 target_name, ra, dec, exposure FROM chanmaster ORDER BY exposure DESC",
+      limit: 10,
+      liveMode: true,
+      _description: "Top 10 longest Chandra observations (HEASARC TAP)",
+    },
+    "vo.obscore.search": {
+      provider: "ESO",
+      tapUrl: "https://archive.eso.org/tap_obs/sync",
+      dataproductType: "image",
+      spatialBoundsRa: 187.277915,
+      spatialBoundsDec: 2.052389,
+      spatialBoundsRadius: 0.5,
+      limit: 20,
+      liveMode: true,
+      _description: "ESO ObsCore image search around quasar 3C 273 (r=0.5\u00b0)",
+    },
+    "vo.votable.fetch": {
+      provider: "HEASARC",
+      votableUrl:
+        "https://heasarc.gsfc.nasa.gov/xamin/query?table=chanmaster&position=3c273&format=votable",
+      format: "votable",
+      liveMode: true,
+      _description: "Chandra observations of quasar 3C 273 as VOTable",
+    },
+    "vo.datalink.resolve": {
+      provider: "CADC",
+      datalinkUrl:
+        "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/datalink",
+      datasetIdentifier: "ivo://cadc.nrc.ca/CFHT?2459817",
+      liveMode: true,
+      _description: "DataLink products for CFHT MegaCam observation 2459817",
+    },
+    "vo.product.fetch": {
+      provider: "HEASARC",
+      productUrl:
+        "https://heasarc.gsfc.nasa.gov/FTP/chandra/data/byobsid/2/21843/primary/acisf21843N002_evt2.fits.gz",
+      expectedMimeType: "application/fits",
+      liveMode: true,
+      _description: "Chandra ACIS event file \u2014 Cas A supernova remnant (obs 21843)",
+    },
+    "vo.soda.cutout": {
+      provider: "CADC",
+      sodaUrl:
+        "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/soda",
+      datasetIdentifier: "ivo://cadc.nrc.ca/CFHT?2459817",
+      spatialBoundsRa: 187.277915,
+      spatialBoundsDec: 2.052389,
+      spatialBoundsRadius: 0.1,
+      outputFormat: "fits",
+      liveMode: true,
+      _description: "CADC SODA cutout centered on 3C 273 (r=0.1\u00b0, CFHT obs 2459817)",
+    },
+    "vo.preview.fetch": {
+      provider: "ESASky",
+      previewUrl:
+        "https://sky.esa.int/esasky-tap/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=votable&QUERY=SELECT+TOP+5+*+FROM+mv_xsa_obs+WHERE+target_name+LIKE+%2527%2525Crab%2525%2527",
+      liveMode: true,
+      _description: "ESASky XMM-Newton observations matching 'Crab' target (top 5)",
+    },
+  };
+}
+
 async function initRedisClient() {
   if (process.env["DISABLE_REDIS_CLIENT"] === "true") {
     console.log("Redis client disabled by environment");
@@ -349,14 +925,19 @@ async function initRedisClient() {
     "redis://127.0.0.1:6379";
   try {
     const c = createClient({ url }) as unknown as RedisClientOps;
-    c.on("error", (err: unknown) => console.warn("Redis client error:", err));
+    c.on("error", (err: unknown) => {
+      redisClientConnected = 0;
+      console.warn("Redis client error:", err);
+    });
     await c.connect();
     redisClient = c;
+    redisClientConnected = 1;
     console.log("Connected to Redis at", url);
   } catch (e) {
     // Not fatal — Redis is optional for caching
     console.warn("Could not initialize Redis client:", e);
     redisClient = null;
+    redisClientConnected = 0;
   }
 }
 
@@ -945,6 +1526,367 @@ export class AppController {
     return this.buildBaseCandidates(governanceBase);
   }
 
+  private mockInfrastructureTelemetry() {
+    return {
+      measuredAt: new Date().toISOString(),
+      source: "mock",
+      services: {
+        redis: {
+          source: "mock",
+          opsPerSec: 42,
+          ingressBytesPerSec: 4096,
+          egressBytesPerSec: 6144,
+          connectedClients: 3,
+          memoryUsedBytes: 1572864,
+        },
+        rabbitmq: {
+          source: "mock",
+          queueDepth: 8,
+          readyMessages: 5,
+          unackedMessages: 3,
+          publishRatePerSec: 6,
+          deliverRatePerSec: 5,
+          consumers: 2,
+        },
+        minio: {
+          source: "mock",
+          ingressBytesPerSec: 1048576,
+          egressBytesPerSec: 524288,
+          requestsPerSec: 12,
+          errorRatePerSec: 0,
+        },
+        nginx: {
+          source: "mock",
+          requestsPerSec: 6.2,
+          ingressBytesPerSec: 4096,
+          egressBytesPerSec: 98304,
+          errorRatePerSec: 0.02,
+          avgLatencyMs: 9,
+        },
+        frontendSsr: {
+          source: "mock",
+          connectedClients: 1,
+          hitRatePerSec: 1.2,
+          missRatePerSec: 0.15,
+          bypassRatePerSec: 0,
+          ingressBytesPerSec: 512,
+          egressBytesPerSec: 3072,
+          errorRatePerSec: 0,
+          avgLatencyMs: 4.5,
+          governanceProxyRatePerSec: 2.4,
+          governanceProxyBytesPerSec: 24576,
+          governanceProxyErrorRatePerSec: 0.02,
+          governanceProxyLatencyMs: 28,
+          prometheusProxyRatePerSec: 3.1,
+          prometheusProxyBytesPerSec: 131072,
+          prometheusProxyErrorRatePerSec: 0,
+          prometheusProxyLatencyMs: 22,
+          frontendRequestRatePerSec: 4.8,
+          frontendResponseBytesPerSec: 65536,
+          frontendErrorRatePerSec: 0.01,
+          frontendRequestLatencyMs: 16,
+          frontendApiRequestRatePerSec: 7.4,
+          frontendApiResponseBytesPerSec: 49152,
+          frontendApiErrorRatePerSec: 0.03,
+          frontendApiLatencyMs: 21,
+          routeRequestRatesPerSec: {
+            dashboard: 1.2,
+            telemetry: 1.6,
+            topology: 0.8,
+            jobs: 0.7,
+            diagnostics: 0.3,
+            settings: 0.2,
+          },
+          apiRouteRequestRatesPerSec: {
+            telemetry: 1.7,
+            jobs: 2.1,
+            vo: 1.3,
+            alerts: 0.9,
+            rabbitmq: 0.6,
+            pulsar: 0.5,
+            admin: 0.3,
+          },
+        },
+        kafka: {
+          source: "mock",
+          brokers: 1,
+          topics: 4,
+          consumerLag: 12,
+          ingressBytesPerSec: 7340032,
+          egressBytesPerSec: 6291456,
+        },
+        javaIngest: {
+          source: "prometheus",
+          receiveRatePerSec: 6.2,
+          processedRatePerSec: 6.1,
+          validationFailureRatePerSec: 0.08,
+          failureRatePerSec: 0.02,
+          retryRatePerSec: 0,
+          dlqRatePerSec: 0,
+          payloadBytesPerSec: 5242880,
+          avgLatencyMs: 14,
+        },
+        pulsar: {
+          source: "prometheus",
+          status: "healthy",
+          brokers: 1,
+          topics: 6,
+          partitions: 24,
+          ingressBytesPerSec: 4194304,
+          egressBytesPerSec: 3670016,
+          publishRatePerSec: 18,
+          deliverRatePerSec: 16,
+        },
+        grafana: {
+          source: "prometheus",
+          requestsPerSec: 1.1,
+          errorRatePerSec: 0.01,
+          avgLatencyMs: 12,
+          dataproxyRatePerSec: 0.4,
+          dataproxyLatencyMs: 24,
+          datasources: 3,
+          activeAlerts: 0,
+        },
+        loki: {
+          source: "prometheus",
+          requestsPerSec: 0.8,
+          ingressBytesPerSec: 2048,
+          egressBytesPerSec: 16384,
+          errorRatePerSec: 0,
+          avgLatencyMs: 18,
+          inflightRequests: 1,
+        },
+        alertmanager: {
+          source: "prometheus",
+          requestsPerSec: 0.2,
+          egressBytesPerSec: 4096,
+          errorRatePerSec: 0,
+          avgLatencyMs: 11,
+          alertsReceivedRatePerSec: 0.05,
+          activeAlerts: 0,
+        },
+        governanceRuntime: {
+          source: "prometheus",
+          submissionRatePerSec: 2.4,
+          dispatchRatePerSec: 2.1,
+          transitionRatePerSec: 3.2,
+          completedTotal: 42,
+          failedTotal: 3,
+          completedRatePerSec: 1.9,
+          failedRatePerSec: 0.2,
+          artifactRatePerSec: 0.6,
+          artifactPayloadBytesPerSec: 24576,
+          kafkaPublishRatePerSec: 2.1,
+          kafkaPublishBytesPerSec: 12288,
+          kafkaPublishLatencyMs: 16,
+          kafkaPublishErrorRatePerSec: 0.01,
+          artifactReadRatePerSec: 0.48,
+          artifactReadBytesPerSec: 12288,
+          artifactReadAvgLatencyMs: 14,
+          artifactReadErrorRatePerSec: 0.01,
+          artifactAvgSizeBytes: 4096,
+          rabbitmqPublishRatePerSec: 2.8,
+          rabbitmqPublishBytesPerSec: 16384,
+          redisReadRatePerSec: 11.5,
+          redisWriteRatePerSec: 8.4,
+          redisReadBytesPerSec: 32768,
+          redisWriteBytesPerSec: 24576,
+          redisAvgLatencyMs: 3.6,
+          redisErrorRatePct: 0.08,
+          objectWriteRatePerSec: 0.9,
+          objectWriteBytesPerSec: 12288,
+          minioObjectWriteRatePerSec: 0.35,
+          minioObjectWriteBytesPerSec: 8192,
+          minioObjectWriteAvgLatencyMs: 24.5,
+          minioObjectWriteErrorRatePct: 0.15,
+          localObjectWriteRatePerSec: 0.55,
+          localObjectWriteBytesPerSec: 4096,
+          kafkaIngestReceiveRatePerSec: 1.7,
+          kafkaIngestSuccessRatePerSec: 1.6,
+          kafkaIngestValidationFailureRatePerSec: 0.05,
+          kafkaIngestDlqRatePerSec: 0.03,
+          kafkaIngestFailureRatePerSec: 0.08,
+          kafkaIngestPayloadBytesPerSec: 8192,
+          kafkaIngestValidationReasonRatesPerSec: {
+            datasetId: 0.03,
+            workflow: 0.02,
+          },
+          kafkaIngestDuplicateReasonRatesPerSec: {
+            request_id: 0.01,
+          },
+          rabbitIngestReceiveRatePerSec: 0.9,
+          rabbitIngestSuccessRatePerSec: 0.88,
+          rabbitIngestValidationFailureRatePerSec: 0.01,
+          rabbitIngestDlqRatePerSec: 0.01,
+          rabbitIngestFailureRatePerSec: 0.02,
+          rabbitIngestPayloadBytesPerSec: 4096,
+          rabbitIngestValidationReasonRatesPerSec: {
+            payload: 0.01,
+          },
+          rabbitIngestDuplicateReasonRatesPerSec: {
+            request_id: 0.01,
+          },
+          pulsarIngestReceiveRatePerSec: 0.6,
+          pulsarIngestSuccessRatePerSec: 0.58,
+          pulsarIngestValidationFailureRatePerSec: 0.01,
+          pulsarIngestDlqRatePerSec: 0.01,
+          pulsarIngestFailureRatePerSec: 0.02,
+          pulsarIngestPayloadBytesPerSec: 3072,
+          pulsarIngestValidationReasonRatesPerSec: {
+            workflow: 0.01,
+          },
+          pulsarIngestDuplicateReasonRatesPerSec: {
+            request_id: 0.01,
+          },
+          datasetMutationRatePerSec: 0.4,
+          datasetMutationPayloadBytesPerSec: 4096,
+          jobMetadataMutationRatePerSec: 0.7,
+          jobMetadataMutationPayloadBytesPerSec: 6144,
+          datasetPublishRatePerSec: 0.22,
+          datasetPublishPayloadBytesPerSec: 3072,
+          datasetReadRatePerSec: 0.71,
+          datasetReadPayloadBytesPerSec: 5120,
+          manifestPublishRatePerSec: 0.18,
+          manifestPublishPayloadBytesPerSec: 2048,
+          manifestReadRatePerSec: 0.46,
+          manifestReadPayloadBytesPerSec: 2560,
+          operatorReadRatePerSec: 2.2,
+          operatorReadBytesPerSec: 12288,
+          operatorReadRouteRatesPerSec: {
+            jobs: 1.4,
+            datasets: 0.5,
+            alerts: 0.2,
+            archive: 0.1,
+          },
+          httpRequestRatePerSec: 4.6,
+          httpResponseBytesPerSec: 32768,
+          httpErrorRatePerSec: 0.05,
+          httpLatencyMs: 18.4,
+          httpRouteRequestRatesPerSec: {
+            jobs: 1.5,
+            telemetry: 0.9,
+            datasets: 0.8,
+            alerts: 0.4,
+            vo: 0.6,
+            admin: 0.2,
+          },
+          voAdapterRequestRatePerSec: 0.44,
+          voAdapterPayloadBytesPerSec: 3584,
+          voAdapterLatencyMs: 412,
+          voAdapterErrorRatePerSec: 0.03,
+          voAdapterFailureClassRatesPerSec: {
+            http_5xx: 0.02,
+            timeout: 0.01,
+          },
+          voAdapterOperationRatesPerSec: {
+            adql_query: 0.22,
+            obscore_search: 0.12,
+            votable_fetch: 0.1,
+          },
+          taccAdapterRequestRatePerSec: 0.31,
+          taccAdapterPayloadBytesPerSec: 1280,
+          taccAdapterLatencyMs: 185,
+          taccAdapterErrorRatePerSec: 0,
+          taccAdapterFailureClassRatesPerSec: {},
+          taccAdapterOperationRatesPerSec: {
+            submit: 0.31,
+          },
+          alertIngestedTotal: 18,
+          alertIngestRatePerSec: 0.12,
+          alertReplaysTotal: 3,
+          alertReplayRatePerSec: 0.01,
+          alertDlqDepth: 2,
+          alertReplaySingleSuccessRatePerSec: 0.01,
+          alertReplaySingleMissRatePerSec: 0,
+          alertReplayAllSuccessRatePerSec: 0.002,
+          alertReplayAllEmptyRatePerSec: 0.001,
+          alertReplayItemsRatePerSec: 0.04,
+          alertReplayAvgBatchSize: 2.5,
+          alertReplayAvgLatencyMs: 18,
+          queuedJobs: 9,
+          runningJobs: 3,
+          deferredJobs: 4,
+          blockedJobs: 1,
+          avgQueueAgeMs: 780,
+          maxQueueAgeMs: 2150,
+          scannerIntervalSeconds: 10,
+          deferredReleaseRatePerSec: 0.03,
+          deferredReleaseTotal: 7,
+          restoreDrillRatePerSec: 0.02,
+          restoreDrillSuccessRatePerSec: 0.02,
+          restoreDrillFailureRatePerSec: 0,
+          avgRestoreDrillLatencyMs: 840,
+          avgCompletionLatencyMs: 1840,
+          avgFailureLatencyMs: 5120,
+          workflowOutcomes: {
+            ingest: {
+              source: "prometheus",
+              completedTotal: 18,
+              failedTotal: 2,
+              completedRatePerSec: 0.8,
+              failedRatePerSec: 0.07,
+              avgDispatchWaitMs: 340,
+              avgRuntimeMs: 2210,
+            },
+            "vo.adql.query": {
+              source: "prometheus",
+              completedTotal: 11,
+              failedTotal: 1,
+              completedRatePerSec: 0.44,
+              failedRatePerSec: 0.02,
+              avgDispatchWaitMs: 180,
+              avgRuntimeMs: 1460,
+            },
+            "simulate.visibility": {
+              source: "prometheus",
+              completedTotal: 13,
+              failedTotal: 0,
+              completedRatePerSec: 0.61,
+              failedRatePerSec: 0,
+              avgDispatchWaitMs: 90,
+              avgRuntimeMs: 920,
+            },
+          },
+          executors: {
+            simulator: {
+              source: "prometheus",
+              dispatchRatePerSec: 0.8,
+              completedTotal: 22,
+              failedTotal: 2,
+              completedRatePerSec: 0.6,
+              failedRatePerSec: 0.05,
+              objectWriteRatePerSec: 0.3,
+              objectWriteBytesPerSec: 4096,
+              avgCompletionLatencyMs: 920,
+            },
+            vo: {
+              source: "prometheus",
+              dispatchRatePerSec: 0.5,
+              completedTotal: 11,
+              failedTotal: 1,
+              completedRatePerSec: 0.4,
+              failedRatePerSec: 0.02,
+              objectWriteRatePerSec: 0.2,
+              objectWriteBytesPerSec: 2048,
+              avgCompletionLatencyMs: 1460,
+            },
+            tacc: {
+              source: "prometheus",
+              dispatchRatePerSec: 0.8,
+              completedTotal: 9,
+              failedTotal: 0,
+              completedRatePerSec: 0.7,
+              failedRatePerSec: 0,
+              objectWriteRatePerSec: 0.4,
+              objectWriteBytesPerSec: 6144,
+              avgCompletionLatencyMs: 4180,
+            },
+          },
+        },
+      },
+    };
+  }
+
   private topologyPayload(): { nodes: TopologyNode[]; links: TopologyLink[] } {
     return {
       nodes: [
@@ -972,6 +1914,7 @@ export class AppController {
         { source: "frontend", target: "backend" },
         { source: "frontend", target: "nginx" },
         { source: "backend", target: "java-governance" },
+        { source: "backend", target: "redis" },
         { source: "backend", target: "prom" },
         { source: "data-generator", target: "pulsar" },
         { source: "data-generator", target: "kafka" },
@@ -979,8 +1922,11 @@ export class AppController {
         { source: "data-generator", target: "array-lbl" },
         { source: "data-generator", target: "array-sba" },
         { source: "pulsar", target: "kafka" },
+        { source: "pulsar", target: "java-governance" },
         { source: "zookeeper", target: "kafka" },
         { source: "rabbitmq", target: "java-governance" },
+        { source: "kafka", target: "java-governance" },
+        { source: "java-governance", target: "rabbitmq" },
         { source: "java-governance", target: "kafka" },
         { source: "java-governance", target: "minio" },
         { source: "java-governance", target: "redis" },
@@ -1000,6 +1946,12 @@ export class AppController {
     return this.ssr.getPublicEnv();
   }
 
+  @Get("/metrics")
+  metrics(@Res() res: Response): void {
+    res.setHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8");
+    res.send(renderPrometheusMetrics());
+  }
+
   @Get("/api/topology")
   getTopology() {
     return this.topologyPayload();
@@ -1016,6 +1968,7 @@ export class AppController {
       (b) => `${b}/api/v1/metrics/topology`
     );
     try {
+      const started = Date.now();
       const upstream = await this.fetchWithFallback(
         targetUrls,
         { method: "GET" },
@@ -1024,6 +1977,13 @@ export class AppController {
       const text = await upstream.text();
       const ct = upstream.headers.get("content-type");
       if (ct) res.setHeader("content-type", ct);
+      recordGovernanceProxyMetrics(
+        "topology_metrics",
+        "GET",
+        upstream.status,
+        Buffer.byteLength(text ?? "", "utf8"),
+        (Date.now() - started) / 1000
+      );
       res.status(upstream.status).send(text);
     } catch (e: any) {
       console.error("Error proxying topology metrics:", e);
@@ -1074,18 +2034,24 @@ export class AppController {
     const path = isRange ? "/api/v1/query_range" : "/api/v1/query";
     const baseCandidates = this.buildBaseCandidates(prom);
     const urls = baseCandidates.map((b) => `${b}${path}?${qp.toString()}`);
-    console.log("Proxying Prometheus request to", urls[0]);
+    const started = Date.now();
     try {
       const r = await this.fetchWithFallback(urls, { method: "GET" }, 7000);
       const body = await r.text();
       const ct = r.headers.get("content-type") || "application/json";
-      console.log(
-        "Prometheus responded",
+      if (!r.ok) {
+        console.warn(
+          "Prometheus proxy returned non-2xx status",
+          r.status,
+          "for",
+          urls[0]
+        );
+      }
+      recordPrometheusProxyMetrics(
+        "GET",
         r.status,
-        "content-type=",
-        ct,
-        "len=",
-        body?.length ?? 0
+        Buffer.byteLength(body ?? "", "utf8"),
+        (Date.now() - started) / 1000
       );
       res.status(r.status);
       res.setHeader("content-type", ct);
@@ -1093,6 +2059,7 @@ export class AppController {
       res.send(body ?? "");
     } catch (e: any) {
       console.error("Error proxying to Prometheus:", e);
+      recordPrometheusProxyMetrics("GET", 502, 0, (Date.now() - started) / 1000);
       res.status(502).send({
         error: "prometheus_proxy_error",
         message: String(e),
@@ -1716,6 +2683,29 @@ export class AppController {
     @Req() req: Request,
     @Res() res: Response
   ): Promise<void> {
+    const path = (req as any).path as string;
+    const method = (req.method || "GET").toUpperCase();
+    if (path !== "/api/v1/broker-events") {
+      const started = Date.now();
+      const apiGroup = classifyFrontendApiRoute(path);
+      res.on("finish", () => {
+        const lengthHeader = res.getHeader("content-length");
+        const responseBytes =
+          typeof lengthHeader === "string"
+            ? Number(lengthHeader)
+            : typeof lengthHeader === "number"
+              ? lengthHeader
+              : 0;
+        recordFrontendApiMetrics(
+          apiGroup,
+          method,
+          res.statusCode,
+          responseBytes,
+          (Date.now() - started) / 1000
+        );
+      });
+    }
+
     if (this.tryHandleEmbeddedGovernance(req, res)) {
       return;
     }
@@ -1723,8 +2713,6 @@ export class AppController {
     // Dev-mode alert mocks — Java AlertController is not running locally.
     // These must live here because @All("/api/v1/*path") is registered before
     // the individual @Get/@Post alert methods and shadows them in NestJS routing.
-    const path = (req as any).path as string;
-    const method = (req.method || "GET").toUpperCase();
     if (path === "/api/v1/alerts/slo" && method === "GET") {
       res.json({
         alertIngestedTotal: 0,
@@ -1846,36 +2834,34 @@ export class AppController {
       return;
     }
     if (path === "/api/v1/telemetry/infrastructure" && method === "GET") {
-      res.json({
-        measuredAt: new Date().toISOString(),
-        source: "mock",
-        services: {
-          redis: {
-            source: "mock",
-            opsPerSec: 42,
-            ingressBytesPerSec: 4096,
-            egressBytesPerSec: 6144,
-            connectedClients: 3,
-            memoryUsedBytes: 1572864,
-          },
-          rabbitmq: {
-            source: "mock",
-            queueDepth: 8,
-            readyMessages: 5,
-            unackedMessages: 3,
-            publishRatePerSec: 6,
-            deliverRatePerSec: 5,
-            consumers: 2,
-          },
-          minio: {
-            source: "mock",
-            ingressBytesPerSec: 1048576,
-            egressBytesPerSec: 524288,
-            requestsPerSec: 12,
-            errorRatePerSec: 0,
-          },
-        },
-      });
+      const targetUrls = this.governanceBaseCandidates().map(
+        (b) => `${b}/api/v1/telemetry/infrastructure`
+      );
+      try {
+        const started = Date.now();
+        const upstream = await this.fetchWithFallback(
+          targetUrls,
+          { method: "GET" },
+          7000
+        );
+        const text = await upstream.text();
+        const ct = upstream.headers.get("content-type");
+        if (ct) res.setHeader("content-type", ct);
+        recordGovernanceProxyMetrics(
+          "telemetry_infrastructure",
+          method,
+          upstream.status,
+          Buffer.byteLength(text ?? "", "utf8"),
+          (Date.now() - started) / 1000
+        );
+        res.status(upstream.status).send(text);
+      } catch (e) {
+        console.warn(
+          "Falling back to mock infrastructure telemetry:",
+          String(e)
+        );
+        res.json(this.mockInfrastructureTelemetry());
+      }
       return;
     }
     // ── VO services mock ─────────────────────────────────────────────────────
@@ -2014,6 +3000,7 @@ export class AppController {
     }
     const targetUrls = this.governanceBaseCandidates().map((b) => `${b}${req.originalUrl}`);
     try {
+      const started = Date.now();
       const headers = new Headers();
       Object.entries(req.headers || {}).forEach(([k, v]) => {
         if (!v) return;
@@ -2051,6 +3038,13 @@ export class AppController {
       const text = await upstream.text();
       const ct = upstream.headers.get("content-type");
       if (ct) res.setHeader("content-type", ct);
+      recordGovernanceProxyMetrics(
+        "governance_api",
+        method,
+        upstream.status,
+        Buffer.byteLength(text ?? "", "utf8"),
+        (Date.now() - started) / 1000
+      );
       res.status(upstream.status).send(text);
     } catch (e: any) {
       console.error("Error proxying to governance API:", e);
@@ -2064,83 +3058,50 @@ export class AppController {
 
   @Get("/api/v1/vo/cached-samples")
   async getVoCachedSamples(@Res() res: Response): Promise<void> {
-    // Return curated sample payloads keyed by VO workflow type.
-    // Used by the submit dialog auto-fill feature.
-    const samples: Record<string, Record<string, unknown>> = {
-      "vo.cone-search": {
-        provider: "SIMBAD",
-        serviceUrl: "https://simbad.cds.unistra.fr/simbad/sim-tap/sync",
-        target: "M42",
-        ra: 83.8221,
-        dec: -5.3911,
-        radius: 0.5,
-        format: "votable",
-        liveMode: true,
-        _description: "Cone search around Orion Nebula (M42), radius 0.5\u00b0",
-      },
-      "vo.adql.query": {
-        provider: "HEASARC",
-        tapUrl: "https://heasarc.gsfc.nasa.gov/xamin/tap/sync",
-        adql: "SELECT TOP 10 target_name, ra, dec, exposure FROM chanmaster ORDER BY exposure DESC",
-        limit: 10,
-        liveMode: true,
-        _description: "Top 10 longest Chandra observations (HEASARC TAP)",
-      },
-      "vo.obscore.search": {
-        provider: "ESO",
-        tapUrl: "https://archive.eso.org/tap_obs/sync",
-        dataproductType: "image",
-        spatialBoundsRa: 187.277915,
-        spatialBoundsDec: 2.052389,
-        spatialBoundsRadius: 0.5,
-        limit: 20,
-        liveMode: true,
-        _description: "ESO ObsCore image search around quasar 3C 273 (r=0.5\u00b0)",
-      },
-      "vo.votable.fetch": {
-        provider: "HEASARC",
-        votableUrl:
-          "https://heasarc.gsfc.nasa.gov/xamin/query?table=chanmaster&position=3c273&format=votable",
-        format: "votable",
-        liveMode: true,
-        _description: "Chandra observations of quasar 3C 273 as VOTable",
-      },
-      "vo.datalink.resolve": {
-        provider: "CADC",
-        datalinkUrl:
-          "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/datalink",
-        datasetIdentifier: "ivo://cadc.nrc.ca/CFHT?2459817",
-        liveMode: true,
-        _description: "DataLink products for CFHT MegaCam observation 2459817",
-      },
-      "vo.product.fetch": {
-        provider: "HEASARC",
-        productUrl:
-          "https://heasarc.gsfc.nasa.gov/FTP/chandra/data/byobsid/2/21843/primary/acisf21843N002_evt2.fits.gz",
-        expectedMimeType: "application/fits",
-        liveMode: true,
-        _description: "Chandra ACIS event file \u2014 Cas A supernova remnant (obs 21843)",
-      },
-      "vo.soda.cutout": {
-        provider: "CADC",
-        sodaUrl:
-          "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/soda",
-        datasetIdentifier: "ivo://cadc.nrc.ca/CFHT?2459817",
-        spatialBoundsRa: 187.277915,
-        spatialBoundsDec: 2.052389,
-        spatialBoundsRadius: 0.1,
-        outputFormat: "fits",
-        liveMode: true,
-        _description: "CADC SODA cutout centered on 3C 273 (r=0.1\u00b0, CFHT obs 2459817)",
-      },
-      "vo.preview.fetch": {
-        provider: "ESASky",
-        previewUrl:
-          "https://sky.esa.int/esasky-tap/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=votable&QUERY=SELECT+TOP+5+*+FROM+mv_xsa_obs+WHERE+target_name+LIKE+%2527%2525Crab%2525%2527",
-        liveMode: true,
-        _description: "ESASky XMM-Newton observations matching 'Crab' target (top 5)",
-      },
-    };
+    const started = Date.now();
+    let samples = voCachedSamplesPayload();
+    let cacheResult: keyof typeof redisCacheRequestsTotal = "bypass";
+    let serialized = JSON.stringify(samples);
+    try {
+      const cached = await redisClient?.get(VO_CACHED_SAMPLES_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached) as Record<string, Record<string, unknown>>;
+        if (parsed && typeof parsed === "object") {
+          samples = parsed;
+          serialized = cached;
+          cacheResult = "hit";
+          res.setHeader("X-Cache", "HIT");
+        }
+      } else {
+        cacheResult = redisClient ? "miss" : "bypass";
+        res.setHeader("X-Cache", redisClient ? "MISS" : "BYPASS");
+      }
+    } catch (e) {
+      console.warn("Failed to read VO cached samples from Redis:", e);
+      redisCacheReadErrorsTotal += 1;
+      cacheResult = "bypass";
+      res.setHeader("X-Cache", "BYPASS");
+    }
+
+    if (res.getHeader("X-Cache") !== "HIT" && redisClient) {
+      try {
+        await redisClient.set(
+          VO_CACHED_SAMPLES_KEY,
+          JSON.stringify(samples),
+          { EX: VO_CACHED_SAMPLES_TTL_SECONDS }
+        );
+        redisCacheBytesWrittenTotal += Buffer.byteLength(serialized, "utf8");
+      } catch (e) {
+        console.warn("Failed to populate VO cached samples in Redis:", e);
+        redisCacheWriteErrorsTotal += 1;
+      }
+    }
+    redisCacheRequestsTotal[cacheResult] += 1;
+    redisCacheBytesServedTotal[cacheResult] += Buffer.byteLength(
+      serialized,
+      "utf8"
+    );
+    observeRedisCacheDuration((Date.now() - started) / 1000);
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.json(samples);
   }
@@ -2177,6 +3138,37 @@ async function bootstrap() {
   );
   const expressInstance = app.getHttpAdapter().getInstance();
   expressInstance.use(express.static(browserDistFolder));
+  expressInstance.use((req: Request, res: Response, next: any) => {
+    const path = req.path || req.originalUrl || "";
+    if (
+      !path ||
+      path.startsWith("/api/") ||
+      path === "/metrics" ||
+      /\.[a-z0-9]+$/i.test(path)
+    ) {
+      return next();
+    }
+
+    const started = Date.now();
+    const routeGroup = classifyFrontendRoute(path);
+    res.on("finish", () => {
+      const lengthHeader = res.getHeader("content-length");
+      const responseBytes =
+        typeof lengthHeader === "string"
+          ? Number(lengthHeader)
+          : typeof lengthHeader === "number"
+            ? lengthHeader
+            : 0;
+      recordFrontendRequestMetrics(
+        routeGroup,
+        req.method || "GET",
+        res.statusCode,
+        responseBytes,
+        (Date.now() - started) / 1000
+      );
+    });
+    return next();
+  });
 
   // If dev, create vite server and attach middlewares for SSR
   if (
@@ -2191,7 +3183,9 @@ async function bootstrap() {
       });
       // Ensure API routes are handled by Nest: skip vite middleware for /api/* to avoid proxy loops
       expressInstance.use((req: Request, res: Response, next: any) => {
-        if (req.path && req.path.startsWith("/api/")) return next();
+        if (req.path && (req.path.startsWith("/api/") || req.path === "/metrics")) {
+          return next();
+        }
         return vite.middlewares(req as any, res as any, next);
       });
       // initialize SsrService with vite instance

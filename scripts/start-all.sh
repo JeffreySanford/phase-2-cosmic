@@ -45,6 +45,13 @@ if [ -n "${DOCKER_PAT:-}" ]; then
 	echo "${DOCKER_PAT}" | docker login --username "${DOCKER_USER}" --password-stdin || log "[start-all] Docker login failed (ignored)"
 fi
 
+# If a GitHub PAT is provided, log in to ghcr.io so GHCR-hosted images (e.g. nginxlog-exporter) can be pulled.
+if [ -n "${GITHUB_PAT:-}" ]; then
+	GH_USER=${GITHUB_USERNAME:-${DOCKER_USERNAME:-${USER:-}}}
+	log "[start-all] Attempting ghcr.io login for user: ${GH_USER}"
+	echo "${GITHUB_PAT}" | docker login ghcr.io --username "${GH_USER}" --password-stdin || log "[start-all] ghcr.io login failed (ignored)"
+fi
+
 FAST_START="${FAST_START:-true}"
 SKIP_BUILD_EFFECTIVE="${SKIP_BUILD:-}"
 NO_PULL_EFFECTIVE="${NO_PULL:-}"

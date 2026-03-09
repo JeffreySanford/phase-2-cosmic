@@ -183,25 +183,26 @@ public class GovernanceController {
 
             @GetMapping("/jobs/{id}/artifacts/{name}")
             public ResponseEntity<String> artifactContent(@PathVariable("id") String id, @PathVariable("name") String name) {
+                Instant startedAt = Instant.now();
                 // try to serve a file from local artifact store
                 try {
                     java.nio.file.Path base = java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "governance-artifacts", id);
                     java.nio.file.Path file = base.resolve(name).normalize();
                     if (java.nio.file.Files.exists(file) && file.startsWith(base)) {
                         String content = java.nio.file.Files.readString(file);
+                        jobService.recordArtifactDelivery("content", content, true, java.time.Duration.between(startedAt, Instant.now()));
                         return ResponseEntity.ok(content);
                     }
                 } catch (Exception ignored) {}
                 // fallback to simulated artifact content for dev/testing
                 String content = "Simulated artifact for job " + id + " - " + name + "\nResult: OK";
+                jobService.recordArtifactDelivery("content", content, true, java.time.Duration.between(startedAt, Instant.now()));
                 return ResponseEntity.ok(content);
             }
 
             @GetMapping("/jobs/{id}/audit")
             public ResponseEntity<?> jobAudit(@PathVariable("id") String id) {
-                var logs = jobService.getAuditLog().stream()
-                        .filter(e -> e.contains(id))
-                        .toList();
+                var logs = jobService.getAuditEntriesForJob(id);
                 return ResponseEntity.ok(logs);
             }
 

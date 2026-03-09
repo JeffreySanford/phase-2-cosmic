@@ -91,19 +91,49 @@ type LinkStats = {
   throughputPct?: string;
   latencyMs?: number;
   errorRate?: string;
+  confidencePct?: number;
   throughputMBpsCurrent?: number;
   throughputMBpsMax?: number;
   throughputPctNumeric?: number;
+  source?: "prometheus" | "admin" | "derived" | "mock" | "unavailable";
+};
+
+type NodeSummary = {
+  id: string;
+  label: string;
+  group?: string;
+  ingressMBps: number;
+  egressMBps: number;
+  totalMBps: number;
+  businessRatePerSec: number;
+  businessBytesPerSec: number;
+  executorLabels: string[];
+  liveLinks: number;
+  derivedLinks: number;
+  mockLinks: number;
+  unavailableLinks: number;
+  primarySource: "prometheus" | "admin" | "derived" | "mock" | "unavailable";
 };
 
 type TopologyMetricPoint = {
   currentMBps: number;
   maxMBps?: number;
+  source?: "prometheus" | "admin" | "derived" | "mock" | "unavailable";
+  latencyMs?: number;
+  errorRatePct?: number;
+  confidencePct?: number;
+};
+
+type NodeActivityPoint = {
+  businessRatePerSec?: number;
+  businessBytesPerSec?: number;
+  executorLabels?: string[];
 };
 
 type TopologyMetricsResponse = Record<string, TopologyMetricPoint> & {
   timing_drift_ns?: number;
   rfi_event_rate?: number;
+  nodeActivity?: Record<string, NodeActivityPoint>;
 };
 @Component({
   selector: "app-topology",
@@ -124,10 +154,17 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   public showMode: "live" | "max" = "live";
   public aggCurrentMBps = 0;
   public aggMaxMBps = 0;
+  public liveLinkCount = 0;
+  public derivedLinkCount = 0;
+  public mockLinkCount = 0;
+  public unavailableLinkCount = 0;
+  public averageConfidencePct = 0;
+  public nodeSummaries: NodeSummary[] = [];
   // mission‑closure metrics
   public timingDriftNs?: number;
   public rfiEventRate?: number;
   public initialLoadSettled = false;
+  private latestNodeActivity: Record<string, NodeActivityPoint> = {};
   // Configurable capacity settings
   public showSettings = false;
   public defaultPerChannelMBps = 1250; // default per-channel capacity (MB/s)
@@ -329,9 +366,9 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     return Math.round(8 + channels * 4 + this.loadScale() * 14);
   }
 
-  private syntheticErrorRate(l: TopoLink): string {
+  private syntheticErrorRatePct(l: TopoLink): number {
     const channels = Number(l.value ?? 1) || 1;
-    return `${(channels * 0.01 + this.loadScale() * 0.08).toFixed(2)}%`;
+    return Number((channels * 0.01 + this.loadScale() * 0.08).toFixed(2));
   }
 
   private normalizeTopologyMetricsResponse(
@@ -398,12 +435,29 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       const metric = value as Record<string, unknown>;
       const currentMBps = Number(metric["currentMBps"]);
       const maxMBps = Number(metric["maxMBps"]);
+      const latencyMs = Number(metric["latencyMs"]);
+      const errorRatePct = Number(metric["errorRatePct"]);
+      const confidencePct = Number(metric["confidencePct"]);
+      const source = String(metric["source"] ?? "");
       if (!Number.isFinite(currentMBps) && !Number.isFinite(maxMBps)) {
         continue;
       }
       target[key] = {
         currentMBps: Number.isFinite(currentMBps) ? currentMBps : 0,
         maxMBps: Number.isFinite(maxMBps) ? maxMBps : undefined,
+        latencyMs: Number.isFinite(latencyMs) ? latencyMs : undefined,
+        errorRatePct: Number.isFinite(errorRatePct) ? errorRatePct : undefined,
+        confidencePct: Number.isFinite(confidencePct)
+          ? confidencePct
+          : undefined,
+        source:
+          source === "prometheus" ||
+          source === "admin" ||
+          source === "derived" ||
+          source === "mock" ||
+          source === "unavailable"
+            ? source
+            : undefined,
       };
     }
   }
@@ -416,8 +470,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!metric) return false;
     const stats = this.statsRef(ln)._stats ?? ({} as LinkStats);
     this.populateStatsFromMetric(stats, metric);
-    stats.latencyMs = this.syntheticLatencyMs(ln);
-    stats.errorRate = this.syntheticErrorRate(ln);
     this.statsRef(ln)._stats = stats;
     return true;
   }
@@ -440,6 +492,16 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     stats.throughput = `${current} MB/s (max ${max} MB/s)`;
     stats.throughputPct = `${pct}%`;
     stats.throughputPctNumeric = pct;
+    stats.source = metric.source ?? stats.source ?? "derived";
+    if (metric.latencyMs !== undefined) {
+      stats.latencyMs = metric.latencyMs;
+    }
+    if (metric.errorRatePct !== undefined) {
+      stats.errorRate = `${metric.errorRatePct.toFixed(2)}%`;
+    }
+    if (metric.confidencePct !== undefined) {
+      stats.confidencePct = metric.confidencePct;
+    }
   }
 
   private metricForLink(
@@ -471,6 +533,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
           )
       ),
       maxMBps,
+      latencyMs: this.syntheticLatencyMs(link),
+      errorRatePct: this.syntheticErrorRatePct(link),
+      confidencePct: this.dataSource.mode === "mock" ? 24 : 48,
+      source: this.dataSource.mode === "mock" ? "mock" : "derived",
     };
   }
 
@@ -504,6 +570,272 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
           Math.max(1, stats?.throughputMBpsMax ?? 1)) *
           100
     );
+  }
+
+  public linkSourceLabel(source?: LinkStats["source"]): string {
+    switch (source) {
+      case "prometheus":
+        return "Live";
+      case "admin":
+        return "Live (Admin)";
+      case "mock":
+        return "Mock";
+      case "unavailable":
+        return "Unavailable";
+      default:
+        return "Derived";
+    }
+  }
+
+  private linkSourceData(source?: LinkStats["source"]): string {
+    return source ?? "derived";
+  }
+
+  private summarizeNodes(nodes: TopoNode[], links: TopoLink[]): NodeSummary[] {
+    const summaries = new Map<string, NodeSummary>();
+    const ensureSummary = (node: TopoNode): NodeSummary => {
+      const existing = summaries.get(node.id);
+      if (existing) return existing;
+      const created: NodeSummary = {
+        id: node.id,
+        label: node.label ?? node.id,
+        group: node.group,
+        ingressMBps: 0,
+        egressMBps: 0,
+        totalMBps: 0,
+        businessRatePerSec: 0,
+        businessBytesPerSec: 0,
+        executorLabels: [],
+        liveLinks: 0,
+        derivedLinks: 0,
+        mockLinks: 0,
+        unavailableLinks: 0,
+        primarySource: "unavailable",
+      };
+      summaries.set(node.id, created);
+      return created;
+    };
+
+    nodes.forEach((node) => ensureSummary(node));
+    this.applyNodeBusinessActivity(nodes, ensureSummary);
+
+    links.forEach((ln) => {
+      const sourceNode =
+        typeof ln.source === "string"
+          ? nodes.find((node) => node.id === ln.source)
+          : (ln.source as TopoNode);
+      const targetNode =
+        typeof ln.target === "string"
+          ? nodes.find((node) => node.id === ln.target)
+          : (ln.target as TopoNode);
+      if (!sourceNode || !targetNode) return;
+
+      const stats = this.statsRef(ln)._stats;
+      const current = Number(stats?.throughputMBpsCurrent ?? 0);
+      const source = stats?.source ?? "derived";
+
+      const sourceSummary = ensureSummary(sourceNode);
+      sourceSummary.egressMBps += current;
+      this.applyNodeSource(sourceSummary, source);
+
+      const targetSummary = ensureSummary(targetNode);
+      targetSummary.ingressMBps += current;
+      this.applyNodeSource(targetSummary, source);
+    });
+
+    return Array.from(summaries.values())
+      .map((summary) => ({
+        ...summary,
+        ingressMBps: Math.round(summary.ingressMBps * 100) / 100,
+        egressMBps: Math.round(summary.egressMBps * 100) / 100,
+        totalMBps:
+          Math.round((summary.ingressMBps + summary.egressMBps) * 100) / 100,
+        businessRatePerSec: Math.round(summary.businessRatePerSec * 100) / 100,
+        businessBytesPerSec:
+          Math.round(summary.businessBytesPerSec * 100) / 100,
+      }))
+      .filter(
+        (summary) =>
+          summary.totalMBps > 0 ||
+          summary.businessRatePerSec > 0 ||
+          summary.businessBytesPerSec > 0
+      )
+      .sort((a, b) => this.nodeSortScore(b) - this.nodeSortScore(a))
+      .slice(0, 8);
+  }
+
+  private applyNodeBusinessActivity(
+    nodes: TopoNode[],
+    ensureSummary: (node: TopoNode) => NodeSummary
+  ): void {
+    for (const node of nodes) {
+      const activity = this.latestNodeActivity[node.id];
+      if (!activity) continue;
+      const summary = ensureSummary(node);
+      summary.businessRatePerSec = Number(activity.businessRatePerSec ?? 0);
+      summary.businessBytesPerSec = Number(activity.businessBytesPerSec ?? 0);
+      summary.executorLabels = Array.isArray(activity.executorLabels)
+        ? activity.executorLabels.filter(
+            (label): label is string => typeof label === "string" && !!label
+          )
+        : [];
+    }
+  }
+
+  private nodeSortScore(summary: NodeSummary): number {
+    return (
+      summary.totalMBps +
+      summary.businessBytesPerSec / (1024 * 1024) +
+      summary.businessRatePerSec * 0.25
+    );
+  }
+
+  private recomputeConfidence(links: TopoLink[]): void {
+    const scores = links
+      .map((link) => this.statsRef(link)._stats?.confidencePct)
+      .filter((score): score is number => Number.isFinite(score));
+    if (!scores.length) {
+      this.averageConfidencePct = 0;
+      return;
+    }
+    this.averageConfidencePct =
+      Math.round(
+        (scores.reduce((sum, score) => sum + score, 0) / scores.length) * 10
+      ) / 10;
+  }
+
+  private applyNodeSource(
+    summary: NodeSummary,
+    source: NodeSummary["primarySource"]
+  ): void {
+    switch (source) {
+      case "prometheus":
+        summary.liveLinks += 1;
+        summary.primarySource = "prometheus";
+        break;
+      case "admin":
+        summary.liveLinks += 1;
+        if (summary.primarySource !== "prometheus") {
+          summary.primarySource = "admin";
+        }
+        break;
+      case "mock":
+        summary.mockLinks += 1;
+        if (
+          summary.primarySource !== "prometheus" &&
+          summary.primarySource !== "admin"
+        ) {
+          summary.primarySource = "mock";
+        }
+        break;
+      case "unavailable":
+        summary.unavailableLinks += 1;
+        if (summary.primarySource === "unavailable") {
+          summary.primarySource = "unavailable";
+        }
+        break;
+      default:
+        summary.derivedLinks += 1;
+        if (
+          summary.primarySource !== "prometheus" &&
+          summary.primarySource !== "admin" &&
+          summary.primarySource !== "mock"
+        ) {
+          summary.primarySource = "derived";
+        }
+        break;
+    }
+  }
+
+  private nodeSummaryMap(): Record<string, NodeSummary> {
+    return this.nodeSummaries.reduce<Record<string, NodeSummary>>(
+      (acc, summary) => {
+        acc[summary.id] = summary;
+        return acc;
+      },
+      {}
+    );
+  }
+
+  private normalizeNodeActivity(
+    res: TopologyMetricsResponse | Record<string, unknown> | null | undefined
+  ): Record<string, NodeActivityPoint> {
+    const raw =
+      res &&
+      typeof res === "object" &&
+      (res as Record<string, unknown>)["nodeActivity"] &&
+      typeof (res as Record<string, unknown>)["nodeActivity"] === "object"
+        ? ((res as Record<string, unknown>)["nodeActivity"] as Record<
+            string,
+            unknown
+          >)
+        : {};
+    const normalized: Record<string, NodeActivityPoint> = {};
+    for (const [nodeId, value] of Object.entries(raw)) {
+      if (!value || typeof value !== "object") continue;
+      const point = value as Record<string, unknown>;
+      const businessRatePerSec = Number(point["businessRatePerSec"]);
+      const businessBytesPerSec = Number(point["businessBytesPerSec"]);
+      normalized[nodeId] = {
+        businessRatePerSec: Number.isFinite(businessRatePerSec)
+          ? businessRatePerSec
+          : 0,
+        businessBytesPerSec: Number.isFinite(businessBytesPerSec)
+          ? businessBytesPerSec
+          : 0,
+        executorLabels: Array.isArray(point["executorLabels"])
+          ? (point["executorLabels"] as unknown[]).filter(
+              (label): label is string => typeof label === "string"
+            )
+          : [],
+      };
+    }
+    return normalized;
+  }
+
+  private nodeRingColor(node: TopoNode, summary?: NodeSummary): string {
+    switch (summary?.primarySource) {
+      case "prometheus":
+        return "#34d399";
+      case "admin":
+        return "#60a5fa";
+      case "mock":
+        return "#fbbf24";
+      case "unavailable":
+        return "#f87171";
+      default:
+        if (node.group === "ngvla") return "#86efac";
+        return "#94a3b8";
+    }
+  }
+
+  private nodeRingStroke(node: TopoNode, summary?: NodeSummary): string {
+    switch (summary?.primarySource) {
+      case "prometheus":
+        return "#065f46";
+      case "admin":
+        return "#1d4ed8";
+      case "mock":
+        return "#92400e";
+      case "unavailable":
+        return "#991b1b";
+      default:
+        if (node.group === "ngvla") return "#166534";
+        return "#475569";
+    }
+  }
+
+  private nodeRingRadius(summary?: NodeSummary): number {
+    const total = Number(summary?.totalMBps ?? 0);
+    if (total >= 4000) return 22;
+    if (total >= 1500) return 20;
+    if (total >= 500) return 18.5;
+    return 17;
+  }
+
+  private nodeActivityLabel(summary?: NodeSummary): string {
+    if (!summary || summary.totalMBps <= 0) return "idle";
+    return `${Math.round(summary.totalMBps)} MB/s`;
   }
 
   private particleCountForStats(stats?: LinkStats): number {
@@ -621,6 +953,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     this.http.get<TopologyMetricsResponse>("/api/metrics/topology").subscribe(
       (res) => {
         const metrics = this.normalizeTopologyMetricsResponse(res);
+        this.latestNodeActivity = this.normalizeNodeActivity(res);
         this.captureMissionMetrics(res);
         let changed = false;
         for (const ln of this.lastLinks ?? []) {
@@ -737,6 +1070,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     // attach precomputed stats to links and compute aggregates (use numeric fields when available)
     this.aggCurrentMBps = 0;
     this.aggMaxMBps = 0;
+    this.liveLinkCount = 0;
+    this.derivedLinkCount = 0;
+    this.mockLinkCount = 0;
+    this.unavailableLinkCount = 0;
     links.forEach((ln) => {
       const stats = this.linkStats(ln);
       this.statsRef(ln)._stats = stats;
@@ -744,7 +1081,25 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       const max = Number(stats?.throughputMBpsMax ?? NaN);
       this.aggCurrentMBps += Number.isFinite(cur) ? cur : 0;
       this.aggMaxMBps += Number.isFinite(max) ? max : 0;
+      switch (stats.source) {
+        case "prometheus":
+        case "admin":
+          this.liveLinkCount += 1;
+          break;
+        case "mock":
+          this.mockLinkCount += 1;
+          break;
+        case "unavailable":
+          this.unavailableLinkCount += 1;
+          break;
+        default:
+          this.derivedLinkCount += 1;
+          break;
+      }
     });
+    this.nodeSummaries = this.summarizeNodes(nodes, links);
+    this.recomputeConfidence(links);
+    const nodeSummaryById = this.nodeSummaryMap();
 
     // store last nodes/links for settings UI and optional metrics overlay
     this.lastNodes = nodes;
@@ -755,7 +1110,17 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       .enter()
       .append("line")
       .attr("data-key", (ln: TopoLink) => this.getLinkKey(ln))
+      .attr("data-source", (ln: TopoLink) =>
+        this.linkSourceData(this.statsRef(ln)._stats?.source)
+      )
       .attr("stroke", "rgba(148, 163, 184, 0.34)")
+      .attr("stroke-dasharray", (ln: TopoLink) => {
+        const source = this.statsRef(ln)._stats?.source;
+        if (source === "prometheus") return "0";
+        if (source === "admin") return "2 2";
+        if (source === "mock") return "4 3";
+        return "8 5";
+      })
       .attr("stroke-width", (d: TopoLink) =>
         d.value ? Math.max(1, Math.log(d.value + 1)) : 1
       );
@@ -768,10 +1133,16 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       .append("circle")
       .attr("class", "link-dot")
       .attr("data-key", (ln: TopoLink) => this.getLinkKey(ln))
+      .attr("data-source", (ln: TopoLink) =>
+        this.linkSourceData(this.statsRef(ln)._stats?.source)
+      )
       .attr("r", 5)
       // color fill/stroke to indicate utilization/bottleneck
       .attr("fill", (ln: TopoLink) => {
         const stats = this.statsRef(ln)._stats;
+        if (stats?.source === "prometheus") return "#34d399";
+        if (stats?.source === "admin") return "#60a5fa";
+        if (stats?.source === "mock") return "#fbbf24";
         const cur = Number(stats?.throughputMBpsCurrent ?? 0);
         const max = Number(stats?.throughputMBpsMax ?? 1);
         const util = max > 0 ? (cur / max) * 100 : 0;
@@ -782,6 +1153,9 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       })
       .attr("stroke", (ln: TopoLink) => {
         const stats = this.statsRef(ln)._stats;
+        if (stats?.source === "prometheus") return "#065f46";
+        if (stats?.source === "admin") return "#1d4ed8";
+        if (stats?.source === "mock") return "#92400e";
         const cur = Number(stats?.throughputMBpsCurrent ?? 0);
         const max = Number(stats?.throughputMBpsMax ?? 1);
         const util = max > 0 ? (cur / max) * 100 : 0;
@@ -851,6 +1225,19 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
     node
       .append("circle")
+      .attr("class", "node-ring")
+      .attr("r", (d: TopoNode) =>
+        this.nodeRingRadius(nodeSummaryById[d.id])
+      )
+      .attr("fill", (d: TopoNode) => this.nodeRingColor(d, nodeSummaryById[d.id]))
+      .attr("fill-opacity", 0.18)
+      .attr("stroke", (d: TopoNode) =>
+        this.nodeRingStroke(d, nodeSummaryById[d.id])
+      )
+      .attr("stroke-width", 1.4);
+
+    node
+      .append("circle")
       .attr("r", 14)
       .attr("fill", (d: TopoNode) => {
         if (d.group === "ngvla") return "#4caf50"; // Green for ngVLA array segments
@@ -870,6 +1257,22 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       .attr("stroke-width", 3)
       .attr("stroke-linejoin", "round")
       .text((d: TopoNode) => d.label ?? d.id);
+
+    node
+      .append("text")
+      .attr("class", "node-activity")
+      .attr("x", 18)
+      .attr("y", 18)
+      .attr("font-size", 10)
+      .attr("fill", (d: TopoNode) =>
+        this.nodeRingColor(d, nodeSummaryById[d.id])
+      )
+      .attr("font-weight", 700)
+      .attr("paint-order", "stroke")
+      .attr("stroke", "rgba(2, 6, 23, 0.92)")
+      .attr("stroke-width", 3)
+      .attr("stroke-linejoin", "round")
+      .text((d: TopoNode) => this.nodeActivityLabel(nodeSummaryById[d.id]));
 
     this.simulation = d3
       .forceSimulation(nodes)
@@ -1000,8 +1403,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
             const stats = prev ?? ({} as LinkStats);
             const prevVal = Number(stats.throughputMBpsCurrent ?? 0);
             this.populateStatsFromMetric(stats, m);
-            stats.latencyMs = this.syntheticLatencyMs(ln);
-            stats.errorRate = this.syntheticErrorRate(ln);
             this.statsRef(ln)._stats = stats;
             // animate if change significant by percentage of max or sensitivityPct
             const maxVal = Number(stats.throughputMBpsMax ?? 1);
@@ -1137,7 +1538,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     const label = n.label ?? n.id;
     switch (id) {
       case "backend":
-        return `${label} — Nest.js SSR/API server. Handles server-side rendering, API aggregation, and acts as a gateway between frontend and backend services.`;
+        return `${label} — Nest.js SSR/API server. Handles server-side rendering, API aggregation, and a small Redis-backed cache for curated VO sample payloads used by the frontend submit flow.`;
       case "frontend":
         return `${label} — Angular frontend (SPA) responsible for operator UI, visualization, and user interactions.`;
       case "kafka":
@@ -1182,8 +1583,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     if (metric) {
       this.populateStatsFromMetric(stats, metric);
     }
-    stats.latencyMs = this.syntheticLatencyMs(l);
-    stats.errorRate = this.syntheticErrorRate(l);
     return stats;
   }
 
@@ -1276,6 +1675,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     this.lastLinks = [];
     this.aggCurrentMBps = 0;
     this.aggMaxMBps = 0;
+    this.latestNodeActivity = {};
     this.svg?.selectAll("*").remove?.();
     this.stopLivePoll();
   }
@@ -1308,9 +1708,13 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     return [
       // Infrastructure connections
       { source: "backend", target: "java-governance" },
+      { source: "backend", target: "redis" },
       { source: "kafka", target: "backend" },
       { source: "pulsar", target: "kafka" },
+      { source: "pulsar", target: "java-governance" },
       { source: "rabbitmq", target: "java-governance" },
+      { source: "kafka", target: "java-governance" },
+      { source: "java-governance", target: "rabbitmq" },
       { source: "java-governance", target: "redis" },
       { source: "backend", target: "frontend" },
       { source: "frontend", target: "prom" },

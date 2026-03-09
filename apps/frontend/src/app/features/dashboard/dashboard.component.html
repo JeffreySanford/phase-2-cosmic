@@ -125,6 +125,18 @@
               <p class="tile-source">source: {{ generatorStatus.source }}</p>
               <a routerLink="/telemetry">Inspect generator telemetry</a>
             </article>
+
+            <article class="panel-card">
+              <h2>Governance Runtime</h2>
+              <p>Completed jobs: <strong>{{ governanceSummary.completedTotal }}</strong></p>
+              <p>Failed jobs: <strong>{{ governanceSummary.failedTotal }}</strong></p>
+              <p>Redis reads: <strong>{{ governanceSummary.redisReadRate }}</strong></p>
+              <p>Object writes: <strong>{{ governanceSummary.objectWriteRate }}</strong></p>
+              <p>Pulsar ingest: <strong>{{ governanceSummary.pulsarIngestRate }}</strong></p>
+              <p>SSR proxy rate: <strong>{{ governanceSummary.proxyRate }}</strong></p>
+              <p class="tile-source">source: {{ governanceSummary.source }}</p>
+              <a routerLink="/telemetry">Inspect governance telemetry</a>
+            </article>
           </section>
 
           <section class="panel">

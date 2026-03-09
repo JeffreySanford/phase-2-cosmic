@@ -55,6 +55,9 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -73,7 +76,11 @@ services:
     command:
       - /bin/bash
       - -c
-      - bin/pulsar standalone
+      - |
+        grep -q '^exposeBundlesMetricsInPrometheus=' conf/standalone.conf \
+          && sed -i 's/^exposeBundlesMetricsInPrometheus=.*/exposeBundlesMetricsInPrometheus=true/' conf/standalone.conf \
+          || echo 'exposeBundlesMetricsInPrometheus=true' >> conf/standalone.conf
+        bin/pulsar standalone
     ports:
       - "6650:6650"
       - "8085:8080"
@@ -94,6 +101,7 @@ services:
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
+      MINIO_PROMETHEUS_AUTH_TYPE: public
     ports:
       - "9000:9000"
     restart: unless-stopped
@@ -228,6 +236,11 @@ services:
       - SPRING_RABBITMQ_PORT=5672
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PULSAR_ADMIN_URL=http://pulsar:8080
+      - GOVERNANCE_MINIO_ENABLED=true
+      - GOVERNANCE_MINIO_ENDPOINT=http://minio:9000
+      - GOVERNANCE_MINIO_ACCESS_KEY=minio
+      - GOVERNANCE_MINIO_SECRET_KEY=minio123
+      - GOVERNANCE_MINIO_BUCKET=governance
       - PROMETHEUS_ENDPOINT=prometheus:9090
       - PROMETHEUS_BASEURL=http://prometheus:9090
       - PROMETHEUS_BASE_URL=http://prometheus:9090
@@ -250,12 +263,64 @@ services:
       - "6379:6379"
     restart: unless-stopped
 
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.67.0
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  rabbitmq-exporter:
+    image: ghcr.io/kbudde/rabbitmq_exporter:1.0.0-RC19
+    environment:
+      RABBIT_URL: http://rabbitmq:15672
+      RABBIT_USER: guest
+      RABBIT_PASSWORD: guest
+      PUBLISH_PORT: 9419
+      OUTPUT_FORMAT: JSON
+    ports:
+      - "9419:9419"
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.7.0
+    command:
+      - --kafka.server=kafka:9092
+    ports:
+      - "9308:9308"
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
   nginx-static:
     image: nginx:stable
     ports:
       - "8080:80"
     volumes:
       - ../dist/apps/frontend:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  nginxlog-exporter:
+    image: quay.io/martinhelmich/prometheus-nginxlog-exporter:v1.11.0
+    command:
+      - -config-file
+      - /etc/prometheus-nginxlog-exporter.hcl
+    ports:
+      - "4040:4040"
+    volumes:
+      - ./nginxlog-exporter.hcl:/etc/prometheus-nginxlog-exporter.hcl:ro
+      - nginx-logs:/var/log/nginx:ro
+    depends_on:
+      - nginx-static
     restart: unless-stopped
 
   test-runner:
@@ -282,4 +347,6 @@ volumes:
   grafana-storage:
     driver: local
   loki-data:
+    driver: local
+  nginx-logs:
     driver: local

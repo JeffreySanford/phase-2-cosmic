@@ -8,6 +8,7 @@ This README describes usage, local scaling, and Kubernetes deployment examples f
 - Sink to file: `--sink=file:logs/payloads.bin` (creates `payloads.log` alongside)
 - Audit frequency: `--audit-every=N` (1 = every record, larger reduces verbosity)
 - Rotate size: `--rotate-size-mb=50` (default 50MB)
+- Segment weights: `--segment-distribution=main:48,lbl:24,sba:21`
 
 ## Local scaling
 
@@ -20,6 +21,7 @@ This README describes usage, local scaling, and Kubernetes deployment examples f
 
 - Build a container image for `data-generator` and deploy as a `Deployment` with multiple replicas.
 - Expose `/metrics` and use Prometheus + Prometheus Adapter to drive an HPA that scales pods by `generator_bytes_produced_total` (or by custom per-pod throughput metric).
+- Per-segment Prometheus metrics are exposed as `generator_bytes_produced_by_segment_total{array_segment=...}` and `generator_records_produced_by_segment_total{array_segment=...}` so topology can use measured fan-out instead of inferred percentages.
 - Use node pools with appropriate NIC/IO guarantees and `nodeSelector`/`affinity` to schedule pods onto nodes with 100GbE and NVMe.
 
 See `k8s/` for example manifests and `scripts/launch-generators.sh` for a local launcher.

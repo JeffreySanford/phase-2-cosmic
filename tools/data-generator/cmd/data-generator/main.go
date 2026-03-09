@@ -6,11 +6,14 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,11 +30,21 @@ var (
 		Name: "generator_records_produced_total",
 		Help: "Total records produced by generator",
 	})
+	bytesProducedBySegment = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "generator_bytes_produced_by_segment_total",
+		Help: "Total bytes produced by generator grouped by array segment",
+	}, []string{"array_segment"})
+	recordsProducedBySegment = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "generator_records_produced_by_segment_total",
+		Help: "Total records produced by generator grouped by array segment",
+	}, []string{"array_segment"})
 )
 
 func init() {
 	prometheus.MustRegister(bytesProduced)
 	prometheus.MustRegister(recordsProduced)
+	prometheus.MustRegister(bytesProducedBySegment)
+	prometheus.MustRegister(recordsProducedBySegment)
 }
 
 func main() {
@@ -44,8 +57,15 @@ func main() {
 		sinkFlag     = flag.String("sink", "", "sink target; supported: file:<path>")
 		auditEvery   = flag.Int("audit-every", 1, "write an audit log line every N records (1 = every record)")
 		rotateSizeMB = flag.Int("rotate-size-mb", 50, "rotate logs when they exceed this size in MB (0 to disable)")
+		segmentDist  = flag.String("segment-distribution", "main:48,lbl:24,sba:21", "comma-separated array segment weights such as main:48,lbl:24,sba:21")
 	)
 	flag.Parse()
+
+	segments, err := parseSegmentWeights(*segmentDist)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "invalid segment distribution: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Start metrics server
 	mux := http.NewServeMux()
@@ -150,7 +170,14 @@ func main() {
 	defer ticker.Stop()
 
 	// per-second loop emit
-	fmt.Fprintf(os.Stderr, "data-generator starting: rate=%d B/s payload=%d no-stdout=%v sink=%s\n", *rate, *payloadSize, *noStdout, *sinkFlag)
+	log.Printf(
+		"data-generator starting: rate=%d B/s payload=%d no-stdout=%v sink=%s segment-distribution=%s",
+		*rate,
+		*payloadSize,
+		*noStdout,
+		*sinkFlag,
+		*segmentDist,
+	)
 	start := time.Now()
 	for {
 		select {
@@ -164,7 +191,9 @@ func main() {
 			if records < 1 {
 				records = 1
 			}
+			recordSegments := allocateSegments(records, segments)
 			for i := 0; i < records; i++ {
+				segment := recordSegments[i]
 				payload := make([]byte, *payloadSize)
 				_, _ = rand.Read(payload)
 				// write to configured sink (file) or stdout depending on flags
@@ -183,6 +212,8 @@ func main() {
 				}
 				bytesProduced.Add(float64(len(payload)))
 				recordsProduced.Inc()
+				bytesProducedBySegment.WithLabelValues(segment).Add(float64(len(payload)))
+				recordsProducedBySegment.WithLabelValues(segment).Inc()
 			}
 			// check for rotation after writing this second's payloads
 			rotateIfNeeded()
@@ -198,4 +229,96 @@ func shutdown(srv *http.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(ctx)
+}
+
+type segmentWeight struct {
+	name   string
+	weight int
+}
+
+func parseSegmentWeights(raw string) ([]segmentWeight, error) {
+	parts := strings.Split(raw, ",")
+	segments := make([]segmentWeight, 0, len(parts))
+	total := 0
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+		pieces := strings.SplitN(trimmed, ":", 2)
+		if len(pieces) != 2 {
+			return nil, fmt.Errorf("segment entry %q must be name:weight", trimmed)
+		}
+		name := strings.TrimSpace(pieces[0])
+		if name == "" {
+			return nil, fmt.Errorf("segment entry %q has empty name", trimmed)
+		}
+		weight, err := strconv.Atoi(strings.TrimSpace(pieces[1]))
+		if err != nil || weight <= 0 {
+			return nil, fmt.Errorf("segment %q has invalid weight %q", name, pieces[1])
+		}
+		segments = append(segments, segmentWeight{name: name, weight: weight})
+		total += weight
+	}
+	if len(segments) == 0 || total <= 0 {
+		return nil, fmt.Errorf("at least one positive segment weight is required")
+	}
+	return segments, nil
+}
+
+func allocateSegments(records int, segments []segmentWeight) []string {
+	assignments := make([]string, 0, records)
+	if records <= 0 || len(segments) == 0 {
+		return assignments
+	}
+
+	type remainder struct {
+		name      string
+		remainder int
+	}
+
+	totalWeight := 0
+	for _, segment := range segments {
+		totalWeight += segment.weight
+	}
+
+	baseCounts := make(map[string]int, len(segments))
+	remainders := make([]remainder, 0, len(segments))
+	assigned := 0
+	for _, segment := range segments {
+		numerator := records * segment.weight
+		base := numerator / totalWeight
+		baseCounts[segment.name] = base
+		assigned += base
+		remainders = append(remainders, remainder{
+			name:      segment.name,
+			remainder: numerator % totalWeight,
+		})
+	}
+
+	sort.SliceStable(remainders, func(i, j int) bool {
+		if remainders[i].remainder == remainders[j].remainder {
+			return remainders[i].name < remainders[j].name
+		}
+		return remainders[i].remainder > remainders[j].remainder
+	})
+
+	for i := 0; i < records-assigned; i++ {
+		baseCounts[remainders[i%len(remainders)].name]++
+	}
+
+	for _, segment := range segments {
+		for i := 0; i < baseCounts[segment.name]; i++ {
+			assignments = append(assignments, segment.name)
+		}
+	}
+
+	if len(assignments) == records {
+		return assignments
+	}
+
+	for len(assignments) < records {
+		assignments = append(assignments, segments[len(assignments)%len(segments)].name)
+	}
+	return assignments
 }

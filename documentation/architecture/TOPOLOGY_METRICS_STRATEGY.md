@@ -330,6 +330,29 @@ The following steps are the most effective next moves.
 - decide whether governance remains the canonical aggregator or whether a dedicated `topology-observer` container should take over
 - formalize an edge taxonomy so each link has stable semantics across UI, alerts, docs, and dashboards
 
+## Remaining Attribution Gaps
+
+The current topology model is now largely measured for repo-owned application and infrastructure paths.
+
+The remaining partial links are mostly external or structural attribution problems rather than missing
+`java-governance` work:
+
+- `zookeeper -> kafka`
+- `prom -> grafana`
+- `loki -> grafana`
+
+These links remain partially inferred because the currently available metrics in this stack do not cleanly
+attribute upstream traffic at the per-link level without inventing semantics.
+
+That means the next work here is not "add more governance metrics" by default. The next work is one of:
+
+- add datasource-level Grafana request attribution if Grafana exposes it in a usable way
+- add Loki query/read attribution that can be mapped to Grafana datasource traffic
+- add stronger Kafka control-plane metrics if Zookeeper/Kafka coordination visibility becomes operationally important
+
+Until those signals exist, these links should remain explicitly marked as partial or derived in the topology
+experience rather than overstated as fully measured.
+
 ## Summary
 
 The effective production model is:

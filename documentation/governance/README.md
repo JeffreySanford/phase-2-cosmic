@@ -11,3 +11,5 @@ Grouped docs for the Governance & Control Plane.
 - Governance control plane: [GOVERNANCE_CONTROL_PLANE.md](/docuentation/governance/GOVERNANCE_CONTROL_PLANE.md)
 
 - Java API spec: [JAVA_GOVERNANCE_SPEC.md](/docuentation/governance/JAVA_GOVERNANCE_SPEC.md)
+
+- Java governance telemetry implementation plan: [JAVA_GOVERNANCE_TELEMETRY_PLAN.md](/docuentation/governance/JAVA_GOVERNANCE_TELEMETRY_PLAN.md)

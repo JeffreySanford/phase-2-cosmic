@@ -9,6 +9,7 @@ import {
 import { TelemetryService } from "../../services/telemetry.service";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
+import { InfrastructureTelemetrySnapshot } from "../../shared/types";
 
 type SourceLabel = "live" | "fallback";
 
@@ -100,6 +101,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
     source: "fallback" as SourceLabel,
   };
 
+  governanceSummary = {
+    completedTotal: 0,
+    failedTotal: 0,
+    redisReadRate: "0.00 req/s",
+    objectWriteRate: "0.00 req/s",
+    pulsarIngestRate: "0.00 req/s",
+    proxyRate: "0.00 req/s",
+    source: "fallback" as SourceLabel,
+  };
+
   readonly quickLinks = [
     { label: "Open Telemetry", route: "/telemetry" },
     { label: "Open Diagnostics", route: "/diagnostics" },
@@ -175,6 +186,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
             path: "",
             files: [] as string[],
           });
+    const infrastructure$ = this.probe(
+      this.http.get<InfrastructureTelemetrySnapshot>(
+        "/api/v1/telemetry/infrastructure"
+      ),
+      {
+        measuredAt: "",
+        source: "unavailable",
+        services: {
+          redis: { source: "unavailable" },
+          rabbitmq: { source: "unavailable" },
+          minio: { source: "unavailable" },
+          nginx: { source: "unavailable" },
+          frontendSsr: { source: "unavailable" },
+          kafka: { source: "unavailable" },
+          javaIngest: { source: "unavailable" },
+          pulsar: { source: "unavailable" },
+          grafana: { source: "unavailable" },
+          loki: { source: "unavailable" },
+          alertmanager: { source: "unavailable" },
+          governanceRuntime: { source: "unavailable" },
+        },
+      }
+    );
     const cpuRange$ = this.probe(
       this.telemetry.queryRange(
         '100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))',
@@ -212,6 +246,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         recordsRate: recordsRate$,
         totalBytes: totalBytes$,
         diagnostics: diagnostics$,
+        infrastructure: infrastructure$,
         cpuRange: cpuRange$,
         bytesRange: bytesRange$,
         targetsRange: targetsRange$,
@@ -346,6 +381,38 @@ export class DashboardComponent implements OnInit, OnDestroy {
               : "n/a",
           source:
             snapshot.generatorUp.ok && snapshot.targetsUp.ok
+              ? "live"
+              : "fallback",
+        };
+
+        const governanceRuntime =
+          snapshot.infrastructure.value.services.governanceRuntime;
+        const frontendSsr = snapshot.infrastructure.value.services.frontendSsr;
+        this.governanceSummary = {
+          completedTotal: Math.max(
+            0,
+            Math.round(governanceRuntime?.completedTotal ?? 0)
+          ),
+          failedTotal: Math.max(
+            0,
+            Math.round(governanceRuntime?.failedTotal ?? 0)
+          ),
+          redisReadRate: this.formatRequestsPerSecond(
+            governanceRuntime?.redisReadRatePerSec ?? 0
+          ),
+          objectWriteRate: this.formatRequestsPerSecond(
+            governanceRuntime?.objectWriteRatePerSec ?? 0
+          ),
+          pulsarIngestRate: this.formatRequestsPerSecond(
+            governanceRuntime?.pulsarIngestReceiveRatePerSec ?? 0
+          ),
+          proxyRate: this.formatRequestsPerSecond(
+            frontendSsr?.governanceProxyRatePerSec ?? 0
+          ),
+          source:
+            snapshot.infrastructure.ok &&
+            (governanceRuntime?.source === "prometheus" ||
+              frontendSsr?.source === "prometheus")
               ? "live"
               : "fallback",
         };
@@ -511,6 +578,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       idx++;
     }
     return `${value.toFixed(2)} ${units[idx]}`;
+  }
+
+  private formatRequestsPerSecond(v: number): string {
+    return `${Math.max(0, v).toFixed(2)} req/s`;
   }
 
   private clamp(v: number, min: number, max: number): number {

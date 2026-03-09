@@ -44,4 +44,22 @@ describe("DashboardComponent", () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector("h1")?.textContent).toContain("Dashboard");
   });
+
+  it("renders the governance Pulsar ingest summary field", () => {
+    component.governanceSummary = {
+      completedTotal: 3,
+      failedTotal: 1,
+      redisReadRate: "1.20 req/s",
+      objectWriteRate: "512.00 B/s",
+      pulsarIngestRate: "0.80 req/s",
+      proxyRate: "2.40 req/s",
+      source: "live",
+    };
+
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain("Pulsar ingest:");
+    expect(el.textContent).toContain("0.80 req/s");
+  });
 });

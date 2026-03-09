@@ -2,6 +2,7 @@ package com.cosmic.governance.api.executor;
 
 import com.cosmic.governance.api.model.JobRecord;
 import com.cosmic.governance.api.model.JobState;
+import com.cosmic.governance.api.service.GovernanceRuntimeMetricsService;
 import com.cosmic.governance.api.util.RedisMarshaller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,11 +44,14 @@ public class VoJobExecutor implements JobExecutor {
 
     private final RedisMarshaller marshaller;
     private final ObjectMapper objectMapper;
+    private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
 
     public VoJobExecutor(@Autowired RedisMarshaller marshaller,
-                         @Autowired ObjectMapper objectMapper) {
+                         @Autowired ObjectMapper objectMapper,
+                         @Autowired GovernanceRuntimeMetricsService governanceRuntimeMetricsService) {
         this.marshaller = marshaller;
         this.objectMapper = objectMapper;
+        this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;
     }
 
     @Override
@@ -70,7 +74,7 @@ public class VoJobExecutor implements JobExecutor {
             var params = mutableParams(r);
             params.put("executor", name());
             r.setParameters(params);
-            redisTemplate.opsForValue().set(jobKey, r);
+            writeRedisValue(jobKey, redisTemplate, r);
             pushLog(jobKey, redisTemplate, "VO executor: starting " + workflow);
         }, 1, TimeUnit.SECONDS);
 
@@ -87,22 +91,27 @@ public class VoJobExecutor implements JobExecutor {
                 Path base = Paths.get(System.getProperty("java.io.tmpdir"), "governance-artifacts", r.getJobId());
                 Files.createDirectories(base);
                 Path file = base.resolve(artifactName);
-                Files.writeString(file, objectMapper.writeValueAsString(result));
+                String content = objectMapper.writeValueAsString(result);
+                Files.writeString(file, content);
+                recordObjectWrite("artifact-file", artifactName, "vo", content);
 
                 String artKey = jobKey + ":artifacts";
                 var artifact = Map.of(
                     "name", artifactName,
                     "url", "/api/v1/jobs/" + r.getJobId() + "/artifacts/" + artifactName
                 );
-                redisTemplate.opsForValue().set(artKey, artifact);
+                writeRedisValue(artKey, redisTemplate, artifact);
 
                 // Transition to COMPLETED
                 r = reload(jobKey, redisTemplate);
                 if (r == null) return;
+                Instant completedAt = Instant.now();
+                Duration runtime = durationBetween(r.getUpdatedAt(), completedAt);
                 r.setState(JobState.COMPLETED);
-                r.setUpdatedAt(Instant.now().toString());
+                r.setUpdatedAt(completedAt.toString());
                 r.setVersion(r.getVersion() + 1);
-                redisTemplate.opsForValue().set(jobKey, r);
+                writeRedisValue(jobKey, redisTemplate, r);
+                recordTerminalState(r.getWorkflow(), "vo", JobState.COMPLETED, runtime);
                 pushLog(jobKey, redisTemplate, "VO executor: completed " + workflow
                     + " — " + fieldsSummary(result));
 
@@ -110,10 +119,13 @@ public class VoJobExecutor implements JobExecutor {
                 pushLog(jobKey, redisTemplate, "VO executor: error — " + e.getMessage());
                 JobRecord failed = reload(jobKey, redisTemplate);
                 if (failed != null) {
+                    Instant failedAt = Instant.now();
+                    Duration runtime = durationBetween(failed.getUpdatedAt(), failedAt);
                     failed.setState(JobState.FAILED);
-                    failed.setUpdatedAt(Instant.now().toString());
+                    failed.setUpdatedAt(failedAt.toString());
                     failed.setVersion(failed.getVersion() + 1);
-                    redisTemplate.opsForValue().set(jobKey, failed);
+                    writeRedisValue(jobKey, redisTemplate, failed);
+                    recordTerminalState(failed.getWorkflow(), "vo", JobState.FAILED, runtime);
                 }
             }
         }, 3, TimeUnit.SECONDS);
@@ -154,7 +166,7 @@ public class VoJobExecutor implements JobExecutor {
         String url = tapUrl + "?REQUEST=doQuery&LANG=ADQL&FORMAT=votable"
             + "&QUERY=" + URLEncoder.encode(queryAdql, StandardCharsets.UTF_8);
 
-        String body = httpGet(url);
+        String body = httpGet("adql_query", url, Map.of("tapUrl", tapUrl, "limit", limit));
         return parseVotable(body);
     }
 
@@ -184,7 +196,7 @@ public class VoJobExecutor implements JobExecutor {
 
         String url = tapUrl + "?REQUEST=doQuery&LANG=ADQL&FORMAT=votable"
             + "&QUERY=" + URLEncoder.encode(adql.toString(), StandardCharsets.UTF_8);
-        String body = httpGet(url);
+        String body = httpGet("obscore_search", url, params);
         return parseVotable(body);
     }
 
@@ -200,7 +212,7 @@ public class VoJobExecutor implements JobExecutor {
         pushLog(jobKey, rt, "VO/ConeSearch → " + serviceUrl);
 
         String url = serviceUrl + "?RA=" + ra + "&DEC=" + dec + "&SR=" + radius + "&FORMAT=votable";
-        String body = httpGet(url);
+        String body = httpGet("cone_search", url, params);
         return parseVotable(body);
     }
 
@@ -211,7 +223,7 @@ public class VoJobExecutor implements JobExecutor {
             throws Exception {
         String votableUrl = str(params, "votableUrl");
         pushLog(jobKey, rt, "VO/VOTable fetch → " + votableUrl);
-        String body = httpGet(votableUrl);
+        String body = httpGet("votable_fetch", votableUrl, params);
         return parseVotable(body);
     }
 
@@ -225,7 +237,7 @@ public class VoJobExecutor implements JobExecutor {
         pushLog(jobKey, rt, "VO/DataLink resolve → " + datalinkUrl);
 
         String url = datalinkUrl + "?ID=" + URLEncoder.encode(id, StandardCharsets.UTF_8);
-        String body = httpGet(url);
+        String body = httpGet("datalink_resolve", url, params);
         // DataLink response is VOTable; links point to access_url
         Map<String, Object> parsed = parseVotable(body);
         // Promote access_url column values into structured links list
@@ -240,6 +252,7 @@ public class VoJobExecutor implements JobExecutor {
         String productUrl = str(params, "productUrl");
         String mimeType   = (String) params.getOrDefault("expectedMimeType", "application/octet-stream");
         pushLog(jobKey, rt, "VO/ProductFetch recorded → " + productUrl);
+        recordExternalAdapterRequest("product_fetch", productUrl, params, true, null, Duration.ZERO);
         // Record the product reference without downloading the binary payload
         Map<String, Object> result = new HashMap<>();
         result.put("fields", List.of("accessUrl", "mimeType", "retrievedAt"));
@@ -267,6 +280,7 @@ public class VoJobExecutor implements JobExecutor {
         if (params.containsKey("outputFormat"))
             sb.append("&FORMAT=").append(URLEncoder.encode(str(params, "outputFormat"), StandardCharsets.UTF_8));
 
+        recordExternalAdapterRequest("soda_cutout", sb.toString(), params, true, null, Duration.ZERO);
         // SODA sync returns a binary product; we record the request as a product link
         Map<String, Object> result = new HashMap<>();
         result.put("fields", List.of("requestUrl", "format", "requestedAt"));
@@ -285,6 +299,7 @@ public class VoJobExecutor implements JobExecutor {
                                                 String jobKey, RedisTemplate<String, Object> rt) {
         String previewUrl = str(params, "previewUrl");
         pushLog(jobKey, rt, "VO/PreviewFetch recorded → " + previewUrl);
+        recordExternalAdapterRequest("preview_fetch", previewUrl, params, true, null, Duration.ZERO);
         Map<String, Object> result = new HashMap<>();
         result.put("fields", List.of("previewUrl", "retrievedAt"));
         result.put("rows",   List.of(List.of(previewUrl, Instant.now().toString())));
@@ -379,7 +394,8 @@ public class VoJobExecutor implements JobExecutor {
 
     // ── HTTP helper ───────────────────────────────────────────────────────────
 
-    private String httpGet(String url) throws Exception {
+    private String httpGet(String operation, String url, Object payload) throws Exception {
+        Instant startedAt = Instant.now();
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                 .build();
@@ -388,21 +404,120 @@ public class VoJobExecutor implements JobExecutor {
                 .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                 .GET()
                 .build();
-        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() >= 400)
-            throw new RuntimeException("HTTP " + resp.statusCode() + " from " + url);
-        return resp.body();
+        try {
+            HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+            Duration duration = Duration.between(startedAt, Instant.now());
+            if (resp.statusCode() >= 400) {
+                recordExternalAdapterRequest(operation, url, payload, false, httpErrorClass(resp.statusCode()), duration);
+                throw new RuntimeException("HTTP " + resp.statusCode() + " from " + url);
+            }
+            recordExternalAdapterRequest(operation, url, payload, true, null, duration);
+            return resp.body();
+        } catch (Exception ex) {
+            recordExternalAdapterRequest(operation, url, payload, false, externalErrorClass(ex), Duration.between(startedAt, Instant.now()));
+            throw ex;
+        }
     }
 
     // ── Utility helpers ───────────────────────────────────────────────────────
 
     private JobRecord reload(String jobKey, RedisTemplate<String, Object> rt) {
+        Instant startedAt = Instant.now();
         Object o = rt.opsForValue().get(jobKey);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRedisRead("redis", keyspaceOf(jobKey), o, true, Duration.between(startedAt, Instant.now()));
+        }
         return marshaller.toJobRecord(o);
     }
 
     private void pushLog(String jobKey, RedisTemplate<String, Object> rt, String msg) {
+        Instant startedAt = Instant.now();
         rt.opsForList().rightPush(jobKey + ":logs", msg);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRedisWrite("redis", keyspaceOf(jobKey + ":logs"), msg, true, Duration.between(startedAt, Instant.now()));
+        }
+    }
+
+    private void writeRedisValue(String key, RedisTemplate<String, Object> rt, Object value) {
+        Instant startedAt = Instant.now();
+        rt.opsForValue().set(key, value);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRedisWrite("redis", keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));
+        }
+    }
+
+    private void recordObjectWrite(String storage, String objectKind, String executor, Object payload) {
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordObjectWrite(storage, objectKind, executor, payload);
+        }
+    }
+
+    private void recordExternalAdapterRequest(
+            String operation,
+            String target,
+            Object payload,
+            boolean success,
+            String errorClass,
+            Duration duration
+    ) {
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordExternalAdapterRequest(
+                    "vo",
+                    operation,
+                    target,
+                    payload,
+                    success,
+                    errorClass,
+                    duration
+            );
+        }
+    }
+
+    private void recordTerminalState(String workflow, String executor, JobState state, Duration runtime) {
+        if (governanceRuntimeMetricsService == null) {
+            return;
+        }
+        governanceRuntimeMetricsService.recordJobTerminalState(workflow, executor, state.name(), runtime);
+        governanceRuntimeMetricsService.recordWorkflowRuntime(workflow, executor, state.name(), runtime);
+    }
+
+    private Duration durationBetween(String startedAt, Instant finishedAt) {
+        try {
+            return Duration.between(Instant.parse(startedAt), finishedAt);
+        } catch (Exception ex) {
+            return Duration.ZERO;
+        }
+    }
+
+    private String keyspaceOf(String key) {
+        if (key == null || key.isBlank()) {
+            return "unknown";
+        }
+        int idx = key.indexOf(':');
+        return idx > 0 ? key.substring(0, idx) : key;
+    }
+
+    private String httpErrorClass(int statusCode) {
+        if (statusCode >= 500) {
+            return "http_5xx";
+        }
+        if (statusCode >= 400) {
+            return "http_4xx";
+        }
+        return "http_other";
+    }
+
+    private String externalErrorClass(Exception ex) {
+        if (ex == null) {
+            return "unknown";
+        }
+        String simple = ex.getClass().getSimpleName();
+        return switch (simple) {
+            case "HttpTimeoutException" -> "timeout";
+            case "ConnectException" -> "connect";
+            case "IllegalArgumentException" -> "invalid_request";
+            default -> simple == null || simple.isBlank() ? "unknown" : simple;
+        };
     }
 
     private Map<String, Object> mutableParams(JobRecord r) {

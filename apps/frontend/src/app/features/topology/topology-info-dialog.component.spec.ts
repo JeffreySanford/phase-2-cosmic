@@ -105,4 +105,15 @@ describe("TopologyInfoDialogComponent", () => {
     expect(component.isHighUtil()).toBe(false);
     expect(component.isNormalUtil()).toBe(false);
   });
+
+  it("renders a confidence label from the link confidence score", async () => {
+    await configure({
+      type: "link",
+      source: "a",
+      target: "b",
+      stats: { confidencePct: 92 },
+    });
+
+    expect(component.confidenceLabel()).toBe("High confidence");
+  });
 });

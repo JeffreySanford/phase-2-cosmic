@@ -23,6 +23,7 @@ import { MatTableModule } from "@angular/material/table";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
+import { By } from "@angular/platform-browser";
 import { TelemetryService } from "../../services/telemetry.service";
 import { LoadProfileService } from "../../services/load-profile.service";
 import { VoService } from "../../services/vo.service";
@@ -34,6 +35,22 @@ type TelemetryComponentTestHooks = {
   initGauge: () => void;
   ensureVizInitialized: () => void;
 };
+
+function clickTabByLabel(
+  fixture: ComponentFixture<TelemetryComponent>,
+  label: string,
+  occurrence = 0
+): void {
+  const tabs = fixture.debugElement.queryAll(By.css(".mdc-tab"));
+  const matching = tabs.filter((tab) =>
+    ((tab.nativeElement.textContent as string) || "").includes(label)
+  );
+  const target = matching[occurrence];
+  if (!target) {
+    throw new Error(`Unable to find tab with label: ${label}`);
+  }
+  (target.nativeElement as HTMLElement).click();
+}
 
 describe("TelemetryComponent", () => {
   let component: TelemetryComponent;
@@ -93,7 +110,10 @@ describe("TelemetryComponent", () => {
         },
         {
           provide: VoService,
-          useValue: { getServices: jest.fn(() => of({})) },
+          useValue: {
+            getServices: jest.fn(() => of({})),
+            voLoading$: new BehaviorSubject(false),
+          },
         },
       ],
     }).compileComponents();
@@ -137,6 +157,28 @@ describe("TelemetryComponent", () => {
       queues: {},
       exchanges: {},
     });
+    httpMock.expectOne("/api/v1/telemetry/infrastructure").flush({
+      measuredAt: new Date().toISOString(),
+      source: "prometheus",
+      services: {
+        redis: { source: "prometheus" },
+        rabbitmq: { source: "prometheus" },
+        minio: { source: "prometheus" },
+        frontendSsr: { source: "prometheus" },
+        kafka: { source: "prometheus" },
+        javaIngest: { source: "prometheus" },
+        pulsar: {
+          source: "prometheus",
+          brokers: 2,
+          topics: 10,
+          partitions: 30,
+          ingressBytesPerSec: 4096,
+          egressBytesPerSec: 2048,
+          publishRatePerSec: 6,
+          deliverRatePerSec: 5,
+        },
+      },
+    });
     httpMock.expectOne("/api/v1/alerts/slo").flush({
       alertIngestedTotal: 0,
       alertLatencyMsP50: 0,
@@ -173,6 +215,28 @@ describe("TelemetryComponent", () => {
       queues: { "test-queue": {} },
       exchanges: { "test-exchange": {} },
     });
+    httpMock.expectOne("/api/v1/telemetry/infrastructure").flush({
+      measuredAt: new Date().toISOString(),
+      source: "prometheus",
+      services: {
+        redis: { source: "prometheus" },
+        rabbitmq: { source: "prometheus" },
+        minio: { source: "prometheus" },
+        frontendSsr: { source: "prometheus" },
+        kafka: { source: "prometheus" },
+        javaIngest: { source: "prometheus" },
+        pulsar: {
+          source: "prometheus",
+          brokers: 1,
+          topics: 1,
+          partitions: 1,
+          ingressBytesPerSec: 1024,
+          egressBytesPerSec: 768,
+          publishRatePerSec: 1,
+          deliverRatePerSec: 1,
+        },
+      },
+    });
     httpMock.expectOne("/api/v1/alerts/slo").flush({
       alertIngestedTotal: 0,
       alertLatencyMsP50: 0,
@@ -202,6 +266,19 @@ describe("TelemetryComponent", () => {
       connection: "unknown",
       queues: {},
       exchanges: {},
+    });
+    httpMock.expectOne("/api/v1/telemetry/infrastructure").flush({
+      measuredAt: new Date().toISOString(),
+      source: "unavailable",
+      services: {
+        redis: { source: "unavailable" },
+        rabbitmq: { source: "unavailable" },
+        minio: { source: "unavailable" },
+        frontendSsr: { source: "unavailable" },
+        kafka: { source: "unavailable" },
+        javaIngest: { source: "unavailable" },
+        pulsar: { source: "unavailable", brokers: 0, topics: 0, partitions: 0 },
+      },
     });
     httpMock.expectOne("/api/v1/alerts/slo").flush({
       alertIngestedTotal: 0,
@@ -233,6 +310,19 @@ describe("TelemetryComponent", () => {
 
     const rabbitReq = httpMock.expectOne("/api/v1/rabbitmq/status");
     rabbitReq.error(new ErrorEvent("connection failed"));
+    httpMock.expectOne("/api/v1/telemetry/infrastructure").flush({
+      measuredAt: new Date().toISOString(),
+      source: "unavailable",
+      services: {
+        redis: { source: "unavailable" },
+        rabbitmq: { source: "unavailable" },
+        minio: { source: "unavailable" },
+        frontendSsr: { source: "unavailable" },
+        kafka: { source: "unavailable" },
+        javaIngest: { source: "unavailable" },
+        pulsar: { source: "unavailable", brokers: 0, topics: 0, partitions: 0 },
+      },
+    });
     httpMock.expectOne("/api/v1/alerts/slo").flush({
       alertIngestedTotal: 0,
       alertLatencyMsP50: 0,
@@ -258,6 +348,28 @@ describe("TelemetryComponent", () => {
     httpMock.expectOne("/api/v1/pulsar/status").flush({ brokers: 1, topics: 1, partitions: 1 });
     httpMock.expectOne("/api/v1/rabbitmq/status").flush({
       status: "unknown", connection: "unknown", queues: {}, exchanges: {},
+    });
+    httpMock.expectOne("/api/v1/telemetry/infrastructure").flush({
+      measuredAt: new Date().toISOString(),
+      source: "prometheus",
+      services: {
+        redis: { source: "prometheus" },
+        rabbitmq: { source: "prometheus" },
+        minio: { source: "prometheus" },
+        frontendSsr: { source: "prometheus" },
+        kafka: { source: "prometheus" },
+        javaIngest: { source: "prometheus" },
+        pulsar: {
+          source: "prometheus",
+          brokers: 1,
+          topics: 1,
+          partitions: 1,
+          ingressBytesPerSec: 1024,
+          egressBytesPerSec: 768,
+          publishRatePerSec: 1,
+          deliverRatePerSec: 1,
+        },
+      },
     });
     httpMock.expectOne("/api/v1/alerts/slo").flush({
       alertIngestedTotal: 42,
@@ -287,11 +399,273 @@ describe("TelemetryComponent", () => {
     httpMock.expectOne("/api/v1/rabbitmq/status").flush({
       status: "unknown", connection: "unknown", queues: {}, exchanges: {},
     });
+    httpMock.expectOne("/api/v1/telemetry/infrastructure").flush({
+      measuredAt: new Date().toISOString(),
+      source: "unavailable",
+      services: {
+        redis: { source: "unavailable" },
+        rabbitmq: { source: "unavailable" },
+        minio: { source: "unavailable" },
+        frontendSsr: { source: "unavailable" },
+        kafka: { source: "unavailable" },
+        javaIngest: { source: "unavailable" },
+        pulsar: { source: "unavailable", brokers: 0, topics: 0, partitions: 0 },
+      },
+    });
     httpMock.expectOne("/api/v1/alerts/slo").error(new ErrorEvent("alert-slo-error"));
     httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
 
     expect(component.alertSloError).toBe("Alert SLO endpoint unavailable");
     expect(component.alertSloLoading).toBe(false);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it("should render Nest SSR API traffic and observability tiles from infrastructure telemetry", fakeAsync(() => {
+    fixture.detectChanges();
+    tick(6000);
+
+    httpMock.expectOne("/api/v1/pulsar/status").flush({
+      brokers: 1,
+      topics: 2,
+      partitions: 3,
+    });
+    httpMock.expectOne("/api/v1/rabbitmq/status").flush({
+      status: "healthy",
+      connection: "established",
+      queues: {},
+      exchanges: {},
+    });
+    httpMock.expectOne("/api/v1/telemetry/infrastructure").flush({
+      measuredAt: new Date().toISOString(),
+      source: "prometheus",
+      services: {
+        redis: { source: "prometheus" },
+        rabbitmq: { source: "prometheus" },
+        minio: { source: "prometheus" },
+        nginx: { source: "prometheus" },
+        frontendSsr: {
+          source: "prometheus",
+          frontendApiRequestRatePerSec: 7.4,
+          frontendApiResponseBytesPerSec: 49152,
+          frontendApiErrorRatePerSec: 0.03,
+          frontendApiLatencyMs: 21,
+          apiRouteRequestRatesPerSec: {
+            telemetry: 1.7,
+            jobs: 2.1,
+            alerts: 0.9,
+          },
+        },
+        governanceRuntime: {
+          source: "prometheus",
+          queuedJobs: 6,
+          runningJobs: 2,
+          deferredJobs: 3,
+          blockedJobs: 1,
+          avgQueueAgeMs: 640,
+          maxQueueAgeMs: 1820,
+          scannerIntervalSeconds: 10,
+          deferredReleaseRatePerSec: 0.03,
+          deferredReleaseTotal: 5,
+          operatorReadRatePerSec: 1.9,
+          operatorReadBytesPerSec: 8192,
+          operatorReadRouteRatesPerSec: {
+            jobs: 1.1,
+            datasets: 0.5,
+            alerts: 0.2,
+          },
+          httpRequestRatePerSec: 5.2,
+          httpResponseBytesPerSec: 16384,
+          httpErrorRatePerSec: 0.06,
+          httpLatencyMs: 17,
+          httpRouteRequestRatesPerSec: {
+            jobs: 1.4,
+            telemetry: 0.7,
+            alerts: 0.3,
+          },
+          datasetPublishRatePerSec: 0.2,
+          datasetPublishPayloadBytesPerSec: 3072,
+          datasetReadRatePerSec: 0.7,
+          datasetReadPayloadBytesPerSec: 5120,
+          manifestPublishRatePerSec: 0.18,
+          manifestPublishPayloadBytesPerSec: 2048,
+          manifestReadRatePerSec: 0.46,
+          manifestReadPayloadBytesPerSec: 2560,
+          kafkaPublishRatePerSec: 2.2,
+          kafkaPublishBytesPerSec: 14336,
+          kafkaPublishLatencyMs: 13,
+          kafkaPublishErrorRatePerSec: 0.01,
+          artifactReadRatePerSec: 0.48,
+          artifactReadBytesPerSec: 12288,
+          artifactReadAvgLatencyMs: 14,
+          artifactReadErrorRatePerSec: 0.01,
+          artifactAvgSizeBytes: 4096,
+          voAdapterRequestRatePerSec: 0.4,
+          voAdapterPayloadBytesPerSec: 3584,
+          voAdapterLatencyMs: 410,
+          voAdapterErrorRatePerSec: 0.02,
+          voAdapterOperationRatesPerSec: {
+            adql_query: 0.2,
+            votable_fetch: 0.1,
+          },
+          voAdapterFailureClassRatesPerSec: {
+            timeout: 0.02,
+          },
+          taccAdapterRequestRatePerSec: 0.3,
+          taccAdapterPayloadBytesPerSec: 1024,
+          taccAdapterLatencyMs: 180,
+          taccAdapterErrorRatePerSec: 0,
+          taccAdapterOperationRatesPerSec: {
+            submit: 0.3,
+          },
+          taccAdapterFailureClassRatesPerSec: {},
+          alertIngestedTotal: 12,
+          alertIngestRatePerSec: 0.2,
+          alertReplaysTotal: 3,
+          alertReplayRatePerSec: 0.04,
+          alertDlqDepth: 2,
+          alertReplaySingleSuccessRatePerSec: 0.03,
+          alertReplaySingleMissRatePerSec: 0.01,
+          alertReplayAllSuccessRatePerSec: 0.01,
+          alertReplayAllEmptyRatePerSec: 0,
+          alertReplayItemsRatePerSec: 0.05,
+          alertReplayAvgBatchSize: 2.5,
+          alertReplayAvgLatencyMs: 15,
+          workflowOutcomes: {
+            ingest: {
+              source: "prometheus",
+              completedTotal: 8,
+              failedTotal: 1,
+              completedRatePerSec: 0.6,
+              failedRatePerSec: 0.03,
+              avgDispatchWaitMs: 220,
+              avgRuntimeMs: 1480,
+            },
+            "vo.adql.query": {
+              source: "prometheus",
+              completedTotal: 4,
+              failedTotal: 0,
+              completedRatePerSec: 0.2,
+              failedRatePerSec: 0,
+              avgDispatchWaitMs: 120,
+              avgRuntimeMs: 890,
+            },
+          },
+        },
+        kafka: { source: "prometheus" },
+        javaIngest: {
+          source: "prometheus",
+          receiveRatePerSec: 5.1,
+          processedRatePerSec: 5.0,
+          validationFailureRatePerSec: 0.05,
+          failureRatePerSec: 0.01,
+          retryRatePerSec: 0,
+          dlqRatePerSec: 0,
+          payloadBytesPerSec: 40960,
+          avgLatencyMs: 11,
+        },
+        pulsar: {
+          source: "prometheus",
+          brokers: 1,
+          topics: 2,
+          partitions: 3,
+        },
+        grafana: {
+          source: "prometheus",
+          dataproxyRatePerSec: 0.4,
+        },
+        loki: {
+          source: "prometheus",
+          inflightRequests: 1,
+        },
+        alertmanager: {
+          source: "prometheus",
+          alertsReceivedRatePerSec: 0.05,
+        },
+      },
+    });
+    httpMock.expectOne("/api/v1/alerts/slo").flush({
+      alertIngestedTotal: 0,
+      alertLatencyMsP50: 0,
+      alertLatencyMsP95: 0,
+      alertLatencyMsP99: 0,
+      dlqDepth: 0,
+      replaysTotal: 0,
+      measuredAt: new Date().toISOString(),
+    });
+    httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
+
+    fixture.detectChanges();
+    clickTabByLabel(fixture, "Overview");
+    fixture.detectChanges();
+    tick();
+    clickTabByLabel(fixture, "Nest SSR");
+    fixture.detectChanges();
+    tick();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain("API Traffic");
+    expect(text).toContain("By API Group");
+    expect(text).toContain("Prometheus Proxy");
+
+    clickTabByLabel(fixture, "Observability");
+    fixture.detectChanges();
+    tick();
+    const observabilityText = fixture.nativeElement.textContent as string;
+    expect(observabilityText).toContain("Observability");
+    expect(observabilityText).toContain("Grafana");
+    expect(observabilityText).toContain("Loki");
+    expect(observabilityText).toContain("Alertmanager");
+
+    clickTabByLabel(fixture, "Operators");
+    fixture.detectChanges();
+    tick();
+    const operatorsText = fixture.nativeElement.textContent as string;
+    expect(operatorsText).toContain("Transient Alerts");
+    expect(operatorsText).toContain("Replay throughput");
+    expect(operatorsText).toContain("Single replay success");
+    expect(operatorsText).toContain("Avg replay batch");
+    expect(operatorsText).toContain("DLQ and Replay");
+    expect(operatorsText).toContain("Jobs reads");
+    expect(operatorsText).toContain("Datasets reads");
+    expect(operatorsText).toContain("Dataset publishes");
+    expect(operatorsText).toContain("Manifest reads");
+
+    clickTabByLabel(fixture, "Brokers");
+    fixture.detectChanges();
+    tick();
+    const brokersText = fixture.nativeElement.textContent as string;
+    expect(brokersText).toContain("Java Ingest Consumer");
+    expect(brokersText).toContain("Retries");
+    expect(brokersText).toContain("Latency");
+
+    clickTabByLabel(fixture, "Java Governance Runtime");
+    fixture.detectChanges();
+    tick();
+    const governanceText = fixture.nativeElement.textContent as string;
+    expect(governanceText).toContain("Scheduler Pressure");
+    expect(governanceText).toContain("Queued jobs");
+    expect(governanceText).toContain("Deferred release rate");
+    expect(governanceText).toContain("API Surface");
+    expect(governanceText).toContain("HTTP request rate");
+    expect(governanceText).toContain("Jobs route rate");
+    expect(governanceText).toContain("Workflow Outcomes");
+    expect(governanceText).toContain("Queue wait");
+    expect(governanceText).toContain("Kafka publishes");
+    expect(governanceText).toContain("Kafka latency");
+    expect(governanceText).toContain("Artifact reads");
+    expect(governanceText).toContain("Avg artifact size");
+    expect(governanceText).toContain("External Adapters");
+    expect(governanceText).toContain("VO requests");
+    expect(governanceText).toContain("vo.adql.query");
+
+    clickTabByLabel(fixture, "Executors");
+    fixture.detectChanges();
+    tick();
+    const executorsText = fixture.nativeElement.textContent as string;
+    expect(executorsText).toContain("VO Adapter");
+    expect(executorsText).toContain("TACC Adapter");
+    expect(executorsText).toContain("Failure Classes");
+
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));

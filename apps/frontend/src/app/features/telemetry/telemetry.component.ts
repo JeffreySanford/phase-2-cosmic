@@ -14,7 +14,12 @@ import { VoService, VoServices } from "../../services/vo.service";
 import { BehaviorSubject, Subscription, timer, NEVER, from, of } from "rxjs";
 import { switchMap, map, catchError } from "rxjs/operators";
 import { LoadProfileService } from "../../services/load-profile.service";
-import { RabbitMQStatus, PulsarStatus } from "../../shared/types";
+import {
+  InfrastructureTelemetrySnapshot,
+  InfraTelemetryServiceMetrics,
+  RabbitMQStatus,
+  PulsarStatus,
+} from "../../shared/types";
 
 // Prometheus range value is [timestamp, value-as-string]
 type PrometheusRangeValue = [number, string];
@@ -130,6 +135,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     queues: {},
     exchanges: {},
   };
+  infrastructureTelemetry: InfrastructureTelemetrySnapshot | null = null;
   lastUpdated: number | null = null;
 
   // Alert SLO state
@@ -197,6 +203,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         this.fetchRangeAndRender();
         this.fetchPulsarStatus();
         this.fetchRabbitMQStatus();
+        this.fetchInfrastructureTelemetry();
         this.fetchAlertSlo();
       });
 
@@ -897,6 +904,51 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
+  private normalizeInfraSnapshot(
+    snapshot: InfrastructureTelemetrySnapshot
+  ): InfrastructureTelemetrySnapshot {
+    const unavailable: InfraTelemetryServiceMetrics = { source: "unavailable" };
+    const svc = snapshot.services ?? {};
+    return {
+      ...snapshot,
+      services: {
+        redis:             (svc as Record<string, InfraTelemetryServiceMetrics>)["redis"]             ?? unavailable,
+        rabbitmq:          (svc as Record<string, InfraTelemetryServiceMetrics>)["rabbitmq"]          ?? unavailable,
+        minio:             (svc as Record<string, InfraTelemetryServiceMetrics>)["minio"]             ?? unavailable,
+        nginx:             (svc as Record<string, InfraTelemetryServiceMetrics>)["nginx"]             ?? unavailable,
+        frontendSsr:       (svc as Record<string, InfraTelemetryServiceMetrics>)["frontendSsr"]       ?? unavailable,
+        kafka:             (svc as Record<string, InfraTelemetryServiceMetrics>)["kafka"]             ?? unavailable,
+        javaIngest:        (svc as Record<string, InfraTelemetryServiceMetrics>)["javaIngest"]        ?? unavailable,
+        pulsar:            (svc as Record<string, InfraTelemetryServiceMetrics>)["pulsar"]            ?? unavailable,
+        grafana:           (svc as Record<string, InfraTelemetryServiceMetrics>)["grafana"]           ?? unavailable,
+        loki:              (svc as Record<string, InfraTelemetryServiceMetrics>)["loki"]              ?? unavailable,
+        alertmanager:      (svc as Record<string, InfraTelemetryServiceMetrics>)["alertmanager"]      ?? unavailable,
+        governanceRuntime: (svc as Record<string, InfraTelemetryServiceMetrics>)["governanceRuntime"] ?? unavailable,
+      },
+    };
+  }
+
+  private fetchInfrastructureTelemetry(): void {
+    this.http
+      .get<InfrastructureTelemetrySnapshot>("/api/v1/telemetry/infrastructure")
+      .subscribe(
+        (snapshot) => {
+          this.infrastructureTelemetry = this.normalizeInfraSnapshot(snapshot);
+          const pulsar = snapshot.services.pulsar;
+          if (pulsar && pulsar.source !== "unavailable") {
+            this.pulsarStatus = {
+              brokers: Math.round(Number(pulsar.brokers ?? 0)),
+              topics: Math.round(Number(pulsar.topics ?? 0)),
+              partitions: Math.round(Number(pulsar.partitions ?? 0)),
+            };
+          }
+        },
+        () => {
+          this.infrastructureTelemetry = null;
+        }
+      );
+  }
+
   // Public refresh helpers used by the Overview expansion panels
   refreshPulsarDetails(): void {
     this.fetchPulsarStatus();
@@ -1038,5 +1090,36 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       () => { this.fetchAlertSlo(); },
       () => { this.alertSloError = 'Replay-all failed'; }
     );
+  }
+
+  formatBytesPerSec(value?: number): string {
+    return this.humanRate(Number(value ?? 0));
+  }
+
+  formatRequestsPerSec(value?: number): string {
+    return `${Number(value ?? 0).toFixed(2)} req/s`;
+  }
+
+  formatOpsPerSec(value?: number): string {
+    return `${Number(value ?? 0).toFixed(2)} ops/s`;
+  }
+
+  formatCount(value?: number): string {
+    return new Intl.NumberFormat().format(Math.round(Number(value ?? 0)));
+  }
+
+  formatMs(value?: number): string {
+    return `${Number(value ?? 0).toFixed(2)} ms`;
+  }
+
+  formatPercent(value?: number): string {
+    return `${Number(value ?? 0).toFixed(2)}%`;
+  }
+
+  infraSourceLabel(source?: string): string {
+    if (source === "prometheus") return "Live";
+    if (source === "admin") return "Live (Admin API)";
+    if (source === "mock") return "Mock";
+    return "Unavailable";
   }
 }

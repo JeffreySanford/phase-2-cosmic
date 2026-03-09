@@ -24,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import com.cosmic.governance.api.service.GovernanceRuntimeMetricsService;
 import com.cosmic.governance.api.util.RedisMarshaller;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -31,11 +32,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class SimulatorExecutor implements JobExecutor {
     private static final ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(2);
     private final RedisMarshaller marshaller;
+    private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
     @Value("${executor.network.enabled:false}")
     private boolean networkEnabled = false;
 
-    public SimulatorExecutor(@Autowired RedisMarshaller marshaller) {
+    public SimulatorExecutor(@Autowired RedisMarshaller marshaller,
+                             @Autowired GovernanceRuntimeMetricsService governanceRuntimeMetricsService) {
         this.marshaller = marshaller;
+        this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;
     }
 
     @Override
@@ -49,7 +53,7 @@ public class SimulatorExecutor implements JobExecutor {
         int completionDelaySeconds = Math.max(startDelaySeconds + 2, 2 + (complexity * 2));
         // schedule running
         EXEC.schedule(() -> {
-            Object o = redisTemplate.opsForValue().get(jobKey);
+            Object o = readRedisValue(redisTemplate, jobKey);
             JobRecord r = null;
             r = marshaller.toJobRecord(o);
             if (r != null) {
@@ -61,35 +65,40 @@ public class SimulatorExecutor implements JobExecutor {
                 newParams.put("executor", name());
                 newParams.put("complexity", complexity);
                 r.setParameters(newParams);
-                redisTemplate.opsForValue().set(jobKey, r);
+                writeRedisValue(redisTemplate, jobKey, r);
                 // push a running log
-                redisTemplate.opsForList().rightPush(jobKey + ":logs", "Simulator: job running (complexity=" + complexity + ")");
+                pushRedisLog(redisTemplate, jobKey + ":logs", "Simulator: job running (complexity=" + complexity + ")");
             }
         }, startDelaySeconds, TimeUnit.SECONDS);
 
         EXEC.schedule(() -> {
-            Object o = redisTemplate.opsForValue().get(jobKey);
+            Object o = readRedisValue(redisTemplate, jobKey);
             JobRecord r2 = null;
             r2 = marshaller.toJobRecord(o);
             if (r2 != null) {
+                Instant completedAt = Instant.now();
+                Duration runtime = durationBetween(r2.getUpdatedAt(), completedAt);
                 r2.setState(JobState.COMPLETED);
-                r2.setUpdatedAt(Instant.now().toString());
+                r2.setUpdatedAt(completedAt.toString());
                 r2.setVersion(r2.getVersion() + 1);
                 var newParams = r2.getParameters() == null ? new java.util.HashMap<String, Object>() : new java.util.HashMap<String, Object>(r2.getParameters());
-                newParams.put("completedAt", Instant.now().toString());
+                newParams.put("completedAt", completedAt.toString());
                 r2.setParameters(newParams);
-                redisTemplate.opsForValue().set(jobKey, r2);
-                redisTemplate.opsForList().rightPush(jobKey + ":logs", "Simulator: job completed (complexity=" + complexity + ")");
+                writeRedisValue(redisTemplate, jobKey, r2);
+                recordTerminalState(r2.getWorkflow(), "simulator", JobState.COMPLETED, runtime);
+                pushRedisLog(redisTemplate, jobKey + ":logs", "Simulator: job completed (complexity=" + complexity + ")");
                 // create a small artifact marker and write a file to tmp artifact store
                 String artKey = jobKey + ":artifacts";
                 String name = "result.txt";
                 var artifact = Map.of("name", name, "url", "/api/v1/jobs/" + r2.getJobId() + "/artifacts/" + name);
-                redisTemplate.opsForValue().set(artKey, artifact);
+                writeRedisValue(redisTemplate, artKey, artifact);
                 try {
                     java.nio.file.Path base = java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "governance-artifacts", r2.getJobId());
                     java.nio.file.Files.createDirectories(base);
                     java.nio.file.Path file = base.resolve(name);
-                    java.nio.file.Files.writeString(file, "Simulator artifact for job " + r2.getJobId() + "\nOK\n");
+                    String content = "Simulator artifact for job " + r2.getJobId() + "\nOK\n";
+                    java.nio.file.Files.writeString(file, content);
+                    recordObjectWrite("artifact-file", name, "simulator", content);
                 } catch (Exception ignored) {}
                 // Optionally perform VO/TAP harvesting when requested by job parameters
                 try {
@@ -180,7 +189,7 @@ public class SimulatorExecutor implements JobExecutor {
                                 try {
                                     if (redisTemplate != null) {
                                         String cacheKey = "vo:cache:" + java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(java.security.MessageDigest.getInstance("SHA-256").digest(fullUrl.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-                                        redisTemplate.opsForValue().set(cacheKey, external);
+                                        writeRedisValue(redisTemplate, cacheKey, external);
                                         try { redisTemplate.expire(cacheKey, 300, java.util.concurrent.TimeUnit.SECONDS); } catch (Exception ignored) {}
                                     }
                                 } catch (Exception ignored) {}
@@ -230,14 +239,16 @@ public class SimulatorExecutor implements JobExecutor {
                         // persist artifact map and write JSON file so API can serve content
                         String externalArtifactsKey = jobKey + ":artifacts";
                         try {
-                            redisTemplate.opsForList().rightPush(externalArtifactsKey, external);
+                            pushRedisLog(redisTemplate, externalArtifactsKey, external);
                         } catch (Exception ignored) {}
                         try {
                             java.nio.file.Path base = java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "governance-artifacts", r2.getJobId());
                             java.nio.file.Files.createDirectories(base);
                             java.nio.file.Path file = base.resolve(jsonName);
                             com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
-                            java.nio.file.Files.writeString(file, om.writerWithDefaultPrettyPrinter().writeValueAsString(external));
+                            String content = om.writerWithDefaultPrettyPrinter().writeValueAsString(external);
+                            java.nio.file.Files.writeString(file, content);
+                            recordObjectWrite("artifact-file", jsonName, "simulator", content);
                         } catch (Exception ignored) {}
                     }
                 } catch (Exception ignored) {}
@@ -255,5 +266,60 @@ public class SimulatorExecutor implements JobExecutor {
         } catch (Exception ignored) {
             return 1;
         }
+    }
+
+    private Object readRedisValue(RedisTemplate<String, Object> redisTemplate, String key) {
+        Instant startedAt = Instant.now();
+        Object value = redisTemplate.opsForValue().get(key);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRedisRead("redis", keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));
+        }
+        return value;
+    }
+
+    private void writeRedisValue(RedisTemplate<String, Object> redisTemplate, String key, Object value) {
+        Instant startedAt = Instant.now();
+        redisTemplate.opsForValue().set(key, value);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRedisWrite("redis", keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));
+        }
+    }
+
+    private void pushRedisLog(RedisTemplate<String, Object> redisTemplate, String key, Object value) {
+        Instant startedAt = Instant.now();
+        redisTemplate.opsForList().rightPush(key, value);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRedisWrite("redis", keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));
+        }
+    }
+
+    private void recordObjectWrite(String storage, String objectKind, String executor, Object payload) {
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordObjectWrite(storage, objectKind, executor, payload);
+        }
+    }
+
+    private void recordTerminalState(String workflow, String executor, JobState state, Duration runtime) {
+        if (governanceRuntimeMetricsService == null) {
+            return;
+        }
+        governanceRuntimeMetricsService.recordJobTerminalState(workflow, executor, state.name(), runtime);
+        governanceRuntimeMetricsService.recordWorkflowRuntime(workflow, executor, state.name(), runtime);
+    }
+
+    private Duration durationBetween(String startedAt, Instant finishedAt) {
+        try {
+            return Duration.between(Instant.parse(startedAt), finishedAt);
+        } catch (Exception ex) {
+            return Duration.ZERO;
+        }
+    }
+
+    private String keyspaceOf(String key) {
+        if (key == null || key.isBlank()) {
+            return "unknown";
+        }
+        int idx = key.indexOf(':');
+        return idx > 0 ? key.substring(0, idx) : key;
     }
 }

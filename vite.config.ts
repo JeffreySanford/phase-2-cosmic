@@ -6,6 +6,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [tsconfigPaths()],
   server: {
+    allowedHosts: ["host.docker.internal"],
     proxy: {
       // Aladin Lite requests like /data/hips/CDS/.../properties
       "/data/hips": {

@@ -46,8 +46,8 @@
     <p class="source-chip" [attr.data-source]="topologySource">
       Source: {{ topologySource === 'live' ? 'Live Data' : topologySource === 'mock' ? 'Mock Data' : 'Live Unavailable' }}
     </p>
-    <div *ngIf="loading" class="loading">Loading topology…</div>
-    <div *ngIf="lastError" class="error">{{ lastError }}</div>
+  <div *ngIf="loading" class="loading">Loading topology…</div>
+  <div *ngIf="lastError" class="error">{{ lastError }}</div>
   </div>
 
   <app-page-state
@@ -60,13 +60,106 @@
     }">
   </app-page-state>
 
-  <div #graph class="topology-graph" aria-label="Topology graph"></div>
-  <div class="mission-metrics">
-    <p *ngIf="timingDriftNs !== undefined">
-      Timing drift: {{ timingDriftNs }} ns
-    </p>
-    <p *ngIf="rfiEventRate !== undefined">
-      RFI event rate: {{ rfiEventRate }} /s
-    </p>
-  </div>
+  <mat-tab-group class="topology-tabs">
+    <mat-tab label="Force Network">
+      <div class="topology-tab-body">
+        <div class="link-source-summary" *ngIf="hasTopologyData">
+          <span class="link-source-chip" data-source="prometheus">
+            Live links: {{ liveLinkCount }}
+          </span>
+          <span class="link-source-chip" data-source="derived">
+            Derived links: {{ derivedLinkCount }}
+          </span>
+          <span class="link-source-chip" data-source="mock" *ngIf="mockLinkCount > 0">
+            Mock links: {{ mockLinkCount }}
+          </span>
+          <span class="link-source-chip" data-source="unavailable" *ngIf="unavailableLinkCount > 0">
+            Unavailable links: {{ unavailableLinkCount }}
+          </span>
+          <span class="link-source-chip" data-source="confidence">
+            Avg confidence: {{ averageConfidencePct | number:'1.0-1' }}%
+          </span>
+        </div>
+
+        <div class="topology-graph-shell">
+          <div class="node-ring-legend" *ngIf="hasTopologyData" aria-label="Node source legend">
+            <span class="node-ring-legend__item" data-source="prometheus">
+              <span class="node-ring-legend__dot"></span>
+              Live
+            </span>
+            <span class="node-ring-legend__item" data-source="admin">
+              <span class="node-ring-legend__dot"></span>
+              Admin
+            </span>
+            <span class="node-ring-legend__item" data-source="derived">
+              <span class="node-ring-legend__dot"></span>
+              Derived
+            </span>
+            <span class="node-ring-legend__item" data-source="mock" *ngIf="mockLinkCount > 0">
+              <span class="node-ring-legend__dot"></span>
+              Mock
+            </span>
+          </div>
+          <div #graph class="topology-graph" aria-label="Topology graph"></div>
+        </div>
+        <div class="mission-metrics" *ngIf="hasTopologyData">
+          <p *ngIf="timingDriftNs !== undefined">
+            Timing drift: {{ timingDriftNs }} ns
+          </p>
+          <p *ngIf="rfiEventRate !== undefined">
+            RFI event rate: {{ rfiEventRate }} /s
+          </p>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Most Active Services">
+      <div class="topology-tab-body">
+        <section class="node-summary" *ngIf="nodeSummaries.length > 0; else noNodeSummary">
+          <div class="node-summary__header">
+            <h2>Most Active Services</h2>
+            <p>Ingress, egress, and governance-native runtime activity for the busiest nodes in the current topology snapshot.</p>
+          </div>
+          <div class="node-summary__grid">
+            <article class="node-card" *ngFor="let node of nodeSummaries">
+              <div class="node-card__header">
+                <div>
+                  <div class="node-card__title">{{ node.label }}</div>
+                  <div class="node-card__group">{{ node.group || 'service' }}</div>
+                </div>
+                <span class="link-source-chip" [attr.data-source]="node.primarySource">
+                  {{ linkSourceLabel(node.primarySource) }}
+                </span>
+              </div>
+              <div class="node-card__metric">Ingress: <strong>{{ node.ingressMBps | number:'1.0-0' }} MB/s</strong></div>
+              <div class="node-card__metric">Egress: <strong>{{ node.egressMBps | number:'1.0-0' }} MB/s</strong></div>
+              <div class="node-card__metric">Total: <strong>{{ node.totalMBps | number:'1.0-0' }} MB/s</strong></div>
+              <div class="node-card__metric" *ngIf="node.businessRatePerSec > 0">
+                Business ops: <strong>{{ node.businessRatePerSec | number:'1.0-2' }}/s</strong>
+              </div>
+              <div class="node-card__metric" *ngIf="node.businessBytesPerSec > 0">
+                Business payload: <strong>{{ node.businessBytesPerSec / 1024 / 1024 | number:'1.0-2' }} MB/s</strong>
+              </div>
+              <div class="node-card__executor-tags" *ngIf="node.executorLabels.length > 0">
+                <span class="node-card__executor-tag" *ngFor="let label of node.executorLabels">
+                  {{ label }}
+                </span>
+              </div>
+              <div class="node-card__counts">
+                <span *ngIf="node.liveLinks > 0">Live: {{ node.liveLinks }}</span>
+                <span *ngIf="node.derivedLinks > 0">Derived: {{ node.derivedLinks }}</span>
+                <span *ngIf="node.mockLinks > 0">Mock: {{ node.mockLinks }}</span>
+                <span *ngIf="node.unavailableLinks > 0">Unavailable: {{ node.unavailableLinks }}</span>
+              </div>
+            </article>
+          </div>
+        </section>
+        <ng-template #noNodeSummary>
+          <div class="empty-tab-state">
+            {{ hasTopologyData ? 'No node activity has been calculated yet.' : 'Node activity will appear after topology data loads.' }}
+          </div>
+        </ng-template>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 </div>

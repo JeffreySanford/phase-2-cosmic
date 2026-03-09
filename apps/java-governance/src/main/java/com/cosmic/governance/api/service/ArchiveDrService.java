@@ -3,10 +3,12 @@ package com.cosmic.governance.api.service;
 import com.cosmic.governance.api.model.ReplicationPolicy;
 import com.cosmic.governance.api.model.RestoreDrillResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,35 +24,54 @@ public class ArchiveDrService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
+    private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
     private final ConcurrentHashMap<String, Object> inMemoryStore = new ConcurrentHashMap<>();
 
     public ArchiveDrService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper) {
+        this(redisTemplate, objectMapper, null);
+    }
+
+    @Autowired
+    public ArchiveDrService(RedisTemplate<String, Object> redisTemplate, ObjectMapper objectMapper, GovernanceRuntimeMetricsService governanceRuntimeMetricsService) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
+        this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;
     }
 
     private void store(String id, ReplicationPolicy policy) {
         String key = KEY_PREFIX + id;
+        Instant startedAt = Instant.now();
         try {
             if (redisTemplate != null) {
                 redisTemplate.opsForValue().set(key, policy);
+                recordRedisWrite("redis", policy, true, Duration.between(startedAt, Instant.now()));
                 return;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            recordRedisWrite("redis", policy, false, Duration.between(startedAt, Instant.now()));
+        }
         inMemoryStore.put(key, policy);
+        recordRedisWrite("memory", policy, true, Duration.between(startedAt, Instant.now()));
     }
 
     private Optional<ReplicationPolicy> load(String id) {
         String key = KEY_PREFIX + id;
+        Instant startedAt = Instant.now();
         Object o = null;
         try {
             if (redisTemplate != null) {
                 o = redisTemplate.opsForValue().get(key);
+                recordRedisRead("redis", o, true, Duration.between(startedAt, Instant.now()));
             }
         } catch (Exception ignored) {
+            recordRedisRead("redis", Map.of("key", key), false, Duration.between(startedAt, Instant.now()));
             o = inMemoryStore.get(key);
+            recordRedisRead("memory", o, true, Duration.between(startedAt, Instant.now()));
         }
-        if (o == null) o = inMemoryStore.get(key);
+        if (o == null) {
+            o = inMemoryStore.get(key);
+            recordRedisRead("memory", o, true, Duration.between(startedAt, Instant.now()));
+        }
         return toPolicy(o);
     }
 
@@ -72,6 +93,9 @@ public class ArchiveDrService {
         ReplicationPolicy policy = new ReplicationPolicy(id, name, retentionDays, targetRegion, replicaCount,
                 Instant.now().toString());
         store(id, policy);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordDatasetMutation("archive_policy_create", policy);
+        }
         return policy;
     }
 
@@ -90,10 +114,14 @@ public class ArchiveDrService {
 
         if (keys != null && !keys.isEmpty()) {
             for (String key : keys) {
+                Instant startedAt = Instant.now();
                 try {
                     Object o = redisTemplate.opsForValue().get(key);
+                    recordRedisRead("redis", o, true, Duration.between(startedAt, Instant.now()));
                     toPolicy(o).ifPresent(result::add);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                    recordRedisRead("redis", Map.of("key", key), false, Duration.between(startedAt, Instant.now()));
+                }
             }
         } else {
             for (Map.Entry<String, Object> e : inMemoryStore.entrySet()) {
@@ -120,10 +148,30 @@ public class ArchiveDrService {
         String notes = success
                 ? "restore_drill_passed: " + policy.replicaCount() + " replica(s) verified in region " + policy.targetRegion()
                 : "restore_drill_failed: invalid policy configuration";
-        return new RestoreDrillResult(
+        RestoreDrillResult result = new RestoreDrillResult(
                 UUID.randomUUID().toString(), datasetId, policyId,
                 success, Instant.now().toString(),
                 System.currentTimeMillis() - start,
                 notes);
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRestoreDrill(
+                    success,
+                    result.durationMs(),
+                    result
+            );
+        }
+        return result;
+    }
+
+    private void recordRedisRead(String store, Object payload, boolean success, Duration duration) {
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRedisRead(store, "dr", payload, success, duration);
+        }
+    }
+
+    private void recordRedisWrite(String store, Object payload, boolean success, Duration duration) {
+        if (governanceRuntimeMetricsService != null) {
+            governanceRuntimeMetricsService.recordRedisWrite(store, "dr", payload, success, duration);
+        }
     }
 }

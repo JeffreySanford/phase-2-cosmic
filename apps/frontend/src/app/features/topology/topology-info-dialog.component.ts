@@ -14,6 +14,8 @@ export interface TopologyLinkStats {
   throughputPct?: string; // e.g. "82%"
   latencyMs?: number;
   errorRate?: number | string; // percentage or fraction or string
+  confidencePct?: number;
+  source?: "prometheus" | "admin" | "derived" | "mock" | "unavailable";
 }
 
 export interface TopologyLinkDialogData {
@@ -64,5 +66,32 @@ export class TopologyInfoDialogComponent {
     if (this.data.type !== "link") return false;
     const p = this.parsePct(this.data.stats?.throughputPct);
     return p !== undefined && p < 75;
+  }
+
+  sourceLabel(): string {
+    if (this.data.type !== "link") return "";
+    switch (this.data.stats?.source) {
+      case "prometheus":
+        return "Live exporter metrics";
+      case "admin":
+        return "Live admin API";
+      case "mock":
+        return "Mock telemetry";
+      case "unavailable":
+        return "Unavailable";
+      default:
+        return "Derived model";
+    }
+  }
+
+  confidenceLabel(): string {
+    if (this.data.type !== "link") return "";
+    const score = Number(this.data.stats?.confidencePct ?? NaN);
+    if (!Number.isFinite(score)) return "Unknown";
+    if (score >= 90) return "High confidence";
+    if (score >= 70) return "Good confidence";
+    if (score >= 40) return "Moderate confidence";
+    if (score > 0) return "Low confidence";
+    return "Unavailable";
   }
 }
