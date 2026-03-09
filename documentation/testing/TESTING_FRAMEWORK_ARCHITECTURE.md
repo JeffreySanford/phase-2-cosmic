@@ -280,7 +280,92 @@ Next steps and automation
 - Playwright variant: add a Playwright diagnostic that launches the app at `baseUrl`, navigates to `/jobs`, and records network traffic to a JSON artifact. This is useful when you want the same diagnostic in a cross-browser CI lane.
 - CI integration: add a short pipeline step that runs the Cypress diagnostic in `profile-smoke` and uploads `logs/` artifacts to the CI job for quicker triage.
 
-## 14. Visual diagrams
+## 14. Iterative CI debugging with gh CLI
+
+The `gh` CLI is authenticated in this repo (`gh auth status` confirms `JeffreySanford`). Two scripts wrap common debugging tasks so you can fetch, read, and fix failures without leaving the terminal.
+
+### Available pnpm scripts
+
+| Script | What it does |
+|---|---|
+| `pnpm run ci:logs` | Fetch failed-step logs from the most recent failed run; save to `logs/` |
+| `pnpm run ci:logs:list` | Print last 15 runs with pass/fail status and run IDs |
+| `pnpm run ci:logs:watch` | Live-tail the currently running workflow; offer to pull logs on finish |
+| `pnpm run ci:codeql` | Download CodeQL SARIF from the latest CodeQL run; print findings report |
+| `pnpm run ci:codeql:list` | List recent CodeQL workflow runs |
+| `pnpm run ci:codeql:trigger` | Manually dispatch the CodeQL workflow (`codeql.yml`) |
+
+### Output files
+
+All diagnostic output lands in `logs/` (gitignored):
+
+```
+logs/
+  ci-<run-id>-<ts>.log          # raw GitHub Actions log with timestamps
+  ci-<run-id>-<ts>-clean.log    # timestamps stripped, markers humanised
+  ci-<run-id>-<ts>-summary.md   # errors + warnings extracted as Markdown
+  codeql/
+    run-<run-id>/               # downloaded SARIF artifact(s)
+    codeql-<ts>.md              # parsed findings report
+```
+
+### Iterative fix loop
+
+```
+git push
+        |
+        v
+pnpm run ci:logs:watch     <-- live tail; pulls logs when run finishes
+        |
+        v
+pnpm run ci:logs           <-- generates logs/ci-<id>-summary.md
+        |                      (errors highlighted, clean log stripped)
+        v
+  fix source files
+        |
+        v
+pnpm run quality:ci        <-- reproduce the gate locally before pushing
+        |
+        v
+git push  -->  repeat until green
+```
+
+### CodeQL iterative loop
+
+```
+pnpm run ci:codeql:trigger      # dispatch workflow (or wait for next push)
+pnpm run ci:logs:watch          # watch it run
+pnpm run ci:codeql              # download SARIF + parse findings to logs/codeql/
+  -> fix the reported file:line
+pnpm run quality:ci             # verify locally
+git push                        # triggers fresh CodeQL scan
+```
+
+### CodeQL — free vs paid
+
+- **Public repo**: CodeQL results appear in the GitHub Security tab automatically at no cost.
+- **Private repo without GHAS**: CodeQL still runs on every push/PR and weekly. This script downloads and parses the SARIF artifacts locally so you see all findings. The GitHub Security tab integration is the only thing that requires GitHub Advanced Security.
+
+### Fetching logs for a specific run
+
+```bash
+# List runs with IDs
+pnpm run ci:logs:list
+
+# Fetch full logs for any run (not just failed steps)
+sh ./scripts/ci-logs.sh --all <run-id>
+
+# Fetch from a specific run by ID
+sh ./scripts/ci-logs.sh <run-id>
+```
+
+### Prerequisites
+
+- `gh` CLI — already installed and authenticated (`gh auth status`)
+- `jq` — needed for SARIF parsing (`brew install jq` / `winget install jqlang.jq`)
+- All scripts gracefully skip or explain what is missing if dependencies are not met.
+
+## 15. Visual diagrams
 
 Below are compact mermaid diagrams that make the testing flows easier to scan. They are intentionally small and focused — use them as visual anchors in PRs and runbooks.
 
