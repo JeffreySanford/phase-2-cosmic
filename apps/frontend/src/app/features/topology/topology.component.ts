@@ -140,9 +140,10 @@ type TopologyMetricsResponse = Record<string, TopologyMetricPoint> & {
   nodeActivity?: Record<string, NodeActivityPoint>;
 };
 @Component({
-  selector: "app-topology",
-  templateUrl: "./topology.component.html",
-  styleUrls: ["./topology.component.scss"],
+    selector: "app-topology",
+    templateUrl: "./topology.component.html",
+    styleUrls: ["./topology.component.scss"],
+    standalone: false
 })
 export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild("graph", { static: true }) graphEl!: ElementRef<HTMLDivElement>;

@@ -4,24 +4,24 @@ import { DiagnosticsComponent } from "./diagnostics.component";
 import { BehaviorSubject } from "rxjs";
 import { PulsarStatus } from "../../shared/types";
 
-@Component({ selector: "app-promql-card", template: "" })
+@Component({ selector: "app-promql-card", template: "", standalone: false })
 class PromqlCardStubComponent {
   @Input() query?: string;
   @Input() title?: string;
   @Input() tone?: string;
 }
 
-@Component({ selector: "app-pulsar-status", template: "" })
+@Component({ selector: "app-pulsar-status", template: "", standalone: false })
 class PulsarStatusStubComponent {
   @Input() status?: Partial<PulsarStatus>;
 }
 
-@Component({ selector: "app-rabbitmq-status", template: "" })
+@Component({ selector: "app-rabbitmq-status", template: "", standalone: false })
 class RabbitMQStatusStubComponent {
   @Input() status?: unknown;
 }
 
-@Component({ selector: "app-disclaimer-banner", template: "" })
+@Component({ selector: "app-disclaimer-banner", template: "", standalone: false })
 class DisclaimerBannerStubComponent {
   @Input() dismissible?: boolean;
   @Input() type?: string;
@@ -29,7 +29,7 @@ class DisclaimerBannerStubComponent {
   @Input() ready?: boolean;
 }
 
-@Component({ selector: "app-trident-allocator", template: "" })
+@Component({ selector: "app-trident-allocator", template: "", standalone: false })
 class TridentAllocatorStubComponent {
   @Input() dismissible?: boolean;
   @Input() type?: string;

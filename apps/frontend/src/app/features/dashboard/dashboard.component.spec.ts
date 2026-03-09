@@ -4,7 +4,7 @@ import { of } from "rxjs";
 import { HttpClientTestingModule } from "@angular/common/http/testing";
 import { DashboardComponent } from "./dashboard.component";
 
-@Component({ selector: "app-promql-card", template: "" })
+@Component({ selector: "app-promql-card", template: "", standalone: false })
 class PromqlCardStubComponent {}
 
 describe("DashboardComponent", () => {

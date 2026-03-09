@@ -36,9 +36,10 @@ interface JobProduct {
 }
 
 @Component({
-  selector: "app-jobs",
-  templateUrl: "./jobs.component.html",
-  styleUrls: ["./jobs.component.scss"],
+    selector: "app-jobs",
+    templateUrl: "./jobs.component.html",
+    styleUrls: ["./jobs.component.scss"],
+    standalone: false
 })
 export class JobsComponent implements OnInit, OnDestroy {
   jobs: JobStatus[] = [];

@@ -8,15 +8,15 @@ import {
   MatDialogConfig,
 } from "@angular/material/dialog";
 
-@Component({ selector: "app-header", template: "" })
+@Component({ selector: "app-header", template: "", standalone: false })
 class HeaderStubComponent {}
-@Component({ selector: "app-status-band", template: "" })
+@Component({ selector: "app-status-band", template: "", standalone: false })
 class StatusBandStubComponent {}
-@Component({ selector: "app-sidebar", template: "" })
+@Component({ selector: "app-sidebar", template: "", standalone: false })
 class SidebarStubComponent {}
-@Component({ selector: "app-mainstage", template: "" })
+@Component({ selector: "app-mainstage", template: "", standalone: false })
 class MainstageStubComponent {}
-@Component({ selector: "app-footer", template: "" })
+@Component({ selector: "app-footer", template: "", standalone: false })
 class FooterStubComponent {}
 
 describe("AppComponent", () => {

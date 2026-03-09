@@ -6,9 +6,10 @@ import {
 } from "../../services/datasets.service";
 
 @Component({
-  selector: "app-datasets",
-  templateUrl: "./datasets.component.html",
-  styleUrls: ["./datasets.component.scss"],
+    selector: "app-datasets",
+    templateUrl: "./datasets.component.html",
+    styleUrls: ["./datasets.component.scss"],
+    standalone: false
 })
 export class DatasetsComponent implements OnInit {
   datasets: Dataset[] = [];

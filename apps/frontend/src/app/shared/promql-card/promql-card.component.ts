@@ -13,9 +13,10 @@ type PrometheusRangeResponseLocal = {
 type MetricFormat = "percent" | "binary" | "number";
 
 @Component({
-  selector: "app-promql-card",
-  templateUrl: "./promql-card.component.html",
-  styleUrls: ["./promql-card.component.scss"],
+    selector: "app-promql-card",
+    templateUrl: "./promql-card.component.html",
+    styleUrls: ["./promql-card.component.scss"],
+    standalone: false
 })
 export class PromqlCardComponent implements OnInit, OnDestroy {
   @Input() query = "";

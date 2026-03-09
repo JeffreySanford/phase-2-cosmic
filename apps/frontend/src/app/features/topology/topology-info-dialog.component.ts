@@ -32,8 +32,9 @@ export type TopologyInfoDialogData =
   | TopologyLinkDialogData;
 
 @Component({
-  selector: "app-topology-info-dialog",
-  templateUrl: "./topology-info-dialog.component.html",
+    selector: "app-topology-info-dialog",
+    templateUrl: "./topology-info-dialog.component.html",
+    standalone: false
 })
 export class TopologyInfoDialogComponent {
   constructor(

@@ -21,7 +21,7 @@ import { ExecutionPlansController } from "./src/app/controllers/execution-plans.
 import express from "express";
 import { createClient } from "redis";
 import { createServer as createViteServer } from "vite";
-import { CommonEngine } from "@angular/ssr";
+import { CommonEngine } from "@angular/ssr/node";
 import { join } from "path";
 import {
   existsSync,

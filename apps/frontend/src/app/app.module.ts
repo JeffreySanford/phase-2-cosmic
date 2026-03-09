@@ -1,4 +1,4 @@
-import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from "@angular/core";
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA, inject, provideAppInitializer } from "@angular/core";
 import { BrowserModule } from "@angular/platform-browser";
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 import { MatSnackBarModule } from "@angular/material/snack-bar";
@@ -24,7 +24,7 @@ import { MatTabsModule } from "@angular/material/tabs";
 import { HttpClientModule } from "@angular/common/http";
 
 import { AppComponent } from "./app.component";
-import { APP_INITIALIZER } from "@angular/core";
+
 import { DataSourceService } from "./services/data-source.service";
 import { appRoutes } from "./app.routes";
 import { UiThemeComponent } from "ui-theme";
@@ -115,9 +115,8 @@ import { TridentAllocatorComponent } from "./features/diagnostics/trident-alloca
       provide: MAT_DIALOG_DEFAULT_OPTIONS,
       useValue: { ariaModal: true },
     },
-    {
-      provide: APP_INITIALIZER,
-      useFactory: (dataSource: DataSourceService) => () => {
+    provideAppInitializer(() => {
+        const initializerFn = ((dataSource: DataSourceService) => () => {
         try {
           const params = new URLSearchParams(window.location.search);
           if (params.get("mode") === "mock") {
@@ -127,10 +126,9 @@ import { TridentAllocatorComponent } from "./features/diagnostics/trident-alloca
           // ignore
         }
         return Promise.resolve();
-      },
-      deps: [DataSourceService],
-      multi: true,
-    },
+      })(inject(DataSourceService));
+        return initializerFn();
+      }),
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent],

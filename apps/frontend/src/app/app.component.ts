@@ -4,9 +4,10 @@ import { SidebarService } from "./base/sidebar/sidebar.service";
 import { StartupWarmService } from "./services/startup-warm.service";
 
 @Component({
-  selector: "app-root",
-  templateUrl: "./app.component.html",
-  styleUrls: ["./app.component.scss"],
+    selector: "app-root",
+    templateUrl: "./app.component.html",
+    styleUrls: ["./app.component.scss"],
+    standalone: false
 })
 export class AppComponent {
   title = "frontend";

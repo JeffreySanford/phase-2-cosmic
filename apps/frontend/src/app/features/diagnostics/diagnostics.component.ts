@@ -16,9 +16,10 @@ import {
 } from "../../shared/types";
 
 @Component({
-  selector: "app-diagnostics",
-  templateUrl: "./diagnostics.component.html",
-  styleUrls: ["./diagnostics.component.scss"],
+    selector: "app-diagnostics",
+    templateUrl: "./diagnostics.component.html",
+    styleUrls: ["./diagnostics.component.scss"],
+    standalone: false
 })
 export class DiagnosticsComponent implements OnInit, OnDestroy {
   index: DiagnosticsIndex | null = null;

@@ -12,10 +12,10 @@ interface Entry {
 }
 
 @Component({
-  selector: "app-jobs-lineage-editor",
-  templateUrl: "./jobs-lineage-editor.component.html",
-  styles: [
-    `
+    selector: "app-jobs-lineage-editor",
+    templateUrl: "./jobs-lineage-editor.component.html",
+    styles: [
+        `
       .lineage-list {
         width: 100%;
         font-family: monospace;
@@ -30,7 +30,8 @@ interface Entry {
         flex: 1;
       }
     `,
-  ],
+    ],
+    standalone: false
 })
 export class JobsLineageEditorComponent implements OnChanges {
   @Input() lineage: Record<string, unknown> | undefined;

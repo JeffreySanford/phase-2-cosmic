@@ -20,7 +20,7 @@ import { LoadProfileService } from "../../services/load-profile.service";
 import { MockDataService } from "../../services/mock-data.service";
 import { of } from "rxjs";
 
-@Component({ selector: "app-disclaimer-banner", template: "" })
+@Component({ selector: "app-disclaimer-banner", template: "", standalone: false })
 class DisclaimerBannerStubComponent {
   @Input() ready = true;
 }
