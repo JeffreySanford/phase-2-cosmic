@@ -1,0 +1,53 @@
+# golangci-lint configuration for tools/data-generator
+# Run locally: golangci-lint run ./...
+# Install:     https://golangci-lint.run/usage/install/
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  # Start from golangci-lint defaults and add extras
+  disable-all: false
+  enable:
+    # Correctness
+    - errcheck      # enforces checked error returns
+    - govet         # reports suspicious constructs (vet suite)
+    - staticcheck   # SA/ST/QF checks from staticcheck.io
+    - ineffassign   # detects assignments whose value is never used
+    - unused        # reports unused code
+    # Style / formatting (must match gofmt + goimports in CODING-STANDARDS.md)
+    - gofmt
+    - goimports
+    # Safety patterns
+    - bodyclose     # checks HTTP response body is closed after use
+    - nilerr        # checks for returning nil alongside a non-nil error
+    - gosec         # OWASP-aligned security checks
+    # Simplification
+    - gosimple
+
+linters-settings:
+  goimports:
+    # Separate internal module imports from stdlib/third-party
+    local-prefixes: github.com/cosmic-horizon
+  govet:
+    enable-all: false
+    enable:
+      - shadow
+  gosec:
+    # Exclude informational findings that add noise without value
+    excludes:
+      - G104  # Errors unhandled — covered by errcheck
+      - G304  # File path provided as taint input — expected for CLI tools
+
+issues:
+  # Do not limit output — show all findings
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  # Exclude test files from gosec and errcheck
+  # (test code intentionally uses hardcoded values)
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck

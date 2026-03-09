@@ -1,0 +1,99 @@
+name: CodeQL Security Analysis
+
+# CodeQL scans for security vulnerabilities and code quality issues
+# across TypeScript, Java, and Go using GitHub's free SAST engine.
+#
+# GitHub Advanced Security (GHAS) requirement:
+#   - Public repositories: FREE — results appear in the GitHub Security
+#     tab automatically.
+#   - Private repositories: The analysis runs and produces SARIF artifacts but
+#     uploading to the GitHub Security tab requires GHAS. The workflow is set to
+#     continue-on-error for the upload step so it never blocks your build.
+#
+# This workflow runs on every push/PR to main AND on a weekly schedule so
+# the security posture stays current even when dependencies change.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Run weekly on Monday at 03:00 UTC to catch new vulnerability disclosures
+    - cron: "0 3 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      # Required for uploading SARIF results to the Security tab (GHAS)
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: java
+            build-mode: manual
+          - language: go
+            build-mode: manual
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- Language-specific setup ---
+
+      - name: Set up JDK 17
+        if: matrix.language == 'java'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Go 1.21
+        if: matrix.language == 'go'
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      # --- CodeQL initialization ---
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # security-extended adds OWASP Top 10 and CWE-focused queries.
+          # security-and-quality adds code hygiene rules
+          # (unused vars, null dereferences, etc.).
+          queries: security-extended,security-and-quality
+
+      # --- Build steps (CodeQL observes the build for compiled languages) ---
+
+      - name: Build Java for CodeQL
+        if: matrix.language == 'java'
+        run: |
+          mvn -f apps/java-governance/pom.xml clean compile -B -DskipTests
+          mvn -f tools/java-ingest/pom.xml clean compile -B -DskipTests
+
+      - name: Build Go for CodeQL
+        if: matrix.language == 'go'
+        run: |
+          cd tools/data-generator
+          go build ./...
+
+      # --- Analysis ---
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+          # On private repos without GitHub Advanced Security the SARIF upload
+          # to the Security tab is rejected. continue-on-error prevents this
+          # from breaking the build while still producing local SARIF artifacts.
+        continue-on-error: ${{ github.event.repository.visibility != 'public' }}

@@ -14,7 +14,10 @@ func TestParseSegmentWeights_ValidThreeSegments(t *testing.T) {
 	if len(segs) != 3 {
 		t.Fatalf("expected 3 segments, got %d", len(segs))
 	}
-	cases := []struct{ name string; weight int }{
+	cases := []struct {
+		name   string
+		weight int
+	}{
 		{"main", 48}, {"lbl", 24}, {"sba", 21},
 	}
 	for i, c := range cases {

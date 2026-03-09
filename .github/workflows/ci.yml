@@ -135,6 +135,31 @@ jobs:
       - name: Run Go unit tests (data-generator)
         run: sh ./scripts/test-go.sh
 
+      - name: Run golangci-lint (Go static analysis)
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.62.2
+          working-directory: tools/data-generator
+          args: --timeout=5m
+
+      - name: Run Semgrep SAST (multi-language)
+        run: |
+          pip install semgrep --quiet
+          semgrep scan \
+            --config "r/java" \
+            --config "r/go" \
+            --config "r/javascript" \
+            --severity ERROR \
+            --error \
+            --exclude "node_modules" \
+            --exclude "pnpm-store" \
+            --exclude "target" \
+            --exclude "dist" \
+            --exclude ".nx" \
+            --exclude "coverage" \
+            --jobs 4 \
+            .
+
   docs-lint:
     name: Docs Lint
     runs-on: ubuntu-latest
