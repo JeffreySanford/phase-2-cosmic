@@ -2,6 +2,7 @@
 
 /* Angular Material theme */
 @use "./styles/material-theme" as *;
+@use "./styles/tokens" as *;
 @use "./styles/vibrant-theme" as *;
 
 /* Expose key token colors as CSS custom properties so runtime JS (charts) can match theme */
