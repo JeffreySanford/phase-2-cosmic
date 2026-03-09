@@ -2,15 +2,15 @@
 # Run locally: golangci-lint run ./...
 # Install:     https://golangci-lint.run/usage/install/
 
-version: "1"
+version: "2"
 
 run:
   timeout: 5m
   modules-download-mode: readonly
 
 linters:
-  # Start from golangci-lint defaults and add extras
-  disable-all: false
+  # default: none means only explicitly listed linters run
+  default: none
   enable:
     # Correctness
     - errcheck # enforces checked error returns
@@ -27,28 +27,28 @@ linters:
     - gosec # OWASP-aligned security checks
     # Simplification
     - gosimple
-
-linters-settings:
-  goimports:
-    # Separate internal module imports from stdlib/third-party
-    local-prefixes: github.com/cosmic-horizon
-  govet:
-    enable-all: false
-    enable:
-      - shadow
-  gosec:
-    # Exclude informational findings that add noise without value
-    excludes:
-      - G104 # Errors unhandled — covered by errcheck
-      - G304 # File path provided as taint input — expected for CLI tools
+  settings:
+    goimports:
+      # Separate internal module imports from stdlib/third-party
+      local-prefixes: github.com/cosmic-horizon
+    govet:
+      enable:
+        - shadow
+    gosec:
+      # Exclude informational findings that add noise without value
+      excludes:
+        - G104 # Errors unhandled — covered by errcheck
+        - G304 # File path provided as taint input — expected for CLI tools
 
 issues:
   # Do not limit output — show all findings
   max-issues-per-linter: 0
   max-same-issues: 0
+
+exclusions:
   # Exclude test files from gosec and errcheck
   # (test code intentionally uses hardcoded values)
-  exclude-rules:
+  rules:
     - path: _test\.go
       linters:
         - gosec

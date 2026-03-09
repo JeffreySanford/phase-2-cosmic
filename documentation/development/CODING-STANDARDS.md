@@ -28,7 +28,7 @@ Canonical scope: `documentation/product/PRODUCT-CHARTER.md` + `SCOPE-LOCK.md`.
 
 These rules apply to every language and service in the repository.
 
-#### Testing
+### Testing
 
 - Every service has automated unit tests that run in CI via `pnpm run test:java`, `pnpm run test:go`, or `pnpm nx test <project>` as appropriate.
 - Every dockerised service defined in `docker/dev-compose.yml` MUST have automated unit tests AND integration tests included in the CI "test all" stage. Use the repository Docker test-runner and `pnpm` store caching to execute these tests in containerised CI environments.
@@ -114,7 +114,7 @@ The repository enforces code quality and security rules through three complement
 
 See the canonical developer run and environment docs: [GETTING_STARTED.md](/docuentation/overview/GETTING_STARTED.md) and [ENVIRONMENT.md](/docuentation/infra/ENVIRONMENT.md).
 
-#### Package manager
+### Package manager
 
 - Node/JavaScript projects MUST use `pnpm` for installs, scripts, and CI. Do not use `npm` or `yarn`.
 - Do not commit `package-lock.json` or `yarn.lock`. Commit `pnpm-lock.yaml` and use it in all CI runners.
@@ -140,7 +140,7 @@ See the canonical developer run and environment docs: [GETTING_STARTED.md](/docu
 - Validate all inbound DTOs with `class-validator`; throw `BadRequestException` for invalid payloads at the controller boundary.
 - Modules must be self-contained: declare providers, imports, and exports explicitly. No `global: true` modules except for core infrastructure (config, logger).
 
-#### Testing
+### NestJS Testing
 
 - Every UI component includes a unit test (`*.spec.ts`). Key interactive components include a Cypress e2e test covering main interactions.
 - Include test stubs when scaffolding new components.
@@ -153,7 +153,7 @@ See the canonical developer run and environment docs: [GETTING_STARTED.md](/docu
 Services: `apps/java-governance` (`com.cosmic.governance`), `tools/java-ingest` (`org.phase2.ingest`).
 Runtime: Java 21+. Framework: Spring Boot 3.x with Jakarta EE namespaces (`jakarta.*`, not `javax.*`).
 
-#### Project structure
+### Project structure
 
 ```text
 src/main/java/<package>/
@@ -165,44 +165,44 @@ src/main/java/<package>/
   listener/     # Kafka / messaging consumers
 ```
 
-#### Dependency injection
+### Dependency injection
 
 - Constructor injection only. Never use `@Autowired` on fields or setters.
 - If a class has more than four constructor parameters, extract a collaborator or introduce a configuration record — it is a design smell.
 
-#### Controllers
+### Controllers
 
 - Controllers are boundary adapters only: they map HTTP ↔ DTOs and delegate to services. No business logic in controllers.
 - All inbound request bodies must be annotated with `@Valid`. Validation failure is handled globally by `ApiExceptionHandler` — do not add try-catch in controllers.
 - Use `@RequestMapping("/api/v1")` at class level; method-level mappings use `@GetMapping`, `@PostMapping`, etc.
 
-#### Services & business logic
+### Services & business logic
 
 - One service class per bounded concern. Services may call other services but must not call controllers.
 - Use `Optional<T>` for nullable returns; never return `null` from a public service method.
 - Prefer `String#isBlank()` over `== null` checks for string guard clauses.
 
-#### DTOs
+### DTOs
 
 - Use Java records for immutable DTOs. If mutation is required, use a plain class with final fields and a canonical constructor.
 - Do not expose JPA/Hibernate entities directly in API responses. Map to DTOs at the service boundary.
 
-**Configuration**
+### JavaConfiguration
 
 - Externalise all values via `@Value("${property.key:defaultValue}")`. Include a sensible default for every property so the service starts in a minimal environment.
 - Group related config into a `@ConfigurationProperties` record when three or more related properties exist together.
 
-#### Messaging (Kafka / RabbitMQ)
+### Messaging (Kafka / RabbitMQ)
 
 - Every `@KafkaListener` or `@RabbitListener` method must call `metricsService.recordReceived(...)` at entry, `recordProcessed(...)` on success, `recordValidationFailure(...)` for bad payloads, and `recordFailure(...)` in the catch block.
 - Never throw from a listener without first recording the failure metric — unhandled exceptions may cause offset commit issues.
 
-#### Logging
+### Java Logging
 
 - Use SLF4J: `private static final Logger log = LoggerFactory.getLogger(Foo.class);`
 - Never use `System.out.println` or `System.err.println` in production code.
 
-#### Testing
+### Java Testing
 
 - Unit tests use `@ExtendWith(MockitoExtension.class)`. Do not load a Spring context for pure unit tests — it slows the build and hides design problems.
 - Integration tests that require live containers are named `*ContainerIntegrationTest.java` and are excluded from the default surefire run. Enable them with `-Pwith-containers`.
@@ -211,7 +211,7 @@ src/main/java/<package>/
 - Run unit tests: `pnpm run test:java` or `mvn -f <pom> clean verify -B`.
 - Run container integration tests: `pnpm run test:java:it` or `mvn -f <pom> clean verify -Pwith-containers -B`.
 
-#### Code style
+### Code style
 
 - Four-space indentation. No wildcard imports (`import com.foo.*`).
 - Class-level Javadoc is required for public API types (`@RestController`, public service interfaces). Method-level Javadoc is only required when the intent is not obvious from the signature.
@@ -222,7 +222,7 @@ src/main/java/<package>/
 
 Service: `tools/data-generator` (`github.com/cosmic-horizon/data-generator`). Go version: 1.21+.
 
-#### Module & package layout
+### Go Module & package layout
 
 ```text
 tools/<service>/
@@ -234,41 +234,41 @@ tools/<service>/
 - Entry-point `main.go` wires flags, dependencies, signal handling, and starts goroutines. Business logic lives in `internal/` packages or as exported pure functions tested independently.
 - Package names are lowercase, single words, matching the directory name. No `util` or `common` packages — name by capability (e.g. `segment`, `sink`, `metrics`).
 
-#### Error handling
+### Error handling
 
 - Return errors to the caller; do not `panic` in library code. `panic` is only acceptable in `func init()` for unrecoverable initialisation (e.g. `prometheus.MustRegister`).
 - Wrap errors with context using `fmt.Errorf("doing X: %w", err)` so stack traces are meaningful.
 - At the top-level `main`, print the error to `os.Stderr` and call `os.Exit(1)` — never `log.Fatal` mid-flow after resources are acquired.
 
-**Concurrency & shutdown**
+### Concurrency & shutdown
 
 - Always use `signal.NotifyContext(context.Background(), os.Interrupt)` for graceful shutdown.
 - Thread `context.Context` as the first argument of any function that performs I/O or blocks.
 - Do not leak goroutines: every goroutine started in `main` must have a shutdown path reachable from the context cancellation.
 
-#### Metrics
+### Metrics
 
 - Register Prometheus counters/gauges/histograms at package level via `prometheus.MustRegister` in `func init()`.
 - Counter names end in `_total`. Use `_seconds` (not `_ms`) for durations. Labels must be bounded.
 - Every service must expose `/metrics` (Prometheus) and `/health` on its metrics HTTP port.
 
-#### HTTP
+### HTTP
 
 - Use `net/http` standard library. Create an explicit `*http.ServeMux` — do not use `http.DefaultServeMux`.
 - Every server must set explicit `ReadTimeout`, `WriteTimeout`, and `IdleTimeout` on `http.Server`.
 
-#### Logging
+### Go Logging
 
 - Use the standard `log` package for simple binaries. For services with multiple subsystems, use a structured logger (e.g. `log/slog` from Go 1.21+).
 - Never use `fmt.Println` in production code paths.
 
-#### Formatting & linting
+### Formatting & linting
 
 - All code must pass `gofmt`. CI enforces `gofmt -l .` with a non-zero exit if any files are reformatted.
 - Imports are ordered: standard library, then external packages, separated by a blank line. `goimports` enforces this.
 - Run `go vet ./...` as part of CI; treat any finding as a build failure.
 
-#### Testing
+### Go Testing
 
 - Use table-driven tests with `t.Run` subtests. Each subcase must have a descriptive name.
 - Test files are named `<file>_test.go` alongside the source they test.
@@ -282,7 +282,7 @@ tools/<service>/
 
 Python is used for data-pipeline scripts and tooling. Version: 3.11+.
 
-#### Project structure
+### Python Project structure
 
 ```text
 tools/<service>/
@@ -296,50 +296,50 @@ tools/<service>/
   requirements.lock     # Pinned lock file generated by pip-compile
 ```
 
-#### Package management
+### Package management
 
 - Use `pip` with `pyproject.toml` for dependency declarations. Pin all transitive dependencies in `requirements.lock` generated by `pip-compile`.
 - Do not commit `.venv` or `__pycache__` directories.
 - Virtual environments must be reproducible: document the exact `python -m venv` + `pip install -r requirements.lock` steps in service `README.md`.
 
-#### Type hints
+### Type hints
 
 - All public functions, methods, and module-level variables must have full type annotations.
 - Add `from __future__ import annotations` at the top of every module to enable forward references.
 - Run `mypy --strict` in CI; all type errors are build failures.
 
-#### Formatting & linting
+### Python Formatting & linting
 
 - Format with `black` (line length 100). Enforced by CI (`black --check`).
 - Sort imports with `isort` (profile `black`). Enforced by CI.
 - Lint with `ruff`. All findings are build failures; no inline `# noqa` suppressions without a comment explaining why.
 
-#### Naming
+### Naming
 
 - `snake_case` for variables, functions, and modules.
 - `PascalCase` for classes.
 - `UPPER_SNAKE_CASE` for module-level constants.
 - Private module members are prefixed with a single underscore (`_`). Do not use double underscore name mangling in non-dunder contexts.
 
-#### Code style
+### Code style
 
 - Use `dataclasses` or `pydantic` models for structured data. Do not use raw dicts as function return types for anything with more than two fields.
 - Absolute imports only. No relative imports (`from .foo import bar` is forbidden outside of `__init__.py` namespace re-exports).
 - Each module has a single responsibility. If a file exceeds ~300 lines, extract a collaborator.
 
-#### Error handling
+### PythonError handling
 
 - Catch specific exception types. Bare `except:` or `except Exception:` are forbidden except at top-level entry points where you must log and exit gracefully.
 - Use custom exception classes that inherit from a service-level base exception for domain errors.
 - Always log the exception (not just the message) so stack traces appear in logs: `log.exception("context message")`.
 
-#### Logging
+### Logging
 
 - Use the standard `logging` module. Configure at entry point (`main.py`) only — never call `logging.basicConfig` in library modules.
 - Log at the correct severity (same cross-cutting rules as above).
 - Never use `print()` in production code paths.
 
-#### Testing
+### Testing
 
 - Use `pytest`. Test files follow the `test_<module>.py` naming convention under `tests/`.
 - Use `pytest-cov` for coverage. Target 80%+ line coverage for business logic modules; enforce with `--cov-fail-under=80`.

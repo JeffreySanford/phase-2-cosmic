@@ -299,7 +299,7 @@ The `gh` CLI is authenticated in this repo (`gh auth status` confirms `JeffreySa
 
 All diagnostic output lands in `logs/` (gitignored):
 
-```
+```text
 logs/
   ci-<run-id>-<ts>.log          # raw GitHub Actions log with timestamps
   ci-<run-id>-<ts>-clean.log    # timestamps stripped, markers humanised
@@ -311,7 +311,7 @@ logs/
 
 ### Iterative fix loop
 
-```
+```text
 git push
         |
         v
@@ -332,7 +332,7 @@ git push  -->  repeat until green
 
 ### CodeQL iterative loop
 
-```
+```bash
 pnpm run ci:codeql:trigger      # dispatch workflow (or wait for next push)
 pnpm run ci:logs:watch          # watch it run
 pnpm run ci:codeql              # download SARIF + parse findings to logs/codeql/
