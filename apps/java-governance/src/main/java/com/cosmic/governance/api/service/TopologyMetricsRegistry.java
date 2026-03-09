@@ -2,6 +2,8 @@ package com.cosmic.governance.api.service;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,12 +13,21 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class TopologyMetricsRegistry {
+    private static final Logger log = LoggerFactory.getLogger(TopologyMetricsRegistry.class);
+    private static final Set<String> STRUCTURALLY_DERIVED_LINKS = Set.of(
+            "zookeeper->kafka",
+            "prom->grafana",
+            "loki->grafana"
+    );
+
     private final MeterRegistry meterRegistry;
     private final JobService jobService;
     private final InfrastructureTelemetryService infrastructureTelemetryService;
@@ -24,6 +35,8 @@ public class TopologyMetricsRegistry {
     private final Map<String, LinkTelemetry> links = new LinkedHashMap<>();
     private volatile RuntimeProfile runtimeProfile = new RuntimeProfile(10, 0, "baseline");
     private volatile double observedIngestMBps = 0.0d;
+    private volatile Map<String, Object> lastRefreshDiagnostics = Map.of();
+    private volatile List<String> lastLoggedFallbackDerivedLinks = List.of();
 
     @Value("${prometheus.baseUrl:}")
     private String prometheusBaseUrl;
@@ -66,6 +79,25 @@ public class TopologyMetricsRegistry {
         double governanceToKafkaMBps = queryPrometheusMBps(
                 "sum(rate(kafka_producer_outgoing_byte_total{job=\"java-governance\"}[1m]))"
                         + " or sum(rate(kafka_producer_producer_metrics_outgoing_byte_total{job=\"java-governance\"}[1m]))"
+        );
+        double governanceRabbitmqPublishMeasuredMBps = queryPrometheusMBps(
+                "sum(rate(governance_rabbitmq_publish_payload_bytes_sum[5m]))"
+        );
+        double governanceRedisMeasuredMBps = queryPrometheusMBps(
+                "sum(rate(governance_redis_read_payload_bytes_sum[5m]))"
+                        + " + sum(rate(governance_redis_write_payload_bytes_sum[5m]))"
+        );
+        double governanceMinioMeasuredMBps = queryPrometheusMBps(
+                "sum(rate(governance_object_write_payload_bytes_sum{storage=\"minio\"}[5m]))"
+        );
+        double governanceRabbitmqIngestMeasuredMBps = queryPrometheusMBps(
+                "sum(rate(governance_ingest_payload_bytes_sum{broker=\"rabbitmq\"}[5m]))"
+        );
+        double governanceKafkaIngestMeasuredMBps = queryPrometheusMBps(
+                "sum(rate(governance_ingest_payload_bytes_sum{broker=\"kafka\"}[5m]))"
+        );
+        double governancePulsarIngestMeasuredMBps = queryPrometheusMBps(
+                "sum(rate(governance_ingest_payload_bytes_sum{broker=\"pulsar\"}[5m]))"
         );
         double kafkaIngestLatencyMs = queryPrometheusMs(
                 "(sum(rate(governance_ingest_processing_duration_seconds_sum{broker=\"kafka\"}[5m]))"
@@ -236,6 +268,30 @@ public class TopologyMetricsRegistry {
                 infrastructure.pulsarEgressMBps,
                 infrastructure.governancePulsarIngestCurrentMBps
         );
+        double governancePulsarInboundMeasuredMBps = preferMeasured(
+                governancePulsarIngestMeasuredMBps,
+                infrastructure.governancePulsarIngestCurrentMBps
+        );
+        double governanceKafkaInboundMeasuredMBps = preferMeasured(
+                governanceKafkaIngestMeasuredMBps,
+                infrastructure.governanceKafkaIngestCurrentMBps
+        );
+        double governanceRabbitmqInboundMeasuredMBps = preferMeasured(
+                governanceRabbitmqIngestMeasuredMBps,
+                infrastructure.rabbitmqCurrentMBps
+        );
+        double governanceRabbitmqOutboundMeasuredMBps = preferMeasured(
+                governanceRabbitmqPublishMeasuredMBps,
+                infrastructure.governanceRabbitmqCurrentMBps
+        );
+        double governanceRedisMeasuredOrInfraMBps = preferMeasured(
+                governanceRedisMeasuredMBps,
+                infrastructure.redisCurrentMBps
+        );
+        double governanceMinioMeasuredOrInfraMBps = preferMeasured(
+                governanceMinioMeasuredMBps,
+                infrastructure.minioCurrentMBps
+        );
         double combinedFrontendBackendCurrentMBps = sumMeasured(
                 frontendBackendCurrentMBps,
                 frontendBackendApiCurrentMBps
@@ -252,30 +308,106 @@ public class TopologyMetricsRegistry {
                 frontendBackendApiErrorPct,
                 frontendBackendApiRequestRate
         );
+        double frontendBackendMeasuredOrInfraMBps = preferMeasured(
+                combinedFrontendBackendCurrentMBps,
+                infrastructure.frontendBackendCurrentMBps
+        );
+        double frontendBackendLatencyMeasuredOrInfraMs = preferMeasured(
+                combinedFrontendBackendLatencyMs,
+                infrastructure.frontendBackendLatencyMs
+        );
+        double frontendNginxMeasuredOrInfraMBps = preferMeasured(
+                frontendNginxCurrentMBps,
+                infrastructure.frontendNginxCurrentMBps
+        );
+        double frontendNginxLatencyMeasuredOrInfraMs = preferMeasured(
+                frontendNginxLatencyMs,
+                infrastructure.frontendNginxLatencyMs
+        );
+        double backendGovernanceMeasuredOrInfraMBps = preferMeasured(
+                nestGovernanceCurrentMBps,
+                infrastructure.backendGovernanceCurrentMBps
+        );
+        double backendGovernanceLatencyMeasuredOrInfraMs = preferMeasured(
+                nestGovernanceLatencyMs,
+                infrastructure.backendGovernanceLatencyMs
+        );
+        double backendRedisMeasuredOrInfraMBps = preferMeasured(
+                nestRedisCurrentMBps,
+                infrastructure.backendRedisCurrentMBps
+        );
+        double backendRedisLatencyMeasuredOrInfraMs = preferMeasured(
+                nestRedisLatencyMs,
+                infrastructure.backendRedisLatencyMs
+        );
+        double backendPromMeasuredOrInfraMBps = preferMeasured(
+                backendPromCurrentMBps,
+                infrastructure.backendPromCurrentMBps
+        );
+        double backendPromLatencyMeasuredOrInfraMs = preferMeasured(
+                backendPromLatencyMs,
+                infrastructure.backendPromLatencyMs
+        );
+        double dataGeneratorKafkaMeasuredOrInfraMBps = preferMeasured(
+                generatorToKafkaMBps,
+                infrastructure.dataGeneratorKafkaCurrentMBps
+        );
+        double dataGeneratorArrayMainMeasuredOrInfraMBps = preferMeasured(
+                generatorArrayMainMBps,
+                infrastructure.dataGeneratorArrayMainCurrentMBps
+        );
+        double dataGeneratorArrayLblMeasuredOrInfraMBps = preferMeasured(
+                generatorArrayLblMBps,
+                infrastructure.dataGeneratorArrayLblCurrentMBps
+        );
+        double dataGeneratorArraySbaMeasuredOrInfraMBps = preferMeasured(
+                generatorArraySbaMBps,
+                infrastructure.dataGeneratorArraySbaCurrentMBps
+        );
+        double governanceKafkaPublishMeasuredOrInfraMBps = preferMeasured(
+                governanceToKafkaMBps,
+                infrastructure.governanceKafkaPublishCurrentMBps
+        );
+        double kafkaJavaIngestMeasuredOrInfraMBps = preferMeasured(
+                ingestFromKafkaMBps,
+                infrastructure.kafkaJavaIngestCurrentMBps
+        );
+        double promAlertmanagerMeasuredOrInfraMBps = preferMeasured(
+                promAlertmanagerCurrentMBps,
+                infrastructure.promAlertmanagerCurrentMBps
+        );
+        double promAlertmanagerLatencyMeasuredOrInfraMs = preferMeasured(
+                promAlertmanagerLatencyMs,
+                infrastructure.promAlertmanagerLatencyMs
+        );
 
         setMeasuredOrDerivedLink(
                 "frontend->backend",
                 40,
-                combinedFrontendBackendCurrentMBps,
+                frontendBackendMeasuredOrInfraMBps,
                 5 + loadScale * 8,
-                combinedFrontendBackendLatencyMs > 0.0d ? combinedFrontendBackendLatencyMs : 14 + loadScale * 8,
+                frontendBackendLatencyMeasuredOrInfraMs > 0.0d
+                        ? frontendBackendLatencyMeasuredOrInfraMs
+                        : 14 + loadScale * 8,
                 combinedFrontendBackendErrorPct >= 0.0d ? combinedFrontendBackendErrorPct : failurePressure * 0.10d
         );
         setMeasuredOrDerivedLink(
                 "frontend->nginx",
                 40,
-                frontendNginxCurrentMBps,
+                frontendNginxMeasuredOrInfraMBps,
                 4 + loadScale * 7,
-                frontendNginxLatencyMs > 0.0d ? frontendNginxLatencyMs : 10 + loadScale * 4,
+                frontendNginxLatencyMeasuredOrInfraMs > 0.0d
+                        ? frontendNginxLatencyMeasuredOrInfraMs
+                        : 10 + loadScale * 4,
                 frontendNginxErrorPct >= 0.0d ? frontendNginxErrorPct : 0.01d
         );
         setMeasuredOrDerivedLink(
                 "backend->java-governance",
                 220,
-                nestGovernanceCurrentMBps,
+                backendGovernanceMeasuredOrInfraMBps,
                 backendGovernanceCurrentMBps,
-                nestGovernanceLatencyMs > 0.0d
-                        ? nestGovernanceLatencyMs
+                backendGovernanceLatencyMeasuredOrInfraMs > 0.0d
+                        ? backendGovernanceLatencyMeasuredOrInfraMs
                         : (governanceHttpLatencyMs > 0.0d ? governanceHttpLatencyMs : 18 + governancePressure * 22),
                 nestGovernanceErrorPct >= 0.0d
                         ? nestGovernanceErrorPct
@@ -284,17 +416,21 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "backend->redis",
                 24,
-                nestRedisCurrentMBps,
+                backendRedisMeasuredOrInfraMBps,
                 0.35d + loadScale * 0.8d,
-                nestRedisLatencyMs > 0.0d ? nestRedisLatencyMs : 5 + loadScale * 2,
+                backendRedisLatencyMeasuredOrInfraMs > 0.0d
+                        ? backendRedisLatencyMeasuredOrInfraMs
+                        : 5 + loadScale * 2,
                 nestRedisErrorPct >= 0.0d ? nestRedisErrorPct : 0.01d
         );
         setMeasuredOrDerivedLink(
                 "backend->prom",
                 60,
-                backendPromCurrentMBps,
+                backendPromMeasuredOrInfraMBps,
                 4 + loadScale * 8,
-                backendPromLatencyMs > 0.0d ? backendPromLatencyMs : 12 + loadScale * 5,
+                backendPromLatencyMeasuredOrInfraMs > 0.0d
+                        ? backendPromLatencyMeasuredOrInfraMs
+                        : 12 + loadScale * 5,
                 backendPromErrorPct >= 0.0d ? backendPromErrorPct : 0.01d
         );
 
@@ -309,7 +445,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "data-generator->kafka",
                 3200,
-                generatorToKafkaMBps,
+                dataGeneratorKafkaMeasuredOrInfraMBps,
                 observedIngestMBps,
                 18 + loadScale * 16,
                 failurePressure * 0.03d
@@ -317,7 +453,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "data-generator->array-main",
                 2200,
-                generatorArrayMainMBps,
+                dataGeneratorArrayMainMeasuredOrInfraMBps,
                 observedIngestMBps * 0.46d,
                 20 + loadScale * 10,
                 0.02d
@@ -325,7 +461,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "data-generator->array-lbl",
                 1200,
-                generatorArrayLblMBps,
+                dataGeneratorArrayLblMeasuredOrInfraMBps,
                 observedIngestMBps * 0.22d,
                 18 + loadScale * 8,
                 0.02d
@@ -333,7 +469,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "data-generator->array-sba",
                 1200,
-                generatorArraySbaMBps,
+                dataGeneratorArraySbaMeasuredOrInfraMBps,
                 observedIngestMBps * 0.20d,
                 18 + loadScale * 8,
                 0.02d
@@ -350,7 +486,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "pulsar->java-governance",
                 1600,
-                infrastructure.governancePulsarIngestCurrentMBps,
+                governancePulsarInboundMeasuredMBps,
                 6 + counts.queued * 3 + counts.running * 8,
                 pulsarIngestLatencyMs > 0.0d ? pulsarIngestLatencyMs : 19 + queuePressure * 14,
                 pulsarIngestErrorPct >= 0.0d ? pulsarIngestErrorPct : 0.03d + failurePressure * 0.12d
@@ -359,7 +495,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "rabbitmq->java-governance",
                 260,
-                infrastructure.rabbitmqCurrentMBps,
+                governanceRabbitmqInboundMeasuredMBps,
                 10 + queueDepth * 7 + counts.failed * 4,
                 rabbitIngestLatencyMs > 0.0d ? rabbitIngestLatencyMs : 18 + queuePressure * 18,
                 rabbitIngestErrorPct >= 0.0d ? rabbitIngestErrorPct : 0.10d + failurePressure * 0.30d
@@ -367,7 +503,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "kafka->java-governance",
                 1600,
-                infrastructure.governanceKafkaIngestCurrentMBps,
+                governanceKafkaInboundMeasuredMBps,
                 8 + counts.queued * 4 + counts.running * 10,
                 kafkaIngestLatencyMs > 0.0d ? kafkaIngestLatencyMs : 20 + queuePressure * 14,
                 kafkaIngestErrorPct >= 0.0d ? kafkaIngestErrorPct : 0.03d + failurePressure * 0.14d
@@ -375,7 +511,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "java-governance->rabbitmq",
                 220,
-                infrastructure.governanceRabbitmqCurrentMBps,
+                governanceRabbitmqOutboundMeasuredMBps,
                 6 + counts.completed * 0.8d + counts.failed * 1.6d,
                 rabbitPublishLatencyMs > 0.0d ? rabbitPublishLatencyMs : 16 + queuePressure * 10,
                 rabbitPublishErrorPct >= 0.0d ? rabbitPublishErrorPct : 0.04d + failurePressure * 0.18d
@@ -383,7 +519,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "java-governance->kafka",
                 720,
-                governanceToKafkaMBps,
+                governanceKafkaPublishMeasuredOrInfraMBps,
                 30 + counts.running * 28 + loadScale * 90,
                 20 + runningPressure * 16,
                 0.03d + failurePressure * 0.20d
@@ -391,7 +527,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "java-governance->minio",
                 2800,
-                infrastructure.minioCurrentMBps,
+                governanceMinioMeasuredOrInfraMBps,
                 observedIngestMBps * (0.55d + runningPressure * 0.20d),
                 governanceMinioLatencyMs > 0.0d ? governanceMinioLatencyMs : 26 + runningPressure * 18,
                 governanceMinioErrorPct >= 0.0d ? governanceMinioErrorPct : 0.02d + failurePressure * 0.12d
@@ -399,7 +535,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "java-governance->redis",
                 320,
-                infrastructure.redisCurrentMBps,
+                governanceRedisMeasuredOrInfraMBps,
                 12 + queueDepth * 9 + counts.running * 6,
                 governanceRedisLatencyMs > 0.0d ? governanceRedisLatencyMs : 12 + queuePressure * 12,
                 governanceRedisErrorPct >= 0.0d ? governanceRedisErrorPct : 0.02d
@@ -407,7 +543,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "kafka->java-ingest",
                 2800,
-                ingestFromKafkaMBps,
+                kafkaJavaIngestMeasuredOrInfraMBps,
                 observedIngestMBps * 0.82d,
                 javaIngestLatencyMs > 0.0d ? javaIngestLatencyMs : 24 + loadScale * 16,
                 javaIngestErrorPct >= 0.0d ? javaIngestErrorPct : 0.03d + failurePressure * 0.10d
@@ -417,9 +553,11 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "prom->alertmanager",
                 80,
-                promAlertmanagerCurrentMBps,
+                promAlertmanagerMeasuredOrInfraMBps,
                 3 + failurePressure * 10,
-                promAlertmanagerLatencyMs > 0.0d ? promAlertmanagerLatencyMs : 12 + failurePressure * 9,
+                promAlertmanagerLatencyMeasuredOrInfraMs > 0.0d
+                        ? promAlertmanagerLatencyMeasuredOrInfraMs
+                        : 12 + failurePressure * 9,
                 promAlertmanagerErrorPct >= 0.0d ? promAlertmanagerErrorPct : 0.01d
         );
         setLink("loki->grafana", 100, 5 + runningPressure * 10, 11 + runningPressure * 6, 0.01d);
@@ -427,7 +565,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "array-main->minio",
                 2600,
-                generatorArrayMainMBps,
+                dataGeneratorArrayMainMeasuredOrInfraMBps,
                 observedIngestMBps * 0.48d,
                 28 + loadScale * 16,
                 0.02d
@@ -435,7 +573,7 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "array-lbl->minio",
                 1400,
-                generatorArrayLblMBps,
+                dataGeneratorArrayLblMeasuredOrInfraMBps,
                 observedIngestMBps * 0.24d,
                 26 + loadScale * 12,
                 0.02d
@@ -443,11 +581,13 @@ public class TopologyMetricsRegistry {
         setMeasuredOrDerivedLink(
                 "array-sba->minio",
                 1400,
-                generatorArraySbaMBps,
+                dataGeneratorArraySbaMeasuredOrInfraMBps,
                 observedIngestMBps * 0.21d,
                 26 + loadScale * 12,
                 0.02d
         );
+        lastRefreshDiagnostics = buildRefreshDiagnostics();
+        logFallbackDerivedChanges(lastRefreshDiagnostics);
     }
 
     public synchronized Map<String, Object> snapshot() {
@@ -460,6 +600,7 @@ public class TopologyMetricsRegistry {
                 "note", runtimeProfile.note
         ));
         out.put("observedIngestMBps", observedIngestMBps);
+        out.put("diagnostics", lastRefreshDiagnostics);
         out.put("links", linkMap());
         out.put("nodeActivity", nodeActivityMap());
         return out;
@@ -572,11 +713,103 @@ public class TopologyMetricsRegistry {
                     "latencyMs", round2(telemetry.latencyMs),
                     "errorRatePct", round2(telemetry.errorRatePct),
                     "confidencePct", confidencePct(telemetry),
+                    "measurementPath", measurementPath(telemetry.key()),
                     "transport", telemetry.transport,
                     "source", telemetry.metricSource
             ));
         }
         return out;
+    }
+
+    private Map<String, Object> buildRefreshDiagnostics() {
+        List<String> measuredLinks = new ArrayList<>();
+        List<String> adminLinks = new ArrayList<>();
+        List<String> fallbackDerivedLinks = new ArrayList<>();
+        List<String> structuralDerivedLinks = new ArrayList<>();
+        List<String> nonStandardSourceLinks = new ArrayList<>();
+        Map<String, Integer> measurementPathCounts = new LinkedHashMap<>();
+
+        for (LinkTelemetry telemetry : links.values()) {
+            measurementPathCounts.merge(measurementPath(telemetry.key()), 1, Integer::sum);
+            switch (telemetry.metricSource) {
+                case "prometheus" -> measuredLinks.add(telemetry.key());
+                case "admin" -> adminLinks.add(telemetry.key());
+                case "derived" -> {
+                    if (STRUCTURALLY_DERIVED_LINKS.contains(telemetry.key())) {
+                        structuralDerivedLinks.add(telemetry.key());
+                    } else {
+                        fallbackDerivedLinks.add(telemetry.key());
+                    }
+                }
+                default -> nonStandardSourceLinks.add(telemetry.key());
+            }
+        }
+
+        Map<String, Object> diagnostics = new LinkedHashMap<>();
+        diagnostics.put("canonicalLinkCount", links.size());
+        diagnostics.put("measuredLinkCount", measuredLinks.size());
+        diagnostics.put("adminLinkCount", adminLinks.size());
+        diagnostics.put("derivedLinkCount", fallbackDerivedLinks.size() + structuralDerivedLinks.size());
+        diagnostics.put("fallbackDerivedLinkCount", fallbackDerivedLinks.size());
+        diagnostics.put("structuralDerivedLinkCount", structuralDerivedLinks.size());
+        diagnostics.put("measuredLinks", measuredLinks);
+        diagnostics.put("adminLinks", adminLinks);
+        diagnostics.put("fallbackDerivedLinks", fallbackDerivedLinks);
+        diagnostics.put("structuralDerivedLinks", structuralDerivedLinks);
+        diagnostics.put("nonStandardSourceLinks", nonStandardSourceLinks);
+        diagnostics.put("measurementPathCounts", measurementPathCounts);
+        diagnostics.put("linksMissingFromSnapshot", Collections.emptyList());
+        return diagnostics;
+    }
+
+    private String measurementPath(String key) {
+        if (STRUCTURALLY_DERIVED_LINKS.contains(key)) {
+            return "derived-model";
+        }
+        return switch (key) {
+            case "data-generator->pulsar", "pulsar->kafka" -> "infrastructure-snapshot";
+            case "pulsar->java-governance",
+                    "frontend->backend",
+                    "frontend->nginx",
+                    "backend->java-governance",
+                    "backend->redis",
+                    "backend->prom",
+                    "data-generator->kafka",
+                    "data-generator->array-main",
+                    "data-generator->array-lbl",
+                    "data-generator->array-sba",
+                    "rabbitmq->java-governance",
+                    "kafka->java-governance",
+                    "java-governance->rabbitmq",
+                    "java-governance->kafka",
+                    "java-governance->minio",
+                    "java-governance->redis",
+                    "kafka->java-ingest",
+                    "prom->alertmanager",
+                    "array-main->minio",
+                    "array-lbl->minio",
+                    "array-sba->minio" -> "direct-prometheus+infrastructure-fallback";
+            default -> "direct-prometheus";
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    private void logFallbackDerivedChanges(Map<String, Object> diagnostics) {
+        Object raw = diagnostics.get("fallbackDerivedLinks");
+        List<String> fallbackDerivedLinks = raw instanceof List<?>
+                ? ((List<?>) raw).stream().map(String::valueOf).toList()
+                : List.of();
+        if (fallbackDerivedLinks.equals(lastLoggedFallbackDerivedLinks)) {
+            return;
+        }
+        lastLoggedFallbackDerivedLinks = fallbackDerivedLinks;
+        if (fallbackDerivedLinks.isEmpty()) {
+            log.info("Topology metrics refresh produced measured or structural-derived data for all canonical links.");
+            return;
+        }
+        log.info("Topology metrics refresh fell back to derived data for {} canonical links: {}",
+                fallbackDerivedLinks.size(),
+                fallbackDerivedLinks);
     }
 
     @SuppressWarnings("unchecked")
@@ -751,7 +984,33 @@ public class TopologyMetricsRegistry {
                     serviceLatencyMs((Map<String, Object>) services.get("governanceRuntime"), "governance-redis"),
                     serviceErrorPct((Map<String, Object>) services.get("governanceRuntime"), "governance-redis"),
                     serviceLatencyMs((Map<String, Object>) services.get("governanceRuntime"), "governance-minio-object"),
-                    serviceErrorPct((Map<String, Object>) services.get("governanceRuntime"), "governance-minio-object")
+                    serviceErrorPct((Map<String, Object>) services.get("governanceRuntime"), "governance-minio-object"),
+                    serviceCurrentMBps((Map<String, Object>) services.get("frontendSsr"), "frontend-backend"),
+                    weightedMeasuredAverage(
+                            serviceLatencyMs((Map<String, Object>) services.get("frontendSsr"), "frontend-backend-page"),
+                            serviceRatePerSec((Map<String, Object>) services.get("frontendSsr"), "frontend-backend-page"),
+                            serviceLatencyMs((Map<String, Object>) services.get("frontendSsr"), "frontend-backend-api"),
+                            serviceRatePerSec((Map<String, Object>) services.get("frontendSsr"), "frontend-backend-api")
+                    ),
+                    serviceCurrentMBps((Map<String, Object>) services.get("nginx"), "nginx"),
+                    serviceLatencyMs((Map<String, Object>) services.get("nginx"), "nginx"),
+                    serviceCurrentMBps((Map<String, Object>) services.get("frontendSsr"), "frontend-governance-proxy"),
+                    serviceLatencyMs((Map<String, Object>) services.get("frontendSsr"), "frontend-governance-proxy"),
+                    serviceCurrentMBps((Map<String, Object>) services.get("frontendSsr"), "frontend-redis-cache"),
+                    serviceLatencyMs((Map<String, Object>) services.get("frontendSsr"), "frontend-redis-cache"),
+                    serviceCurrentMBps((Map<String, Object>) services.get("frontendSsr"), "frontend-prometheus-proxy"),
+                    serviceLatencyMs((Map<String, Object>) services.get("frontendSsr"), "frontend-prometheus-proxy"),
+                    serviceCurrentMBps((Map<String, Object>) services.get("kafka"), "kafka-ingress"),
+                    serviceCurrentMBps((Map<String, Object>) services.get("dataGenerator"), "data-generator-array-main"),
+                    serviceCurrentMBps((Map<String, Object>) services.get("dataGenerator"), "data-generator-array-lbl"),
+                    serviceCurrentMBps((Map<String, Object>) services.get("dataGenerator"), "data-generator-array-sba"),
+                    serviceCurrentMBps((Map<String, Object>) services.get("governanceRuntime"), "governance-kafka-publish"),
+                    preferMeasured(
+                            serviceCurrentMBps((Map<String, Object>) services.get("javaIngest"), "java-ingest-payload"),
+                            serviceCurrentMBps((Map<String, Object>) services.get("kafka"), "kafka-egress")
+                    ),
+                    serviceCurrentMBps((Map<String, Object>) services.get("alertmanager"), "alertmanager"),
+                    serviceLatencyMs((Map<String, Object>) services.get("alertmanager"), "alertmanager")
             );
         } catch (Exception ignored) {
             return InfrastructureMetrics.unavailable();
@@ -780,7 +1039,24 @@ public class TopologyMetricsRegistry {
             );
             case "pulsar" -> toMBps(toDouble(service.get("ingressBytesPerSec")));
             case "pulsar-egress" -> toMBps(toDouble(service.get("egressBytesPerSec")));
+            case "nginx" -> toMBps(toDouble(service.get("egressBytesPerSec")));
+            case "frontend-backend" -> toMBps(
+                    toDouble(service.get("frontendResponseBytesPerSec")),
+                    toDouble(service.get("frontendApiResponseBytesPerSec"))
+            );
+            case "frontend-governance-proxy" -> toMBps(toDouble(service.get("governanceProxyBytesPerSec")));
+            case "frontend-prometheus-proxy" -> toMBps(toDouble(service.get("prometheusProxyBytesPerSec")));
+            case "frontend-redis-cache" -> toMBps(
+                    toDouble(service.get("ingressBytesPerSec")),
+                    toDouble(service.get("egressBytesPerSec"))
+            );
+            case "data-generator-array-main" -> toMBps(toDouble(service.get("mainSegmentBytesPerSec")));
+            case "data-generator-array-lbl" -> toMBps(toDouble(service.get("lblSegmentBytesPerSec")));
+            case "data-generator-array-sba" -> toMBps(toDouble(service.get("sbaSegmentBytesPerSec")));
+            case "kafka-ingress" -> toMBps(toDouble(service.get("ingressBytesPerSec")));
+            case "kafka-egress" -> toMBps(toDouble(service.get("egressBytesPerSec")));
             case "governance-rabbitmq" -> toMBps(toDouble(service.get("rabbitmqPublishBytesPerSec")));
+            case "governance-kafka-publish" -> toMBps(toDouble(service.get("kafkaPublishBytesPerSec")));
             case "governance-kafka-ingest" -> toMBps(toDouble(service.get("kafkaIngestPayloadBytesPerSec")));
             case "governance-pulsar-ingest" -> toMBps(toDouble(service.get("pulsarIngestPayloadBytesPerSec")));
             case "governance-operator-read" -> toMBps(toDouble(service.get("operatorReadBytesPerSec")));
@@ -794,6 +1070,8 @@ public class TopologyMetricsRegistry {
             );
             case "governance-object" -> toMBps(toDouble(service.get("objectWriteBytesPerSec")));
             case "governance-minio-object" -> toMBps(toDouble(service.get("minioObjectWriteBytesPerSec")));
+            case "java-ingest-payload" -> toMBps(toDouble(service.get("payloadBytesPerSec")));
+            case "alertmanager" -> toMBps(toDouble(service.get("egressBytesPerSec")));
             default -> -1.0d;
         };
     }
@@ -844,9 +1122,27 @@ public class TopologyMetricsRegistry {
             return -1.0d;
         }
         return switch (name) {
+            case "nginx" -> toDouble(service.get("avgLatencyMs"));
+            case "frontend-backend-page" -> toDouble(service.get("frontendRequestLatencyMs"));
+            case "frontend-backend-api" -> toDouble(service.get("frontendApiLatencyMs"));
+            case "frontend-governance-proxy" -> toDouble(service.get("governanceProxyLatencyMs"));
+            case "frontend-prometheus-proxy" -> toDouble(service.get("prometheusProxyLatencyMs"));
+            case "frontend-redis-cache" -> toDouble(service.get("avgLatencyMs"));
             case "governance-redis" -> toDouble(service.get("redisAvgLatencyMs"));
             case "governance-minio-object" -> toDouble(service.get("minioObjectWriteAvgLatencyMs"));
+            case "alertmanager" -> toDouble(service.get("avgLatencyMs"));
             default -> -1.0d;
+        };
+    }
+
+    private double serviceRatePerSec(Map<String, Object> service, String name) {
+        if (service == null || !"prometheus".equals(String.valueOf(service.get("source")))) {
+            return 0.0d;
+        }
+        return switch (name) {
+            case "frontend-backend-page" -> toDouble(service.get("frontendRequestRatePerSec"));
+            case "frontend-backend-api" -> toDouble(service.get("frontendApiRequestRatePerSec"));
+            default -> 0.0d;
         };
     }
 
@@ -964,7 +1260,7 @@ public class TopologyMetricsRegistry {
             }
             Object resultObj = dataMap.get("result");
             if (!(resultObj instanceof List<?> resultList) || resultList.isEmpty()) {
-                return MetricValue.unavailable();
+                return MetricValue.live(0.0d);
             }
             Object first = resultList.get(0);
             if (!(first instanceof Map<?, ?> firstMap)) {
@@ -1013,13 +1309,36 @@ public class TopologyMetricsRegistry {
             double governanceRedisLatencyMs,
             double governanceRedisErrorPct,
             double governanceMinioLatencyMs,
-            double governanceMinioErrorPct
+            double governanceMinioErrorPct,
+            double frontendBackendCurrentMBps,
+            double frontendBackendLatencyMs,
+            double frontendNginxCurrentMBps,
+            double frontendNginxLatencyMs,
+            double backendGovernanceCurrentMBps,
+            double backendGovernanceLatencyMs,
+            double backendRedisCurrentMBps,
+            double backendRedisLatencyMs,
+            double backendPromCurrentMBps,
+            double backendPromLatencyMs,
+            double dataGeneratorKafkaCurrentMBps,
+            double dataGeneratorArrayMainCurrentMBps,
+            double dataGeneratorArrayLblCurrentMBps,
+            double dataGeneratorArraySbaCurrentMBps,
+            double governanceKafkaPublishCurrentMBps,
+            double kafkaJavaIngestCurrentMBps,
+            double promAlertmanagerCurrentMBps,
+            double promAlertmanagerLatencyMs
     ) {
         private static InfrastructureMetrics unavailable() {
             return new InfrastructureMetrics(
                     -1.0d, -1.0d, -1.0d, -1.0d, -1.0d,
                     -1.0d, -1.0d, -1.0d, -1.0d, -1.0d,
-                    -1.0d, -1.0d, -1.0d, -1.0d
+                    -1.0d, -1.0d, -1.0d, -1.0d,
+                    -1.0d, -1.0d, -1.0d, -1.0d,
+                    -1.0d, -1.0d, -1.0d, -1.0d,
+                    -1.0d, -1.0d, -1.0d, -1.0d,
+                    -1.0d, -1.0d, -1.0d,
+                    -1.0d, -1.0d, -1.0d
             );
         }
     }

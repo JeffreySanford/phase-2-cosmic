@@ -14,7 +14,6 @@ jest.mock("net", () => {
     constructor() {
       super();
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setTimeout(_ms: number, _cb?: () => void) {
       /* no-op for mock */
     }
@@ -310,6 +309,8 @@ function createSseResponse(): SseResponse {
 }
 
 describe.skip("AppController brokerEventsSse (S1-1)", () => {
+  type CtrlPrivate = { brokerEventsSse: (res: import("express").Response) => void };
+
   it("sets text/event-stream and no-cache headers then flushes", () => {
     const ctrl = new AppController(
       {} as ConstructorParameters<typeof AppController>[0],
@@ -317,7 +318,7 @@ describe.skip("AppController brokerEventsSse (S1-1)", () => {
     );
     const res = createSseResponse();
 
-    (ctrl as any).brokerEventsSse(res as unknown as import("express").Response);
+    (ctrl as unknown as CtrlPrivate).brokerEventsSse(res as unknown as import("express").Response);
 
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Type",
@@ -335,7 +336,7 @@ describe.skip("AppController brokerEventsSse (S1-1)", () => {
     );
     const res = createSseResponse();
 
-    (ctrl as any).brokerEventsSse(res as unknown as import("express").Response);
+    (ctrl as unknown as CtrlPrivate).brokerEventsSse(res as unknown as import("express").Response);
 
     expect(res.write).toHaveBeenCalledTimes(1);
     const raw: string = res.write.mock.calls[0][0] as string;
@@ -360,11 +361,11 @@ describe.skip("AppController brokerEventsSse (S1-1)", () => {
       if (event === "close") closeHandler = cb;
     });
 
-    (ctrl as any).brokerEventsSse(res as unknown as import("express").Response);
+    (ctrl as unknown as CtrlPrivate).brokerEventsSse(res as unknown as import("express").Response);
 
     expect(closeHandler).not.toBeNull();
     const clearIntervalSpy = jest.spyOn(global, "clearInterval");
-    closeHandler!();
+    (closeHandler as unknown as () => void)();
     expect(clearIntervalSpy).toHaveBeenCalled();
 
     jest.useRealTimers();

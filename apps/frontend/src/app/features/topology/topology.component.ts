@@ -96,6 +96,7 @@ type LinkStats = {
   throughputMBpsMax?: number;
   throughputPctNumeric?: number;
   source?: "prometheus" | "admin" | "derived" | "mock" | "unavailable";
+  measurementPath?: string;
 };
 
 type NodeSummary = {
@@ -122,7 +123,10 @@ type TopologyMetricPoint = {
   latencyMs?: number;
   errorRatePct?: number;
   confidencePct?: number;
+  measurementPath?: string;
 };
+
+type ProvenanceFilter = "prometheus" | "admin" | "derived";
 
 type NodeActivityPoint = {
   businessRatePerSec?: number;
@@ -144,6 +148,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild("graph", { static: true }) graphEl!: ElementRef<HTMLDivElement>;
 
   private svg?: D3Selection | null;
+  private viewportGroup?: D3Selection | null;
   private simulation?: D3Simulation | null;
   private d3: D3Module | null = null;
 
@@ -154,6 +159,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   public showMode: "live" | "max" = "live";
   public aggCurrentMBps = 0;
   public aggMaxMBps = 0;
+  public totalLinkCount = 0;
   public liveLinkCount = 0;
   public derivedLinkCount = 0;
   public mockLinkCount = 0;
@@ -164,6 +170,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   public timingDriftNs?: number;
   public rfiEventRate?: number;
   public initialLoadSettled = false;
+  // Phase 15/16 diagnostics from backend snapshot contract
+  public structuralDerivedLinkCount = 0;
+  public fallbackDerivedLinkCount = 0;
+  public hasDiagnosticsData = false;
   private latestNodeActivity: Record<string, NodeActivityPoint> = {};
   // Configurable capacity settings
   public showSettings = false;
@@ -174,9 +184,26 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   public pollIntervalSec = 5;
   public sensitivityPct = 5; // percent change threshold to animate
   public profilePct: LoadProfilePct = 10;
+  public viewportScale = 1;
+  public viewportTranslateX = 0;
+  public viewportTranslateY = 0;
+  public readonly provenanceFilterOptions: ProvenanceFilter[] = [
+    "prometheus",
+    "admin",
+    "derived",
+  ];
   // last rendered topology (kept so settings UI can auto-populate)
   private lastNodes: TopoNode[] = [];
   private lastLinks: TopoLink[] = [];
+  private fullTopologyNodes: TopoNode[] = [];
+  private fullTopologyLinks: TopoLink[] = [];
+  private activeProvenanceFilters = new Set<ProvenanceFilter>(
+    this.provenanceFilterOptions
+  );
+  private fitViewport = { scale: 1, x: 0, y: 0 };
+  private shouldAutoFitViewport = false;
+  public showProvenanceFilterHelper = false;
+  private provenanceFilterHelperTimeout: number | null = null;
   // live polling interval id
   private livePollInterval: number | null = null;
   private profileSub?: { unsubscribe: () => void };
@@ -206,8 +233,9 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     this.profileSub = this.loadProfile.profile$.subscribe((pct) => {
       this.profilePct = pct;
       this.syncProfileControls(pct);
-      if (this.lastLinks.length > 0) {
-        this.render(this.lastNodes, this.lastLinks, true);
+      const current = this.currentTopologyData();
+      if (current.links.length > 0) {
+        this.applyCurrentTopologyView(true);
         if (this.showMode === "live") {
           this.restartLivePoll();
         }
@@ -343,6 +371,202 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  public effectiveProvenanceFilters(): ProvenanceFilter[] {
+    if (this.activeProvenanceFilters.size > 0) {
+      return Array.from(this.activeProvenanceFilters);
+    }
+    return [...this.provenanceFilterOptions];
+  }
+
+  public isProvenanceFilterActive(source: ProvenanceFilter): boolean {
+    return this.effectiveProvenanceFilters().includes(source);
+  }
+
+  public toggleProvenanceFilter(source: ProvenanceFilter): void {
+    if (this.activeProvenanceFilters.has(source)) {
+      this.activeProvenanceFilters.delete(source);
+    } else {
+      this.activeProvenanceFilters.add(source);
+    }
+    if (this.activeProvenanceFilters.size === 0) {
+      this.activeProvenanceFilters = new Set(this.provenanceFilterOptions);
+    }
+    this.showTransientProvenanceHelper();
+    this.applyCurrentTopologyView(true);
+  }
+
+  public provenanceFilterLabel(source: ProvenanceFilter): string {
+    switch (source) {
+      case "prometheus":
+        return "Live";
+      case "admin":
+        return "Admin";
+      default:
+        return "Derived";
+    }
+  }
+
+  public allProvenanceFiltersActive(): boolean {
+    return (
+      this.effectiveProvenanceFilters().length ===
+      this.provenanceFilterOptions.length
+    );
+  }
+
+  public activeProvenanceFilterSummary(): string {
+    if (this.allProvenanceFiltersActive()) {
+      return "All visible";
+    }
+    return `Filtered: ${this.effectiveProvenanceFilters()
+      .map((source) => this.provenanceFilterLabel(source))
+      .join(" + ")}`;
+  }
+
+  public graphFilterNotice(): string {
+    if (this.allProvenanceFiltersActive()) {
+      return "Showing Live, Admin, and Derived links together. Use the provenance filters to isolate measured, health-backed, or inferred paths.";
+    }
+    return `${this.activeProvenanceFilterSummary()}. Counts, rankings, and Snapshot Fidelity still describe the full topology snapshot.`;
+  }
+
+  public summaryScopeNotice(): string {
+    if (this.allProvenanceFiltersActive()) {
+      return "These counts and fidelity metrics describe the full topology snapshot.";
+    }
+    return "Graph filtered. These counts and fidelity metrics still describe the full topology snapshot.";
+  }
+
+  public provenanceFilterHelperText(): string {
+    const active = this.effectiveProvenanceFilters().map((source) =>
+      this.provenanceFilterLabel(source)
+    );
+    if (active.length === this.provenanceFilterOptions.length) {
+      return "Showing Live, Admin, and Derived links. Turning the last active filter off restores the full graph.";
+    }
+    return `Showing ${active.join(" + ")} links. Turning the last active filter off restores the full graph.`;
+  }
+
+  public provenanceFilterAriaLabel(source: ProvenanceFilter): string {
+    const label = this.provenanceFilterLabel(source);
+    const state = this.isProvenanceFilterActive(source)
+      ? "Hide"
+      : "Show only";
+    return `${state} ${label} links in the force network`;
+  }
+
+  public zoomIn(): void {
+    this.setViewportScale(this.viewportScale * 1.2);
+  }
+
+  public zoomOut(): void {
+    this.setViewportScale(this.viewportScale / 1.2);
+  }
+
+  public resetViewport(): void {
+    this.viewportScale = this.fitViewport.scale;
+    this.viewportTranslateX = this.fitViewport.x;
+    this.viewportTranslateY = this.fitViewport.y;
+    this.applyViewportTransform();
+  }
+
+  private setCanonicalTopology(nodes: TopoNode[], links: TopoLink[]): void {
+    this.fullTopologyNodes = nodes;
+    this.fullTopologyLinks = links;
+  }
+
+  private currentTopologyData(): { nodes: TopoNode[]; links: TopoLink[] } {
+    return {
+      nodes: this.fullTopologyNodes,
+      links: this.fullTopologyLinks,
+    };
+  }
+
+  private applyCurrentTopologyView(skipFetch = false): void {
+    const visible = this.visibleTopologyData();
+    this.render(visible.nodes, visible.links, skipFetch);
+  }
+
+  private visibleTopologyData(): { nodes: TopoNode[]; links: TopoLink[] } {
+    const full = this.currentTopologyData();
+    if (!full.nodes.length && !full.links.length) {
+      return full;
+    }
+    if (this.allProvenanceFiltersActive()) {
+      return full;
+    }
+
+    const visibleLinks = full.links.filter((link) =>
+      this.isVisibleForActiveFilters(link)
+    );
+    const visibleNodeIds = new Set<string>();
+    for (const link of visibleLinks) {
+      const sourceId =
+        typeof link.source === "string" ? link.source : link.source.id;
+      const targetId =
+        typeof link.target === "string" ? link.target : link.target.id;
+      visibleNodeIds.add(sourceId);
+      visibleNodeIds.add(targetId);
+    }
+
+    return {
+      nodes: full.nodes.filter((node) => visibleNodeIds.has(node.id)),
+      links: visibleLinks,
+    };
+  }
+
+  private isVisibleForActiveFilters(link: TopoLink): boolean {
+    const source = this.statsRef(link)._stats?.source;
+    if (
+      source === "prometheus" ||
+      source === "admin" ||
+      source === "derived"
+    ) {
+      return this.isProvenanceFilterActive(source);
+    }
+    return this.allProvenanceFiltersActive();
+  }
+
+  private setViewportScale(nextScale: number): void {
+    this.viewportScale = Math.max(0.55, Math.min(2.4, nextScale));
+    this.applyViewportTransform();
+  }
+
+  private applyViewportTransform(): void {
+    this.viewportGroup
+      ?.attr(
+        "transform",
+        `translate(${this.viewportTranslateX},${this.viewportTranslateY}) scale(${this.viewportScale})`
+      );
+  }
+
+  private fitGraphToViewport(nodes: TopoNode[], width: number, height: number): void {
+    if (!nodes.length) {
+      this.fitViewport = { scale: 1, x: 0, y: 0 };
+      this.resetViewport();
+      return;
+    }
+    const xs = nodes.map((node) => node.x ?? 0);
+    const ys = nodes.map((node) => node.y ?? 0);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const graphWidth = Math.max(1, maxX - minX);
+    const graphHeight = Math.max(1, maxY - minY);
+    const padding = 72;
+    const scale = Math.min(
+      1,
+      Math.min(
+        (width - padding) / Math.max(graphWidth, 1),
+        (height - padding) / Math.max(graphHeight, 1)
+      )
+    );
+    const centeredX = (width - graphWidth * scale) / 2 - minX * scale;
+    const centeredY = (height - graphHeight * scale) / 2 - minY * scale;
+    this.fitViewport = { scale, x: centeredX, y: centeredY };
+    this.resetViewport();
+  }
+
   private restartLivePoll(): void {
     if (this.showMode === "live") {
       this.startLivePoll();
@@ -425,6 +649,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         key === "payload" ||
         key === "links" ||
         key === "timing_drift_ns" ||
+          key === "diagnostics" ||
         key === "rfi_event_rate"
       ) {
         continue;
@@ -457,6 +682,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
           source === "mock" ||
           source === "unavailable"
             ? source
+            : undefined,
+        measurementPath:
+          typeof metric["measurementPath"] === "string"
+            ? (metric["measurementPath"] as string)
             : undefined,
       };
     }
@@ -501,6 +730,9 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (metric.confidencePct !== undefined) {
       stats.confidencePct = metric.confidencePct;
+    }
+    if (metric.measurementPath !== undefined) {
+      stats.measurementPath = metric.measurementPath;
     }
   }
 
@@ -589,6 +821,101 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private linkSourceData(source?: LinkStats["source"]): string {
     return source ?? "derived";
+  }
+
+  private sourceCoveragePct(count: number): number {
+    if (this.totalLinkCount <= 0) return 0;
+    return Math.round((count / this.totalLinkCount) * 1000) / 10;
+  }
+
+  public measuredCoveragePct(): number {
+    return this.sourceCoveragePct(this.liveLinkCount);
+  }
+
+  public derivedCoveragePct(): number {
+    return this.sourceCoveragePct(this.derivedLinkCount);
+  }
+
+  public mockCoveragePct(): number {
+    return this.sourceCoveragePct(this.mockLinkCount);
+  }
+
+  public unavailableCoveragePct(): number {
+    return this.sourceCoveragePct(this.unavailableLinkCount);
+  }
+
+  public confidenceBand(): string {
+    if (this.averageConfidencePct >= 90) return "High confidence";
+    if (this.averageConfidencePct >= 70) return "Good confidence";
+    if (this.averageConfidencePct >= 40) return "Moderate confidence";
+    if (this.averageConfidencePct > 0) return "Low confidence";
+    return "No confidence signal";
+  }
+
+  public topologyFidelityState():
+    | "measured"
+    | "partial"
+    | "modeled"
+    | "mock"
+    | "unavailable" {
+    if (this.totalLinkCount <= 0) return "unavailable";
+    if (this.mockLinkCount === this.totalLinkCount) return "mock";
+    if (this.unavailableLinkCount === this.totalLinkCount) return "unavailable";
+    if (this.measuredCoveragePct() >= 80 && this.averageConfidencePct >= 80) {
+      return "measured";
+    }
+    if (this.measuredCoveragePct() >= 25 || this.averageConfidencePct >= 60) {
+      return "partial";
+    }
+    return "modeled";
+  }
+
+  public topologyFidelityLabel(): string {
+    switch (this.topologyFidelityState()) {
+      case "measured":
+        return "Mostly live-backed";
+      case "partial":
+        return "Partial live coverage";
+      case "mock":
+        return "Mock snapshot";
+      case "unavailable":
+        return "Live unavailable";
+      default:
+        return "Mostly modeled";
+    }
+  }
+
+  public topologyFidelityMessage(): string {
+    switch (this.topologyFidelityState()) {
+      case "measured":
+        return "Most edges in this snapshot are backed by live governance or Prometheus telemetry, so link intensity is a reasonable proxy for current transport behavior.";
+      case "partial":
+        return "Some edges in this snapshot are measured, but the graph still mixes live telemetry with inferred paths. Treat hot spots as directional, not exhaustive.";
+      case "mock":
+        return "This view is using mocked topology metrics for UI continuity. Use it for layout and interactions, not operational decisions.";
+      case "unavailable":
+        return "Live topology data is unavailable right now, so this snapshot cannot support operational conclusions.";
+      default:
+        return "This snapshot is mostly inferred from governance topology rules. It is useful for structure and expected flow, but it is not proof of live broker traffic.";
+    }
+  }
+
+  public coverageFocusNodes(): NodeSummary[] {
+    return this.nodeSummaries
+      .filter(
+        (summary) =>
+          summary.derivedLinks > 0 ||
+          summary.mockLinks > 0 ||
+          summary.unavailableLinks > 0
+      )
+      .sort((a, b) => {
+        const aScore =
+          a.derivedLinks * 3 + a.unavailableLinks * 4 + a.mockLinks * 2;
+        const bScore =
+          b.derivedLinks * 3 + b.unavailableLinks * 4 + b.mockLinks * 2;
+        return bScore - aScore;
+      })
+      .slice(0, 3);
   }
 
   private summarizeNodes(nodes: TopoNode[], links: TopoLink[]): NodeSummary[] {
@@ -869,7 +1196,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private syncParticlesForLink(
-    svgEl: SVGSVGElement,
+    particleLayerEl: SVGGElement,
     key: string,
     stats?: LinkStats
   ): void {
@@ -878,7 +1205,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     const radius = this.particleRadius(stats);
     const fill = this.particleColor(stats);
     const existing = Array.from(
-      svgEl.querySelectorAll(`.flow-particle[data-key="${key}"]`)
+      particleLayerEl.querySelectorAll(`.flow-particle[data-key="${key}"]`)
     ) as SVGCircleElement[];
 
     existing.slice(desiredCount).forEach((node) => node.remove());
@@ -905,11 +1232,11 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       mpath.setAttribute("href", `#${this.safeId(key)}`);
       anim.appendChild(mpath);
       particle.appendChild(anim);
-      svgEl.appendChild(particle);
+      particleLayerEl.appendChild(particle);
     }
 
     const particles = Array.from(
-      svgEl.querySelectorAll(`.flow-particle[data-key="${key}"]`)
+      particleLayerEl.querySelectorAll(`.flow-particle[data-key="${key}"]`)
     ) as SVGCircleElement[];
     particles.forEach((particle, index) => {
       particle.setAttribute("r", `${radius}`);
@@ -935,17 +1262,17 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   // Expected shape: { "source->target": { currentMBps: number, maxMBps?: number } }
   private fetchMetrics() {
     if (this.dataSource.mode === "mock") {
-      const keys = (this.lastLinks ?? []).map((l) => this.getLinkKey(l));
+      const keys = this.currentTopologyData().links.map((l) => this.getLinkKey(l));
       this.mock
         .topologyMetricsForLinks(keys)
         .subscribe((res: TopologyMetricsResponse) => {
           const metrics = this.normalizeTopologyMetricsResponse(res);
           this.captureMissionMetrics(res);
           let changed = false;
-          for (const ln of this.lastLinks ?? []) {
+          for (const ln of this.currentTopologyData().links) {
             changed = this.applyMetricToLink(ln, metrics) || changed;
           }
-          if (changed) this.render(this.lastNodes, this.lastLinks, true);
+          if (changed) this.applyCurrentTopologyView(true);
         });
       return;
     }
@@ -956,12 +1283,12 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         this.latestNodeActivity = this.normalizeNodeActivity(res);
         this.captureMissionMetrics(res);
         let changed = false;
-        for (const ln of this.lastLinks ?? []) {
+        for (const ln of this.currentTopologyData().links) {
           changed = this.applyMetricToLink(ln, metrics) || changed;
         }
         if (changed) {
           // re-render to update visuals; avoid triggering another metrics fetch
-          this.render(this.lastNodes, this.lastLinks, true);
+          this.applyCurrentTopologyView(true);
         }
       },
       () => {
@@ -982,6 +1309,23 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     window.removeEventListener("resize", this.onResize);
     this.profileSub?.unsubscribe();
     this.stopLivePoll();
+    this.clearProvenanceHelperTimeout();
+  }
+
+  private showTransientProvenanceHelper(): void {
+    this.showProvenanceFilterHelper = true;
+    this.clearProvenanceHelperTimeout();
+    this.provenanceFilterHelperTimeout = window.setTimeout(() => {
+      this.showProvenanceFilterHelper = false;
+      this.provenanceFilterHelperTimeout = null;
+    }, 5000);
+  }
+
+  private clearProvenanceHelperTimeout(): void {
+    if (this.provenanceFilterHelperTimeout != null) {
+      clearTimeout(this.provenanceFilterHelperTimeout);
+      this.provenanceFilterHelperTimeout = null;
+    }
   }
 
   private async initSvg() {
@@ -997,8 +1341,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       .attr("height", h)
       .attr("viewBox", `0 0 ${w} ${h}`)
       .attr("preserveAspectRatio", "xMidYMid meet");
-    this.svg.append("g").attr("class", "links");
-    this.svg.append("g").attr("class", "nodes");
+    this.viewportGroup = this.svg.append("g").attr("class", "viewport");
   }
 
   private async loadD3() {
@@ -1063,19 +1406,26 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     const h = Math.max(360, el.clientHeight || 480);
     this.svg.attr("viewBox", `0 0 ${w} ${h}`).attr("height", h);
 
-    const linkGroup = this.svg.append("g").attr("class", "links");
-    const nodeGroup = this.svg.append("g").attr("class", "nodes");
+    this.viewportGroup = this.svg.append("g").attr("class", "viewport");
+    const linkGroup = this.viewportGroup.append("g").attr("class", "links");
+    this.viewportGroup.append("g").attr("class", "flow-particles");
+    const nodeGroup = this.viewportGroup.append("g").attr("class", "nodes");
 
     const d3 = this.d3 as D3Module;
+    const summaryNodes =
+      this.fullTopologyNodes.length > 0 ? this.fullTopologyNodes : nodes;
+    const summaryLinks =
+      this.fullTopologyLinks.length > 0 ? this.fullTopologyLinks : links;
     // attach precomputed stats to links and compute aggregates (use numeric fields when available)
     this.aggCurrentMBps = 0;
     this.aggMaxMBps = 0;
+    this.totalLinkCount = summaryLinks.length;
     this.liveLinkCount = 0;
     this.derivedLinkCount = 0;
     this.mockLinkCount = 0;
     this.unavailableLinkCount = 0;
-    links.forEach((ln) => {
-      const stats = this.linkStats(ln);
+    summaryLinks.forEach((ln) => {
+      const stats = this.statsRef(ln)._stats ?? this.linkStats(ln);
       this.statsRef(ln)._stats = stats;
       const cur = Number(stats?.throughputMBpsCurrent ?? NaN);
       const max = Number(stats?.throughputMBpsMax ?? NaN);
@@ -1097,13 +1447,14 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
           break;
       }
     });
-    this.nodeSummaries = this.summarizeNodes(nodes, links);
-    this.recomputeConfidence(links);
+    this.nodeSummaries = this.summarizeNodes(summaryNodes, summaryLinks);
+    this.recomputeConfidence(summaryLinks);
     const nodeSummaryById = this.nodeSummaryMap();
 
     // store last nodes/links for settings UI and optional metrics overlay
     this.lastNodes = nodes;
     this.lastLinks = links;
+    this.shouldAutoFitViewport = true;
     const link = linkGroup
       .selectAll("line")
       .data(links)
@@ -1187,17 +1538,21 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // DOM-create per-link flow particles that follow the path via <animateMotion>
     try {
-      const svgEl = this.graphEl.nativeElement.querySelector(
-        "svg"
-      ) as SVGSVGElement | null;
-      if (svgEl) {
+      const particleLayerEl = this.graphEl.nativeElement.querySelector(
+        "svg g.viewport g.flow-particles"
+      ) as SVGGElement | null;
+      if (particleLayerEl) {
         // remove any existing flow particles (defensive)
-        Array.from(svgEl.querySelectorAll(".flow-particle")).forEach((n) =>
-          n.remove()
+        Array.from(particleLayerEl.querySelectorAll(".flow-particle")).forEach(
+          (n) => n.remove()
         );
         for (const ln of links) {
           const key = this.getLinkKey(ln);
-          this.syncParticlesForLink(svgEl, key, this.statsRef(ln)._stats);
+          this.syncParticlesForLink(
+            particleLayerEl,
+            key,
+            this.statsRef(ln)._stats
+          );
         }
       }
     } catch (e) {
@@ -1316,14 +1671,14 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
         // update particle element positions/durations if needed
         try {
-          const svgEl = this.graphEl.nativeElement.querySelector(
-            "svg"
-          ) as SVGSVGElement | null;
-          if (svgEl) {
+          const particleLayerEl = this.graphEl.nativeElement.querySelector(
+            "svg g.viewport g.flow-particles"
+          ) as SVGGElement | null;
+          if (particleLayerEl) {
             for (const ln of links) {
               const key = this.getLinkKey(ln);
               const stats = this.statsRef(ln)._stats;
-              this.syncParticlesForLink(svgEl, key, stats);
+              this.syncParticlesForLink(particleLayerEl, key, stats);
             }
           }
         } catch (e) {
@@ -1350,6 +1705,12 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
             const ty = t.y ?? 0;
             return (sy + ty) / 2;
           });
+        }
+        if (this.shouldAutoFitViewport) {
+          this.fitGraphToViewport(nodes, w, h);
+          this.shouldAutoFitViewport = false;
+        } else {
+          this.applyViewportTransform();
         }
       });
     node.on?.("click", (_event: unknown, datum: unknown) =>
@@ -1395,7 +1756,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         this.lastError = null;
         const metrics = this.normalizeTopologyMetricsResponse(res);
         this.captureMissionMetrics(res);
-        for (const ln of this.lastLinks ?? []) {
+        for (const ln of this.currentTopologyData().links) {
           const key = this.getLinkKey(ln);
           const prev = this.statsRef(ln)._stats;
           const m = this.metricForLink(metrics, ln);
@@ -1425,7 +1786,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
             }
           }
         }
-        this.render(this.lastNodes, this.lastLinks, true);
+        this.applyCurrentTopologyView(true);
       },
       () => {
         this.lastError =
@@ -1497,6 +1858,15 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (typeof res.rfi_event_rate === "number") {
       this.rfiEventRate = res.rfi_event_rate;
+    }
+    const diag = (res as Record<string, unknown>)["diagnostics"];
+    if (diag && typeof diag === "object") {
+      const d = diag as Record<string, unknown>;
+      const structural = Number(d["structuralDerivedLinkCount"]);
+      const fallback = Number(d["fallbackDerivedLinkCount"]);
+      if (Number.isFinite(structural)) this.structuralDerivedLinkCount = structural;
+      if (Number.isFinite(fallback)) this.fallbackDerivedLinkCount = fallback;
+      this.hasDiagnosticsData = true;
     }
   }
 
@@ -1622,7 +1992,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.dataSource.mode === "mock" && !forceApi) {
       this.topologySource = "mock";
       this.hasTopologyData = true;
-      this.render(this.mockNodes(), this.mockLinks());
+      const nodes = this.mockNodes();
+      const links = this.mockLinks();
+      this.setCanonicalTopology(nodes, links);
+      this.applyCurrentTopologyView();
       this.loading = false;
       this.initialLoadSettled = true;
       return;
@@ -1633,7 +2006,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         (res) => {
           this.topologySource = "live";
           this.hasTopologyData = true;
-          this.render(res.nodes ?? [], res.links ?? []);
+          const nodes = res.nodes ?? [];
+          const links = res.links ?? [];
+          this.setCanonicalTopology(nodes, links);
+          this.applyCurrentTopologyView();
           this.loading = false;
           this.initialLoadSettled = true;
         },
@@ -1654,7 +2030,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       (res) => {
         this.topologySource = "live";
         this.hasTopologyData = true;
-        this.render(res.nodes ?? [], res.links ?? []);
+        const nodes = res.nodes ?? [];
+        const links = res.links ?? [];
+        this.setCanonicalTopology(nodes, links);
+        this.applyCurrentTopologyView();
         this.loading = false;
         this.initialLoadSettled = true;
       },
@@ -1671,6 +2050,8 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private clearGraph() {
+    this.fullTopologyNodes = [];
+    this.fullTopologyLinks = [];
     this.lastNodes = [];
     this.lastLinks = [];
     this.aggCurrentMBps = 0;

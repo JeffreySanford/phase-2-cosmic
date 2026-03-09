@@ -16,6 +16,7 @@ export interface TopologyLinkStats {
   errorRate?: number | string; // percentage or fraction or string
   confidencePct?: number;
   source?: "prometheus" | "admin" | "derived" | "mock" | "unavailable";
+  measurementPath?: string;
 }
 
 export interface TopologyLinkDialogData {
@@ -93,5 +94,18 @@ export class TopologyInfoDialogComponent {
     if (score >= 40) return "Moderate confidence";
     if (score > 0) return "Low confidence";
     return "Unavailable";
+  }
+
+  measurementPathLabel(): string {
+    if (this.data.type !== "link") return "";
+    const path = this.data.stats?.measurementPath;
+    if (!path) return "";
+    switch (path) {
+      case "direct-prometheus": return "Direct Prometheus query";
+      case "direct-prometheus+infrastructure-fallback": return "Prometheus (infrastructure fallback)";
+      case "infrastructure-snapshot": return "Infrastructure snapshot";
+      case "derived-model": return "Derived model";
+      default: return path;
+    }
   }
 }

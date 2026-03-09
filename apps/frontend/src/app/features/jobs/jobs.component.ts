@@ -589,14 +589,17 @@ export class JobsComponent implements OnInit, OnDestroy {
     const map = new Map<ProductCategory, JobProduct[]>();
     for (const p of this.products) {
       if (!map.has(p.category)) map.set(p.category, []);
-      map.get(p.category)!.push(p);
+      (map.get(p.category) as JobProduct[]).push(p);
     }
-    return ORDER.filter((c) => map.has(c)).map((c) => ({
-      category: c,
-      label:    map.get(c)![0].label,
-      icon:     map.get(c)![0].icon,
-      items:    map.get(c)!,
-    }));
+    return ORDER.filter((c) => map.has(c)).map((c) => {
+      const items = map.get(c) as JobProduct[];
+      return {
+        category: c,
+        label:    items[0].label,
+        icon:     items[0].icon,
+        items,
+      };
+    });
   }
 
   fetchArtifacts(id: string) {

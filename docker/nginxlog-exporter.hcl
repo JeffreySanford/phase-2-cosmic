@@ -6,7 +6,7 @@ listen {
 
 namespace "nginx_static" {
   source {
-    files = ["/var/log/nginx/access.log"]
+    files = ["/var/log/nginx/static-access*.log"]
   }
 
   format = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent $request_length $request_time \"$http_referer\" \"$http_user_agent\""

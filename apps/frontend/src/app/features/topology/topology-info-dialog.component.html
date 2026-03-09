@@ -9,6 +9,9 @@
   <div *ngIf="data.type === 'link'">
     <p><strong>Value:</strong> {{ data.value }}</p>
     <p><strong>Metric source:</strong> {{ sourceLabel() }}</p>
+    <p *ngIf="measurementPathLabel()">
+      <strong>Measurement path:</strong> {{ measurementPathLabel() }}
+    </p>
     <p *ngIf="data.stats?.confidencePct !== undefined">
       <strong>Confidence:</strong> {{ data.stats?.confidencePct }}% ({{ confidenceLabel() }})
     </p>

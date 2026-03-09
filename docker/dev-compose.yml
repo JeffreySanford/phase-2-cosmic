@@ -77,9 +77,10 @@ services:
       - /bin/bash
       - -c
       - |
-        grep -q '^exposeBundlesMetricsInPrometheus=' conf/standalone.conf \
-          && sed -i 's/^exposeBundlesMetricsInPrometheus=.*/exposeBundlesMetricsInPrometheus=true/' conf/standalone.conf \
-          || echo 'exposeBundlesMetricsInPrometheus=true' >> conf/standalone.conf
+        P='exposeBundlesMetricsInPrometheus'
+        grep -q "^${P}=" conf/standalone.conf \
+          && sed -i "s/^${P}=.*/${P}=true/" conf/standalone.conf \
+          || echo "${P}=true" >> conf/standalone.conf
         bin/pulsar standalone
     ports:
       - "6650:6650"
@@ -302,7 +303,8 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ../dist/apps/frontend:/usr/share/nginx/html:ro
+      - ../dist/apps/frontend/browser:/usr/share/nginx/html:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - nginx-logs:/var/log/nginx
     depends_on:

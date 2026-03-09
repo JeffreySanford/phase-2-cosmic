@@ -80,27 +80,71 @@
             Avg confidence: {{ averageConfidencePct | number:'1.0-1' }}%
           </span>
         </div>
+        <div class="graph-filter-note graph-filter-note--summary" *ngIf="hasTopologyData">
+          {{ summaryScopeNotice() }}
+        </div>
 
         <div class="topology-graph-shell">
-          <div class="node-ring-legend" *ngIf="hasTopologyData" aria-label="Node source legend">
-            <span class="node-ring-legend__item" data-source="prometheus">
+          <div class="graph-tools" *ngIf="hasTopologyData" aria-label="Force network zoom controls">
+            <button
+              type="button"
+              class="graph-tools__button"
+              aria-label="Zoom out the force network"
+              title="Zoom out"
+              (click)="zoomOut()"
+            >
+              -
+            </button>
+            <button
+              type="button"
+              class="graph-tools__button"
+              aria-label="Zoom in to the force network"
+              title="Zoom in"
+              (click)="zoomIn()"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              class="graph-tools__button graph-tools__button--reset"
+              aria-label="Fit the force network to the container"
+              title="Fit graph"
+              (click)="resetViewport()"
+            >
+              Fit
+            </button>
+          </div>
+          <div class="node-ring-legend" *ngIf="hasTopologyData" aria-label="Topology provenance filters">
+            <button
+              type="button"
+              class="node-ring-legend__item node-ring-legend__button"
+              *ngFor="let source of provenanceFilterOptions"
+              [attr.data-source]="source"
+              [class.is-active]="isProvenanceFilterActive(source)"
+              [attr.aria-pressed]="isProvenanceFilterActive(source)"
+              [attr.aria-label]="provenanceFilterAriaLabel(source)"
+              [attr.title]="provenanceFilterAriaLabel(source)"
+              (click)="toggleProvenanceFilter(source)"
+            >
               <span class="node-ring-legend__dot"></span>
-              Live
+              {{ provenanceFilterLabel(source) }}
+            </button>
+            <span
+              class="node-ring-legend__status"
+              [class.node-ring-legend__status--filtered]="!allProvenanceFiltersActive()"
+              role="status"
+              aria-live="polite"
+            >
+              {{ activeProvenanceFilterSummary() }}
             </span>
-            <span class="node-ring-legend__item" data-source="admin">
-              <span class="node-ring-legend__dot"></span>
-              Admin
-            </span>
-            <span class="node-ring-legend__item" data-source="derived">
-              <span class="node-ring-legend__dot"></span>
-              Derived
-            </span>
-            <span class="node-ring-legend__item" data-source="mock" *ngIf="mockLinkCount > 0">
-              <span class="node-ring-legend__dot"></span>
-              Mock
+            <span class="node-ring-legend__helper" *ngIf="showProvenanceFilterHelper">
+              {{ provenanceFilterHelperText() }}
             </span>
           </div>
           <div #graph class="topology-graph" aria-label="Topology graph"></div>
+        </div>
+        <div class="graph-filter-note" *ngIf="hasTopologyData">
+          {{ graphFilterNotice() }}
         </div>
         <div class="mission-metrics" *ngIf="hasTopologyData">
           <p *ngIf="timingDriftNs !== undefined">
@@ -115,6 +159,9 @@
 
     <mat-tab label="Most Active Services">
       <div class="topology-tab-body">
+        <div class="graph-filter-note" *ngIf="hasTopologyData">
+          {{ graphFilterNotice() }}
+        </div>
         <section class="node-summary" *ngIf="nodeSummaries.length > 0; else noNodeSummary">
           <div class="node-summary__header">
             <h2>Most Active Services</h2>
@@ -157,6 +204,107 @@
         <ng-template #noNodeSummary>
           <div class="empty-tab-state">
             {{ hasTopologyData ? 'No node activity has been calculated yet.' : 'Node activity will appear after topology data loads.' }}
+          </div>
+        </ng-template>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Snapshot Fidelity">
+      <div class="topology-tab-body">
+        <div class="graph-filter-note" *ngIf="hasTopologyData">
+          {{ graphFilterNotice() }}
+        </div>
+        <section class="topology-fidelity" *ngIf="hasTopologyData; else noFidelityData">
+          <article class="fidelity-card">
+            <div class="fidelity-card__header">
+              <div>
+                <h2>Snapshot fidelity</h2>
+                <p>{{ topologyFidelityMessage() }}</p>
+              </div>
+              <span class="fidelity-badge" [attr.data-state]="topologyFidelityState()">
+                {{ topologyFidelityLabel() }}
+              </span>
+            </div>
+            <div class="fidelity-meter" aria-label="Topology source coverage">
+              <span
+                class="fidelity-meter__segment"
+                data-source="prometheus"
+                [style.width.%]="measuredCoveragePct()"
+              ></span>
+              <span
+                class="fidelity-meter__segment"
+                data-source="derived"
+                [style.width.%]="derivedCoveragePct()"
+              ></span>
+              <span
+                class="fidelity-meter__segment"
+                data-source="mock"
+                [style.width.%]="mockCoveragePct()"
+              ></span>
+              <span
+                class="fidelity-meter__segment"
+                data-source="unavailable"
+                [style.width.%]="unavailableCoveragePct()"
+              ></span>
+            </div>
+            <div class="fidelity-card__stats">
+              <div class="fidelity-stat">
+                <strong>{{ totalLinkCount }}</strong>
+                <span>Total links</span>
+              </div>
+              <div class="fidelity-stat">
+                <strong>{{ measuredCoveragePct() | number:'1.0-1' }}%</strong>
+                <span>Measured coverage</span>
+              </div>
+              <div class="fidelity-stat">
+                <strong>{{ derivedCoveragePct() | number:'1.0-1' }}%</strong>
+                <span>Derived coverage</span>
+              </div>
+              <div class="fidelity-stat">
+                <strong>{{ confidenceBand() }}</strong>
+                <span>Confidence band</span>
+              </div>
+              <div class="fidelity-stat fidelity-stat--secondary" *ngIf="hasDiagnosticsData">
+                <strong>{{ structuralDerivedLinkCount }}</strong>
+                <span>Structural derived (by design)</span>
+              </div>
+              <div class="fidelity-stat fidelity-stat--secondary" *ngIf="hasDiagnosticsData">
+                <strong>{{ fallbackDerivedLinkCount }}</strong>
+                <span>Promotable but currently derived</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="fidelity-card fidelity-card--secondary">
+            <div class="fidelity-card__header">
+              <div>
+                <h2>Coverage focus</h2>
+                <p>Nodes with the most inferred or unavailable paths in this snapshot.</p>
+              </div>
+            </div>
+            <div class="coverage-focus" *ngIf="coverageFocusNodes().length > 0; else noCoverageFocus">
+              <div class="coverage-focus__row" *ngFor="let node of coverageFocusNodes()">
+                <div>
+                  <strong>{{ node.label }}</strong>
+                  <span>{{ node.group || 'service' }}</span>
+                </div>
+                <div class="coverage-focus__counts">
+                  <span *ngIf="node.derivedLinks > 0">Derived {{ node.derivedLinks }}</span>
+                  <span *ngIf="node.mockLinks > 0">Mock {{ node.mockLinks }}</span>
+                  <span *ngIf="node.unavailableLinks > 0">Unavailable {{ node.unavailableLinks }}</span>
+                </div>
+              </div>
+            </div>
+            <ng-template #noCoverageFocus>
+              <div class="empty-tab-state">
+                All visible nodes are currently backed by measured paths.
+              </div>
+            </ng-template>
+          </article>
+        </section>
+        <ng-template #noFidelityData>
+          <div class="empty-tab-state">
+            Snapshot fidelity will appear after topology data loads.
           </div>
         </ng-template>
       </div>

@@ -41,6 +41,7 @@ public class InfrastructureTelemetryService {
         ServiceSnapshot minio = minioSnapshot();
         ServiceSnapshot nginx = nginxSnapshot();
         ServiceSnapshot frontendSsr = frontendSsrSnapshot();
+        ServiceSnapshot dataGenerator = dataGeneratorSnapshot();
         ServiceSnapshot kafka = kafkaSnapshot();
         ServiceSnapshot javaIngest = javaIngestSnapshot();
         ServiceSnapshot pulsar = pulsarSnapshot();
@@ -57,6 +58,7 @@ public class InfrastructureTelemetryService {
                 minio,
                 nginx,
                 frontendSsr,
+                dataGenerator,
                 kafka,
                 javaIngest,
                 pulsar,
@@ -71,6 +73,7 @@ public class InfrastructureTelemetryService {
         services.put("minio", minio.payload());
         services.put("nginx", nginx.payload());
         services.put("frontendSsr", frontendSsr.payload());
+        services.put("dataGenerator", dataGenerator.payload());
         services.put("kafka", kafka.payload());
         services.put("javaIngest", javaIngest.payload());
         services.put("pulsar", pulsar.payload());
@@ -338,6 +341,50 @@ public class InfrastructureTelemetryService {
             }
         }
         return out;
+    }
+
+    private ServiceSnapshot dataGeneratorSnapshot() {
+        MetricValue totalBps = queryScalar("sum(rate(generator_bytes_produced_total[1m]))");
+        MetricValue totalRecordsPerSec = queryScalar("sum(rate(generator_records_produced_total[1m]))");
+        MetricValue mainSegmentBps = queryScalar(
+                "sum(rate(generator_bytes_produced_by_segment_total{array_segment=\"main\"}[1m]))"
+        );
+        MetricValue lblSegmentBps = queryScalar(
+                "sum(rate(generator_bytes_produced_by_segment_total{array_segment=\"lbl\"}[1m]))"
+        );
+        MetricValue sbaSegmentBps = queryScalar(
+                "sum(rate(generator_bytes_produced_by_segment_total{array_segment=\"sba\"}[1m]))"
+        );
+        MetricValue mainSegmentRecordsPerSec = queryScalar(
+                "sum(rate(generator_records_produced_by_segment_total{array_segment=\"main\"}[1m]))"
+        );
+        MetricValue lblSegmentRecordsPerSec = queryScalar(
+                "sum(rate(generator_records_produced_by_segment_total{array_segment=\"lbl\"}[1m]))"
+        );
+        MetricValue sbaSegmentRecordsPerSec = queryScalar(
+                "sum(rate(generator_records_produced_by_segment_total{array_segment=\"sba\"}[1m]))"
+        );
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("source", sourceOf(
+                totalBps,
+                totalRecordsPerSec,
+                mainSegmentBps,
+                lblSegmentBps,
+                sbaSegmentBps,
+                mainSegmentRecordsPerSec,
+                lblSegmentRecordsPerSec,
+                sbaSegmentRecordsPerSec
+        ));
+        payload.put("egressBytesPerSec", round2(totalBps.value()));
+        payload.put("recordsPerSec", round2(totalRecordsPerSec.value()));
+        payload.put("mainSegmentBytesPerSec", round2(mainSegmentBps.value()));
+        payload.put("lblSegmentBytesPerSec", round2(lblSegmentBps.value()));
+        payload.put("sbaSegmentBytesPerSec", round2(sbaSegmentBps.value()));
+        payload.put("mainSegmentRecordsPerSec", round2(mainSegmentRecordsPerSec.value()));
+        payload.put("lblSegmentRecordsPerSec", round2(lblSegmentRecordsPerSec.value()));
+        payload.put("sbaSegmentRecordsPerSec", round2(sbaSegmentRecordsPerSec.value()));
+        return new ServiceSnapshot(payload);
     }
 
     private ServiceSnapshot kafkaSnapshot() {

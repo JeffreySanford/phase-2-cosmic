@@ -135,7 +135,8 @@ timeline
 - Broker SSE stream connects and delivers at least one heartbeat/event in dev
 - VO dialog populates cached samples without 404
 - No `aria-hidden` warning on button focus
-- All 50 backend tests + 193 frontend tests continue to pass ✅ _(197 frontend / 53 Java as of 2026-03-07)_
+- All 50 backend tests + 193 frontend tests continue to pass ✅ _(224 frontend / 80 Java as of 2026-03-09 — topology Phase 17 adds 1 frontend spec + 2 Java tests; 3 skipped infrastructure integration tests require live Pulsar/external services)_
+- Topology live-link fidelity reached `23 live / 3 derived / 90.08% avg confidence` (Phase 16 acceptance criteria met). Phases 17–21 planned in `documentation/governance/TOPOLOGY_NON_DERIVED.md`. ✅
 - Unit tests added for S1-1 (SSE headers, connected event, interval cleanup) and S1-2 (`ariaModal` provider) ✅
 - Jobs toolbar buttons all visible with distinct vibrant colors (`mat-raised-button` + MDC palette) ✅
 
