@@ -4,14 +4,14 @@
   "type": "object",
   "required": ["provider", "serviceUrl"],
   "properties": {
-    "provider":    { "type": "string", "minLength": 1 },
-    "serviceUrl":  { "type": "string", "minLength": 1 },
-    "target":      { "type": "string" },
-    "ra":          { "type": "number" },
-    "dec":         { "type": "number" },
-    "radius":      { "type": "number", "exclusiveMinimum": 0 },
-    "format":      { "type": "string", "enum": ["votable", "stream"] },
-    "liveMode":    { "type": "boolean" }
+    "provider": { "type": "string", "minLength": 1 },
+    "serviceUrl": { "type": "string", "minLength": 1 },
+    "target": { "type": "string" },
+    "ra": { "type": "number" },
+    "dec": { "type": "number" },
+    "radius": { "type": "number", "exclusiveMinimum": 0 },
+    "format": { "type": "string", "enum": ["votable", "stream"] },
+    "liveMode": { "type": "boolean" }
   },
   "additionalProperties": true
 }

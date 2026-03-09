@@ -784,7 +784,6 @@ button[mat-flat-button] {
   text-align: right;
 }
 
-
 /* ── Alert SLO Tab ──────────────────────────────────────────────── */
 .tab-content {
   padding: 16px 0;
@@ -830,7 +829,11 @@ button[mat-flat-button] {
     font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.55);
     margin-bottom: 6px;
-    mat-icon { font-size: 16px; height: 16px; width: 16px; }
+    mat-icon {
+      font-size: 16px;
+      height: 16px;
+      width: 16px;
+    }
   }
 
   .slo-value {
@@ -841,11 +844,15 @@ button[mat-flat-button] {
 
   &.slo-warn {
     border-color: rgba(252, 165, 0, 0.5);
-    .slo-value { color: #fbbf24; }
+    .slo-value {
+      color: #fbbf24;
+    }
   }
 }
 
-.dlq-section { margin-top: 8px; }
+.dlq-section {
+  margin-top: 8px;
+}
 
 .dlq-header {
   display: flex;
@@ -860,10 +867,18 @@ button[mat-flat-button] {
     font-weight: 600;
     font-size: 0.95rem;
     flex: 1;
-    mat-icon { font-size: 18px; height: 18px; width: 18px; }
+    mat-icon {
+      font-size: 18px;
+      height: 18px;
+      width: 18px;
+    }
   }
 
-  .dlq-count { color: #fbbf24; font-weight: 400; font-size: 0.85rem; }
+  .dlq-count {
+    color: #fbbf24;
+    font-weight: 400;
+    font-size: 0.85rem;
+  }
 }
 
 .dlq-table {
@@ -871,7 +886,8 @@ button[mat-flat-button] {
   border-collapse: collapse;
   font-size: 0.85rem;
 
-  th, td {
+  th,
+  td {
     padding: 8px 12px;
     text-align: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -885,7 +901,9 @@ button[mat-flat-button] {
     letter-spacing: 0.06em;
   }
 
-  tr:hover td { background: rgba(34, 211, 238, 0.05); }
+  tr:hover td {
+    background: rgba(34, 211, 238, 0.05);
+  }
 }
 
 .correlation-id {

@@ -75,7 +75,8 @@ describe("BrokerEventsService", () => {
     });
 
     expect(Mock.lastUrl).toEqual("/api/v1/broker-events");
-    const instance = (service as unknown as { source?: MockEventSource }).source;
+    const instance = (service as unknown as { source?: MockEventSource })
+      .source;
     expect(instance).toBeDefined();
     instance?.emit(JSON.stringify(msg));
   });

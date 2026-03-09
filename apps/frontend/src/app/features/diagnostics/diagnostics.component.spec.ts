@@ -328,14 +328,22 @@ describe("DiagnosticsComponent", () => {
         name: "Antenna Calibration",
         type: "aiv",
         description: "Validates antenna calibration parameters.",
-        requiredParameters: ["antennaId", "targetFrequencyMHz", "pointingModelVersion"],
+        requiredParameters: [
+          "antennaId",
+          "targetFrequencyMHz",
+          "pointingModelVersion",
+        ],
       },
       {
         id: "timing_sync",
         name: "Timing Synchronisation",
         type: "aiv",
         description: "Validates timing reference synchronisation.",
-        requiredParameters: ["referenceElementId", "maxDriftNs", "syncProtocol"],
+        requiredParameters: [
+          "referenceElementId",
+          "maxDriftNs",
+          "syncProtocol",
+        ],
       },
     ]);
 

@@ -912,18 +912,45 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     return {
       ...snapshot,
       services: {
-        redis:             (svc as Record<string, InfraTelemetryServiceMetrics>)["redis"]             ?? unavailable,
-        rabbitmq:          (svc as Record<string, InfraTelemetryServiceMetrics>)["rabbitmq"]          ?? unavailable,
-        minio:             (svc as Record<string, InfraTelemetryServiceMetrics>)["minio"]             ?? unavailable,
-        nginx:             (svc as Record<string, InfraTelemetryServiceMetrics>)["nginx"]             ?? unavailable,
-        frontendSsr:       (svc as Record<string, InfraTelemetryServiceMetrics>)["frontendSsr"]       ?? unavailable,
-        kafka:             (svc as Record<string, InfraTelemetryServiceMetrics>)["kafka"]             ?? unavailable,
-        javaIngest:        (svc as Record<string, InfraTelemetryServiceMetrics>)["javaIngest"]        ?? unavailable,
-        pulsar:            (svc as Record<string, InfraTelemetryServiceMetrics>)["pulsar"]            ?? unavailable,
-        grafana:           (svc as Record<string, InfraTelemetryServiceMetrics>)["grafana"]           ?? unavailable,
-        loki:              (svc as Record<string, InfraTelemetryServiceMetrics>)["loki"]              ?? unavailable,
-        alertmanager:      (svc as Record<string, InfraTelemetryServiceMetrics>)["alertmanager"]      ?? unavailable,
-        governanceRuntime: (svc as Record<string, InfraTelemetryServiceMetrics>)["governanceRuntime"] ?? unavailable,
+        redis:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)["redis"] ??
+          unavailable,
+        rabbitmq:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)["rabbitmq"] ??
+          unavailable,
+        minio:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)["minio"] ??
+          unavailable,
+        nginx:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)["nginx"] ??
+          unavailable,
+        frontendSsr:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)[
+            "frontendSsr"
+          ] ?? unavailable,
+        kafka:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)["kafka"] ??
+          unavailable,
+        javaIngest:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)["javaIngest"] ??
+          unavailable,
+        pulsar:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)["pulsar"] ??
+          unavailable,
+        grafana:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)["grafana"] ??
+          unavailable,
+        loki:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)["loki"] ??
+          unavailable,
+        alertmanager:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)[
+            "alertmanager"
+          ] ?? unavailable,
+        governanceRuntime:
+          (svc as Record<string, InfraTelemetryServiceMetrics>)[
+            "governanceRuntime"
+          ] ?? unavailable,
       },
     };
   }
@@ -1062,33 +1089,47 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   fetchAlertSlo(): void {
     this.alertSloLoading = true;
     this.alertSloError = null;
-    this.http.get<AlertSloMetrics>('/api/v1/alerts/slo').subscribe(
+    this.http.get<AlertSloMetrics>("/api/v1/alerts/slo").subscribe(
       (slo) => {
         this.alertSlo = slo;
         this.alertSloLoading = false;
       },
       () => {
-        this.alertSloError = 'Alert SLO endpoint unavailable';
+        this.alertSloError = "Alert SLO endpoint unavailable";
         this.alertSloLoading = false;
       }
     );
-    this.http.get<TransientAlert[]>('/api/v1/alerts/dlq').subscribe(
-      (dlq) => { this.alertDlq = dlq; },
-      () => { this.alertDlq = []; }
+    this.http.get<TransientAlert[]>("/api/v1/alerts/dlq").subscribe(
+      (dlq) => {
+        this.alertDlq = dlq;
+      },
+      () => {
+        this.alertDlq = [];
+      }
     );
   }
 
   replayFromDlq(alertId: string): void {
-    this.http.post<TransientAlert>(`/api/v1/alerts/dlq/replay/${alertId}`, {}).subscribe(
-      () => { this.fetchAlertSlo(); },
-      () => { this.alertSloError = `Replay failed for alert ${alertId}`; }
-    );
+    this.http
+      .post<TransientAlert>(`/api/v1/alerts/dlq/replay/${alertId}`, {})
+      .subscribe(
+        () => {
+          this.fetchAlertSlo();
+        },
+        () => {
+          this.alertSloError = `Replay failed for alert ${alertId}`;
+        }
+      );
   }
 
   replayAllFromDlq(): void {
-    this.http.post<number>('/api/v1/alerts/dlq/replay-all', {}).subscribe(
-      () => { this.fetchAlertSlo(); },
-      () => { this.alertSloError = 'Replay-all failed'; }
+    this.http.post<number>("/api/v1/alerts/dlq/replay-all", {}).subscribe(
+      () => {
+        this.fetchAlertSlo();
+      },
+      () => {
+        this.alertSloError = "Replay-all failed";
+      }
     );
   }
 

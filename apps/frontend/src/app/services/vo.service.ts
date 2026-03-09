@@ -1,9 +1,6 @@
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import {
-  Observable,
-  BehaviorSubject,
-} from "rxjs";
+import { Observable, BehaviorSubject } from "rxjs";
 
 export interface VoServices {
   tapUrl?: string;
@@ -68,7 +65,8 @@ export class VoService {
         "https://heasarc.gsfc.nasa.gov/FTP/chandra/data/byobsid/2/21843/primary/acisf21843N002_evt2.fits.gz",
       expectedMimeType: "application/fits",
       liveMode: true,
-      _description: "Chandra ACIS event file for Cas A supernova remnant (obs 21843)",
+      _description:
+        "Chandra ACIS event file for Cas A supernova remnant (obs 21843)",
     },
     "vo.soda.cutout": {
       provider: "CADC",
@@ -79,14 +77,16 @@ export class VoService {
       spatialBoundsRadius: 0.1,
       outputFormat: "fits",
       liveMode: true,
-      _description: "CADC SODA cutout centered on 3C 273 (r=0.1 deg, CFHT obs 2459817)",
+      _description:
+        "CADC SODA cutout centered on 3C 273 (r=0.1 deg, CFHT obs 2459817)",
     },
     "vo.preview.fetch": {
       provider: "ESASky",
       previewUrl:
         "https://sky.esa.int/esasky-tap/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=votable&QUERY=SELECT+TOP+5+*+FROM+mv_xsa_obs+WHERE+target_name+LIKE+%2527%2525Crab%2525%2527",
       liveMode: true,
-      _description: "ESASky XMM-Newton observations matching 'Crab' target (top 5)",
+      _description:
+        "ESASky XMM-Newton observations matching 'Crab' target (top 5)",
     },
   };
 

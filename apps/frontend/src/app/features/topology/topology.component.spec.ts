@@ -252,9 +252,9 @@ describe("TopologyComponent", () => {
 
     expect(component.effectiveProvenanceFilters()).toEqual(["prometheus"]);
     expect(component["lastLinks"]).toHaveLength(1);
-    expect(component["lastNodes"].map((node: { id: string }) => node.id)).toEqual(
-      ["frontend", "backend"]
-    );
+    expect(
+      component["lastNodes"].map((node: { id: string }) => node.id)
+    ).toEqual(["frontend", "backend"]);
     expect(component.graphFilterNotice()).toBe(
       "Filtered: Live. Counts, rankings, and Snapshot Fidelity still describe the full topology snapshot."
     );
@@ -273,9 +273,9 @@ describe("TopologyComponent", () => {
 
     expect(component.effectiveProvenanceFilters()).toEqual(["admin"]);
     expect(component["lastLinks"]).toHaveLength(1);
-    expect(component["lastNodes"].map((node: { id: string }) => node.id)).toEqual(
-      ["backend", "java-governance"]
-    );
+    expect(
+      component["lastNodes"].map((node: { id: string }) => node.id)
+    ).toEqual(["backend", "java-governance"]);
     tick(5000);
   }));
 
@@ -288,9 +288,9 @@ describe("TopologyComponent", () => {
 
     expect(component.effectiveProvenanceFilters()).toEqual(["derived"]);
     expect(component["lastLinks"]).toHaveLength(1);
-    expect(component["lastNodes"].map((node: { id: string }) => node.id)).toEqual(
-      ["java-governance", "redis"]
-    );
+    expect(
+      component["lastNodes"].map((node: { id: string }) => node.id)
+    ).toEqual(["java-governance", "redis"]);
     tick(5000);
   }));
 
@@ -305,9 +305,9 @@ describe("TopologyComponent", () => {
       "admin",
     ]);
     expect(component["lastLinks"]).toHaveLength(2);
-    expect(component["lastNodes"].map((node: { id: string }) => node.id)).toEqual(
-      ["frontend", "backend", "java-governance"]
-    );
+    expect(
+      component["lastNodes"].map((node: { id: string }) => node.id)
+    ).toEqual(["frontend", "backend", "java-governance"]);
     tick(5000);
   }));
 
@@ -363,11 +363,7 @@ describe("TopologyComponent", () => {
 
   it("filters the visible graph in memory without losing the canonical topology", fakeAsync(() => {
     httpMock.expectOne("/api/topology").flush({
-      nodes: [
-        { id: "frontend" },
-        { id: "backend" },
-        { id: "java-governance" },
-      ],
+      nodes: [{ id: "frontend" }, { id: "backend" }, { id: "java-governance" }],
       links: [
         { source: "frontend", target: "backend" },
         { source: "backend", target: "java-governance" },
@@ -401,19 +397,15 @@ describe("TopologyComponent", () => {
     expect(component["fullTopologyLinks"]).toHaveLength(2);
     expect(component["lastLinks"]).toHaveLength(1);
     expect(component["lastNodes"]).toHaveLength(2);
-    expect(component["lastNodes"].map((node: { id: string }) => node.id)).toEqual(
-      ["backend", "java-governance"]
-    );
+    expect(
+      component["lastNodes"].map((node: { id: string }) => node.id)
+    ).toEqual(["backend", "java-governance"]);
     tick(5000);
   }));
 
   it("supports phase 5 toggle rules and preserves filters across refresh", fakeAsync(() => {
     httpMock.expectOne("/api/topology").flush({
-      nodes: [
-        { id: "frontend" },
-        { id: "backend" },
-        { id: "java-governance" },
-      ],
+      nodes: [{ id: "frontend" }, { id: "backend" }, { id: "java-governance" }],
       links: [
         { source: "frontend", target: "backend" },
         { source: "backend", target: "java-governance" },
@@ -479,11 +471,7 @@ describe("TopologyComponent", () => {
 
     component.refresh();
     httpMock.expectOne("/api/topology").flush({
-      nodes: [
-        { id: "frontend" },
-        { id: "backend" },
-        { id: "java-governance" },
-      ],
+      nodes: [{ id: "frontend" }, { id: "backend" }, { id: "java-governance" }],
       links: [
         { source: "frontend", target: "backend" },
         { source: "backend", target: "java-governance" },
@@ -629,7 +617,10 @@ describe("TopologyComponent", () => {
     );
     expect(component.topologyFidelityMessage()).toContain("snapshot");
 
-    component["openNodeInfo"]({ id: "java-governance", label: "Java Governance" });
+    component["openNodeInfo"]({
+      id: "java-governance",
+      label: "Java Governance",
+    });
     expect(matDialog.open).toHaveBeenCalled();
     tick(5000);
   }));

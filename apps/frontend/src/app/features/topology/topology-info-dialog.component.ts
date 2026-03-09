@@ -101,11 +101,16 @@ export class TopologyInfoDialogComponent {
     const path = this.data.stats?.measurementPath;
     if (!path) return "";
     switch (path) {
-      case "direct-prometheus": return "Direct Prometheus query";
-      case "direct-prometheus+infrastructure-fallback": return "Prometheus (infrastructure fallback)";
-      case "infrastructure-snapshot": return "Infrastructure snapshot";
-      case "derived-model": return "Derived model";
-      default: return path;
+      case "direct-prometheus":
+        return "Direct Prometheus query";
+      case "direct-prometheus+infrastructure-fallback":
+        return "Prometheus (infrastructure fallback)";
+      case "infrastructure-snapshot":
+        return "Infrastructure snapshot";
+      case "derived-model":
+        return "Derived model";
+      default:
+        return path;
     }
   }
 }

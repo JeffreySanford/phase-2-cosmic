@@ -122,12 +122,12 @@ timeline
 
 **Why:** Three live browser console errors degrade developer confidence and demo readiness today. The `broker-events` SSE 404 means operators receive no live job notifications despite the Kafka/RabbitMQ/Pulsar work being complete. The `vo/cached-samples` 404 fires a polling loop on every VO dialog open against a non-existent endpoint. The `aria-hidden` focus warning is an accessibility regression introduced by the Material dialog overlay. All three are cheap to fix and unblock clean demo runs.
 
-| Priority | Step |
-| --- | --- |
-| 🔴 | Add `GET /api/v1/broker-events` SSE endpoint (or ensure it is reachable via proxy) and add mock server handler so SSE stream resolves in dev |
-| 🔴 | Implement or stub `GET /api/v1/vo/cached-samples` in the Java backend (returns a curated list of sample VO payloads per workflow type); add mock server handler |
-| 🟡 | Fix `aria-hidden` focus trap — remove `aria-hidden="true"` from `<app-root>` while a dialog is open; use Angular CDK `inert` strategy instead |
-| 🟢 | Audit remaining `console.warn` / `console.error` noise and suppress or gate behind devMode flag |
+| Priority | Step                                                                                                                                                            |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🔴       | Add `GET /api/v1/broker-events` SSE endpoint (or ensure it is reachable via proxy) and add mock server handler so SSE stream resolves in dev                    |
+| 🔴       | Implement or stub `GET /api/v1/vo/cached-samples` in the Java backend (returns a curated list of sample VO payloads per workflow type); add mock server handler |
+| 🟡       | Fix `aria-hidden` focus trap — remove `aria-hidden="true"` from `<app-root>` while a dialog is open; use Angular CDK `inert` strategy instead                   |
+| 🟢       | Audit remaining `console.warn` / `console.error` noise and suppress or gate behind devMode flag                                                                 |
 
 **Exit criteria:**
 
@@ -146,14 +146,14 @@ timeline
 
 **Why:** PI-1 Sprint 3 target is flaky-suite migration; Sprint 4 is CI gating. Cypress has known cache/runtime issues that block e2e confidence in both local and CI runs. Without a stable PR gate, future feature merges carry unchecked regression risk. This sprint closes PI-1's testing goals and installs the quality gate that all subsequent sprints depend on.
 
-| Priority | Step |
-| --- | --- |
-| 🔴 | Cypress runtime/cache remediation — identify root cause, fix in `frontend-e2e` config; re-enable `datasets-provenance.cy.ts` in smoke path |
-| 🔴 | Add negative-path tests for RabbitMQ and Pulsar status endpoints (`/api/v1/rabbitmq/status`, `/api/v1/pulsar/status` when broker is down) |
-| 🔴 | Configure CI nightly lane: PR gate (unit + smoke e2e), nightly lane (full e2e + integration tests) |
-| 🟡 | Add job lifecycle edge-case coverage: manifest, lineage, retry, and cancel controller/service paths |
-| 🟡 | Enforce coverage thresholds (Java JaCoCo, frontend Istanbul) with pipeline failure on regression |
-| 🟢 | Publish JaCoCo HTML report as CI artifact; link from PR summary |
+| Priority | Step                                                                                                                                       |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 🔴       | Cypress runtime/cache remediation — identify root cause, fix in `frontend-e2e` config; re-enable `datasets-provenance.cy.ts` in smoke path |
+| 🔴       | Add negative-path tests for RabbitMQ and Pulsar status endpoints (`/api/v1/rabbitmq/status`, `/api/v1/pulsar/status` when broker is down)  |
+| 🔴       | Configure CI nightly lane: PR gate (unit + smoke e2e), nightly lane (full e2e + integration tests)                                         |
+| 🟡       | Add job lifecycle edge-case coverage: manifest, lineage, retry, and cancel controller/service paths                                        |
+| 🟡       | Enforce coverage thresholds (Java JaCoCo, frontend Istanbul) with pipeline failure on regression                                           |
+| 🟢       | Publish JaCoCo HTML report as CI artifact; link from PR summary                                                                            |
 
 **Exit criteria:**
 
@@ -173,14 +173,14 @@ timeline
 
 **Why:** MG-3 (VO interoperability) closed on Mar 7. MG-4 (Commissioning/AIV readiness) and MG-5 (Archive DR replication) are the next open mission oversight gates. Commissioning scenario coverage proves the platform can model real observatory AIV readiness checks before data-taking begins. DR tooling ensures dataset survival under failure — a prerequisite for any production-adjacent review. Neither has a code baseline yet.
 
-| Priority | Step |
-| --- | --- |
-| ✅ | **MG-4** — `CommissioningScenarioService` + 3 built-in AIV scenarios (antenna calibration, timing sync, RFI baseline) |
-| ✅ | **MG-4** — `GET /api/v1/commissioning/scenarios` + `POST /api/v1/commissioning/validate`; `CommissioningControllerTest` 4 tests |
-| ✅ | **MG-5** — `ArchiveDrService` + `ReplicationPolicy` + `RestoreDrillResult`; `ArchiveDrRestoreDrillTest` 5 tests |
-| ✅ | **MG-5** — `documentation/mission-closure/MG-5-DR-POLICY.md` with RPO/RTO, tier table, restore runbook, alerting |
-| ✅ | **MG-4** — Commissioning "Mission Gates" tab on Diagnostics page; 2 new spec tests |
-| 🟢 | Cross-link MG-4 and MG-5 into `NGVLA_MISSION_ALIGNMENT.md` with exit criteria |
+| Priority | Step                                                                                                                            |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| ✅       | **MG-4** — `CommissioningScenarioService` + 3 built-in AIV scenarios (antenna calibration, timing sync, RFI baseline)           |
+| ✅       | **MG-4** — `GET /api/v1/commissioning/scenarios` + `POST /api/v1/commissioning/validate`; `CommissioningControllerTest` 4 tests |
+| ✅       | **MG-5** — `ArchiveDrService` + `ReplicationPolicy` + `RestoreDrillResult`; `ArchiveDrRestoreDrillTest` 5 tests                 |
+| ✅       | **MG-5** — `documentation/mission-closure/MG-5-DR-POLICY.md` with RPO/RTO, tier table, restore runbook, alerting                |
+| ✅       | **MG-4** — Commissioning "Mission Gates" tab on Diagnostics page; 2 new spec tests                                              |
+| 🟢       | Cross-link MG-4 and MG-5 into `NGVLA_MISSION_ALIGNMENT.md` with exit criteria                                                   |
 
 **Exit criteria:**
 
@@ -200,16 +200,16 @@ timeline
 
 **Why:** MG-6 (transient/low-latency alert SLOs) closes the last of the six mission oversight gaps. Simultaneously, the canonical execution event envelope is the prerequisite for the Phase 3 Trident gateway work — without a shared cross-broker event schema and correlation discipline, Sprint 5's Trident domain model cannot be built safely. These two items are linked: MG-6 alert replay requires the same correlation/envelope primitives as the Trident execution layer.
 
-| Status | Step |
-| --- | --- |
-| ✅ | **MG-6** — `TransientAlertService` + Micrometer `Counter` for `alert_ingested_total` / `alert_replays_total`; in-memory DLQ with bounded store |
-| ✅ | **MG-6** — `AlertController` (`/api/v1/alerts`): POST `/ingest`, GET `/slo`, GET `/dlq`, POST `/dlq/replay/{id}`, POST `/dlq/replay-all` |
-| ✅ | **MG-6** — `AlertControllerTest` — 5 tests: ingest 201, SLO counter, DLQ list, replay-all, 404 replay |
-| ✅ | **MG-6** — Alert SLO 5th tab in Telemetry UI: 6 metric cards (total/p50/p95/p99/DLQ depth/replays), DLQ table with per-row + bulk replay buttons |
-| ✅ | Canonical `ExecutionEvent` record (`correlationId`, `eventType`, `originBroker`, `schemaVersion`, `timestamp`, `payload`) |
-| ✅ | `BROKER_SAFETY_RUNBOOK.md` — Kafka=audit/replay, RabbitMQ=control commands, Pulsar=federated delivery; role rules, failure modes, escalation matrix, CLI runbook |
-| ✅ | `CorrelationPropagationTest` — 5 integration tests for correlationId round-trip, DLQ preservation, idempotent delivery contract |
-| ⬜ | MG-6 SLO dashboard panel in Grafana compose stack |
+| Status | Step                                                                                                                                                             |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅     | **MG-6** — `TransientAlertService` + Micrometer `Counter` for `alert_ingested_total` / `alert_replays_total`; in-memory DLQ with bounded store                   |
+| ✅     | **MG-6** — `AlertController` (`/api/v1/alerts`): POST `/ingest`, GET `/slo`, GET `/dlq`, POST `/dlq/replay/{id}`, POST `/dlq/replay-all`                         |
+| ✅     | **MG-6** — `AlertControllerTest` — 5 tests: ingest 201, SLO counter, DLQ list, replay-all, 404 replay                                                            |
+| ✅     | **MG-6** — Alert SLO 5th tab in Telemetry UI: 6 metric cards (total/p50/p95/p99/DLQ depth/replays), DLQ table with per-row + bulk replay buttons                 |
+| ✅     | Canonical `ExecutionEvent` record (`correlationId`, `eventType`, `originBroker`, `schemaVersion`, `timestamp`, `payload`)                                        |
+| ✅     | `BROKER_SAFETY_RUNBOOK.md` — Kafka=audit/replay, RabbitMQ=control commands, Pulsar=federated delivery; role rules, failure modes, escalation matrix, CLI runbook |
+| ✅     | `CorrelationPropagationTest` — 5 integration tests for correlationId round-trip, DLQ preservation, idempotent delivery contract                                  |
+| ⬜     | MG-6 SLO dashboard panel in Grafana compose stack                                                                                                                |
 
 ---
 
@@ -217,14 +217,14 @@ timeline
 
 **Why:** Phase 3/5A Trident gateway integration is the next major architectural layer. Defining `SchedulingBlock`, `ExecutionBlock`, `SubarrayConfiguration`, `SpectralConfiguration`, and the FSP allocation model now unlocks the entire execution-layer API and mode-aware backend orchestration. Without versioned contracts first, subsequent executor and backend fan-out work will be built on shifting foundations. This sprint is contract-first to enable parallel downstream work.
 
-| Priority | Step |
-| --- | --- |
-| 🔴 | Define and version JSON Schemas for `SchedulingBlock`, `ExecutionBlock`, `SubarrayConfiguration`, `SpectralConfiguration`, `FspAllocationPlan` |
-| 🔴 | Java domain records for each entity; `SchemaService` extended with Trident schema builtins |
-| 🔴 | Gateway-side FSP allocator simulator: subarray contention detection, incompatible spectral plan rejection, finite-capacity guard; unit tests for all error paths |
-| 🟡 | Execution-layer API stub: `POST /api/v1/execution/plans` (validate), `POST /api/v1/execution/plans/{id}/apply` (apply with idempotency key) |
-| 🟡 | Mode-aware backend job template stubs: correlation, VLBI, pulsar-timing, pulsar-search — each returns a validated job template from a `SchedulingBlock` input |
-| 🟢 | Trident integration documentation: `documentation/trident/TRIDENT_GATEWAY.md` with contract schema versions and routing rules |
+| Priority | Step                                                                                                                                                             |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🔴       | Define and version JSON Schemas for `SchedulingBlock`, `ExecutionBlock`, `SubarrayConfiguration`, `SpectralConfiguration`, `FspAllocationPlan`                   |
+| 🔴       | Java domain records for each entity; `SchemaService` extended with Trident schema builtins                                                                       |
+| 🔴       | Gateway-side FSP allocator simulator: subarray contention detection, incompatible spectral plan rejection, finite-capacity guard; unit tests for all error paths |
+| 🟡       | Execution-layer API stub: `POST /api/v1/execution/plans` (validate), `POST /api/v1/execution/plans/{id}/apply` (apply with idempotency key)                      |
+| 🟡       | Mode-aware backend job template stubs: correlation, VLBI, pulsar-timing, pulsar-search — each returns a validated job template from a `SchedulingBlock` input    |
+| 🟢       | Trident integration documentation: `documentation/trident/TRIDENT_GATEWAY.md` with contract schema versions and routing rules                                    |
 
 **Exit criteria:**
 
@@ -240,14 +240,14 @@ timeline
 
 **Why:** Phase 4 security hardening is the final gap before this platform can support any production-adjacent demo or external review. `AuthFilter` currently runs in dev-permissive mode. Without enforced RBAC, replay protection, and an immutable audit trail, the institutional trust and audit mission outcome is only partially satisfied — the architecture is present but unenforced. This sprint moves from baseline scaffolding to enforced policy, and adds the rate-limiting layer that protects the job submission and ingest hotpaths.
 
-| Priority | Step |
-| --- | --- |
-| 🔴 | Upgrade `AuthFilter` from dev-permissive to enforced mode: validate JWT claims, enforce role-based policy rules (`OPERATOR`, `SCIENTIST`, `ADMIN`); negative-path auth tests for each role boundary |
-| 🔴 | Replay/idempotency protection on job submission (`POST /api/v1/jobs`) and execution apply endpoint — reject duplicate `idempotencyKey` with 409 |
-| 🔴 | Immutable audit log enforcement: job state transitions append-only; rewrite/delete of audit records returns 405; audit log integrity test |
-| 🟡 | Rate limiting on `POST /api/v1/jobs` and `/api/v1/ingest` (token bucket, configurable per-role limits) |
-| 🟡 | Security posture documentation update: `documentation/security/SECURITY_POSTURE.md` revised with enforcement status, threat model delta, and OWASP Top 10 mapping |
-| 🟢 | Frontend auth error handling: display 401/403 error states in Jobs and Diagnostics rather than silent failure or spinner hang |
+| Priority | Step                                                                                                                                                                                                |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🔴       | Upgrade `AuthFilter` from dev-permissive to enforced mode: validate JWT claims, enforce role-based policy rules (`OPERATOR`, `SCIENTIST`, `ADMIN`); negative-path auth tests for each role boundary |
+| 🔴       | Replay/idempotency protection on job submission (`POST /api/v1/jobs`) and execution apply endpoint — reject duplicate `idempotencyKey` with 409                                                     |
+| 🔴       | Immutable audit log enforcement: job state transitions append-only; rewrite/delete of audit records returns 405; audit log integrity test                                                           |
+| 🟡       | Rate limiting on `POST /api/v1/jobs` and `/api/v1/ingest` (token bucket, configurable per-role limits)                                                                                              |
+| 🟡       | Security posture documentation update: `documentation/security/SECURITY_POSTURE.md` revised with enforcement status, threat model delta, and OWASP Top 10 mapping                                   |
+| 🟢       | Frontend auth error handling: display 401/403 error states in Jobs and Diagnostics rather than silent failure or spinner hang                                                                       |
 
 **Exit criteria:**
 

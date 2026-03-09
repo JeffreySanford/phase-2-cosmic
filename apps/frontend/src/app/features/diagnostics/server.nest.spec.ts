@@ -50,7 +50,10 @@ function createMockResponse() {
   };
   const res = {
     json: jest.fn((body?: unknown) => {
-      headers.set("content-length", Buffer.byteLength(JSON.stringify(body ?? {}), "utf8"));
+      headers.set(
+        "content-length",
+        Buffer.byteLength(JSON.stringify(body ?? {}), "utf8")
+      );
       emitFinish();
       return body;
     }),
@@ -252,11 +255,12 @@ describe("AppController diagnostics endpoints", () => {
     const upstream = {
       status: 200,
       headers: { get: jest.fn().mockReturnValue("application/json") },
-      text: jest.fn().mockResolvedValue('{"source":"prometheus","services":{}}'),
+      text: jest
+        .fn()
+        .mockResolvedValue('{"source":"prometheus","services":{}}'),
     };
-    (ctrl as unknown as { fetchWithFallback: jest.Mock }).fetchWithFallback = jest
-      .fn()
-      .mockResolvedValue(upstream);
+    (ctrl as unknown as { fetchWithFallback: jest.Mock }).fetchWithFallback =
+      jest.fn().mockResolvedValue(upstream);
 
     await ctrl.proxyGovernance(req, res);
 
@@ -264,7 +268,9 @@ describe("AppController diagnostics endpoints", () => {
       (ctrl as unknown as { fetchWithFallback: jest.Mock }).fetchWithFallback
     ).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.send).toHaveBeenCalledWith('{"source":"prometheus","services":{}}');
+    expect(res.send).toHaveBeenCalledWith(
+      '{"source":"prometheus","services":{}}'
+    );
   });
 
   it("falls back to mock infrastructure telemetry when governance is unavailable", async () => {
@@ -274,9 +280,8 @@ describe("AppController diagnostics endpoints", () => {
     );
     const req = createGovernanceRequest("/api/v1/telemetry/infrastructure");
     const res = createMockResponse();
-    (ctrl as unknown as { fetchWithFallback: jest.Mock }).fetchWithFallback = jest
-      .fn()
-      .mockRejectedValue(new Error("connect failed"));
+    (ctrl as unknown as { fetchWithFallback: jest.Mock }).fetchWithFallback =
+      jest.fn().mockRejectedValue(new Error("connect failed"));
 
     await ctrl.proxyGovernance(req, res);
 
@@ -309,7 +314,9 @@ function createSseResponse(): SseResponse {
 }
 
 describe.skip("AppController brokerEventsSse (S1-1)", () => {
-  type CtrlPrivate = { brokerEventsSse: (res: import("express").Response) => void };
+  type CtrlPrivate = {
+    brokerEventsSse: (res: import("express").Response) => void;
+  };
 
   it("sets text/event-stream and no-cache headers then flushes", () => {
     const ctrl = new AppController(
@@ -318,7 +325,9 @@ describe.skip("AppController brokerEventsSse (S1-1)", () => {
     );
     const res = createSseResponse();
 
-    (ctrl as unknown as CtrlPrivate).brokerEventsSse(res as unknown as import("express").Response);
+    (ctrl as unknown as CtrlPrivate).brokerEventsSse(
+      res as unknown as import("express").Response
+    );
 
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Type",
@@ -336,7 +345,9 @@ describe.skip("AppController brokerEventsSse (S1-1)", () => {
     );
     const res = createSseResponse();
 
-    (ctrl as unknown as CtrlPrivate).brokerEventsSse(res as unknown as import("express").Response);
+    (ctrl as unknown as CtrlPrivate).brokerEventsSse(
+      res as unknown as import("express").Response
+    );
 
     expect(res.write).toHaveBeenCalledTimes(1);
     const raw: string = res.write.mock.calls[0][0] as string;
@@ -361,7 +372,9 @@ describe.skip("AppController brokerEventsSse (S1-1)", () => {
       if (event === "close") closeHandler = cb;
     });
 
-    (ctrl as unknown as CtrlPrivate).brokerEventsSse(res as unknown as import("express").Response);
+    (ctrl as unknown as CtrlPrivate).brokerEventsSse(
+      res as unknown as import("express").Response
+    );
 
     expect(closeHandler).not.toBeNull();
     const clearIntervalSpy = jest.spyOn(global, "clearInterval");

@@ -133,21 +133,33 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
           name: "Antenna Calibration",
           type: "aiv",
           description: "Mock: validates antenna calibration parameters.",
-          requiredParameters: ["antennaId", "targetFrequencyMHz", "pointingModelVersion"],
+          requiredParameters: [
+            "antennaId",
+            "targetFrequencyMHz",
+            "pointingModelVersion",
+          ],
         },
         {
           id: "timing_sync",
           name: "Timing Synchronisation",
           type: "aiv",
           description: "Mock: validates timing reference synchronisation.",
-          requiredParameters: ["referenceElementId", "maxDriftNs", "syncProtocol"],
+          requiredParameters: [
+            "referenceElementId",
+            "maxDriftNs",
+            "syncProtocol",
+          ],
         },
         {
           id: "rfi_baseline",
           name: "RFI Baseline Survey",
           type: "aiv",
           description: "Mock: validates RFI environment baseline.",
-          requiredParameters: ["siteId", "frequencyRangeMHz", "maxOccupancyPercent"],
+          requiredParameters: [
+            "siteId",
+            "frequencyRangeMHz",
+            "maxOccupancyPercent",
+          ],
         },
       ];
       this.commissioningLoading = false;

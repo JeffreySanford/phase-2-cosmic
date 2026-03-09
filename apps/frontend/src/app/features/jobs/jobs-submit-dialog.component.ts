@@ -148,13 +148,27 @@ export class JobsSubmitDialogComponent implements OnInit {
   }
 
   // URL-field visibility helpers used by the template
-  get showTapUrl(): boolean { return this.showAdqlFields || this.showObscoreFields; }
-  get showDatalinkUrl(): boolean { return this.showDatalinkFields; }
-  get showServiceUrl(): boolean { return this.showConeFields; }
-  get showVotableUrl(): boolean { return this.showVotableFields; }
-  get showProductUrl(): boolean { return this.showProductFields; }
-  get showSodaUrl(): boolean { return this.showSodaFields; }
-  get showPreviewUrl(): boolean { return this.showPreviewFields; }
+  get showTapUrl(): boolean {
+    return this.showAdqlFields || this.showObscoreFields;
+  }
+  get showDatalinkUrl(): boolean {
+    return this.showDatalinkFields;
+  }
+  get showServiceUrl(): boolean {
+    return this.showConeFields;
+  }
+  get showVotableUrl(): boolean {
+    return this.showVotableFields;
+  }
+  get showProductUrl(): boolean {
+    return this.showProductFields;
+  }
+  get showSodaUrl(): boolean {
+    return this.showSodaFields;
+  }
+  get showPreviewUrl(): boolean {
+    return this.showPreviewFields;
+  }
 
   ngOnInit(): void {
     this.jobsSvc.types().subscribe(
@@ -309,7 +323,10 @@ export class JobsSubmitDialogComponent implements OnInit {
 
     // Add provider to the dropdown list if it isn't already present
     const providerName = sample["provider"] as string | undefined;
-    if (providerName && !this.voProviders.find((p) => p.name === providerName)) {
+    if (
+      providerName &&
+      !this.voProviders.find((p) => p.name === providerName)
+    ) {
       this.voProviders = [
         { name: providerName, tapUrl: "", dataLinkUrl: "" },
         ...this.voProviders,

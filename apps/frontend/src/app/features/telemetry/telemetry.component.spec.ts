@@ -345,9 +345,14 @@ describe("TelemetryComponent", () => {
     fixture.detectChanges();
     tick(6000);
 
-    httpMock.expectOne("/api/v1/pulsar/status").flush({ brokers: 1, topics: 1, partitions: 1 });
+    httpMock
+      .expectOne("/api/v1/pulsar/status")
+      .flush({ brokers: 1, topics: 1, partitions: 1 });
     httpMock.expectOne("/api/v1/rabbitmq/status").flush({
-      status: "unknown", connection: "unknown", queues: {}, exchanges: {},
+      status: "unknown",
+      connection: "unknown",
+      queues: {},
+      exchanges: {},
     });
     httpMock.expectOne("/api/v1/telemetry/infrastructure").flush({
       measuredAt: new Date().toISOString(),
@@ -395,9 +400,14 @@ describe("TelemetryComponent", () => {
     fixture.detectChanges();
     tick(6000);
 
-    httpMock.expectOne("/api/v1/pulsar/status").flush({ brokers: 1, topics: 1, partitions: 1 });
+    httpMock
+      .expectOne("/api/v1/pulsar/status")
+      .flush({ brokers: 1, topics: 1, partitions: 1 });
     httpMock.expectOne("/api/v1/rabbitmq/status").flush({
-      status: "unknown", connection: "unknown", queues: {}, exchanges: {},
+      status: "unknown",
+      connection: "unknown",
+      queues: {},
+      exchanges: {},
     });
     httpMock.expectOne("/api/v1/telemetry/infrastructure").flush({
       measuredAt: new Date().toISOString(),
@@ -412,7 +422,9 @@ describe("TelemetryComponent", () => {
         pulsar: { source: "unavailable", brokers: 0, topics: 0, partitions: 0 },
       },
     });
-    httpMock.expectOne("/api/v1/alerts/slo").error(new ErrorEvent("alert-slo-error"));
+    httpMock
+      .expectOne("/api/v1/alerts/slo")
+      .error(new ErrorEvent("alert-slo-error"));
     httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
 
     expect(component.alertSloError).toBe("Alert SLO endpoint unavailable");

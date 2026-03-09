@@ -4,16 +4,16 @@
   "type": "object",
   "required": ["provider", "tapUrl"],
   "properties": {
-    "provider":          { "type": "string", "minLength": 1 },
-    "tapUrl":            { "type": "string", "minLength": 1 },
-    "dataproductType":   { "type": "string" },
-    "spatialBoundsRa":   { "type": "number" },
-    "spatialBoundsDec":  { "type": "number" },
+    "provider": { "type": "string", "minLength": 1 },
+    "tapUrl": { "type": "string", "minLength": 1 },
+    "dataproductType": { "type": "string" },
+    "spatialBoundsRa": { "type": "number" },
+    "spatialBoundsDec": { "type": "number" },
     "spatialBoundsRadius": { "type": "number", "exclusiveMinimum": 0 },
-    "spectralMin":       { "type": "number" },
-    "spectralMax":       { "type": "number" },
-    "limit":             { "type": "integer", "minimum": 1 },
-    "liveMode":          { "type": "boolean" }
+    "spectralMin": { "type": "number" },
+    "spectralMax": { "type": "number" },
+    "limit": { "type": "integer", "minimum": 1 },
+    "liveMode": { "type": "boolean" }
   },
   "additionalProperties": true
 }

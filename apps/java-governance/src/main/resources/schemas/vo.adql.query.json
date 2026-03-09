@@ -4,12 +4,12 @@
   "type": "object",
   "required": ["provider", "tapUrl", "adql"],
   "properties": {
-    "provider":   { "type": "string", "minLength": 1 },
-    "tapUrl":     { "type": "string", "minLength": 1 },
-    "adql":       { "type": "string", "minLength": 1 },
-    "limit":      { "type": "integer", "minimum": 1 },
+    "provider": { "type": "string", "minLength": 1 },
+    "tapUrl": { "type": "string", "minLength": 1 },
+    "adql": { "type": "string", "minLength": 1 },
+    "limit": { "type": "integer", "minimum": 1 },
     "asyncQuery": { "type": "boolean" },
-    "liveMode":   { "type": "boolean" }
+    "liveMode": { "type": "boolean" }
   },
   "additionalProperties": true
 }

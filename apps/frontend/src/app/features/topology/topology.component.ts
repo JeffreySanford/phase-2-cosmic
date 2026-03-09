@@ -443,14 +443,14 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     if (active.length === this.provenanceFilterOptions.length) {
       return "Showing Live, Admin, and Derived links. Turning the last active filter off restores the full graph.";
     }
-    return `Showing ${active.join(" + ")} links. Turning the last active filter off restores the full graph.`;
+    return `Showing ${active.join(
+      " + "
+    )} links. Turning the last active filter off restores the full graph.`;
   }
 
   public provenanceFilterAriaLabel(source: ProvenanceFilter): string {
     const label = this.provenanceFilterLabel(source);
-    const state = this.isProvenanceFilterActive(source)
-      ? "Hide"
-      : "Show only";
+    const state = this.isProvenanceFilterActive(source) ? "Hide" : "Show only";
     return `${state} ${label} links in the force network`;
   }
 
@@ -516,11 +516,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private isVisibleForActiveFilters(link: TopoLink): boolean {
     const source = this.statsRef(link)._stats?.source;
-    if (
-      source === "prometheus" ||
-      source === "admin" ||
-      source === "derived"
-    ) {
+    if (source === "prometheus" || source === "admin" || source === "derived") {
       return this.isProvenanceFilterActive(source);
     }
     return this.allProvenanceFiltersActive();
@@ -532,14 +528,17 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private applyViewportTransform(): void {
-    this.viewportGroup
-      ?.attr(
-        "transform",
-        `translate(${this.viewportTranslateX},${this.viewportTranslateY}) scale(${this.viewportScale})`
-      );
+    this.viewportGroup?.attr(
+      "transform",
+      `translate(${this.viewportTranslateX},${this.viewportTranslateY}) scale(${this.viewportScale})`
+    );
   }
 
-  private fitGraphToViewport(nodes: TopoNode[], width: number, height: number): void {
+  private fitGraphToViewport(
+    nodes: TopoNode[],
+    width: number,
+    height: number
+  ): void {
     if (!nodes.length) {
       this.fitViewport = { scale: 1, x: 0, y: 0 };
       this.resetViewport();
@@ -649,7 +648,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         key === "payload" ||
         key === "links" ||
         key === "timing_drift_ns" ||
-          key === "diagnostics" ||
+        key === "diagnostics" ||
         key === "rfi_event_rate"
       ) {
         continue;
@@ -1262,7 +1261,9 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   // Expected shape: { "source->target": { currentMBps: number, maxMBps?: number } }
   private fetchMetrics() {
     if (this.dataSource.mode === "mock") {
-      const keys = this.currentTopologyData().links.map((l) => this.getLinkKey(l));
+      const keys = this.currentTopologyData().links.map((l) =>
+        this.getLinkKey(l)
+      );
       this.mock
         .topologyMetricsForLinks(keys)
         .subscribe((res: TopologyMetricsResponse) => {
@@ -1581,10 +1582,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     node
       .append("circle")
       .attr("class", "node-ring")
-      .attr("r", (d: TopoNode) =>
-        this.nodeRingRadius(nodeSummaryById[d.id])
+      .attr("r", (d: TopoNode) => this.nodeRingRadius(nodeSummaryById[d.id]))
+      .attr("fill", (d: TopoNode) =>
+        this.nodeRingColor(d, nodeSummaryById[d.id])
       )
-      .attr("fill", (d: TopoNode) => this.nodeRingColor(d, nodeSummaryById[d.id]))
       .attr("fill-opacity", 0.18)
       .attr("stroke", (d: TopoNode) =>
         this.nodeRingStroke(d, nodeSummaryById[d.id])
@@ -1864,7 +1865,8 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       const d = diag as Record<string, unknown>;
       const structural = Number(d["structuralDerivedLinkCount"]);
       const fallback = Number(d["fallbackDerivedLinkCount"]);
-      if (Number.isFinite(structural)) this.structuralDerivedLinkCount = structural;
+      if (Number.isFinite(structural))
+        this.structuralDerivedLinkCount = structural;
       if (Number.isFinite(fallback)) this.fallbackDerivedLinkCount = fallback;
       this.hasDiagnosticsData = true;
     }

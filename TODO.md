@@ -48,6 +48,7 @@ pie title TODO Status (March 7, 2026)
 ### Recent Completed
 
 - **Sprint 4 MG-6 — complete (2026-03-08):**
+
   - `TransientAlert` + `AlertSloMetrics` model records.
   - `TransientAlertService` — in-memory alert store + DLQ, Micrometer `Counter` for `alert_ingested_total` / `alert_replays_total`, percentile latency tracking.
   - `AlertController` (`/api/v1/alerts`) — POST `/ingest`, GET `/slo`, GET `/dlq`, POST `/dlq/replay/{id}`, POST `/dlq/replay-all`, POST `/dlq`.
@@ -61,6 +62,7 @@ pie title TODO Status (March 7, 2026)
   - Java tests: **78/78** (+5). Frontend tests: **202/202** (+2).
 
 - **Sprint 3 Mission Gates MG-4 & MG-5 — complete (2026-03-08):**
+
   - MG-4: `CommissioningScenarioService` + `CommissioningController` (3 built-in AIV scenarios). `CommissioningControllerTest` (4 tests: list, validate pass, validate fail, 404 unknown).
   - MG-4: Diagnostics "Mission Gates" tab showing scenario tiles + 2 new spec tests.
   - MG-5: `ArchiveDrService` with `ReplicationPolicy` + `RestoreDrillResult` models. `ArchiveDrRestoreDrillTest` (5 tests: create, get, list, drill pass, drill unknown).
@@ -68,6 +70,7 @@ pie title TODO Status (March 7, 2026)
   - Java tests: **73/73**. Frontend tests: **200/200**.
 
 - **Sprint 2 CI Hardening — complete (2026-04-04):**
+
   - S2-1: Cypress cache fix — `e2e`/`e2e-ci` cache disabled; binary cache in `e2e.yml`.
   - S2-2: `BrokerStatusTest.java` — 3 negative-path tests for RabbitMQ/Pulsar (healthy, 503, unavailable).
   - S2-3: CI PR gate — frontend unit tests + Cypress binary cache in `ci.yml`/`e2e.yml`.
@@ -76,6 +79,7 @@ pie title TODO Status (March 7, 2026)
   - Total Java tests: **64/64**. Frontend: **197/197**.
 
 - **Sprint 1 console stability + unit tests (2026-03-07):**
+
   - `GET /api/v1/broker-events` SSE 404 — dev SSE mock added to `server.nest.ts` (connected + 15 s heartbeat).
   - `aria-hidden` focus warning — `MAT_DIALOG_DEFAULT_OPTIONS { ariaModal: true }` added in `app.module.ts`.
   - Console noise audit complete — all remaining calls are in error paths only.
@@ -85,6 +89,7 @@ pie title TODO Status (March 7, 2026)
   - Total frontend tests: **197/197** (was 193).
 
 - **Jobs view: clear completed + show/hide archived jobs** (completed 2026-03-07)
+
   - `showCompleted` toggle (mat-checkbox) in jobs toolbar hides COMPLETED/FAILED/CANCELED/TIMED_OUT jobs
   - `clearCompleted()` calls `DELETE /api/v1/jobs/{id}` for each terminal job and updates the list
   - `filteredJobs` getter drives the `*ngFor` rendering so filter is instant/reactive
@@ -94,6 +99,7 @@ pie title TODO Status (March 7, 2026)
   - Validation evidence: all 187 frontend tests pass; build clean
 
 - **VO auto-fill with curated real-data samples** (completed 2026-03-07)
+
   - `VoController.java` `GET /api/v1/vo/cached-samples` returns 8 curated payloads with real public VO service URLs (SIMBAD, HEASARC, ESO, CADC, ESASky)
   - `server.nest.ts` mirrors the same static map for dev mode
   - `VoService.getSampleForType(type)` exposes per-type payloads (single one-shot load, no polling)
@@ -101,6 +107,7 @@ pie title TODO Status (March 7, 2026)
   - All 50 Java + 187 Angular tests pass; build clean
 
 - **VO Jobs Initiative — backend** (completed 2026-03-07)
+
   - 8 JSON Schema files under `src/main/resources/schemas/` with required-field enforcement
   - `SchemaService` loads all 8 VO schemas at startup; fixed Map→JSONObject payload conversion bug
   - `VoJobExecutor` dispatches all 8 VO workflows with live HTTP + VOTable XML parsing
@@ -110,6 +117,7 @@ pie title TODO Status (March 7, 2026)
   - Mission outcome: Reproducible science / Institutional trust and audit
 
 - **VO Jobs Initiative — frontend** (completed 2026-03-07)
+
   - Typed Angular reactive subform for all 8 VO workflow types in submit dialog
   - Provider selector populated from `GET /api/v1/vo/services`; per-provider URL auto-fill
   - Job detail panel restructured from 2 tabs to 5 tabs: Summary | Parameters | Logs | Artifacts | Lineage

@@ -78,15 +78,15 @@ flowchart LR
 
 ## 4. Service-by-service testing ownership
 
-| Service | Type | Unit Tests | Container Integration | Status |
-|---|---|---|---|---|
-| `apps/frontend` | Angular SPA | ✅ 39 suites / 224 tests | n/a | **Green** |
-| `apps/frontend-e2e` | Cypress e2e | ✅ 11 topology specs | n/a | **Green** |
-| `apps/java-governance` | Spring Boot | ✅ 17 test classes | ✅ Testcontainers (Kafka, Redis, RabbitMQ, Pulsar) via `-Pwith-containers` | **Green** |
-| `tools/java-ingest` | Spring Boot | ✅ `BasicTest`, `IngestMetricsServiceTest` | ✅ `KafkaIngestListenerContainerIntegrationTest` via `-Pwith-containers` | **Green** |
-| `tools/data-generator` | Go binary | ✅ `main_test.go` (parseSegmentWeights, allocateSegments) | n/a (no external deps) | **Green** |
-| `tools/maven-test-image` | Docker image | via CI build only | n/a | Build-only |
-| Third-party compose services | Stock images | n/a | healthchecks in `dev-compose.yml` | Config-validated |
+| Service                      | Type         | Unit Tests                                                | Container Integration                                                      | Status           |
+| ---------------------------- | ------------ | --------------------------------------------------------- | -------------------------------------------------------------------------- | ---------------- |
+| `apps/frontend`              | Angular SPA  | ✅ 39 suites / 224 tests                                  | n/a                                                                        | **Green**        |
+| `apps/frontend-e2e`          | Cypress e2e  | ✅ 11 topology specs                                      | n/a                                                                        | **Green**        |
+| `apps/java-governance`       | Spring Boot  | ✅ 17 test classes                                        | ✅ Testcontainers (Kafka, Redis, RabbitMQ, Pulsar) via `-Pwith-containers` | **Green**        |
+| `tools/java-ingest`          | Spring Boot  | ✅ `BasicTest`, `IngestMetricsServiceTest`                | ✅ `KafkaIngestListenerContainerIntegrationTest` via `-Pwith-containers`   | **Green**        |
+| `tools/data-generator`       | Go binary    | ✅ `main_test.go` (parseSegmentWeights, allocateSegments) | n/a (no external deps)                                                     | **Green**        |
+| `tools/maven-test-image`     | Docker image | via CI build only                                         | n/a                                                                        | Build-only       |
+| Third-party compose services | Stock images | n/a                                                       | healthchecks in `dev-compose.yml`                                          | Config-validated |
 
 Configuration-only containers (nginx, Grafana, Loki, Alertmanager, Prometheus) have their YAML/config files automatically picked up by `pnpm run lint:yaml` via `git ls-files`.
 
@@ -286,14 +286,14 @@ The `gh` CLI is authenticated in this repo (`gh auth status` confirms `JeffreySa
 
 ### Available pnpm scripts
 
-| Script | What it does |
-|---|---|
-| `pnpm run ci:logs` | Fetch failed-step logs from the most recent failed run; save to `logs/` |
-| `pnpm run ci:logs:list` | Print last 15 runs with pass/fail status and run IDs |
-| `pnpm run ci:logs:watch` | Live-tail the currently running workflow; offer to pull logs on finish |
-| `pnpm run ci:codeql` | Download CodeQL SARIF from the latest CodeQL run; print findings report |
-| `pnpm run ci:codeql:list` | List recent CodeQL workflow runs |
-| `pnpm run ci:codeql:trigger` | Manually dispatch the CodeQL workflow (`codeql.yml`) |
+| Script                       | What it does                                                            |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| `pnpm run ci:logs`           | Fetch failed-step logs from the most recent failed run; save to `logs/` |
+| `pnpm run ci:logs:list`      | Print last 15 runs with pass/fail status and run IDs                    |
+| `pnpm run ci:logs:watch`     | Live-tail the currently running workflow; offer to pull logs on finish  |
+| `pnpm run ci:codeql`         | Download CodeQL SARIF from the latest CodeQL run; print findings report |
+| `pnpm run ci:codeql:list`    | List recent CodeQL workflow runs                                        |
+| `pnpm run ci:codeql:trigger` | Manually dispatch the CodeQL workflow (`codeql.yml`)                    |
 
 ### Output files
 

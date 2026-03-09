@@ -4,14 +4,14 @@
   "type": "object",
   "required": ["provider", "sodaUrl", "datasetIdentifier"],
   "properties": {
-    "provider":             { "type": "string", "minLength": 1 },
-    "sodaUrl":              { "type": "string", "minLength": 1 },
-    "datasetIdentifier":    { "type": "string", "minLength": 1 },
-    "spatialBoundsRa":      { "type": "number" },
-    "spatialBoundsDec":     { "type": "number" },
-    "spatialBoundsRadius":  { "type": "number", "exclusiveMinimum": 0 },
-    "outputFormat":         { "type": "string" },
-    "liveMode":             { "type": "boolean" }
+    "provider": { "type": "string", "minLength": 1 },
+    "sodaUrl": { "type": "string", "minLength": 1 },
+    "datasetIdentifier": { "type": "string", "minLength": 1 },
+    "spatialBoundsRa": { "type": "number" },
+    "spatialBoundsDec": { "type": "number" },
+    "spatialBoundsRadius": { "type": "number", "exclusiveMinimum": 0 },
+    "outputFormat": { "type": "string" },
+    "liveMode": { "type": "boolean" }
   },
   "additionalProperties": true
 }

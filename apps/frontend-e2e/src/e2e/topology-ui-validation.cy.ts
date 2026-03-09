@@ -21,7 +21,9 @@ describe("topology UI integration validation", () => {
       .then(($viewport) => $viewport[0].getAttribute("transform") || "");
   }
 
-  function openTab(label: "Force Network" | "Most Active Services" | "Snapshot Fidelity") {
+  function openTab(
+    label: "Force Network" | "Most Active Services" | "Snapshot Fidelity"
+  ) {
     cy.contains('[role="tab"]', label).scrollIntoView();
     cy.contains('[role="tab"]', label).click();
   }
@@ -38,18 +40,23 @@ describe("topology UI integration validation", () => {
     cy.contains(".node-ring-legend__button", "Derived")
       .should("have.attr", "aria-pressed", "true")
       .and("be.visible");
-    cy.contains(".node-ring-legend__status", "All visible").should("be.visible");
+    cy.contains(".node-ring-legend__status", "All visible").should(
+      "be.visible"
+    );
     cy.contains(".node-ring-legend__button", "Live").should(
       "have.attr",
       "aria-label",
       "Hide Live links in the force network"
     );
-    cy.get('.graph-tools__button[aria-label="Zoom in to the force network"]').should(
-      "be.visible"
-    );
+    cy.get(
+      '.graph-tools__button[aria-label="Zoom in to the force network"]'
+    ).should("be.visible");
 
     cy.contains(".node-ring-legend__button", "Derived").click();
-    cy.get(".node-ring-legend__status").should("not.contain.text", "All visible");
+    cy.get(".node-ring-legend__status").should(
+      "not.contain.text",
+      "All visible"
+    );
     cy.contains(
       ".node-ring-legend__helper",
       "Showing Live + Admin links. Turning the last active filter off restores the full graph."
@@ -63,28 +70,44 @@ describe("topology UI integration validation", () => {
     visitTopology();
 
     cy.contains(".node-ring-legend__button", "Live").click();
-    cy.contains(".node-ring-legend__button", "Live")
-      .should("have.attr", "aria-pressed", "false");
+    cy.contains(".node-ring-legend__button", "Live").should(
+      "have.attr",
+      "aria-pressed",
+      "false"
+    );
     cy.get(".node-ring-legend__status").should("contain.text", "Filtered:");
 
     cy.contains(".node-ring-legend__button", "Live").click();
-    cy.contains(".node-ring-legend__button", "Live")
-      .should("have.attr", "aria-pressed", "true");
-    cy.contains(".node-ring-legend__status", "All visible").should("be.visible");
+    cy.contains(".node-ring-legend__button", "Live").should(
+      "have.attr",
+      "aria-pressed",
+      "true"
+    );
+    cy.contains(".node-ring-legend__status", "All visible").should(
+      "be.visible"
+    );
   });
 
   it("toggles Derived on and off and updates the visible filter state", () => {
     visitTopology();
 
     cy.contains(".node-ring-legend__button", "Derived").click();
-    cy.contains(".node-ring-legend__button", "Derived")
-      .should("have.attr", "aria-pressed", "false");
+    cy.contains(".node-ring-legend__button", "Derived").should(
+      "have.attr",
+      "aria-pressed",
+      "false"
+    );
     cy.get(".node-ring-legend__status").should("contain.text", "Filtered:");
 
     cy.contains(".node-ring-legend__button", "Derived").click();
-    cy.contains(".node-ring-legend__button", "Derived")
-      .should("have.attr", "aria-pressed", "true");
-    cy.contains(".node-ring-legend__status", "All visible").should("be.visible");
+    cy.contains(".node-ring-legend__button", "Derived").should(
+      "have.attr",
+      "aria-pressed",
+      "true"
+    );
+    cy.contains(".node-ring-legend__status", "All visible").should(
+      "be.visible"
+    );
   });
 
   it("supports two-filter combinations", () => {
@@ -105,7 +128,9 @@ describe("topology UI integration validation", () => {
     cy.get(".node-ring-legend__status").should("contain.text", "Live");
 
     cy.contains(".node-ring-legend__button", "Live").click();
-    cy.contains(".node-ring-legend__status", "All visible").should("be.visible");
+    cy.contains(".node-ring-legend__status", "All visible").should(
+      "be.visible"
+    );
     cy.contains(".node-ring-legend__button", "Live").should(
       "have.attr",
       "aria-pressed",
@@ -153,18 +178,16 @@ describe("topology UI integration validation", () => {
       "have.length.greaterThan",
       0
     );
-    cy.get(".topology-graph svg g.viewport g.flow-particles .flow-particle").should(
-      "have.length.greaterThan",
-      0
-    );
+    cy.get(
+      ".topology-graph svg g.viewport g.flow-particles .flow-particle"
+    ).should("have.length.greaterThan", 0);
   });
 
   it("supports focus and keyboard activation on provenance controls", () => {
     visitTopology();
 
     cy.contains(".node-ring-legend__button", "Admin").focus();
-    cy.contains(".node-ring-legend__button", "Admin")
-      .should("have.focus");
+    cy.contains(".node-ring-legend__button", "Admin").should("have.focus");
     cy.contains(".node-ring-legend__button", "Admin").type("{enter}");
     cy.contains(".node-ring-legend__button", "Admin").should(
       "have.attr",

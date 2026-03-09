@@ -50,7 +50,12 @@ type EmbeddedJobRecord = {
   lineage?: Record<string, unknown>;
   parameters?: Record<string, unknown>;
   logs: string[];
-  artifacts: Array<{ name: string; url: string; mimeType?: string; size?: string }>;
+  artifacts: Array<{
+    name: string;
+    url: string;
+    mimeType?: string;
+    size?: string;
+  }>;
 };
 
 const embeddedJobStore = new Map<string, EmbeddedJobRecord>();
@@ -66,7 +71,10 @@ setInterval(() => {
   for (const job of embeddedJobStore.values()) {
     const prev = job.status;
     advanceJobStatus(job);
-    if (prev === "QUEUED" && (job.status === "RUNNING" || job.status === "COMPLETED")) {
+    if (
+      prev === "QUEUED" &&
+      (job.status === "RUNNING" || job.status === "COMPLETED")
+    ) {
       mockDispatchCount += 1;
     }
   }
@@ -133,17 +141,23 @@ function voExternalSourcePayload(
       return {
         type: "external-source",
         provider: String(params["provider"] ?? "HEASARC"),
-        sourceName: `Cone Search – ${params["target"] ?? "3C 273"} (r=${params["radius"] ?? 0.1}°)`,
-        accessUrl: String(params["serviceUrl"] ?? "https://heasarc.gsfc.nasa.gov/xamin/vo/cone"),
+        sourceName: `Cone Search – ${params["target"] ?? "3C 273"} (r=${
+          params["radius"] ?? 0.1
+        }°)`,
+        accessUrl: String(
+          params["serviceUrl"] ?? "https://heasarc.gsfc.nasa.gov/xamin/vo/cone"
+        ),
         sampleFields: ["source_name", "ra", "dec", "flux_erg_s_cm2", "mission"],
         sampleRows: [
-          ["3C273",      "187.2779", "2.0524", "1.62e-11", "Chandra/CXO"],
+          ["3C273", "187.2779", "2.0524", "1.62e-11", "Chandra/CXO"],
           ["3C273_off1", "187.2960", "2.0714", "4.10e-14", "ROSAT/HRI"],
           ["3C273_off2", "187.2610", "2.0341", "2.80e-14", "XMM-Newton"],
         ],
         links: [
           {
-            accessUrl: `https://heasarc.gsfc.nasa.gov/xamin/vo/cone?target=${params["target"] ?? "3C273"}&radius=${params["radius"] ?? 0.1}&format=votable`,
+            accessUrl: `https://heasarc.gsfc.nasa.gov/xamin/vo/cone?target=${
+              params["target"] ?? "3C273"
+            }&radius=${params["radius"] ?? 0.1}&format=votable`,
             semantics: "#this",
             contentType: "application/x-votable+xml",
           },
@@ -153,13 +167,17 @@ function voExternalSourcePayload(
       return {
         type: "external-source",
         provider: String(params["provider"] ?? "NRAO"),
-        sourceName: `ADQL Query – ${String(params["tapUrl"] ?? "unknown TAP").replace("https://", "")}`,
-        tapUrl: String(params["tapUrl"] ?? "https://data-query.nrao.edu/tap/sync"),
+        sourceName: `ADQL Query – ${String(
+          params["tapUrl"] ?? "unknown TAP"
+        ).replace("https://", "")}`,
+        tapUrl: String(
+          params["tapUrl"] ?? "https://data-query.nrao.edu/tap/sync"
+        ),
         sampleFields: ["obs_id", "ra", "dec", "t_exptime", "dataproduct_type"],
         sampleRows: [
-          ["VLASS1.1+J123049+122322", "187.706", "12.390",  "5.0",  "image"],
-          ["VLASS1.1+J123051+122344", "187.713", "12.395",  "5.0",  "image"],
-          ["VLASS1.1+J123052+122316", "187.718", "12.388", "10.0",  "image"],
+          ["VLASS1.1+J123049+122322", "187.706", "12.390", "5.0", "image"],
+          ["VLASS1.1+J123051+122344", "187.713", "12.395", "5.0", "image"],
+          ["VLASS1.1+J123052+122316", "187.718", "12.388", "10.0", "image"],
         ],
         links: [],
       };
@@ -167,12 +185,28 @@ function voExternalSourcePayload(
       return {
         type: "external-source",
         provider: String(params["provider"] ?? "NRAO"),
-        sourceName: `ObsCore Search – M87 cubes (r=${(params["position"] as Record<string, unknown>)?.["radius"] ?? 0.2}°)`,
-        tapUrl: String(params["tapUrl"] ?? "https://data-query.nrao.edu/tap/sync"),
-        sampleFields: ["obs_id", "obs_title", "s_ra", "s_dec", "dataproduct_type"],
+        sourceName: `ObsCore Search – M87 cubes (r=${
+          (params["position"] as Record<string, unknown>)?.["radius"] ?? 0.2
+        }°)`,
+        tapUrl: String(
+          params["tapUrl"] ?? "https://data-query.nrao.edu/tap/sync"
+        ),
+        sampleFields: [
+          "obs_id",
+          "obs_title",
+          "s_ra",
+          "s_dec",
+          "dataproduct_type",
+        ],
         sampleRows: [
-          ["ALMA-M87-2017.1.00843", "M87 ALMA Band 6", "187.706", "12.391", "cube"],
-          ["EVLA-M87-13A-292",      "M87 JVLA L-band",  "187.705", "12.390", "cube"],
+          [
+            "ALMA-M87-2017.1.00843",
+            "M87 ALMA Band 6",
+            "187.706",
+            "12.391",
+            "cube",
+          ],
+          ["EVLA-M87-13A-292", "M87 JVLA L-band", "187.705", "12.390", "cube"],
         ],
         links: [],
       };
@@ -180,12 +214,34 @@ function voExternalSourcePayload(
       return {
         type: "external-source",
         provider: String(params["provider"] ?? "NRAO"),
-        sourceName: `DataLink – ${params["datasetIdentifier"] ?? "unknown dataset"}`,
-        accessUrl: String(params["datalinkUrl"] ?? "https://data-query.nrao.edu/datalink"),
-        sampleFields: ["ID", "access_url", "semantics", "content_type", "content_length"],
+        sourceName: `DataLink – ${
+          params["datasetIdentifier"] ?? "unknown dataset"
+        }`,
+        accessUrl: String(
+          params["datalinkUrl"] ?? "https://data-query.nrao.edu/datalink"
+        ),
+        sampleFields: [
+          "ID",
+          "access_url",
+          "semantics",
+          "content_type",
+          "content_length",
+        ],
         sampleRows: [
-          [String(params["datasetIdentifier"] ?? ""), "https://data-query.nrao.edu/products/ngvla-pilot-ms-0001.ms.tar", "#this",    "application/tar",  "3221225472"],
-          [String(params["datasetIdentifier"] ?? ""), "https://data-query.nrao.edu/products/ngvla-pilot-ms-0001.fits",   "#preview", "application/fits",  "104857600"],
+          [
+            String(params["datasetIdentifier"] ?? ""),
+            "https://data-query.nrao.edu/products/ngvla-pilot-ms-0001.ms.tar",
+            "#this",
+            "application/tar",
+            "3221225472",
+          ],
+          [
+            String(params["datasetIdentifier"] ?? ""),
+            "https://data-query.nrao.edu/products/ngvla-pilot-ms-0001.fits",
+            "#preview",
+            "application/fits",
+            "104857600",
+          ],
         ],
         links: [],
       };
@@ -193,14 +249,18 @@ function voExternalSourcePayload(
       return {
         type: "external-source",
         provider: String(params["provider"] ?? "NRAO"),
-        sourceName: `Product Download – ${String(params["productUrl"] ?? "").split("/").pop() ?? "unknown"}`,
+        sourceName: `Product Download – ${
+          String(params["productUrl"] ?? "")
+            .split("/")
+            .pop() ?? "unknown"
+        }`,
         accessUrl: String(params["productUrl"] ?? ""),
         sampleFields: ["keyword", "value", "comment"],
         sampleRows: [
-          ["SIMPLE",   "T",     "file conforms to FITS standard"],
-          ["BITPIX",   "-32",   "4-byte IEEE floating-point values"],
-          ["NAXIS",    "4",     "number of data axes"],
-          ["NAXIS1",   "1024",  "RA axis length"],
+          ["SIMPLE", "T", "file conforms to FITS standard"],
+          ["BITPIX", "-32", "4-byte IEEE floating-point values"],
+          ["NAXIS", "4", "number of data axes"],
+          ["NAXIS1", "1024", "RA axis length"],
           ["TELESCOP", "ngVLA", "Next Generation Very Large Array"],
         ],
         links: [],
@@ -212,13 +272,15 @@ function voExternalSourcePayload(
 
 /** Registers an external-source artifact for a completed VO job. */
 function registerVoArtifact(job: EmbeddedJobRecord): void {
-  if (job.artifacts.length > 0) return;   // already registered
+  if (job.artifacts.length > 0) return; // already registered
   const params = (job.parameters ?? {}) as Record<string, unknown>;
   const payload = voExternalSourcePayload(job.workflow, params, job.jobId);
   if (!payload) return;
   const artifactName = "external-call.json";
-  const artifactUrl  = `/api/v1/jobs/${job.jobId}/artifacts/${artifactName}`;
-  job.artifacts = [{ name: artifactName, url: artifactUrl, mimeType: "application/json" }];
+  const artifactUrl = `/api/v1/jobs/${job.jobId}/artifacts/${artifactName}`;
+  job.artifacts = [
+    { name: artifactName, url: artifactUrl, mimeType: "application/json" },
+  ];
   artifactContentStore.set(artifactUrl, payload);
 }
 
@@ -233,7 +295,11 @@ function registerVoArtifact(job: EmbeddedJobRecord): void {
     minsAgo: number
   ): EmbeddedJobRecord => {
     const createdAt = new Date(_now - minsAgo * 60_000).toISOString();
-    const j = createEmbeddedJob({ workflow, datasetId, requestedBy: "dev-seed" });
+    const j = createEmbeddedJob({
+      workflow,
+      datasetId,
+      requestedBy: "dev-seed",
+    });
     j.status = status;
     j.createdAt = createdAt;
     j.updatedAt = createdAt;
@@ -247,11 +313,11 @@ function registerVoArtifact(job: EmbeddedJobRecord): void {
     return j;
   };
   for (const j of [
-    _seed("import",        "COMPLETED", "ds-2026-alpha-001", 120),
-    _seed("vo.cone-search", "COMPLETED", "ds-2026-alpha-002",  90),
-    _seed("ingest",         "RUNNING",   "ds-2026-alpha-003",  45),
-    _seed("export",         "QUEUED",    "ds-2026-alpha-004",  10),
-    _seed("diagnostics",    "FAILED",    "ds-2026-alpha-005",  60),
+    _seed("import", "COMPLETED", "ds-2026-alpha-001", 120),
+    _seed("vo.cone-search", "COMPLETED", "ds-2026-alpha-002", 90),
+    _seed("ingest", "RUNNING", "ds-2026-alpha-003", 45),
+    _seed("export", "QUEUED", "ds-2026-alpha-004", 10),
+    _seed("diagnostics", "FAILED", "ds-2026-alpha-005", 60),
   ]) {
     embeddedJobStore.set(j.jobId, j);
   }
@@ -349,7 +415,7 @@ let redisCacheBytesWrittenTotal = 0;
 let redisCacheReadErrorsTotal = 0;
 let redisCacheWriteErrorsTotal = 0;
 let redisClientConnected = 0;
-/** 
+/**
  * The following in-memory metrics stores are keyed by dimension combinations (e.g. route+method+status class) and hold cumulative counts/sums for Prometheus exposition. This is a simplified approach suitable for a dev/test environment; production telemetry should use a proper metrics library and export directly to a monitoring system.
  */
 const governanceProxyRequestsTotal: Record<string, number> = {};
@@ -381,13 +447,19 @@ let redisCacheDurationSum = 0;
 function observeRedisCacheDuration(seconds: number): void {
   redisCacheDurationCount += 1;
   redisCacheDurationSum += seconds;
-  const idx = REDIS_CACHE_DURATION_BUCKETS.findIndex((bucket) => seconds <= bucket);
+  const idx = REDIS_CACHE_DURATION_BUCKETS.findIndex(
+    (bucket) => seconds <= bucket
+  );
   redisCacheDurationBucketCounts[
     idx === -1 ? redisCacheDurationBucketCounts.length - 1 : idx
   ] += 1;
 }
 
-function governanceProxyKey(route: string, method: string, statusClass: string): string {
+function governanceProxyKey(
+  route: string,
+  method: string,
+  statusClass: string
+): string {
   return `${route}|${method}|${statusClass}`;
 }
 
@@ -422,8 +494,10 @@ function observeGovernanceProxyDuration(
     governanceProxyDurationBucketCounts[key] ??
     new Array(GOVERNANCE_PROXY_DURATION_BUCKETS.length + 1).fill(0);
   governanceProxyDurationBucketCounts[key] = buckets;
-  governanceProxyDurationCount[key] = (governanceProxyDurationCount[key] ?? 0) + 1;
-  governanceProxyDurationSum[key] = (governanceProxyDurationSum[key] ?? 0) + seconds;
+  governanceProxyDurationCount[key] =
+    (governanceProxyDurationCount[key] ?? 0) + 1;
+  governanceProxyDurationSum[key] =
+    (governanceProxyDurationSum[key] ?? 0) + seconds;
   const idx = GOVERNANCE_PROXY_DURATION_BUCKETS.findIndex(
     (bucket) => seconds <= bucket
   );
@@ -438,12 +512,24 @@ function recordGovernanceProxyMetrics(
   durationSeconds: number
 ): void {
   const statusClass =
-    status >= 500 ? "5xx" : status >= 400 ? "4xx" : status >= 300 ? "3xx" : "2xx";
+    status >= 500
+      ? "5xx"
+      : status >= 400
+      ? "4xx"
+      : status >= 300
+      ? "3xx"
+      : "2xx";
   const key = governanceProxyKey(route, method.toUpperCase(), statusClass);
-  governanceProxyRequestsTotal[key] = (governanceProxyRequestsTotal[key] ?? 0) + 1;
+  governanceProxyRequestsTotal[key] =
+    (governanceProxyRequestsTotal[key] ?? 0) + 1;
   governanceProxyResponseBytesTotal[key] =
     (governanceProxyResponseBytesTotal[key] ?? 0) + Math.max(0, responseBytes);
-  observeGovernanceProxyDuration(route, method.toUpperCase(), statusClass, durationSeconds);
+  observeGovernanceProxyDuration(
+    route,
+    method.toUpperCase(),
+    statusClass,
+    durationSeconds
+  );
 }
 
 function observePrometheusProxyDuration(
@@ -456,8 +542,10 @@ function observePrometheusProxyDuration(
     prometheusProxyDurationBucketCounts[key] ??
     new Array(GOVERNANCE_PROXY_DURATION_BUCKETS.length + 1).fill(0);
   prometheusProxyDurationBucketCounts[key] = buckets;
-  prometheusProxyDurationCount[key] = (prometheusProxyDurationCount[key] ?? 0) + 1;
-  prometheusProxyDurationSum[key] = (prometheusProxyDurationSum[key] ?? 0) + seconds;
+  prometheusProxyDurationCount[key] =
+    (prometheusProxyDurationCount[key] ?? 0) + 1;
+  prometheusProxyDurationSum[key] =
+    (prometheusProxyDurationSum[key] ?? 0) + seconds;
   const idx = GOVERNANCE_PROXY_DURATION_BUCKETS.findIndex(
     (bucket) => seconds <= bucket
   );
@@ -471,12 +559,23 @@ function recordPrometheusProxyMetrics(
   durationSeconds: number
 ): void {
   const statusClass =
-    status >= 500 ? "5xx" : status >= 400 ? "4xx" : status >= 300 ? "3xx" : "2xx";
+    status >= 500
+      ? "5xx"
+      : status >= 400
+      ? "4xx"
+      : status >= 300
+      ? "3xx"
+      : "2xx";
   const key = prometheusProxyKey(method.toUpperCase(), statusClass);
-  prometheusProxyRequestsTotal[key] = (prometheusProxyRequestsTotal[key] ?? 0) + 1;
+  prometheusProxyRequestsTotal[key] =
+    (prometheusProxyRequestsTotal[key] ?? 0) + 1;
   prometheusProxyResponseBytesTotal[key] =
     (prometheusProxyResponseBytesTotal[key] ?? 0) + Math.max(0, responseBytes);
-  observePrometheusProxyDuration(method.toUpperCase(), statusClass, durationSeconds);
+  observePrometheusProxyDuration(
+    method.toUpperCase(),
+    statusClass,
+    durationSeconds
+  );
 }
 
 function observeFrontendRequestDuration(
@@ -506,7 +605,13 @@ function recordFrontendRequestMetrics(
   durationSeconds: number
 ): void {
   const statusClass =
-    status >= 500 ? "5xx" : status >= 400 ? "4xx" : status >= 300 ? "3xx" : "2xx";
+    status >= 500
+      ? "5xx"
+      : status >= 400
+      ? "4xx"
+      : status >= 300
+      ? "3xx"
+      : "2xx";
   const key = frontendRequestKey(routeGroup, method.toUpperCase(), statusClass);
   frontendRequestsTotal[key] = (frontendRequestsTotal[key] ?? 0) + 1;
   frontendResponseBytesTotal[key] =
@@ -546,7 +651,13 @@ function recordFrontendApiMetrics(
   durationSeconds: number
 ): void {
   const statusClass =
-    status >= 500 ? "5xx" : status >= 400 ? "4xx" : status >= 300 ? "3xx" : "2xx";
+    status >= 500
+      ? "5xx"
+      : status >= 400
+      ? "4xx"
+      : status >= 300
+      ? "3xx"
+      : "2xx";
   const key = frontendApiKey(apiGroup, method.toUpperCase(), statusClass);
   frontendApiRequestsTotal[key] = (frontendApiRequestsTotal[key] ?? 0) + 1;
   frontendApiResponseBytesTotal[key] =
@@ -665,7 +776,9 @@ function renderPrometheusMetrics(): string {
     "# HELP frontend_ssr_governance_proxy_response_bytes_total Total response bytes returned by java-governance through Nest SSR.",
     "# TYPE frontend_ssr_governance_proxy_response_bytes_total counter"
   );
-  for (const [key, value] of Object.entries(governanceProxyResponseBytesTotal)) {
+  for (const [key, value] of Object.entries(
+    governanceProxyResponseBytesTotal
+  )) {
     const [route, method, statusClass] = key.split("|");
     lines.push(
       `frontend_ssr_governance_proxy_response_bytes_total{route="${route}",method="${method}",status_class="${statusClass}"} ${value}`
@@ -689,8 +802,12 @@ function renderPrometheusMetrics(): string {
     bucketCumulative += buckets[buckets.length - 1] ?? 0;
     lines.push(
       `frontend_ssr_governance_proxy_request_duration_seconds_bucket{route="${route}",method="${method}",status_class="${statusClass}",le="+Inf"} ${bucketCumulative}`,
-      `frontend_ssr_governance_proxy_request_duration_seconds_sum{route="${route}",method="${method}",status_class="${statusClass}"} ${governanceProxyDurationSum[key] ?? 0}`,
-      `frontend_ssr_governance_proxy_request_duration_seconds_count{route="${route}",method="${method}",status_class="${statusClass}"} ${governanceProxyDurationCount[key] ?? 0}`
+      `frontend_ssr_governance_proxy_request_duration_seconds_sum{route="${route}",method="${method}",status_class="${statusClass}"} ${
+        governanceProxyDurationSum[key] ?? 0
+      }`,
+      `frontend_ssr_governance_proxy_request_duration_seconds_count{route="${route}",method="${method}",status_class="${statusClass}"} ${
+        governanceProxyDurationCount[key] ?? 0
+      }`
     );
   }
 
@@ -709,7 +826,9 @@ function renderPrometheusMetrics(): string {
     "# HELP frontend_ssr_prometheus_proxy_response_bytes_total Total response bytes returned by Prometheus through Nest SSR.",
     "# TYPE frontend_ssr_prometheus_proxy_response_bytes_total counter"
   );
-  for (const [key, value] of Object.entries(prometheusProxyResponseBytesTotal)) {
+  for (const [key, value] of Object.entries(
+    prometheusProxyResponseBytesTotal
+  )) {
     const [method, statusClass] = key.split("|");
     lines.push(
       `frontend_ssr_prometheus_proxy_response_bytes_total{method="${method}",status_class="${statusClass}"} ${value}`
@@ -733,8 +852,12 @@ function renderPrometheusMetrics(): string {
     bucketCumulative += buckets[buckets.length - 1] ?? 0;
     lines.push(
       `frontend_ssr_prometheus_proxy_request_duration_seconds_bucket{method="${method}",status_class="${statusClass}",le="+Inf"} ${bucketCumulative}`,
-      `frontend_ssr_prometheus_proxy_request_duration_seconds_sum{method="${method}",status_class="${statusClass}"} ${prometheusProxyDurationSum[key] ?? 0}`,
-      `frontend_ssr_prometheus_proxy_request_duration_seconds_count{method="${method}",status_class="${statusClass}"} ${prometheusProxyDurationCount[key] ?? 0}`
+      `frontend_ssr_prometheus_proxy_request_duration_seconds_sum{method="${method}",status_class="${statusClass}"} ${
+        prometheusProxyDurationSum[key] ?? 0
+      }`,
+      `frontend_ssr_prometheus_proxy_request_duration_seconds_count{method="${method}",status_class="${statusClass}"} ${
+        prometheusProxyDurationCount[key] ?? 0
+      }`
     );
   }
 
@@ -777,8 +900,12 @@ function renderPrometheusMetrics(): string {
     bucketCumulative += buckets[buckets.length - 1] ?? 0;
     lines.push(
       `frontend_ssr_frontend_request_duration_seconds_bucket{route_group="${routeGroup}",method="${method}",status_class="${statusClass}",le="+Inf"} ${bucketCumulative}`,
-      `frontend_ssr_frontend_request_duration_seconds_sum{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${frontendDurationSum[key] ?? 0}`,
-      `frontend_ssr_frontend_request_duration_seconds_count{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${frontendDurationCount[key] ?? 0}`
+      `frontend_ssr_frontend_request_duration_seconds_sum{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${
+        frontendDurationSum[key] ?? 0
+      }`,
+      `frontend_ssr_frontend_request_duration_seconds_count{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${
+        frontendDurationCount[key] ?? 0
+      }`
     );
   }
 
@@ -821,8 +948,12 @@ function renderPrometheusMetrics(): string {
     bucketCumulative += buckets[buckets.length - 1] ?? 0;
     lines.push(
       `frontend_ssr_frontend_api_request_duration_seconds_bucket{api_group="${apiGroup}",method="${method}",status_class="${statusClass}",le="+Inf"} ${bucketCumulative}`,
-      `frontend_ssr_frontend_api_request_duration_seconds_sum{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${frontendApiDurationSum[key] ?? 0}`,
-      `frontend_ssr_frontend_api_request_duration_seconds_count{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${frontendApiDurationCount[key] ?? 0}`
+      `frontend_ssr_frontend_api_request_duration_seconds_sum{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${
+        frontendApiDurationSum[key] ?? 0
+      }`,
+      `frontend_ssr_frontend_api_request_duration_seconds_count{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${
+        frontendApiDurationCount[key] ?? 0
+      }`
     );
   }
 
@@ -864,7 +995,8 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
       spatialBoundsRadius: 0.5,
       limit: 20,
       liveMode: true,
-      _description: "ESO ObsCore image search around quasar 3C 273 (r=0.5\u00b0)",
+      _description:
+        "ESO ObsCore image search around quasar 3C 273 (r=0.5\u00b0)",
     },
     "vo.votable.fetch": {
       provider: "HEASARC",
@@ -888,26 +1020,28 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
         "https://heasarc.gsfc.nasa.gov/FTP/chandra/data/byobsid/2/21843/primary/acisf21843N002_evt2.fits.gz",
       expectedMimeType: "application/fits",
       liveMode: true,
-      _description: "Chandra ACIS event file \u2014 Cas A supernova remnant (obs 21843)",
+      _description:
+        "Chandra ACIS event file \u2014 Cas A supernova remnant (obs 21843)",
     },
     "vo.soda.cutout": {
       provider: "CADC",
-      sodaUrl:
-        "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/soda",
+      sodaUrl: "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/soda",
       datasetIdentifier: "ivo://cadc.nrc.ca/CFHT?2459817",
       spatialBoundsRa: 187.277915,
       spatialBoundsDec: 2.052389,
       spatialBoundsRadius: 0.1,
       outputFormat: "fits",
       liveMode: true,
-      _description: "CADC SODA cutout centered on 3C 273 (r=0.1\u00b0, CFHT obs 2459817)",
+      _description:
+        "CADC SODA cutout centered on 3C 273 (r=0.1\u00b0, CFHT obs 2459817)",
     },
     "vo.preview.fetch": {
       provider: "ESASky",
       previewUrl:
         "https://sky.esa.int/esasky-tap/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=votable&QUERY=SELECT+TOP+5+*+FROM+mv_xsa_obs+WHERE+target_name+LIKE+%2527%2525Crab%2525%2527",
       liveMode: true,
-      _description: "ESASky XMM-Newton observations matching 'Crab' target (top 5)",
+      _description:
+        "ESASky XMM-Newton observations matching 'Crab' target (top 5)",
     },
   };
 }
@@ -1371,7 +1505,8 @@ export class AppController {
 
     if (method === "POST" && path === "/api/v1/admin/dispatch") {
       const newInterval = Number(
-        (req.body as { intervalSeconds?: number })?.intervalSeconds || mockDispatchIntervalSeconds
+        (req.body as { intervalSeconds?: number })?.intervalSeconds ||
+          mockDispatchIntervalSeconds
       );
       if (newInterval > 0) mockDispatchIntervalSeconds = newInterval;
       return sendJson(200, {
@@ -2059,7 +2194,12 @@ export class AppController {
       res.send(body ?? "");
     } catch (e: any) {
       console.error("Error proxying to Prometheus:", e);
-      recordPrometheusProxyMetrics("GET", 502, 0, (Date.now() - started) / 1000);
+      recordPrometheusProxyMetrics(
+        "GET",
+        502,
+        0,
+        (Date.now() - started) / 1000
+      );
       res.status(502).send({
         error: "prometheus_proxy_error",
         message: String(e),
@@ -2694,8 +2834,8 @@ export class AppController {
           typeof lengthHeader === "string"
             ? Number(lengthHeader)
             : typeof lengthHeader === "number"
-              ? lengthHeader
-              : 0;
+            ? lengthHeader
+            : 0;
         recordFrontendApiMetrics(
           apiGroup,
           method,
@@ -2777,15 +2917,42 @@ export class AppController {
 
     // Dev-mode commissioning mocks (Java CommissioningController not running locally).
     const COMMISSIONING_SCENARIOS = [
-      { id: "antenna_calibration", name: "Antenna Calibration", type: "aiv",
-        description: "Validates antenna calibration parameters including pointing model, noise temperature, and efficiency at target frequencies.",
-        requiredParameters: ["antennaId", "targetFrequencyMHz", "pointingModelVersion"] },
-      { id: "timing_sync", name: "Timing Synchronisation", type: "aiv",
-        description: "Validates that all array elements are synchronised to the timing reference within the accepted drift window.",
-        requiredParameters: ["referenceElementId", "maxDriftNs", "syncProtocol"] },
-      { id: "rfi_baseline", name: "RFI Baseline Survey", type: "aiv",
-        description: "Validates the RFI environment baseline against the expected spectral occupancy thresholds for science operations.",
-        requiredParameters: ["siteId", "frequencyRangeMHz", "maxOccupancyPercent"] },
+      {
+        id: "antenna_calibration",
+        name: "Antenna Calibration",
+        type: "aiv",
+        description:
+          "Validates antenna calibration parameters including pointing model, noise temperature, and efficiency at target frequencies.",
+        requiredParameters: [
+          "antennaId",
+          "targetFrequencyMHz",
+          "pointingModelVersion",
+        ],
+      },
+      {
+        id: "timing_sync",
+        name: "Timing Synchronisation",
+        type: "aiv",
+        description:
+          "Validates that all array elements are synchronised to the timing reference within the accepted drift window.",
+        requiredParameters: [
+          "referenceElementId",
+          "maxDriftNs",
+          "syncProtocol",
+        ],
+      },
+      {
+        id: "rfi_baseline",
+        name: "RFI Baseline Survey",
+        type: "aiv",
+        description:
+          "Validates the RFI environment baseline against the expected spectral occupancy thresholds for science operations.",
+        requiredParameters: [
+          "siteId",
+          "frequencyRangeMHz",
+          "maxOccupancyPercent",
+        ],
+      },
     ];
     if (path === "/api/v1/commissioning/scenarios" && method === "GET") {
       res.json(COMMISSIONING_SCENARIOS);
@@ -2794,23 +2961,37 @@ export class AppController {
     if (path === "/api/v1/commissioning/validate" && method === "POST") {
       const body = (req as any).body ?? {};
       const scenarioId: string = body["scenarioId"] ?? "";
-      const scenario = COMMISSIONING_SCENARIOS.find(s => s.id === scenarioId);
+      const scenario = COMMISSIONING_SCENARIOS.find((s) => s.id === scenarioId);
       if (!scenario) {
-        res.status(404).json({ scenarioId, scenarioName: null, pass: false,
-          failures: [`scenario_not_found: ${scenarioId}`], validatedAt: new Date().toISOString() });
+        res.status(404).json({
+          scenarioId,
+          scenarioName: null,
+          pass: false,
+          failures: [`scenario_not_found: ${scenarioId}`],
+          validatedAt: new Date().toISOString(),
+        });
         return;
       }
       const params: Record<string, unknown> = body["parameters"] ?? {};
       const failures = scenario.requiredParameters
-        .filter(p => params[p] == null)
-        .map(p => `missing_required_parameter: ${p}`);
-      res.json({ scenarioId: scenario.id, scenarioName: scenario.name,
-        pass: failures.length === 0, failures, validatedAt: new Date().toISOString() });
+        .filter((p) => params[p] == null)
+        .map((p) => `missing_required_parameter: ${p}`);
+      res.json({
+        scenarioId: scenario.id,
+        scenarioName: scenario.name,
+        pass: failures.length === 0,
+        failures,
+        validatedAt: new Date().toISOString(),
+      });
       return;
     }
     // ── Health / infra-status mocks ───────────────────────────────────────────
     if (path === "/api/v1/health" && method === "GET") {
-      res.json({ status: "ok", service: "java-governance", timestamp: new Date().toISOString() });
+      res.json({
+        status: "ok",
+        service: "java-governance",
+        timestamp: new Date().toISOString(),
+      });
       return;
     }
     if (path === "/api/v1/pulsar/status" && method === "GET") {
@@ -2827,8 +3008,14 @@ export class AppController {
       res.json({
         status: "healthy",
         connection: "established",
-        queues: { audit: "cosmic.audit.queue", control: "cosmic.control.queue" },
-        exchanges: { audit: "cosmic.audit.exchange", control: "cosmic.control.exchange" },
+        queues: {
+          audit: "cosmic.audit.queue",
+          control: "cosmic.control.queue",
+        },
+        exchanges: {
+          audit: "cosmic.audit.exchange",
+          control: "cosmic.control.exchange",
+        },
         lastUpdated: new Date().toISOString(),
       });
       return;
@@ -2868,7 +3055,8 @@ export class AppController {
     if (path === "/api/v1/vo/services" && method === "GET") {
       res.json({
         tapUrl: "https://heasarc.gsfc.nasa.gov/xamin/tap/sync",
-        dataLinkUrl: "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/datalink",
+        dataLinkUrl:
+          "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/datalink",
       });
       return;
     }
@@ -2878,18 +3066,55 @@ export class AppController {
       res.json({
         fields: ["time", "source_name", "ra", "dec", "flux"],
         rows: [
-          ["2026-01-15T06:12:00Z", "3C273",          "187.2779", "2.0524", "42.3"],
-          ["2026-01-22T11:34:00Z", "3C273_b",         "187.2960", "2.0714", "38.7"],
-          ["2026-01-29T08:55:00Z", "3C273_field_a",   "187.3101", "2.0841", "12.1"],
-          ["2026-02-05T15:07:00Z", "3C273_field_b",   "187.2601", "2.0394",  "9.4"],
-          ["2026-02-12T22:19:00Z", "3C273_field_c",   "187.2515", "2.0271",  "6.8"],
-          ["2026-02-19T03:43:00Z", "3C273_field_d",   "187.3021", "2.0657",  "5.3"],
-          ["2026-02-26T17:02:00Z", "3C273_field_e",   "187.2990", "2.0612",  "4.9"],
-          ["2026-03-04T12:31:00Z", "3C273_ngvla_ref", "187.2779", "2.0524", "44.1"],
+          ["2026-01-15T06:12:00Z", "3C273", "187.2779", "2.0524", "42.3"],
+          ["2026-01-22T11:34:00Z", "3C273_b", "187.2960", "2.0714", "38.7"],
+          [
+            "2026-01-29T08:55:00Z",
+            "3C273_field_a",
+            "187.3101",
+            "2.0841",
+            "12.1",
+          ],
+          [
+            "2026-02-05T15:07:00Z",
+            "3C273_field_b",
+            "187.2601",
+            "2.0394",
+            "9.4",
+          ],
+          [
+            "2026-02-12T22:19:00Z",
+            "3C273_field_c",
+            "187.2515",
+            "2.0271",
+            "6.8",
+          ],
+          [
+            "2026-02-19T03:43:00Z",
+            "3C273_field_d",
+            "187.3021",
+            "2.0657",
+            "5.3",
+          ],
+          [
+            "2026-02-26T17:02:00Z",
+            "3C273_field_e",
+            "187.2990",
+            "2.0612",
+            "4.9",
+          ],
+          [
+            "2026-03-04T12:31:00Z",
+            "3C273_ngvla_ref",
+            "187.2779",
+            "2.0524",
+            "44.1",
+          ],
         ],
         links: [
           {
-            accessUrl: "https://heasarc.gsfc.nasa.gov/xamin/vo/cone?target=3C273&radius=0.1&format=votable",
+            accessUrl:
+              "https://heasarc.gsfc.nasa.gov/xamin/vo/cone?target=3C273&radius=0.1&format=votable",
             semantics: "#this",
             contentType: "application/x-votable+xml",
           },
@@ -2934,7 +3159,10 @@ export class AppController {
       return;
     }
     // Serve inline artifact content (registered by registerVoArtifact) keyed by URL path.
-    if (path.match(/^\/api\/v1\/jobs\/[^/]+\/artifacts\/[^/]+$/) && method === "GET") {
+    if (
+      path.match(/^\/api\/v1\/jobs\/[^/]+\/artifacts\/[^/]+$/) &&
+      method === "GET"
+    ) {
       const content = artifactContentStore.get(path);
       if (content === undefined) {
         res.status(404).json({ error: "artifact_not_found", path });
@@ -2965,7 +3193,10 @@ export class AppController {
       res.status(204).send();
       return;
     }
-    if (path.match(/^\/api\/v1\/jobs\/[^/]+\/transition$/) && method === "POST") {
+    if (
+      path.match(/^\/api\/v1\/jobs\/[^/]+\/transition$/) &&
+      method === "POST"
+    ) {
       const jobId = path.split("/").slice(-2)[0];
       const job = embeddedJobStore.get(jobId);
       if (!job) {
@@ -2975,9 +3206,9 @@ export class AppController {
       const body = (req as any).body ?? {};
       const nextStatus = String(
         (body["targetStatus"] as string | undefined) ||
-        (body["state"] as string | undefined) ||
-        (body["newState"] as string | undefined) ||
-        "RUNNING"
+          (body["state"] as string | undefined) ||
+          (body["newState"] as string | undefined) ||
+          "RUNNING"
       );
       job.status = nextStatus as EmbeddedJobRecord["status"];
       job.updatedAt = new Date().toISOString();
@@ -2988,17 +3219,29 @@ export class AppController {
     }
     // ── Admin dispatch mock ──────────────────────────────────────────────────
     if (path === "/api/v1/admin/dispatch" && method === "GET") {
-      res.json({ intervalSeconds: mockDispatchIntervalSeconds, scannedCount: mockScanCount, dispatchedCount: mockDispatchCount });
+      res.json({
+        intervalSeconds: mockDispatchIntervalSeconds,
+        scannedCount: mockScanCount,
+        dispatchedCount: mockDispatchCount,
+      });
       return;
     }
     if (path === "/api/v1/admin/dispatch" && method === "POST") {
       const body = (req as any).body ?? {};
-      const newInterval = Number(body["intervalSeconds"] ?? mockDispatchIntervalSeconds);
+      const newInterval = Number(
+        body["intervalSeconds"] ?? mockDispatchIntervalSeconds
+      );
       if (newInterval > 0) mockDispatchIntervalSeconds = newInterval;
-      res.json({ intervalSeconds: mockDispatchIntervalSeconds, scannedCount: mockScanCount, dispatchedCount: mockDispatchCount });
+      res.json({
+        intervalSeconds: mockDispatchIntervalSeconds,
+        scannedCount: mockScanCount,
+        dispatchedCount: mockDispatchCount,
+      });
       return;
     }
-    const targetUrls = this.governanceBaseCandidates().map((b) => `${b}${req.originalUrl}`);
+    const targetUrls = this.governanceBaseCandidates().map(
+      (b) => `${b}${req.originalUrl}`
+    );
     try {
       const started = Date.now();
       const headers = new Headers();
@@ -3065,7 +3308,10 @@ export class AppController {
     try {
       const cached = await redisClient?.get(VO_CACHED_SAMPLES_KEY);
       if (cached) {
-        const parsed = JSON.parse(cached) as Record<string, Record<string, unknown>>;
+        const parsed = JSON.parse(cached) as Record<
+          string,
+          Record<string, unknown>
+        >;
         if (parsed && typeof parsed === "object") {
           samples = parsed;
           serialized = cached;
@@ -3085,11 +3331,9 @@ export class AppController {
 
     if (res.getHeader("X-Cache") !== "HIT" && redisClient) {
       try {
-        await redisClient.set(
-          VO_CACHED_SAMPLES_KEY,
-          JSON.stringify(samples),
-          { EX: VO_CACHED_SAMPLES_TTL_SECONDS }
-        );
+        await redisClient.set(VO_CACHED_SAMPLES_KEY, JSON.stringify(samples), {
+          EX: VO_CACHED_SAMPLES_TTL_SECONDS,
+        });
         redisCacheBytesWrittenTotal += Buffer.byteLength(serialized, "utf8");
       } catch (e) {
         console.warn("Failed to populate VO cached samples in Redis:", e);
@@ -3157,8 +3401,8 @@ async function bootstrap() {
         typeof lengthHeader === "string"
           ? Number(lengthHeader)
           : typeof lengthHeader === "number"
-            ? lengthHeader
-            : 0;
+          ? lengthHeader
+          : 0;
       recordFrontendRequestMetrics(
         routeGroup,
         req.method || "GET",
@@ -3183,7 +3427,10 @@ async function bootstrap() {
       });
       // Ensure API routes are handled by Nest: skip vite middleware for /api/* to avoid proxy loops
       expressInstance.use((req: Request, res: Response, next: any) => {
-        if (req.path && (req.path.startsWith("/api/") || req.path === "/metrics")) {
+        if (
+          req.path &&
+          (req.path.startsWith("/api/") || req.path === "/metrics")
+        ) {
           return next();
         }
         return vite.middlewares(req as any, res as any, next);

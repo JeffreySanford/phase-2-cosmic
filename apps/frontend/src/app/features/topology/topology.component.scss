@@ -111,11 +111,8 @@
   color: #e2e8f0;
   font-weight: 800;
   cursor: pointer;
-  transition:
-    transform 140ms ease,
-    background-color 140ms ease,
-    border-color 140ms ease,
-    box-shadow 140ms ease;
+  transition: transform 140ms ease, background-color 140ms ease,
+    border-color 140ms ease, box-shadow 140ms ease;
 }
 
 .graph-tools__button:hover {
@@ -168,11 +165,8 @@
   padding: 0.25rem 0.45rem;
   background: rgba(15, 23, 42, 0.22);
   cursor: pointer;
-  transition:
-    background-color 140ms ease,
-    border-color 140ms ease,
-    opacity 140ms ease,
-    transform 140ms ease;
+  transition: background-color 140ms ease, border-color 140ms ease,
+    opacity 140ms ease, transform 140ms ease;
 }
 
 .node-ring-legend__button:hover {
@@ -298,14 +292,20 @@
   padding: 1rem;
   border: 1px solid rgba(96, 165, 250, 0.22);
   border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(2, 6, 23, 0.92));
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.88),
+    rgba(2, 6, 23, 0.92)
+  );
   box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.08);
 }
 
 .fidelity-card--secondary {
-  background:
-    linear-gradient(180deg, rgba(10, 15, 31, 0.88), rgba(2, 6, 23, 0.95));
+  background: linear-gradient(
+    180deg,
+    rgba(10, 15, 31, 0.88),
+    rgba(2, 6, 23, 0.95)
+  );
 }
 
 .fidelity-card__header {
@@ -606,8 +606,11 @@
   padding: 0.9rem 1rem 1rem;
   border: 1px solid rgba(96, 165, 250, 0.22);
   border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(2, 6, 23, 0.92));
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.88),
+    rgba(2, 6, 23, 0.92)
+  );
   box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.08);
 }
 

@@ -4,10 +4,10 @@
   "type": "object",
   "required": ["provider", "productUrl"],
   "properties": {
-    "provider":          { "type": "string", "minLength": 1 },
-    "productUrl":        { "type": "string", "minLength": 1 },
-    "expectedMimeType":  { "type": "string" },
-    "liveMode":          { "type": "boolean" }
+    "provider": { "type": "string", "minLength": 1 },
+    "productUrl": { "type": "string", "minLength": 1 },
+    "expectedMimeType": { "type": "string" },
+    "liveMode": { "type": "boolean" }
   },
   "additionalProperties": true
 }

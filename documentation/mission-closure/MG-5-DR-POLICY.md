@@ -9,25 +9,25 @@
 
 ## 1. Objectives
 
-| Metric | Target |
-| --- | --- |
-| Recovery Point Objective (RPO) | ≤ 1 hour for science/cal datasets; ≤ 24 hours for raw data |
-| Recovery Time Objective (RTO) | ≤ 4 hours for priority-1 datasets; ≤ 24 hours for archive tier |
-| Replication lag threshold | ≤ 5 minutes continuous replication; alert at 15 minutes |
-| Minimum replica count | 2 geographic replicas for all science-grade data |
-| Restore-drill frequency | Monthly for science tier; quarterly for archive tier |
+| Metric                         | Target                                                         |
+| ------------------------------ | -------------------------------------------------------------- |
+| Recovery Point Objective (RPO) | ≤ 1 hour for science/cal datasets; ≤ 24 hours for raw data     |
+| Recovery Time Objective (RTO)  | ≤ 4 hours for priority-1 datasets; ≤ 24 hours for archive tier |
+| Replication lag threshold      | ≤ 5 minutes continuous replication; alert at 15 minutes        |
+| Minimum replica count          | 2 geographic replicas for all science-grade data               |
+| Restore-drill frequency        | Monthly for science tier; quarterly for archive tier           |
 
 ---
 
 ## 2. Dataset Tier Classification
 
-| Tier | Examples | Retention | Replicas | Region |
-| --- | --- | --- | --- | --- |
-| **science** | calibrated visibilities, images, spectra | 365 days | 3 | primary + 2 DR |
-| **calibration** | bandpass, flux, pointing models | 730 days | 2 | primary + 1 DR |
-| **raw** | raw correlator dumps | 90 days | 2 | primary + 1 DR |
-| **provenance** | audit manifests, lineage chains | indefinite | 3 | primary + 2 DR |
-| **catalog** | dataset index, VO registry entries | indefinite | 2 | primary + 1 DR |
+| Tier            | Examples                                 | Retention  | Replicas | Region         |
+| --------------- | ---------------------------------------- | ---------- | -------- | -------------- |
+| **science**     | calibrated visibilities, images, spectra | 365 days   | 3        | primary + 2 DR |
+| **calibration** | bandpass, flux, pointing models          | 730 days   | 2        | primary + 1 DR |
+| **raw**         | raw correlator dumps                     | 90 days    | 2        | primary + 1 DR |
+| **provenance**  | audit manifests, lineage chains          | indefinite | 3        | primary + 2 DR |
+| **catalog**     | dataset index, VO registry entries       | indefinite | 2        | primary + 1 DR |
 
 ---
 
@@ -73,24 +73,24 @@ Each policy record carries:
 
 ### 4.3 Drill schedule
 
-| Tier | Frequency | Owner | Evidence artifact |
-| --- | --- | --- | --- |
-| science | Monthly (first Monday) | SRE on-call | `restore-drill-{yyyyMM}.json` |
-| calibration | Quarterly | SRE + QA | `restore-drill-cal-{yyyyQn}.json` |
-| raw | Quarterly | SRE | `restore-drill-raw-{yyyyQn}.json` |
-| provenance | Semi-annual | Governance + SRE | `restore-drill-prov-{yyyy}H{n}.json` |
-| catalog | Semi-annual | Governance | `restore-drill-cat-{yyyy}H{n}.json` |
+| Tier        | Frequency              | Owner            | Evidence artifact                    |
+| ----------- | ---------------------- | ---------------- | ------------------------------------ |
+| science     | Monthly (first Monday) | SRE on-call      | `restore-drill-{yyyyMM}.json`        |
+| calibration | Quarterly              | SRE + QA         | `restore-drill-cal-{yyyyQn}.json`    |
+| raw         | Quarterly              | SRE              | `restore-drill-raw-{yyyyQn}.json`    |
+| provenance  | Semi-annual            | Governance + SRE | `restore-drill-prov-{yyyy}H{n}.json` |
+| catalog     | Semi-annual            | Governance       | `restore-drill-cat-{yyyy}H{n}.json`  |
 
 ---
 
 ## 5. Alerting and Monitoring
 
-| Alert | Condition | Severity | Action |
-| --- | --- | --- | --- |
-| `replication_lag_high` | lag > 15 min on any science-tier dataset | P2 | Page SRE; investigate replication health |
-| `replica_count_low` | active replicas < policy `replicaCount` | P1 | Immediate escalation; halt new ingests |
-| `restore_drill_overdue` | last successful drill > 2× scheduled interval | P2 | Schedule emergency drill; notify mission ops |
-| `rto_breach_risk` | predicted restore time > 50% of RTO | P2 | Begin pre-restore staging |
+| Alert                   | Condition                                     | Severity | Action                                       |
+| ----------------------- | --------------------------------------------- | -------- | -------------------------------------------- |
+| `replication_lag_high`  | lag > 15 min on any science-tier dataset      | P2       | Page SRE; investigate replication health     |
+| `replica_count_low`     | active replicas < policy `replicaCount`       | P1       | Immediate escalation; halt new ingests       |
+| `restore_drill_overdue` | last successful drill > 2× scheduled interval | P2       | Schedule emergency drill; notify mission ops |
+| `rto_breach_risk`       | predicted restore time > 50% of RTO           | P2       | Begin pre-restore staging                    |
 
 Prometheus counters (planned, Sprint 4+):
 

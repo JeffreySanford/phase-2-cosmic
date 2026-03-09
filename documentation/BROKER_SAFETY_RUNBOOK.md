@@ -11,11 +11,11 @@ and operational checks for each broker.
 
 ## Broker Role Assignments
 
-| Broker   | Role                  | Topic/Queue pattern | Retention | Replay? |
-|----------|-----------------------|---------------------|-----------|---------|
-| Kafka    | Audit log + replay    | `cosmic.audit.*`    | 7 days    | Yes     |
-| RabbitMQ | Control commands      | `cosmic.control.*`  | Transient | No      |
-| Pulsar   | Federated delivery    | `cosmic/ngvla/*`    | 24 h      | Via DLQ |
+| Broker   | Role               | Topic/Queue pattern | Retention | Replay? |
+| -------- | ------------------ | ------------------- | --------- | ------- |
+| Kafka    | Audit log + replay | `cosmic.audit.*`    | 7 days    | Yes     |
+| RabbitMQ | Control commands   | `cosmic.control.*`  | Transient | No      |
+| Pulsar   | Federated delivery | `cosmic/ngvla/*`    | 24 h      | Via DLQ |
 
 ### Kafka — Audit / Replay
 
@@ -82,7 +82,7 @@ with at-least-once semantics via Pulsar's built-in geo-replication.
 
 - Tenant/namespace: `cosmic/ngvla`, `cosmic/meerkat`, `cosmic/ska`.
 - Topic names: `persistent://cosmic/<tenant>/<domain>` (e.g.
-   `persistent://cosmic/ngvla/observations`).
+  `persistent://cosmic/ngvla/observations`).
 - **Never** use Pulsar for administrative control commands; use RabbitMQ.
 - Schema enforcement: Activate `SchemaType.JSON` with Avro backward-compatibility.
 - Partitioned topics MUST be used for throughput > 5 000 msg/s per topic.
@@ -127,7 +127,7 @@ Producer         →   Kafka audit   →   Audit consumer
 ## Escalation Matrix
 
 | Severity | Condition                          | Action              |
-|----------|------------------------------------|---------------------|
+| -------- | ---------------------------------- | ------------------- |
 | P1       | Kafka unavailable > 1 min          | Page on-call SRE    |
 | P1       | RabbitMQ DLX depth > 500           | Page on-call SRE    |
 | P1       | Pulsar geo-replication lag > 10000 | Isolate site; page  |
@@ -196,6 +196,6 @@ pulsar-admin topics reset-cursor \
 
 ## Change History
 
-| Date       | Author          | Change                                      |
-|------------|-----------------|---------------------------------------------|
-| 2025-01-01 | Platform Team   | Initial broker role partitioning document   |
+| Date       | Author        | Change                                    |
+| ---------- | ------------- | ----------------------------------------- |
+| 2025-01-01 | Platform Team | Initial broker role partitioning document |

@@ -71,7 +71,10 @@
   &__stat {
     white-space: nowrap;
     color: #222;
-    strong { color: #000; font-weight: 700; }
+    strong {
+      color: #000;
+      font-weight: 700;
+    }
   }
 
   &__sep {
@@ -185,7 +188,8 @@
   color: #e6f7ff;
   border-left: 4px solid #78909c; // default/fallback; overridden via [ngStyle]
   border-radius: token(radii, md);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -194,11 +198,13 @@
 }
 
 .job-card:hover {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
 }
 
 .job-card--expanded {
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
 }
 
 // ─── Collapsed header ────────────────────────────────────────────────────────
@@ -514,24 +520,44 @@
   font-weight: 600;
   opacity: 0.75;
 
-  &:first-of-type { margin-top: 8px; }
+  &:first-of-type {
+    margin-top: 8px;
+  }
 }
 
 .group-icon {
   font-size: 16px;
   width: 16px;
   height: 16px;
-  &--fits     { color: #00e5ff; }
-  &--votable  { color: #7b61ff; }
-  &--csv      { color: #69f0ae; }
-  &--json     { color: #ffd740; }
-  &--archive  { color: #ff9100; }
-  &--preview  { color: #ff80ab; }
-  &--other    { color: #90a4ae; }
-  &--external { color: #40c4ff; }
+  &--fits {
+    color: #00e5ff;
+  }
+  &--votable {
+    color: #7b61ff;
+  }
+  &--csv {
+    color: #69f0ae;
+  }
+  &--json {
+    color: #ffd740;
+  }
+  &--archive {
+    color: #ff9100;
+  }
+  &--preview {
+    color: #ff80ab;
+  }
+  &--other {
+    color: #90a4ae;
+  }
+  &--external {
+    color: #40c4ff;
+  }
 }
 
-.group-label { flex: 1 1 auto; }
+.group-label {
+  flex: 1 1 auto;
+}
 
 .group-count {
   background: rgba(255, 255, 255, 0.08);
@@ -551,13 +577,13 @@
 
 // category-specific left-border accent colours
 $product-colors: (
-  fits:    #00e5ff,
+  fits: #00e5ff,
   votable: #7b61ff,
-  csv:     #69f0ae,
-  json:    #ffd740,
+  csv: #69f0ae,
+  json: #ffd740,
   archive: #ff9100,
   preview: #ff80ab,
-  other:   #90a4ae,
+  other: #90a4ae,
 );
 
 .product-card {
@@ -574,7 +600,9 @@ $product-colors: (
   @each $cat, $color in $product-colors {
     &--#{$cat} {
       border-left-color: $color;
-      &:hover { background: rgba($color, 0.07); }
+      &:hover {
+        background: rgba($color, 0.07);
+      }
     }
   }
 }
@@ -587,7 +615,9 @@ $product-colors: (
   opacity: 0.8;
 
   @each $cat, $color in $product-colors {
-    &--#{$cat} { color: $color; }
+    &--#{$cat} {
+      color: $color;
+    }
   }
 }
 
