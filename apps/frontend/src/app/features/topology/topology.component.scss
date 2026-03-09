@@ -716,6 +716,38 @@
   margin-top: 12px;
 }
 
+/* Material MDC tab styling for topology tabs */
+::ng-deep .topology-tabs .mat-mdc-tab-list {
+  background: linear-gradient(90deg, #04293a 0%, #0b5568 100%);
+  border-radius: 8px;
+  padding: 6px;
+}
+
+/* Inactive tab labels — readable on dark */
+::ng-deep .topology-tabs .mdc-tab__text-label {
+  color: rgba(200, 230, 255, 0.75) !important;
+  transition: color 200ms ease;
+}
+
+/* Active tab label — vibrant cyan */
+::ng-deep .topology-tabs .mdc-tab--active .mdc-tab__text-label {
+  color: #40e0ff !important;
+  text-shadow: 0 0 12px rgba(64, 224, 255, 0.55);
+  font-weight: 700;
+}
+
+/* Active ink-bar indicator */
+::ng-deep .topology-tabs .mdc-tab--active .mdc-tab-indicator__content--underline,
+::ng-deep .topology-tabs .mat-mdc-tab-ink-bar {
+  border-color: #40e0ff !important;
+  background-color: #40e0ff !important;
+}
+
+/* Hover */
+::ng-deep .topology-tabs .mdc-tab:not(.mdc-tab--active):hover .mdc-tab__text-label {
+  color: rgba(200, 230, 255, 0.95) !important;
+}
+
 .topology-tab-body {
   padding-top: 0.4rem;
 }
