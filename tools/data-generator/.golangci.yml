@@ -27,28 +27,26 @@ linters:
     - gosec # OWASP-aligned security checks
     # Simplification
     - gosimple
-  settings:
-    goimports:
-      # Separate internal module imports from stdlib/third-party
-      local-prefixes: github.com/cosmic-horizon
-    govet:
-      enable:
-        - shadow
-    gosec:
-      # Exclude informational findings that add noise without value
-      excludes:
-        - G104 # Errors unhandled — covered by errcheck
-        - G304 # File path provided as taint input — expected for CLI tools
+linters-settings:
+  goimports:
+    # Separate internal module imports from stdlib/third-party
+    local-prefixes: github.com/cosmic-horizon
+  govet:
+    enable:
+      - shadow
+  gosec:
+    # Exclude informational findings that add noise without value
+    excludes:
+      - G104 # Errors unhandled — covered by errcheck
+      - G304 # File path provided as taint input — expected for CLI tools
 
 issues:
   # Do not limit output — show all findings
   max-issues-per-linter: 0
   max-same-issues: 0
-
-exclusions:
-  # Exclude test files from gosec and errcheck
-  # (test code intentionally uses hardcoded values)
-  rules:
+  exclude-rules:
+    # Exclude test files from gosec and errcheck
+    # (test code intentionally uses hardcoded values)
     - path: _test\.go
       linters:
         - gosec
