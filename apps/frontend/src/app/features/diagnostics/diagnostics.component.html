@@ -1,14 +1,35 @@
 <div class="view-container">
   <div class="view-header">
     <h1>Diagnostics & Benchmarks</h1>
-    <app-disclaimer-banner type="demo" [dismissible]="true" [ready]="initialLoadSettled"></app-disclaimer-banner>
+    <app-disclaimer-banner
+      type="demo"
+      [dismissible]="true"
+      [ready]="initialLoadSettled"
+    ></app-disclaimer-banner>
 
-    <p class="lead">Passive and optional active diagnostics produced by the `data-generator` container.</p>
+    <p class="lead">
+      Passive and optional active diagnostics produced by the `data-generator`
+      container.
+    </p>
 
     <div class="controls">
-      <button mat-raised-button color="primary" (click)="fetchIndex()">Refresh index</button>
-      <button mat-stroked-button (click)="viewSystemSpecs()" [disabled]="loading">View system-specs.txt</button>
-      <a *ngIf="index?.files?.includes('system-specs.txt')" class="download" href="/api/diagnostics/system-specs" download>Download system-specs.txt</a>
+      <button mat-raised-button color="primary" (click)="fetchIndex()">
+        Refresh index
+      </button>
+      <button
+        mat-stroked-button
+        (click)="viewSystemSpecs()"
+        [disabled]="loading"
+      >
+        View system-specs.txt
+      </button>
+      <a
+        *ngIf="index?.files?.includes('system-specs.txt')"
+        class="download"
+        href="/api/diagnostics/system-specs"
+        download
+        >Download system-specs.txt</a
+      >
     </div>
 
     <div *ngIf="loading" class="status">Loading…</div>
@@ -21,12 +42,36 @@
         <section class="promql-section">
           <h2>Live Signals</h2>
           <div class="promql-cards">
-            <app-promql-card title="Ingest Rate (1m)" query='rate(generator_bytes_produced_total[1m])' tone="cyan"></app-promql-card>
-            <app-promql-card title="Total Bytes" query='generator_bytes_produced_total' tone="violet"></app-promql-card>
-            <app-promql-card title="Generator Up" query='up{job="data-generator"}' tone="mint"></app-promql-card>
-            <app-promql-card title="Records Rate" query='rate(generator_records_produced_total[1m])' tone="amber"></app-promql-card>
-            <app-promql-card title="Targets Up" query='sum(up)' tone="blue"></app-promql-card>
-            <app-promql-card title="CPU Load" query='100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))' tone="rose"></app-promql-card>
+            <app-promql-card
+              title="Ingest Rate (1m)"
+              query="rate(generator_bytes_produced_total[1m])"
+              tone="cyan"
+            ></app-promql-card>
+            <app-promql-card
+              title="Total Bytes"
+              query="generator_bytes_produced_total"
+              tone="violet"
+            ></app-promql-card>
+            <app-promql-card
+              title="Generator Up"
+              query='up{job="data-generator"}'
+              tone="mint"
+            ></app-promql-card>
+            <app-promql-card
+              title="Records Rate"
+              query="rate(generator_records_produced_total[1m])"
+              tone="amber"
+            ></app-promql-card>
+            <app-promql-card
+              title="Targets Up"
+              query="sum(up)"
+              tone="blue"
+            ></app-promql-card>
+            <app-promql-card
+              title="CPU Load"
+              query='100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))'
+              tone="rose"
+            ></app-promql-card>
           </div>
         </section>
         <!-- Virtual Observatory sample removed from Diagnostics: external-source data belongs on Dataset/Job detail and Viewer pages. -->
@@ -38,14 +83,33 @@
         <div class="brokers-header">
           <h2>Broker & Service Status</h2>
           <div class="brokers-controls">
-            <span class="last-updated" *ngIf="lastUpdated">Updated: {{ lastUpdated | date:'mediumTime' }}</span>
-            <span class="polling-interval" *ngIf="autoRefresh">(every {{ currentPollingMs / 1000 }}s)</span>
-            <mat-slide-toggle [checked]="autoRefresh" (change)="toggleAutoRefresh()" color="primary">Auto-refresh</mat-slide-toggle>
-            <button mat-stroked-button (click)="fetchDockerServices()" [disabled]="loading">Refresh</button>
+            <span class="last-updated" *ngIf="lastUpdated"
+              >Updated: {{ lastUpdated | date : "mediumTime" }}</span
+            >
+            <span class="polling-interval" *ngIf="autoRefresh"
+              >(every {{ currentPollingMs / 1000 }}s)</span
+            >
+            <mat-slide-toggle
+              [checked]="autoRefresh"
+              (change)="toggleAutoRefresh()"
+              color="primary"
+              >Auto-refresh</mat-slide-toggle
+            >
+            <button
+              mat-stroked-button
+              (click)="fetchDockerServices()"
+              [disabled]="loading"
+            >
+              Refresh
+            </button>
           </div>
         </div>
         <div class="tiles-grid">
-          <mat-card class="tile" [ngClass]="'tile-' + (s.status || 'unknown')" *ngFor="let s of dockerServices">
+          <mat-card
+            class="tile"
+            [ngClass]="'tile-' + (s.status || 'unknown')"
+            *ngFor="let s of dockerServices"
+          >
             <div class="tile-head">
               <div class="tile-title">
                 <mat-icon *ngIf="s.icon">{{ s.icon }}</mat-icon>
@@ -53,7 +117,9 @@
               </div>
               <div class="tile-status">{{ s.status }}</div>
             </div>
-            <div class="tile-body">{{ s.details || 'No endpoint configured' }}</div>
+            <div class="tile-body">
+              {{ s.details || "No endpoint configured" }}
+            </div>
             <div class="tile-meta" *ngIf="s.latencyMs || s.error">
               <span *ngIf="s.latencyMs">{{ s.latencyMs }}ms</span>
               <span *ngIf="s.error" class="tile-error">{{ s.error }}</span>
@@ -63,10 +129,17 @@
           <app-rabbitmq-status [status]="rabbitMQStatus"></app-rabbitmq-status>
         </div>
       </div>
-      <div class="metrics-summary" *ngIf="timingDriftNs !== undefined || rfiEventRate !== undefined">
+      <div
+        class="metrics-summary"
+        *ngIf="timingDriftNs !== undefined || rfiEventRate !== undefined"
+      >
         <h3>Timing / RFI Metrics</h3>
-        <p *ngIf="timingDriftNs !== undefined">Timing drift: {{ timingDriftNs }} ns</p>
-        <p *ngIf="rfiEventRate !== undefined">RFI event rate: {{ rfiEventRate }} /s</p>
+        <p *ngIf="timingDriftNs !== undefined">
+          Timing drift: {{ timingDriftNs }} ns
+        </p>
+        <p *ngIf="rfiEventRate !== undefined">
+          RFI event rate: {{ rfiEventRate }} /s
+        </p>
       </div>
     </mat-tab>
 
@@ -77,9 +150,12 @@
             <h2>Recent received files</h2>
             <mat-form-field appearance="outline" class="count-select">
               <mat-label>Show</mat-label>
-              <mat-select [value]="visibleFileCount" (selectionChange)="setVisibleFileCount($event.value)">
+              <mat-select
+                [value]="visibleFileCount"
+                (selectionChange)="setVisibleFileCount($event.value)"
+              >
                 <mat-option *ngFor="let n of fileCountOptions" [value]="n">
-                  {{ n < 0 ? 'All' : n }}
+                  {{ n < 0 ? "All" : n }}
                 </mat-option>
               </mat-select>
             </mat-form-field>
@@ -87,7 +163,9 @@
           <ul class="recent-files">
             <li *ngFor="let f of visibleFiles">{{ f }}</li>
           </ul>
-          <p class="muted">Showing {{ visibleFiles.length }} of {{ sortedFiles.length }} files.</p>
+          <p class="muted">
+            Showing {{ visibleFiles.length }} of {{ sortedFiles.length }} files.
+          </p>
           <p class="muted">Storage location: {{ index.path }}</p>
         </section>
 
@@ -98,15 +176,34 @@
       </div>
     </mat-tab>
 
+    <mat-tab label="Trident Allocator">
+      <div class="tab-content">
+        <app-trident-allocator></app-trident-allocator>
+      </div>
+    </mat-tab>
+
     <mat-tab label="Mission Gates">
       <div class="tab-content">
         <section class="commissioning-section">
           <h2>Commissioning / AIV Scenarios (MG-4)</h2>
-          <p class="muted">Registered commissioning acceptance scenarios for ngVLA AIV readiness gate.</p>
-          <div *ngIf="commissioningLoading" class="status">Loading scenarios…</div>
-          <div *ngIf="commissioningError" class="error">{{ commissioningError }}</div>
-          <div class="tiles-grid" *ngIf="!commissioningLoading && !commissioningError">
-            <mat-card class="tile tile-online" *ngFor="let s of commissioningScenarios">
+          <p class="muted">
+            Registered commissioning acceptance scenarios for ngVLA AIV
+            readiness gate.
+          </p>
+          <div *ngIf="commissioningLoading" class="status">
+            Loading scenarios…
+          </div>
+          <div *ngIf="commissioningError" class="error">
+            {{ commissioningError }}
+          </div>
+          <div
+            class="tiles-grid"
+            *ngIf="!commissioningLoading && !commissioningError"
+          >
+            <mat-card
+              class="tile tile-online"
+              *ngFor="let s of commissioningScenarios"
+            >
               <div class="tile-head">
                 <div class="tile-title">
                   <mat-icon>task_alt</mat-icon>
@@ -116,10 +213,12 @@
               </div>
               <div class="tile-body">{{ s.description }}</div>
               <div class="tile-meta">
-                Required: {{ s.requiredParameters.join(', ') }}
+                Required: {{ s.requiredParameters.join(", ") }}
               </div>
             </mat-card>
-            <p *ngIf="commissioningScenarios.length === 0" class="muted">No commissioning scenarios registered.</p>
+            <p *ngIf="commissioningScenarios.length === 0" class="muted">
+              No commissioning scenarios registered.
+            </p>
           </div>
         </section>
       </div>

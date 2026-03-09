@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExecutionEvent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.model</a> &gt; <span class="el_source">ExecutionEvent.java</span></div><h1>ExecutionEvent.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.model;
+
+import java.util.Map;
+
+/**
+ * Canonical execution event envelope.
+ *
+ * &lt;p&gt;Every event flowing through the broker fabric (Kafka audit/replay,
+ * RabbitMQ control commands, Pulsar federated delivery) MUST be wrapped in
+ * this envelope. Consumers extract {@code correlationId} to reconstruct
+ * distributed traces across broker boundaries.
+ *
+ * @param correlationId  Trace identifier that propagates unchanged across all brokers.
+ * @param eventType      Domain event type descriptor (e.g. &quot;JOB_SUBMITTED&quot;, &quot;ALERT_ISSUED&quot;).
+ * @param originBroker   Originating broker role: &quot;kafka&quot;, &quot;rabbitmq&quot;, or &quot;pulsar&quot;.
+ * @param schemaVersion  Semver string for the payload schema (e.g. &quot;1.0.0&quot;).
+ * @param timestamp      ISO-8601 UTC timestamp set by the publisher.
+ * @param payload        Domain-specific payload; structure governed by {@code schemaVersion}.
+ */
+<span class="fc" id="L20">public record ExecutionEvent(</span>
+        String correlationId,
+        String eventType,
+        String originBroker,
+        String schemaVersion,
+        String timestamp,
+        Map&lt;String, Object&gt; payload) {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

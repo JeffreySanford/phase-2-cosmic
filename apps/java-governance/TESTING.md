@@ -6,7 +6,7 @@ Overview
 
 - The module provides a Maven profile `with-containers` which enables container-style integration tests.
 - By default the project excludes tests named `*ContainerIntegrationTest.java` so local `mvn test` runs are quick and safe for developers without Docker.
-- When Docker/Testcontainers is available to the JVM, tests will start a Redis container automatically via `AbstractRedisTest`. If Docker is not available, tests fall back to `localhost:6379` or values from environment variables.
+- When Docker/Testcontainers is available to the JVM, tests will start a Redis container automatically via `AbstractRedisTest` and may spin up additional helpers such as an httpbin stub for the new `ModeRouterContainerIntegrationTest`. If Docker is not available, tests fall back to `localhost:6379` or values from environment variables.
 
 Commands
 
@@ -21,6 +21,8 @@ mvn -f apps/java-governance/pom.xml test -DskipITs
 ```bash
 mvn -f apps/java-governance/pom.xml test -Pwith-containers
 ```
+
+The `with-containers` profile now enables the `ModeRouterContainerIntegrationTest`, which starts an httpbin container and verifies backend submission behavior.
 
 Environment
 

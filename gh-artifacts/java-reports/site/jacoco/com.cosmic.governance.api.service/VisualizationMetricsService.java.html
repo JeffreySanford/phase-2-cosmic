@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VisualizationMetricsService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.service</a> &gt; <span class="el_source">VisualizationMetricsService.java</span></div><h1>VisualizationMetricsService.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.service;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
+
+@Service
+public class VisualizationMetricsService {
+<span class="fc" id="L13">    private final RestTemplate rest = new RestTemplate();</span>
+    private final JobService jobService;
+<span class="fc" id="L15">    private final Deque&lt;Map&lt;String, Object&gt;&gt; queueDepthHistory = new ConcurrentLinkedDeque&lt;&gt;();</span>
+    private static final int HISTORY_LIMIT = 40;
+
+<span class="fc" id="L18">    public VisualizationMetricsService(JobService jobService) {</span>
+<span class="fc" id="L19">        this.jobService = jobService;</span>
+<span class="fc" id="L20">    }</span>
+
+    @Value(&quot;${prometheus.baseUrl:}&quot;)
+    private String prometheusBaseUrl;
+
+    public Map&lt;String, Object&gt; getVisualizationMetrics() {
+<span class="nc" id="L26">        int queueDepth = currentQueueDepth();</span>
+<span class="nc" id="L27">        double jobFailureRate = currentJobFailureRate();</span>
+<span class="nc" id="L28">        List&lt;Map&lt;String, Object&gt;&gt; queueSeries = recordQueueDepthSample(queueDepth);</span>
+        // Try Prometheus if configured — build a shaped payload the frontend expects
+<span class="nc bnc" id="L30" title="All 4 branches missed.">        if (prometheusBaseUrl != null &amp;&amp; !prometheusBaseUrl.isBlank()) {</span>
+            try {
+<span class="nc" id="L32">                long nowSec = System.currentTimeMillis() / 1000L;</span>
+
+                // 1) throughput (instant)
+<span class="nc" id="L35">                double throughput = 0.0;</span>
+                try {
+<span class="nc" id="L37">                    String q1 = &quot;sum(rate(application_network_bytes_total[1m]))&quot;;</span>
+<span class="nc" id="L38">                    String url1 = prometheusBaseUrl + &quot;/api/v1/query?query=&quot; + java.net.URLEncoder.encode(q1, java.nio.charset.StandardCharsets.UTF_8);</span>
+<span class="nc" id="L39">                    ResponseEntity&lt;Map&gt; r1 = rest.getForEntity(url1, Map.class);</span>
+<span class="nc bnc" id="L40" title="All 4 branches missed.">                    if (r1.getStatusCode().is2xxSuccessful() &amp;&amp; r1.getBody() != null) {</span>
+<span class="nc" id="L41">                        Map b = r1.getBody();</span>
+<span class="nc" id="L42">                        Map data = (Map) b.get(&quot;data&quot;);</span>
+<span class="nc" id="L43">                        List results = (List) data.get(&quot;result&quot;);</span>
+<span class="nc bnc" id="L44" title="All 4 branches missed.">                        if (results != null &amp;&amp; !results.isEmpty()) {</span>
+<span class="nc" id="L45">                            Map first = (Map) results.get(0);</span>
+<span class="nc" id="L46">                            List value = (List) first.get(&quot;value&quot;);</span>
+<span class="nc bnc" id="L47" title="All 4 branches missed.">                            if (value != null &amp;&amp; value.size() &gt; 1) {</span>
+<span class="nc" id="L48">                                throughput = Double.parseDouble(value.get(1).toString());</span>
+                            }
+                        }
+                    }
+<span class="nc" id="L52">                } catch (Exception ignored) { }</span>
+
+                // 2) sparkline (range query, 40 points @ 1s step)
+<span class="nc" id="L55">                List&lt;Map&lt;String, Object&gt;&gt; spark = new ArrayList&lt;&gt;();</span>
+                try {
+<span class="nc" id="L57">                    String q2 = &quot;sum(rate(application_network_bytes_total[1m]))&quot;;</span>
+<span class="nc" id="L58">                    long start = Math.max(0, nowSec - 39);</span>
+<span class="nc" id="L59">                    long end = nowSec;</span>
+<span class="nc" id="L60">                    String url2 = prometheusBaseUrl + &quot;/api/v1/query_range?query=&quot; + java.net.URLEncoder.encode(q2, java.nio.charset.StandardCharsets.UTF_8)</span>
+                            + &quot;&amp;start=&quot; + start + &quot;&amp;end=&quot; + end + &quot;&amp;step=1&quot;;
+<span class="nc" id="L62">                    ResponseEntity&lt;Map&gt; r2 = rest.getForEntity(url2, Map.class);</span>
+<span class="nc bnc" id="L63" title="All 4 branches missed.">                    if (r2.getStatusCode().is2xxSuccessful() &amp;&amp; r2.getBody() != null) {</span>
+<span class="nc" id="L64">                        Map b2 = r2.getBody();</span>
+<span class="nc" id="L65">                        Map d2 = (Map) b2.get(&quot;data&quot;);</span>
+<span class="nc" id="L66">                        List results2 = (List) d2.get(&quot;result&quot;);</span>
+<span class="nc bnc" id="L67" title="All 4 branches missed.">                        if (results2 != null &amp;&amp; !results2.isEmpty()) {</span>
+<span class="nc" id="L68">                            Map series = (Map) results2.get(0);</span>
+<span class="nc" id="L69">                            List values = (List) series.get(&quot;values&quot;);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">                            for (Object vv : values) {</span>
+<span class="nc" id="L71">                                List pair = (List) vv;</span>
+<span class="nc" id="L72">                                double ts = Double.parseDouble(pair.get(0).toString());</span>
+<span class="nc" id="L73">                                double val = Double.parseDouble(pair.get(1).toString());</span>
+<span class="nc" id="L74">                                Map&lt;String, Object&gt; pt = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L75">                                pt.put(&quot;t&quot;, (long) (ts * 1000L));</span>
+<span class="nc" id="L76">                                pt.put(&quot;v&quot;, val);</span>
+<span class="nc" id="L77">                                spark.add(pt);</span>
+<span class="nc" id="L78">                            }</span>
+                        }
+                    }
+<span class="nc" id="L81">                } catch (Exception ignored) { }</span>
+
+                // 3) histogram buckets (increase over 1m grouped by le)
+<span class="nc" id="L84">                List&lt;Number&gt; histogram = new ArrayList&lt;&gt;();</span>
+                try {
+<span class="nc" id="L86">                    String q3 = &quot;sum(increase(application_request_duration_seconds_bucket[1m])) by (le)&quot;;</span>
+<span class="nc" id="L87">                    String url3 = prometheusBaseUrl + &quot;/api/v1/query?query=&quot; + java.net.URLEncoder.encode(q3, java.nio.charset.StandardCharsets.UTF_8);</span>
+<span class="nc" id="L88">                    ResponseEntity&lt;Map&gt; r3 = rest.getForEntity(url3, Map.class);</span>
+<span class="nc bnc" id="L89" title="All 4 branches missed.">                    if (r3.getStatusCode().is2xxSuccessful() &amp;&amp; r3.getBody() != null) {</span>
+<span class="nc" id="L90">                        Map b3 = r3.getBody();</span>
+<span class="nc" id="L91">                        Map d3 = (Map) b3.get(&quot;data&quot;);</span>
+<span class="nc" id="L92">                        List results3 = (List) d3.get(&quot;result&quot;);</span>
+                        // collect le-&gt;value
+<span class="nc" id="L94">                        List&lt;Map.Entry&lt;Double, Double&gt;&gt; bucketPairs = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                        for (Object obj : results3) {</span>
+<span class="nc" id="L96">                            Map item = (Map) obj;</span>
+<span class="nc" id="L97">                            Map metric = (Map) item.get(&quot;metric&quot;);</span>
+<span class="nc" id="L98">                            String leStr = (String) metric.get(&quot;le&quot;);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                            double le = leStr.equals(&quot;+Inf&quot;) ? Double.POSITIVE_INFINITY : Double.parseDouble(leStr);</span>
+<span class="nc" id="L100">                            List value = (List) item.get(&quot;value&quot;);</span>
+<span class="nc" id="L101">                            double v = Double.parseDouble(value.get(1).toString());</span>
+<span class="nc" id="L102">                            bucketPairs.add(new AbstractMap.SimpleEntry&lt;&gt;(le, v));</span>
+<span class="nc" id="L103">                        }</span>
+                        // sort by le and map counts
+<span class="nc" id="L105">                        bucketPairs.sort(Comparator.comparingDouble(Map.Entry::getKey));</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">                        for (Map.Entry&lt;Double, Double&gt; e : bucketPairs) histogram.add(e.getValue());</span>
+                    }
+<span class="nc" id="L108">                } catch (Exception ignored) { }</span>
+
+                // 4) scatter — not always available; fall back to synthetic
+<span class="nc" id="L111">                List&lt;Map&lt;String, Object&gt;&gt; scatter = new ArrayList&lt;&gt;();</span>
+                try {
+                    // Map X = network rate per job, Y = average request duration per job
+<span class="nc" id="L114">                    String qx = &quot;sum by (job) (rate(application_network_bytes_total[1m]))&quot;;</span>
+<span class="nc" id="L115">                    String qy = &quot;sum by (job) (rate(application_request_duration_seconds_sum[1m])) / sum by (job) (rate(application_request_duration_seconds_count[1m]))&quot;;</span>
+
+<span class="nc" id="L117">                    Map&lt;String, Double&gt; xMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L118">                    Map&lt;String, Double&gt; yMap = new HashMap&lt;&gt;();</span>
+
+                    // query X
+                    try {
+<span class="nc" id="L122">                        String urlx = prometheusBaseUrl + &quot;/api/v1/query?query=&quot; + java.net.URLEncoder.encode(qx, java.nio.charset.StandardCharsets.UTF_8);</span>
+<span class="nc" id="L123">                        ResponseEntity&lt;Map&gt; rx = rest.getForEntity(urlx, Map.class);</span>
+<span class="nc bnc" id="L124" title="All 4 branches missed.">                        if (rx.getStatusCode().is2xxSuccessful() &amp;&amp; rx.getBody() != null) {</span>
+<span class="nc" id="L125">                            Map bx = rx.getBody();</span>
+<span class="nc" id="L126">                            Map dx = (Map) bx.get(&quot;data&quot;);</span>
+<span class="nc" id="L127">                            List resultsx = (List) dx.get(&quot;result&quot;);</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                            for (Object o : resultsx) {</span>
+<span class="nc" id="L129">                                Map it = (Map) o;</span>
+<span class="nc" id="L130">                                Map metric = (Map) it.get(&quot;metric&quot;);</span>
+                                // prefer instance label for per-instance mapping, fall back to job
+<span class="nc bnc" id="L132" title="All 4 branches missed.">                                String job = metric.get(&quot;instance&quot;) != null ? metric.get(&quot;instance&quot;).toString() : (metric.get(&quot;job&quot;) != null ? metric.get(&quot;job&quot;).toString() : UUID.randomUUID().toString());</span>
+<span class="nc" id="L133">                                List value = (List) it.get(&quot;value&quot;);</span>
+<span class="nc" id="L134">                                double v = Double.parseDouble(value.get(1).toString());</span>
+<span class="nc" id="L135">                                xMap.put(job, v);</span>
+<span class="nc" id="L136">                            }</span>
+                        }
+<span class="nc" id="L138">                    } catch (Exception ignored) { }</span>
+
+                    // query Y
+                    try {
+<span class="nc" id="L142">                        String urly = prometheusBaseUrl + &quot;/api/v1/query?query=&quot; + java.net.URLEncoder.encode(qy, java.nio.charset.StandardCharsets.UTF_8);</span>
+<span class="nc" id="L143">                        ResponseEntity&lt;Map&gt; ry = rest.getForEntity(urly, Map.class);</span>
+<span class="nc bnc" id="L144" title="All 4 branches missed.">                        if (ry.getStatusCode().is2xxSuccessful() &amp;&amp; ry.getBody() != null) {</span>
+<span class="nc" id="L145">                            Map by = ry.getBody();</span>
+<span class="nc" id="L146">                            Map dy = (Map) by.get(&quot;data&quot;);</span>
+<span class="nc" id="L147">                            List resultsy = (List) dy.get(&quot;result&quot;);</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                            for (Object o : resultsy) {</span>
+<span class="nc" id="L149">                                Map it = (Map) o;</span>
+<span class="nc" id="L150">                                    Map metric = (Map) it.get(&quot;metric&quot;);</span>
+                                    // prefer instance label for per-instance mapping, fall back to job
+<span class="nc bnc" id="L152" title="All 4 branches missed.">                                    String job = metric.get(&quot;instance&quot;) != null ? metric.get(&quot;instance&quot;).toString() : (metric.get(&quot;job&quot;) != null ? metric.get(&quot;job&quot;).toString() : UUID.randomUUID().toString());</span>
+<span class="nc" id="L153">                                List value = (List) it.get(&quot;value&quot;);</span>
+<span class="nc" id="L154">                                double v = Double.parseDouble(value.get(1).toString());</span>
+<span class="nc" id="L155">                                yMap.put(job, v);</span>
+<span class="nc" id="L156">                            }</span>
+                        }
+<span class="nc" id="L158">                    } catch (Exception ignored) { }</span>
+
+                    // produce paired points for jobs present in both maps
+<span class="nc" id="L161">                    Set&lt;String&gt; jobs = new HashSet&lt;&gt;(xMap.keySet());</span>
+<span class="nc" id="L162">                    jobs.retainAll(yMap.keySet());</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                    if (!jobs.isEmpty()) {</span>
+<span class="nc" id="L164">                        double minX = Double.POSITIVE_INFINITY, maxX = Double.NEGATIVE_INFINITY;</span>
+<span class="nc" id="L165">                        double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                        for (String j : jobs) {</span>
+<span class="nc" id="L167">                            double xv = xMap.get(j);</span>
+<span class="nc" id="L168">                            double yv = yMap.get(j);</span>
+<span class="nc" id="L169">                            minX = Math.min(minX, xv); maxX = Math.max(maxX, xv);</span>
+<span class="nc" id="L170">                            minY = Math.min(minY, yv); maxY = Math.max(maxY, yv);</span>
+<span class="nc" id="L171">                        }</span>
+                        // normalize to 0-100
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                        for (String j : jobs) {</span>
+<span class="nc" id="L174">                            double xv = xMap.get(j);</span>
+<span class="nc" id="L175">                            double yv = yMap.get(j);</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">                            double nx = (maxX == minX) ? 50.0 : ((xv - minX) / (maxX - minX)) * 100.0;</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">                            double ny = (maxY == minY) ? 50.0 : ((yv - minY) / (maxY - minY)) * 100.0;</span>
+<span class="nc" id="L178">                            Map&lt;String, Object&gt; p = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L179">                            p.put(&quot;x&quot;, nx);</span>
+<span class="nc" id="L180">                            p.put(&quot;y&quot;, ny);</span>
+<span class="nc" id="L181">                            scatter.add(p);</span>
+<span class="nc" id="L182">                        }</span>
+                    }
+<span class="nc" id="L184">                } catch (Exception ignored) {</span>
+                    // keep scatter empty to use fallback later
+<span class="nc" id="L186">                }</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                if (scatter.isEmpty()) {</span>
+                    // fallback synthetic scatter
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                    for (int i = 0; i &lt; 60; i++) {</span>
+<span class="nc" id="L190">                        Map&lt;String, Object&gt; p = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L191">                        p.put(&quot;x&quot;, Math.random() * 100);</span>
+<span class="nc" id="L192">                        p.put(&quot;y&quot;, Math.random() * 100);</span>
+<span class="nc" id="L193">                        scatter.add(p);</span>
+                    }
+                }
+
+<span class="nc" id="L197">                Map&lt;String, Object&gt; payload = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L198">                payload.put(&quot;throughput&quot;, throughput);</span>
+<span class="nc" id="L199">                payload.put(&quot;errorRate&quot;, jobFailureRate);</span>
+<span class="nc" id="L200">                payload.put(&quot;queueDepth&quot;, queueDepth);</span>
+<span class="nc" id="L201">                payload.put(&quot;queueSeries&quot;, queueSeries);</span>
+<span class="nc" id="L202">                payload.put(&quot;sparkline&quot;, spark);</span>
+<span class="nc" id="L203">                payload.put(&quot;histogram&quot;, histogram);</span>
+<span class="nc" id="L204">                payload.put(&quot;scatter&quot;, scatter);</span>
+
+<span class="nc" id="L206">                Map&lt;String, Object&gt; out = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L207">                out.put(&quot;source&quot;, &quot;prometheus&quot;);</span>
+<span class="nc" id="L208">                out.put(&quot;data&quot;, payload);</span>
+<span class="nc" id="L209">                return out;</span>
+<span class="nc" id="L210">            } catch (Exception e) {</span>
+<span class="nc" id="L211">                e.printStackTrace();</span>
+            }
+        }
+
+        // Fallback synthetic payload matching frontend expectations
+<span class="nc" id="L216">        Map&lt;String, Object&gt; payload = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L217">        payload.put(&quot;throughput&quot;, 240.7);</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        payload.put(&quot;errorRate&quot;, jobFailureRate &gt; 0 ? jobFailureRate : 1.14);</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">        payload.put(&quot;queueDepth&quot;, queueDepth &gt; 0 ? queueDepth : 45);</span>
+<span class="nc" id="L220">        payload.put(&quot;queueSeries&quot;, queueSeries);</span>
+
+<span class="nc" id="L222">        List&lt;Map&lt;String, Object&gt;&gt; spark = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L223">        long now = System.currentTimeMillis();</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        for (int i = 0; i &lt; 40; i++) {</span>
+<span class="nc" id="L225">            Map&lt;String, Object&gt; pt = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L226">            pt.put(&quot;t&quot;, now - (40 - i) * 1000);</span>
+<span class="nc" id="L227">            pt.put(&quot;v&quot;, 20 + Math.random() * 60);</span>
+<span class="nc" id="L228">            spark.add(pt);</span>
+        }
+<span class="nc" id="L230">        payload.put(&quot;sparkline&quot;, spark);</span>
+
+<span class="nc" id="L232">        payload.put(&quot;histogram&quot;, Arrays.asList(0,0,1,0,1,0,6,0,0,2));</span>
+
+<span class="nc" id="L234">        List&lt;Map&lt;String, Object&gt;&gt; scatter = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        for (int i=0;i&lt;60;i++){ Map&lt;String,Object&gt; p = new HashMap&lt;&gt;(); p.put(&quot;x&quot;, Math.random()*100); p.put(&quot;y&quot;, Math.random()*100); scatter.add(p);}        </span>
+<span class="nc" id="L236">        payload.put(&quot;scatter&quot;, scatter);</span>
+
+<span class="nc" id="L238">        Map&lt;String, Object&gt; out = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L239">        out.put(&quot;source&quot;, &quot;fallback&quot;);</span>
+<span class="nc" id="L240">        out.put(&quot;data&quot;, payload);</span>
+<span class="nc" id="L241">        return out;</span>
+    }
+
+    private int currentQueueDepth() {
+<span class="nc" id="L245">        return jobService.list(null, com.cosmic.governance.api.model.JobState.QUEUED, 0, Integer.MAX_VALUE).size();</span>
+    }
+
+    private double currentJobFailureRate() {
+<span class="nc" id="L249">        int failed = jobService.list(null, com.cosmic.governance.api.model.JobState.FAILED, 0, Integer.MAX_VALUE).size();</span>
+<span class="nc" id="L250">        int total = jobService.listAll().size();</span>
+<span class="nc bnc" id="L251" title="All 2 branches missed.">        if (total &lt;= 0) return 0.0;</span>
+<span class="nc" id="L252">        return ((double) failed / (double) total) * 100.0;</span>
+    }
+
+    private List&lt;Map&lt;String, Object&gt;&gt; recordQueueDepthSample(int queueDepth) {
+<span class="nc" id="L256">        long now = System.currentTimeMillis();</span>
+<span class="nc" id="L257">        Map&lt;String, Object&gt; point = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L258">        point.put(&quot;t&quot;, now);</span>
+<span class="nc" id="L259">        point.put(&quot;v&quot;, queueDepth);</span>
+<span class="nc" id="L260">        queueDepthHistory.addLast(point);</span>
+
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        while (queueDepthHistory.size() &gt; HISTORY_LIMIT) {</span>
+<span class="nc" id="L263">            queueDepthHistory.pollFirst();</span>
+        }
+
+<span class="nc bnc" id="L266" title="All 2 branches missed.">        if (queueDepthHistory.size() == 1) {</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">            for (int i = HISTORY_LIMIT - 1; i &gt;= 1; i--) {</span>
+<span class="nc" id="L268">                Map&lt;String, Object&gt; seed = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L269">                seed.put(&quot;t&quot;, now - (i * 1000L));</span>
+<span class="nc" id="L270">                seed.put(&quot;v&quot;, queueDepth);</span>
+<span class="nc" id="L271">                queueDepthHistory.addFirst(seed);</span>
+            }
+        }
+
+<span class="nc" id="L275">        return new ArrayList&lt;&gt;(queueDepthHistory);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

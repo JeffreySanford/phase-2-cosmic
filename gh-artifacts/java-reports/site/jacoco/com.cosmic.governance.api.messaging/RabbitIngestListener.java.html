@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RabbitIngestListener.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.messaging</a> &gt; <span class="el_source">RabbitIngestListener.java</span></div><h1>RabbitIngestListener.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.messaging;
+
+import com.cosmic.governance.api.config.RabbitMQConfig;
+import com.cosmic.governance.api.service.GovernanceIngestMetricsService;
+import com.cosmic.governance.api.service.GovernanceIngestProcessingService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+@Component
+public class RabbitIngestListener {
+<span class="fc" id="L13">    private static final Logger log = LoggerFactory.getLogger(RabbitIngestListener.class);</span>
+    private static final String BROKER = &quot;rabbitmq&quot;;
+
+    private final GovernanceIngestMetricsService ingestMetrics;
+    private final GovernanceIngestProcessingService ingestProcessor;
+
+    public RabbitIngestListener(
+            GovernanceIngestMetricsService ingestMetrics,
+            GovernanceIngestProcessingService ingestProcessor
+<span class="fc" id="L22">    ) {</span>
+<span class="fc" id="L23">        this.ingestMetrics = ingestMetrics;</span>
+<span class="fc" id="L24">        this.ingestProcessor = ingestProcessor;</span>
+<span class="fc" id="L25">    }</span>
+
+    @RabbitListener(queues = RabbitMQConfig.INGEST_QUEUE)
+    public void onMessage(String payload) {
+        try {
+<span class="fc" id="L30">            var result = ingestProcessor.process(BROKER, RabbitMQConfig.INGEST_QUEUE, payload);</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">            if (result.duplicate()) {</span>
+<span class="fc" id="L32">                log.info(&quot;Ignored duplicate RabbitMQ ingest event for workflow={} datasetId={}&quot;, result.workflow(), result.datasetId());</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">            } else if (result.accepted()) {</span>
+<span class="fc" id="L34">                log.info(&quot;Received RabbitMQ event for workflow={} datasetId={}&quot;, result.workflow(), result.datasetId());</span>
+            }
+<span class="fc" id="L36">        } catch (Exception ex) {</span>
+<span class="fc" id="L37">            ingestMetrics.recordDlqForward(BROKER, RabbitMQConfig.INGEST_QUEUE, &quot;ingest&quot;);</span>
+<span class="fc" id="L38">            log.warn(&quot;Failed to process RabbitMQ message: {}&quot;, ex.toString());</span>
+<span class="fc" id="L39">            throw new RuntimeException(ex);</span>
+<span class="fc" id="L40">        }</span>
+<span class="fc" id="L41">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

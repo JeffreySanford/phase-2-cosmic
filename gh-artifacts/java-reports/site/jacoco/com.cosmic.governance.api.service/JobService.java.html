@@ -1,0 +1,1031 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JobService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.service</a> &gt; <span class="el_source">JobService.java</span></div><h1>JobService.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.service;
+
+import com.cosmic.governance.api.dto.JobStatusResponse;
+import com.cosmic.governance.api.dto.JobSubmitRequest;
+import com.cosmic.governance.api.executor.JobExecutor;
+import com.cosmic.governance.api.model.JobRecord;
+import com.cosmic.governance.api.model.JobState;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import jakarta.annotation.PreDestroy;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicLong;
+
+import java.time.Instant;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cosmic.governance.api.util.RedisMarshaller;
+import jakarta.annotation.PostConstruct;
+import java.util.concurrent.Executors;
+
+@Service
+public class JobService {
+    private static final String KEY_PREFIX = &quot;job:&quot;;
+<span class="fc" id="L37">    private static final Logger log = LoggerFactory.getLogger(JobService.class);</span>
+
+    // simple in-memory audit log for provenance/E2E tests
+<span class="fc" id="L40">    private final java.util.List&lt;String&gt; auditLog = java.util.Collections.synchronizedList(new java.util.ArrayList&lt;&gt;());</span>
+
+    /**
+     * Expose a copy of the audit log for testing.
+     */
+    public java.util.List&lt;String&gt; getAuditLog() {
+<span class="fc" id="L46">        return new java.util.ArrayList&lt;&gt;(auditLog);</span>
+    }
+
+    private void recordAudit(String msg) {
+<span class="fc" id="L50">        auditLog.add(msg);</span>
+<span class="fc" id="L51">        log.info(&quot;Audit: {}&quot;, msg);</span>
+<span class="fc" id="L52">    }</span>
+
+    private final RedisTemplate&lt;String, Object&gt; redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final RedisMarshaller marshaller;
+    private final AuditService auditService;
+    private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
+    // in-memory fallback store used when RedisTemplate is not available
+<span class="fc" id="L60">    private final ConcurrentHashMap&lt;String, Object&gt; inMemoryStore = new ConcurrentHashMap&lt;&gt;();</span>
+
+<span class="fc" id="L62">    private final Map&lt;String, JobExecutor&gt; executorMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L63">    private final ScheduledExecutorService scanner = Executors.newScheduledThreadPool(1);</span>
+    private volatile ScheduledFuture&lt;?&gt; scannerFuture;
+<span class="fc" id="L65">    private volatile int scannerIntervalSeconds = 10;</span>
+<span class="fc" id="L66">    private final AtomicLong scannedCount = new AtomicLong(0);</span>
+<span class="fc" id="L67">    private final AtomicLong dispatchedCount = new AtomicLong(0);</span>
+
+    public JobService(RedisTemplate&lt;String, Object&gt; redisTemplate, ObjectMapper objectMapper, @Autowired List&lt;JobExecutor&gt; executors, RedisMarshaller marshaller, AuditService auditService) {
+<span class="fc" id="L70">        this(redisTemplate, objectMapper, executors, marshaller, auditService, null);</span>
+<span class="fc" id="L71">    }</span>
+
+    @Autowired
+<span class="fc" id="L74">    public JobService(RedisTemplate&lt;String, Object&gt; redisTemplate, ObjectMapper objectMapper, List&lt;JobExecutor&gt; executors, RedisMarshaller marshaller, AuditService auditService, GovernanceRuntimeMetricsService governanceRuntimeMetricsService) {</span>
+<span class="fc" id="L75">        this.redisTemplate = redisTemplate;</span>
+<span class="fc" id="L76">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L77">        this.marshaller = marshaller;</span>
+<span class="fc" id="L78">        this.auditService = auditService;</span>
+<span class="fc" id="L79">        this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (executors != null) {</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            for (JobExecutor e : executors) executorMap.put(e.name(), e);</span>
+        }
+<span class="fc" id="L83">    }</span>
+
+    // Helper methods to abstract Redis vs in-memory store access
+    private Set&lt;String&gt; keys(String pattern) {
+        try {
+<span class="fc bfc" id="L88" title="All 2 branches covered.">            if (redisTemplate != null) {</span>
+<span class="fc" id="L89">                Set&lt;String&gt; ks = redisTemplate.keys(pattern);</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">                return ks == null ? java.util.Set.of() : ks;</span>
+            }
+<span class="fc" id="L92">        } catch (Throwable ignored) {}</span>
+        // emulate simple glob behavior where pattern like &quot;job:*&quot; matches keys starting with prefix
+<span class="pc bpc" id="L94" title="2 of 4 branches missed.">        if (pattern != null &amp;&amp; pattern.endsWith(&quot;*&quot;)) {</span>
+<span class="fc" id="L95">            String prefix = pattern.substring(0, pattern.length()-1);</span>
+<span class="fc" id="L96">            return inMemoryStore.keySet().stream().filter(k -&gt; k.startsWith(prefix)).collect(Collectors.toSet());</span>
+        }
+<span class="nc" id="L98">        return inMemoryStore.keySet();</span>
+    }
+
+    private Object getValue(String key) {
+<span class="fc" id="L102">        Instant startedAt = Instant.now();</span>
+        try {
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            if (redisTemplate != null) {</span>
+<span class="fc" id="L105">                Object value = redisTemplate.opsForValue().get(key);</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">                if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L107">                    governanceRuntimeMetricsService.recordRedisRead(</span>
+                            &quot;redis&quot;,
+<span class="fc" id="L109">                            keyspaceOf(key),</span>
+                            value,
+                            true,
+<span class="fc" id="L112">                            Duration.between(startedAt, Instant.now())</span>
+                    );
+                }
+<span class="fc" id="L115">                return value;</span>
+            }
+<span class="fc" id="L117">        } catch (Throwable ignored) {</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L119">                governanceRuntimeMetricsService.recordRedisRead(</span>
+                        &quot;redis&quot;,
+<span class="fc" id="L121">                        keyspaceOf(key),</span>
+<span class="fc" id="L122">                        Map.of(&quot;key&quot;, key),</span>
+                        false,
+<span class="fc" id="L124">                        Duration.between(startedAt, Instant.now())</span>
+                );
+            }
+<span class="fc" id="L127">        }</span>
+<span class="fc" id="L128">        Object value = inMemoryStore.get(key);</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L130">            governanceRuntimeMetricsService.recordRedisRead(</span>
+                    &quot;memory&quot;,
+<span class="fc" id="L132">                    keyspaceOf(key),</span>
+                    value,
+                    true,
+<span class="fc" id="L135">                    Duration.between(startedAt, Instant.now())</span>
+            );
+        }
+<span class="fc" id="L138">        return value;</span>
+    }
+
+    private void setValue(String key, Object value) {
+<span class="fc" id="L142">        Instant startedAt = Instant.now();</span>
+        try {
+<span class="fc bfc" id="L144" title="All 2 branches covered.">            if (redisTemplate != null) {</span>
+<span class="fc" id="L145">                redisTemplate.opsForValue().set(key, value);</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">                if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L147">                    governanceRuntimeMetricsService.recordRedisWrite(</span>
+                            &quot;redis&quot;,
+<span class="fc" id="L149">                            keyspaceOf(key),</span>
+                            value,
+                            true,
+<span class="fc" id="L152">                            Duration.between(startedAt, Instant.now())</span>
+                    );
+                }
+<span class="fc" id="L155">                return;</span>
+            }
+<span class="fc" id="L157">        } catch (Throwable ignored) {</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L159">                governanceRuntimeMetricsService.recordRedisWrite(</span>
+                        &quot;redis&quot;,
+<span class="fc" id="L161">                        keyspaceOf(key),</span>
+                        value,
+                        false,
+<span class="fc" id="L164">                        Duration.between(startedAt, Instant.now())</span>
+                );
+            }
+<span class="fc" id="L167">        }</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        if (value == null) inMemoryStore.remove(key); else inMemoryStore.put(key, value);</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L170">            governanceRuntimeMetricsService.recordRedisWrite(</span>
+                    &quot;memory&quot;,
+<span class="fc" id="L172">                    keyspaceOf(key),</span>
+                    value,
+                    true,
+<span class="fc" id="L175">                    Duration.between(startedAt, Instant.now())</span>
+            );
+        }
+<span class="fc" id="L178">    }</span>
+
+    private java.util.List&lt;Object&gt; listRange(String key, long start, long end) {
+<span class="nc" id="L181">        Instant startedAt = Instant.now();</span>
+        try {
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            if (redisTemplate != null) {</span>
+<span class="nc" id="L184">                java.util.List&lt;Object&gt; list = redisTemplate.opsForList().range(key, start, end);</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">                if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L186">                    governanceRuntimeMetricsService.recordRedisRead(</span>
+                            &quot;redis&quot;,
+<span class="nc" id="L188">                            keyspaceOf(key),</span>
+                            list,
+                            true,
+<span class="nc" id="L191">                            Duration.between(startedAt, Instant.now())</span>
+                    );
+                }
+<span class="nc bnc" id="L194" title="All 2 branches missed.">                return list == null ? List.of() : list;</span>
+            }
+<span class="nc" id="L196">        } catch (Throwable ignored) {</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L198">                governanceRuntimeMetricsService.recordRedisRead(</span>
+                        &quot;redis&quot;,
+<span class="nc" id="L200">                        keyspaceOf(key),</span>
+<span class="nc" id="L201">                        Map.of(&quot;key&quot;, key, &quot;range&quot;, start + &quot;:&quot; + end),</span>
+                        false,
+<span class="nc" id="L203">                        Duration.between(startedAt, Instant.now())</span>
+                );
+            }
+<span class="nc" id="L206">        }</span>
+<span class="nc" id="L207">        Object o = inMemoryStore.get(key);</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (o instanceof java.util.List) {</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L210">                governanceRuntimeMetricsService.recordRedisRead(</span>
+                        &quot;memory&quot;,
+<span class="nc" id="L212">                        keyspaceOf(key),</span>
+                        o,
+                        true,
+<span class="nc" id="L215">                        Duration.between(startedAt, Instant.now())</span>
+                );
+            }
+<span class="nc" id="L218">            return (java.util.List&lt;Object&gt;) o;</span>
+        }
+<span class="nc" id="L220">        return List.of();</span>
+    }
+
+    private String keyspaceOf(String key) {
+<span class="pc bpc" id="L224" title="2 of 4 branches missed.">        if (key == null || key.isBlank()) {</span>
+<span class="nc" id="L225">            return &quot;unknown&quot;;</span>
+        }
+<span class="fc" id="L227">        int idx = key.indexOf(':');</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">        return idx &gt; 0 ? key.substring(0, idx) : key;</span>
+    }
+
+    // Package-private helpers for tests to directly manipulate the backing store
+    void putRaw(String key, Object value) {
+<span class="fc" id="L233">        setValue(key, value);</span>
+<span class="fc" id="L234">    }</span>
+
+    Object getRaw(String key) {
+<span class="fc" id="L237">        return getValue(key);</span>
+    }
+
+    @PostConstruct
+    public void recoverQueuedJobs() {
+        // run an immediate recovery scan and schedule periodic scans for late arrivals
+<span class="fc" id="L243">        Executors.newSingleThreadExecutor().submit(() -&gt; {</span>
+            // dispatch any queued jobs first
+<span class="fc" id="L245">            dispatchQueuedJobs();</span>
+            // convert any previously-running simulator jobs to completed so they don't hang
+<span class="fc" id="L247">            completeStaleRunningJobs();</span>
+<span class="fc" id="L248">        });</span>
+<span class="fc" id="L249">        scannerFuture = scanner.scheduleAtFixedRate(this::dispatchQueuedJobs, scannerIntervalSeconds, scannerIntervalSeconds, TimeUnit.SECONDS);</span>
+<span class="fc" id="L250">    }</span>
+
+    /**
+     * If a job was in RUNNING state when the service restarted we have no
+     * guarantee the simulator completion task ran.  For the simple demo
+     * executor we just mark those jobs completed so they won't sit in RUNNING
+     * forever.
+     */
+    // package-private so tests can call it
+    void completeStaleRunningJobs() {
+        try {
+<span class="fc" id="L261">            var keys = keys(KEY_PREFIX + &quot;*&quot;);</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">            if (keys == null) return;</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">            for (String k : keys) {</span>
+<span class="fc" id="L264">                Object o = getValue(k);</span>
+<span class="fc" id="L265">                JobRecord rec = marshaller.toJobRecord(o);</span>
+<span class="fc bfc" id="L266" title="All 2 branches covered.">                if (rec == null) continue;</span>
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">                if (rec.getState() == JobState.RUNNING) {</span>
+                    // only apply to simulator jobs (other executors may have proper persistence)
+<span class="fc" id="L269">                    Map&lt;String, Object&gt; params = rec.getParameters();</span>
+<span class="pc bpc" id="L270" title="2 of 4 branches missed.">                    String execName = params != null &amp;&amp; params.containsKey(&quot;executor&quot;) ? String.valueOf(params.get(&quot;executor&quot;)) : &quot;simulator&quot;;</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">                    if (&quot;simulator&quot;.equals(execName)) {</span>
+<span class="fc" id="L272">                        log.warn(&quot;Completing stale running job {} after restart&quot;, rec.getJobId());</span>
+<span class="fc" id="L273">                        JobState previousState = rec.getState();</span>
+<span class="fc" id="L274">                        rec.setState(JobState.COMPLETED);</span>
+<span class="fc" id="L275">                        rec.setUpdatedAt(Instant.now().toString());</span>
+<span class="fc" id="L276">                        rec.setVersion(rec.getVersion() + 1);</span>
+<span class="fc" id="L277">                        setValue(k, rec);</span>
+<span class="fc" id="L278">                        recordTerminalMetrics(rec, previousState, JobState.COMPLETED);</span>
+                    }
+                }
+<span class="fc" id="L281">            }</span>
+<span class="nc" id="L282">        } catch (Exception e) {</span>
+<span class="nc" id="L283">            log.error(&quot;Failed to complete stale running jobs&quot;, e);</span>
+<span class="fc" id="L284">        }</span>
+<span class="fc" id="L285">    }</span>
+
+    /* package-private for testing */
+    void dispatchQueuedJobs() {
+        try {
+<span class="fc" id="L290">            var keys = keys(KEY_PREFIX + &quot;*&quot;);</span>
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">            if (keys == null) return;</span>
+<span class="fc" id="L292">            scannedCount.addAndGet(keys.size());</span>
+<span class="fc bfc" id="L293" title="All 2 branches covered.">            for (String k : keys) {</span>
+<span class="pc bpc" id="L294" title="1 of 6 branches missed.">                if (k == null || k.chars().filter(ch -&gt; ch == ':').count() != 1) continue;</span>
+                try {
+<span class="fc" id="L296">                    Object o = getValue(k);</span>
+<span class="fc" id="L297">                    JobRecord rec = marshaller.toJobRecord(o);</span>
+<span class="pc bpc" id="L298" title="1 of 2 branches missed.">                    if (rec == null) continue;</span>
+<span class="fc bfc" id="L299" title="All 2 branches covered.">                    if (rec.getState() == JobState.QUEUED) {</span>
+                        // skip jobs explicitly marked as deferred (pre-seeded samples)
+<span class="pc bpc" id="L301" title="1 of 2 branches missed.">                        Map&lt;String, Object&gt; paramsObjCheck = rec.getParameters() == null ? Map.&lt;String, Object&gt;of() : rec.getParameters();</span>
+<span class="fc" id="L302">                        boolean deferred = false;</span>
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">                        if (paramsObjCheck.containsKey(&quot;deferred&quot;)) {</span>
+<span class="nc" id="L304">                            Object dv = paramsObjCheck.get(&quot;deferred&quot;);</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">                            if (dv instanceof Boolean) deferred = (Boolean) dv;</span>
+<span class="nc" id="L306">                            else deferred = &quot;true&quot;.equalsIgnoreCase(String.valueOf(dv));</span>
+                        }
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">                        if (deferred) {</span>
+<span class="nc" id="L309">                            log.info(&quot;Skipping deferred queued job {} (awaiting release)&quot;, rec.getJobId());</span>
+<span class="nc" id="L310">                            continue;</span>
+                        }
+<span class="fc" id="L312">                        String executorName = &quot;simulator&quot;;</span>
+<span class="pc bpc" id="L313" title="1 of 2 branches missed.">                        var paramsObj = rec.getParameters() == null ? Map.&lt;String, Object&gt;of() : rec.getParameters();</span>
+<span class="fc bfc" id="L314" title="All 2 branches covered.">                        if (paramsObj.containsKey(&quot;executor&quot;)) executorName = String.valueOf(paramsObj.get(&quot;executor&quot;));</span>
+<span class="pc bpc" id="L315" title="1 of 4 branches missed.">                        else if (rec.getWorkflow() != null &amp;&amp; rec.getWorkflow().equalsIgnoreCase(&quot;ingest&quot;)) executorName = &quot;tacc&quot;;</span>
+<span class="pc bpc" id="L316" title="2 of 4 branches missed.">                        else if (rec.getWorkflow() != null &amp;&amp; rec.getWorkflow().startsWith(&quot;vo.&quot;)) executorName = &quot;vo&quot;;</span>
+<span class="fc" id="L317">                        JobExecutor exec = executorMap.getOrDefault(executorName, executorMap.get(&quot;simulator&quot;));</span>
+<span class="pc bpc" id="L318" title="1 of 2 branches missed.">                        if (exec != null) {</span>
+<span class="fc" id="L319">                            log.info(&quot;Dispatching queued job {} to executor {}&quot;, rec.getJobId(), executorName);</span>
+<span class="fc" id="L320">                            dispatchedCount.incrementAndGet();</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">                            if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L322">                                governanceRuntimeMetricsService.recordJobDispatch(rec.getWorkflow(), executorName);</span>
+<span class="fc" id="L323">                                governanceRuntimeMetricsService.recordJobDispatchWait(</span>
+<span class="fc" id="L324">                                        rec.getWorkflow(),</span>
+                                        executorName,
+<span class="fc" id="L326">                                        durationBetween(rec.getCreatedAt(), Instant.now())</span>
+                                );
+                            }
+<span class="fc" id="L329">                            exec.execute(rec, redisTemplate);</span>
+                        } else {
+<span class="nc" id="L331">                            log.warn(&quot;No executor available for '{}' when dispatching job {}&quot;, executorName, rec.getJobId());</span>
+                        }
+                    }
+<span class="nc" id="L334">                } catch (Exception e) {</span>
+<span class="nc" id="L335">                    log.debug(&quot;Ignoring job key {} during dispatch scan: {}&quot;, k, e.toString());</span>
+<span class="fc" id="L336">                }</span>
+<span class="fc" id="L337">            }</span>
+<span class="nc" id="L338">        } catch (Exception ex) {</span>
+<span class="nc" id="L339">            log.error(&quot;Queued job dispatch scan failed&quot;, ex);</span>
+<span class="fc" id="L340">        }</span>
+<span class="fc" id="L341">    }</span>
+
+    /**
+     * Release queued sample jobs that were marked deferred by removing the deferred flag.
+     * Returns number of jobs released.
+     */
+    public int releaseDeferredJobs() {
+<span class="nc" id="L348">        int released = 0;</span>
+        try {
+<span class="nc" id="L350">            var keys = keys(KEY_PREFIX + &quot;*&quot;);</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">            if (keys == null) return 0;</span>
+<span class="nc bnc" id="L352" title="All 2 branches missed.">            for (String k : keys) {</span>
+<span class="nc bnc" id="L353" title="All 6 branches missed.">                if (k == null || k.chars().filter(ch -&gt; ch == ':').count() != 1) continue;</span>
+                try {
+<span class="nc" id="L355">                    Object o = getValue(k);</span>
+<span class="nc" id="L356">                    JobRecord rec = marshaller.toJobRecord(o);</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">                    if (rec == null) continue;</span>
+<span class="nc bnc" id="L358" title="All 2 branches missed.">                    if (rec.getState() == JobState.QUEUED) {</span>
+<span class="nc bnc" id="L359" title="All 2 branches missed.">                        Map&lt;String, Object&gt; params = rec.getParameters() == null ? Map.of() : rec.getParameters();</span>
+<span class="nc bnc" id="L360" title="All 2 branches missed.">                        if (params.containsKey(&quot;deferred&quot;)) {</span>
+<span class="nc" id="L361">                            boolean deferred = false;</span>
+<span class="nc" id="L362">                            Object dv = params.get(&quot;deferred&quot;);</span>
+<span class="nc bnc" id="L363" title="All 2 branches missed.">                            if (dv instanceof Boolean) deferred = (Boolean) dv;</span>
+<span class="nc" id="L364">                            else deferred = &quot;true&quot;.equalsIgnoreCase(String.valueOf(dv));</span>
+<span class="nc bnc" id="L365" title="All 2 branches missed.">                            if (deferred) {</span>
+<span class="nc" id="L366">                                var newParams = new HashMap&lt;String, Object&gt;(params);</span>
+<span class="nc" id="L367">                                newParams.remove(&quot;deferred&quot;);</span>
+<span class="nc" id="L368">                                rec.setParameters(newParams);</span>
+<span class="nc" id="L369">                                rec.setUpdatedAt(Instant.now().toString());</span>
+<span class="nc" id="L370">                                rec.setVersion(rec.getVersion() + 1);</span>
+<span class="nc" id="L371">                                setValue(k, rec);</span>
+<span class="nc" id="L372">                                released++;</span>
+                            }
+                        }
+                    }
+<span class="nc" id="L376">                } catch (Exception ignored) {}</span>
+<span class="nc" id="L377">            }</span>
+<span class="nc" id="L378">        } catch (Exception ex) {</span>
+<span class="nc" id="L379">            log.error(&quot;Failed to release deferred jobs&quot;, ex);</span>
+<span class="nc" id="L380">        }</span>
+<span class="nc bnc" id="L381" title="All 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L382">            governanceRuntimeMetricsService.recordDeferredRelease(released);</span>
+        }
+<span class="nc" id="L384">        return released;</span>
+    }
+
+    @PreDestroy
+    public void shutdownScanner() {
+        try {
+<span class="nc" id="L390">            scanner.shutdownNow();</span>
+<span class="nc" id="L391">        } catch (Exception ignored) {}</span>
+<span class="nc" id="L392">    }</span>
+
+    public JobStatusResponse submit(JobSubmitRequest request) {
+<span class="fc" id="L395">        String now = Instant.now().toString();</span>
+<span class="fc" id="L396">        String jobId = UUID.randomUUID().toString();</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">        Map&lt;String, Object&gt; params = request.parameters() == null ? new HashMap&lt;&gt;() : new HashMap&lt;&gt;(request.parameters());</span>
+        // if the request included a dedicated lineage object, stash it under parameters for storage
+<span class="fc bfc" id="L399" title="All 2 branches covered.">        if (request.lineage() != null) {</span>
+<span class="fc" id="L400">            params.put(&quot;lineage&quot;, Map.copyOf(request.lineage()));</span>
+        }
+<span class="fc bfc" id="L402" title="All 2 branches covered.">        Map&lt;String, Object&gt; manifest = request.manifest() == null ? null : Map.copyOf(request.manifest());</span>
+<span class="fc" id="L403">        JobRecord record = new JobRecord(</span>
+                jobId,
+<span class="fc" id="L405">                request.workflow(),</span>
+<span class="fc" id="L406">                request.datasetId(),</span>
+                JobState.QUEUED,
+                now,
+                now,
+                params,
+                manifest,
+<span class="fc" id="L412">                request.requestedBy()</span>
+        );
+        // start version at 1 now that the record is persisted
+<span class="fc" id="L415">        record.setVersion(1);</span>
+        // preserve requestId/traceId if available
+<span class="fc" id="L417">        String rid = org.slf4j.MDC.get(&quot;requestId&quot;);</span>
+<span class="fc" id="L418">        String tid = org.slf4j.MDC.get(&quot;traceId&quot;);</span>
+<span class="pc bpc" id="L419" title="2 of 8 branches missed.">        if ((rid != null &amp;&amp; !rid.isBlank()) || (tid != null &amp;&amp; !tid.isBlank())) {</span>
+<span class="pc bpc" id="L420" title="1 of 2 branches missed.">            var p = new java.util.HashMap&lt;&gt;(record.getParameters() == null ? Map.of() : record.getParameters());</span>
+<span class="pc bpc" id="L421" title="1 of 4 branches missed.">            if (rid != null &amp;&amp; !rid.isBlank()) p.put(&quot;requestId&quot;, rid);</span>
+<span class="pc bpc" id="L422" title="2 of 4 branches missed.">            if (tid != null &amp;&amp; !tid.isBlank()) p.put(&quot;traceId&quot;, tid);</span>
+<span class="fc" id="L423">            record.setParameters(p);</span>
+        }
+<span class="fc" id="L425">        setValue(KEY_PREFIX + jobId, record);</span>
+<span class="fc" id="L426">        StringBuilder auditSb = new StringBuilder();</span>
+<span class="fc" id="L427">        auditSb.append(&quot;job submitted &quot;).append(jobId)</span>
+<span class="fc" id="L428">               .append(&quot; workflow=&quot;).append(request.workflow())</span>
+<span class="fc" id="L429">               .append(&quot; dataset=&quot;).append(request.datasetId());</span>
+<span class="fc bfc" id="L430" title="All 2 branches covered.">        if (manifest != null) {</span>
+<span class="fc" id="L431">            auditSb.append(&quot; manifest=&quot;).append(manifest.toString());</span>
+<span class="pc bpc" id="L432" title="2 of 4 branches missed.">        } else if (params != null &amp;&amp; params.containsKey(&quot;manifest&quot;)) {</span>
+            // backwards compatibility: manifest inside parameters
+<span class="nc" id="L434">            auditSb.append(&quot; manifest=&quot;).append(params.get(&quot;manifest&quot;).toString());</span>
+        }
+<span class="fc bfc" id="L436" title="All 2 branches covered.">        if (request.lineage() != null) {</span>
+<span class="fc" id="L437">            auditSb.append(&quot; lineage=&quot;).append(request.lineage().toString());</span>
+<span class="pc bpc" id="L438" title="2 of 4 branches missed.">        } else if (params != null &amp;&amp; params.containsKey(&quot;lineage&quot;)) {</span>
+<span class="nc" id="L439">            auditSb.append(&quot; lineage=&quot;).append(params.get(&quot;lineage&quot;).toString());</span>
+        }
+<span class="fc" id="L441">        recordAudit(auditSb.toString());</span>
+<span class="fc bfc" id="L442" title="All 2 branches covered.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L443">            governanceRuntimeMetricsService.recordJobSubmitted(request.workflow());</span>
+<span class="fc bfc" id="L444" title="All 2 branches covered.">            if (manifest != null) {</span>
+<span class="fc" id="L445">                governanceRuntimeMetricsService.recordJobMetadataMutation(&quot;submit_manifest&quot;, manifest);</span>
+            }
+<span class="fc bfc" id="L447" title="All 2 branches covered.">            if (request.lineage() != null) {</span>
+<span class="fc" id="L448">                governanceRuntimeMetricsService.recordJobMetadataMutation(&quot;submit_lineage&quot;, request.lineage());</span>
+            }
+        }
+
+        // pick executor (explicit param 'executor' overrides; default to 'tacc' for ingest workflow)
+<span class="fc" id="L453">        String executorName = &quot;simulator&quot;;</span>
+<span class="fc" id="L454">        boolean deferred = false;</span>
+<span class="pc bpc" id="L455" title="1 of 2 branches missed.">        if (params.containsKey(&quot;deferred&quot;)) {</span>
+<span class="nc" id="L456">            Object dv = params.get(&quot;deferred&quot;);</span>
+<span class="nc bnc" id="L457" title="All 2 branches missed.">            if (dv instanceof Boolean) deferred = (Boolean) dv;</span>
+<span class="nc" id="L458">            else deferred = &quot;true&quot;.equalsIgnoreCase(String.valueOf(dv));</span>
+        }
+
+        // Publish job submitted event to control plane (avoid Map.of which rejects nulls)
+<span class="fc" id="L462">        Map&lt;String, Object&gt; eventDetails = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">        if (request.workflow() != null) eventDetails.put(&quot;workflow&quot;, request.workflow());</span>
+<span class="pc bpc" id="L464" title="1 of 2 branches missed.">        if (request.datasetId() != null) eventDetails.put(&quot;datasetId&quot;, request.datasetId());</span>
+<span class="pc bpc" id="L465" title="1 of 2 branches missed.">        if (request.requestedBy() != null) eventDetails.put(&quot;requestedBy&quot;, request.requestedBy());</span>
+<span class="fc" id="L466">        eventDetails.put(&quot;executor&quot;, executorName);</span>
+<span class="pc bpc" id="L467" title="1 of 2 branches missed.">        if (auditService != null) {</span>
+<span class="fc" id="L468">            auditService.publishJobEvent(jobId, &quot;submitted&quot;, eventDetails);</span>
+        }
+<span class="fc bfc" id="L470" title="All 2 branches covered.">        Map&lt;String, Object&gt; paramsObj = request.parameters() == null ? Map.&lt;String, Object&gt;of() : Map.copyOf(request.parameters());</span>
+<span class="pc bpc" id="L471" title="1 of 2 branches missed.">        if (paramsObj.containsKey(&quot;executor&quot;)) executorName = String.valueOf(paramsObj.get(&quot;executor&quot;));</span>
+<span class="pc bpc" id="L472" title="1 of 4 branches missed.">        else if (request.workflow() != null &amp;&amp; request.workflow().equalsIgnoreCase(&quot;ingest&quot;)) executorName = &quot;tacc&quot;;</span>
+<span class="pc bpc" id="L473" title="1 of 4 branches missed.">        else if (request.workflow() != null &amp;&amp; request.workflow().startsWith(&quot;vo.&quot;)) executorName = &quot;vo&quot;;</span>
+
+<span class="fc" id="L475">        JobExecutor exec = executorMap.getOrDefault(executorName, executorMap.get(&quot;simulator&quot;));</span>
+<span class="pc bpc" id="L476" title="1 of 4 branches missed.">        if (!deferred &amp;&amp; exec != null) {</span>
+<span class="pc bpc" id="L477" title="1 of 2 branches missed.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L478">                governanceRuntimeMetricsService.recordJobDispatch(record.getWorkflow(), executorName);</span>
+<span class="fc" id="L479">                governanceRuntimeMetricsService.recordJobDispatchWait(</span>
+<span class="fc" id="L480">                        record.getWorkflow(),</span>
+                        executorName,
+<span class="fc" id="L482">                        durationBetween(record.getCreatedAt(), Instant.now())</span>
+                );
+            }
+<span class="fc" id="L485">            exec.execute(record, redisTemplate);</span>
+        }
+<span class="fc" id="L487">        return toResponse(record);</span>
+    }
+
+    public List&lt;String&gt; types() {
+        // canonical types exposed to the frontend
+<span class="fc" id="L492">        return List.of(</span>
+                &quot;ingest&quot;, &quot;export&quot;, &quot;reindex&quot;, &quot;cleanup&quot;, &quot;diagnostics&quot;,
+                &quot;vo.cone-search&quot;, &quot;vo.adql.query&quot;, &quot;vo.obscore.search&quot;, &quot;vo.votable.fetch&quot;,
+                &quot;vo.datalink.resolve&quot;, &quot;vo.product.fetch&quot;, &quot;vo.soda.cutout&quot;, &quot;vo.preview.fetch&quot;);
+    }
+
+    public Optional&lt;JobStatusResponse&gt; get(String jobId) {
+<span class="fc" id="L499">        Object o = getValue(KEY_PREFIX + jobId);</span>
+<span class="fc bfc" id="L500" title="All 2 branches covered.">        if (o == null) return Optional.empty();</span>
+<span class="fc" id="L501">        JobRecord rec = marshaller.toJobRecord(o);</span>
+<span class="pc bpc" id="L502" title="1 of 2 branches missed.">        if (rec != null) {</span>
+<span class="fc bfc" id="L503" title="All 2 branches covered.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L504">                governanceRuntimeMetricsService.recordOperatorRead(&quot;job_status&quot;, rec);</span>
+            }
+<span class="fc" id="L506">            return Optional.of(toResponse(rec));</span>
+        }
+<span class="nc" id="L508">        return Optional.empty();</span>
+    }
+
+    public List&lt;String&gt; getLogs(String jobId) {
+<span class="nc" id="L512">        String key = KEY_PREFIX + jobId + &quot;:logs&quot;;</span>
+        try {
+<span class="nc" id="L514">            var list = listRange(key, 0, -1);</span>
+<span class="nc bnc" id="L515" title="All 2 branches missed.">            if (list == null) return List.of();</span>
+<span class="nc" id="L516">            var logs = list.stream().map(Object::toString).collect(Collectors.toList());</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L518">                governanceRuntimeMetricsService.recordOperatorRead(&quot;job_logs&quot;, logs);</span>
+            }
+<span class="nc" id="L520">            return logs;</span>
+<span class="nc" id="L521">        } catch (org.springframework.data.redis.serializer.SerializationException ex) {</span>
+            // fallback: read raw bytes from Redis connection and decode as UTF-8 strings
+            try {
+<span class="nc" id="L524">                Object o = getValue(key);</span>
+<span class="nc bnc" id="L525" title="All 2 branches missed.">                if (o instanceof List) {</span>
+<span class="nc" id="L526">                    var logs = ((List&lt;?&gt;) o).stream().map(Object::toString).collect(Collectors.toList());</span>
+<span class="nc bnc" id="L527" title="All 2 branches missed.">                    if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L528">                        governanceRuntimeMetricsService.recordOperatorRead(&quot;job_logs&quot;, logs);</span>
+                    }
+<span class="nc" id="L530">                    return logs;</span>
+                }
+<span class="nc" id="L532">            } catch (Exception ignored) {}</span>
+        }
+<span class="nc" id="L534">        return List.of();</span>
+    }
+
+    // manifest helpers ---------------------------------------------
+    public Optional&lt;Map&lt;String, Object&gt;&gt; getManifest(String jobId) {
+<span class="fc" id="L539">        Optional&lt;JobStatusResponse&gt; status = get(jobId);</span>
+<span class="fc" id="L540">        Optional&lt;Map&lt;String, Object&gt;&gt; result = status.map(JobStatusResponse::manifest);</span>
+<span class="fc" id="L541">        result.ifPresent(manifest -&gt; {</span>
+<span class="pc bpc" id="L542" title="1 of 2 branches missed.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L543">                governanceRuntimeMetricsService.recordOperatorRead(&quot;job_manifest&quot;, manifest);</span>
+<span class="fc" id="L544">                governanceRuntimeMetricsService.recordBusinessAction(&quot;manifest&quot;, &quot;read&quot;, manifest);</span>
+            }
+<span class="fc" id="L546">        });</span>
+<span class="fc" id="L547">        return result;</span>
+    }
+
+    /**
+     * Retrieve lineage metadata stored in the job parameters under key &quot;lineage&quot;.
+     * This is a simple implementation for medium-priority backlog; clients may
+     * populate this field when submitting jobs to record parent/ancestor IDs.
+     */
+    public Optional&lt;Map&lt;String, Object&gt;&gt; getLineage(String jobId) {
+<span class="fc" id="L556">        Optional&lt;JobStatusResponse&gt; status = get(jobId);</span>
+<span class="pc bpc" id="L557" title="1 of 2 branches missed.">        if (status.isEmpty()) return Optional.empty();</span>
+<span class="fc" id="L558">        Map&lt;String, Object&gt; params = status.get().parameters();</span>
+<span class="pc bpc" id="L559" title="1 of 4 branches missed.">        if (params != null &amp;&amp; params.get(&quot;lineage&quot;) instanceof Map) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L561">            Map&lt;String, Object&gt; lineage = (Map&lt;String, Object&gt;) params.get(&quot;lineage&quot;);</span>
+<span class="fc bfc" id="L562" title="All 2 branches covered.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L563">                governanceRuntimeMetricsService.recordOperatorRead(&quot;job_lineage&quot;, lineage);</span>
+            }
+<span class="fc" id="L565">            return Optional.of(lineage);</span>
+        }
+<span class="fc" id="L567">        return Optional.empty();</span>
+    }
+
+    /**
+     * Update lineage metadata for a job. This updates the lineage field in the
+     * job parameters and increments the version.
+     */
+    public boolean updateLineage(String jobId, Map&lt;String, Object&gt; lineage) {
+<span class="fc" id="L575">        Object o = getValue(KEY_PREFIX + jobId);</span>
+<span class="fc" id="L576">        JobRecord rec = marshaller.toJobRecord(o);</span>
+<span class="fc bfc" id="L577" title="All 2 branches covered.">        if (rec == null) return false;</span>
+<span class="fc" id="L578">        Map&lt;String, Object&gt; params = rec.getParameters();</span>
+<span class="pc bpc" id="L579" title="1 of 2 branches missed.">        if (params == null) {</span>
+<span class="nc" id="L580">            params = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L581">            rec.setParameters(params);</span>
+        }
+<span class="pc bpc" id="L583" title="1 of 2 branches missed.">        params.put(&quot;lineage&quot;, new HashMap&lt;&gt;(lineage == null ? Map.of() : lineage));</span>
+<span class="fc" id="L584">        rec.setUpdatedAt(Instant.now().toString());</span>
+<span class="fc" id="L585">        rec.setVersion(rec.getVersion() + 1);</span>
+<span class="fc" id="L586">        setValue(KEY_PREFIX + jobId, rec);</span>
+        // Record audit entry for lineage update
+<span class="fc" id="L588">        recordAudit(&quot;job:&quot; + jobId + &quot; lineage updated to &quot; + String.valueOf(lineage));</span>
+<span class="fc bfc" id="L589" title="All 2 branches covered.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L590">            governanceRuntimeMetricsService.recordJobMetadataMutation(&quot;lineage_update&quot;, lineage);</span>
+        }
+<span class="fc" id="L592">        return true;</span>
+    }
+
+    public boolean attachManifest(String jobId, Map&lt;String, Object&gt; manifest) {
+<span class="fc" id="L596">        Object o = getValue(KEY_PREFIX + jobId);</span>
+<span class="fc" id="L597">        JobRecord rec = marshaller.toJobRecord(o);</span>
+<span class="fc bfc" id="L598" title="All 2 branches covered.">        if (rec == null) return false;</span>
+<span class="fc" id="L599">        rec.setManifest(manifest);</span>
+<span class="fc" id="L600">        rec.setUpdatedAt(Instant.now().toString());</span>
+<span class="fc" id="L601">        rec.setVersion(rec.getVersion() + 1);</span>
+<span class="fc" id="L602">        setValue(KEY_PREFIX + jobId, rec);</span>
+<span class="fc" id="L603">        recordAudit(&quot;manifest attached &quot; + jobId + &quot; &quot; + manifest.toString());</span>
+<span class="pc bpc" id="L604" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L605">            governanceRuntimeMetricsService.recordJobMetadataMutation(&quot;manifest_attach&quot;, manifest);</span>
+<span class="fc" id="L606">            governanceRuntimeMetricsService.recordBusinessAction(&quot;manifest&quot;, &quot;publish&quot;, manifest);</span>
+        }
+<span class="fc" id="L608">        return true;</span>
+    }
+
+    public boolean attachArtifact(String jobId, Map&lt;String, Object&gt; artifact) {
+<span class="nc" id="L612">        String key = KEY_PREFIX + jobId + &quot;:artifacts&quot;;</span>
+        try {
+<span class="nc bnc" id="L614" title="All 2 branches missed.">            if (redisTemplate != null) {</span>
+                // push onto a list so multiple artifacts can be attached
+<span class="nc" id="L616">                redisTemplate.opsForList().rightPush(key, artifact);</span>
+            } else {
+                // in-memory fallback: maintain a List&lt;Object&gt;
+<span class="nc" id="L619">                Object o = inMemoryStore.get(key);</span>
+                java.util.List&lt;Object&gt; list;
+<span class="nc bnc" id="L621" title="All 2 branches missed.">                if (o instanceof java.util.List) {</span>
+<span class="nc" id="L622">                    list = (java.util.List&lt;Object&gt;) o;</span>
+                } else {
+<span class="nc" id="L624">                    list = new java.util.ArrayList&lt;&gt;();</span>
+                }
+<span class="nc" id="L626">                list.add(artifact);</span>
+<span class="nc" id="L627">                inMemoryStore.put(key, list);</span>
+            }
+<span class="nc" id="L629">            recordAudit(&quot;artifact attached &quot; + jobId + &quot; &quot; + artifact.toString());</span>
+<span class="nc bnc" id="L630" title="All 2 branches missed.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L631">                String workflow = get(jobId).map(JobStatusResponse::workflow).orElse(&quot;unknown&quot;);</span>
+<span class="nc bnc" id="L632" title="All 2 branches missed.">                String artifactName = artifact == null ? &quot;unknown&quot; : String.valueOf(artifact.getOrDefault(&quot;name&quot;, artifact.getOrDefault(&quot;type&quot;, &quot;unknown&quot;)));</span>
+<span class="nc" id="L633">                governanceRuntimeMetricsService.recordArtifactAttached(workflow, artifactName, artifact);</span>
+            }
+<span class="nc" id="L635">            return true;</span>
+<span class="nc" id="L636">        } catch (Exception ex) {</span>
+<span class="nc" id="L637">            log.error(&quot;Failed to attach artifact for job {}: {}&quot;, jobId, ex.toString());</span>
+<span class="nc" id="L638">            return false;</span>
+        }
+    }
+
+    public List&lt;Map&lt;String, String&gt;&gt; getArtifacts(String jobId) {
+<span class="nc" id="L643">        String key = KEY_PREFIX + jobId + &quot;:artifacts&quot;;</span>
+<span class="nc" id="L644">        Instant startedAt = Instant.now();</span>
+        try {
+<span class="nc bnc" id="L646" title="All 2 branches missed.">            if (redisTemplate != null) {</span>
+<span class="nc" id="L647">                java.util.List&lt;Object&gt; items = redisTemplate.opsForList().range(key, 0, -1);</span>
+<span class="nc bnc" id="L648" title="All 4 branches missed.">                if (items == null || items.isEmpty()) {</span>
+<span class="nc" id="L649">                    recordArtifactRead(&quot;metadata_list&quot;, List.of(), true, Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L650">                    return List.of();</span>
+                }
+<span class="nc" id="L652">                var artifacts = items.stream().map(it -&gt; {</span>
+<span class="nc bnc" id="L653" title="All 2 branches missed.">                    if (it instanceof Map) {</span>
+                        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L655">                        Map&lt;String, String&gt; m = (Map&lt;String, String&gt;) it;</span>
+<span class="nc" id="L656">                        return m;</span>
+                    }
+                    try {
+                        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L660">                        Map&lt;String, String&gt; m = objectMapper.convertValue(it, Map.class);</span>
+<span class="nc" id="L661">                        return m;</span>
+<span class="nc" id="L662">                    } catch (Exception ex) {</span>
+<span class="nc" id="L663">                        return java.util.Collections.&lt;String, String&gt;emptyMap();</span>
+                    }
+<span class="nc" id="L665">                }).collect(Collectors.toList());</span>
+<span class="nc bnc" id="L666" title="All 2 branches missed.">                if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L667">                    governanceRuntimeMetricsService.recordOperatorRead(&quot;job_artifacts&quot;, artifacts);</span>
+                }
+<span class="nc" id="L669">                recordArtifactRead(&quot;metadata_list&quot;, artifacts, true, Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L670">                return artifacts;</span>
+            } else {
+<span class="nc" id="L672">                Object o = inMemoryStore.get(key);</span>
+<span class="nc bnc" id="L673" title="All 2 branches missed.">                if (o instanceof java.util.List) {</span>
+                    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L675">                    java.util.List&lt;Object&gt; items = (java.util.List&lt;Object&gt;) o;</span>
+<span class="nc" id="L676">                    var artifacts = items.stream().map(it -&gt; {</span>
+<span class="nc bnc" id="L677" title="All 2 branches missed.">                        if (it instanceof Map) {</span>
+                            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L679">                            Map&lt;String, String&gt; m = (Map&lt;String, String&gt;) it;</span>
+<span class="nc" id="L680">                            return m;</span>
+                        }
+<span class="nc" id="L682">                        return java.util.Collections.&lt;String, String&gt;emptyMap();</span>
+<span class="nc" id="L683">                    }).collect(Collectors.toList());</span>
+<span class="nc bnc" id="L684" title="All 2 branches missed.">                    if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L685">                        governanceRuntimeMetricsService.recordOperatorRead(&quot;job_artifacts&quot;, artifacts);</span>
+                    }
+<span class="nc" id="L687">                    recordArtifactRead(&quot;metadata_list&quot;, artifacts, true, Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L688">                    return artifacts;</span>
+                }
+<span class="nc" id="L690">                recordArtifactRead(&quot;metadata_list&quot;, List.of(), true, Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L691">                return List.of();</span>
+            }
+<span class="nc" id="L693">        } catch (Exception ex) {</span>
+<span class="nc" id="L694">            log.debug(&quot;Failed to read artifacts for {}: {}&quot;, jobId, ex.toString());</span>
+<span class="nc" id="L695">            recordArtifactRead(&quot;metadata_list&quot;, Map.of(&quot;jobId&quot;, jobId), false, Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L696">            return List.of();</span>
+        }
+    }
+
+    public List&lt;JobStatusResponse&gt; listAll() {
+<span class="fc" id="L701">        return list(null, null, 0, Integer.MAX_VALUE);</span>
+    }
+
+    public void recordArtifactDelivery(String artifactKind, Object payload, boolean success, Duration duration) {
+<span class="nc" id="L705">        recordArtifactRead(artifactKind, payload, success, duration);</span>
+<span class="nc" id="L706">    }</span>
+    /**
+     * Cancel a job if it is in a state that can still be aborted.
+     */
+    public Optional&lt;JobStatusResponse&gt; cancel(String jobId, Long expectedVersion) {
+        // explicit cancel wrapper to handle allowed-from states if needed
+<span class="fc" id="L712">        return transition(jobId, JobState.CANCELED, expectedVersion);</span>
+    }
+
+    /**
+     * Retry a job by resetting its state to QUEUED.  Only FAILED, CANCELED or
+     * TIMED_OUT jobs may be retried.
+     */
+    public Optional&lt;JobStatusResponse&gt; retry(String jobId, Long expectedVersion) {
+<span class="fc" id="L720">        String key = KEY_PREFIX + jobId;</span>
+<span class="fc" id="L721">        Object o = getValue(key);</span>
+<span class="fc bfc" id="L722" title="All 2 branches covered.">        if (o == null) return Optional.empty();</span>
+<span class="fc" id="L723">        JobRecord rec = marshaller.toJobRecord(o);</span>
+<span class="pc bpc" id="L724" title="1 of 2 branches missed.">        if (rec == null) return Optional.empty();</span>
+<span class="pc bpc" id="L725" title="3 of 4 branches missed.">        if (expectedVersion != null &amp;&amp; rec.getVersion() != expectedVersion) {</span>
+<span class="nc" id="L726">            return Optional.empty();</span>
+        }
+<span class="pc bpc" id="L728" title="1 of 6 branches missed.">        if (rec.getState() != JobState.FAILED &amp;&amp; rec.getState() != JobState.CANCELED &amp;&amp; rec.getState() != JobState.TIMED_OUT) {</span>
+<span class="fc" id="L729">            log.warn(&quot;Cannot retry job {} from state {}&quot;, jobId, rec.getState());</span>
+<span class="fc" id="L730">            return Optional.empty();</span>
+        }
+<span class="fc" id="L732">        rec.setState(JobState.QUEUED);</span>
+<span class="fc" id="L733">        rec.setUpdatedAt(Instant.now().toString());</span>
+<span class="fc" id="L734">        rec.setVersion(rec.getVersion() + 1);</span>
+<span class="fc" id="L735">        setValue(key, rec);</span>
+<span class="fc" id="L736">        log.info(&quot;Audit: job {} retried (version now {})&quot;, jobId, rec.getVersion());</span>
+<span class="fc" id="L737">        return Optional.of(toResponse(rec));</span>
+    }
+    public List&lt;JobStatusResponse&gt; list(String workflowFilter, JobState stateFilter, int page, int size) {
+        // Note: For small dev usage we use keys scan; in production use a proper index or sorted set.
+<span class="fc" id="L741">        var keys = keys(KEY_PREFIX + &quot;*&quot;);</span>
+<span class="pc bpc" id="L742" title="1 of 4 branches missed.">        if (keys == null || keys.isEmpty()) return List.of();</span>
+<span class="fc" id="L743">        var jobs = keys.stream()</span>
+                // skip auxiliary keys (logs, artifacts, etc.) which use suffixes like &quot;:logs&quot; or &quot;:artifacts&quot;
+<span class="pc bpc" id="L745" title="1 of 6 branches missed.">                .filter(k -&gt; k != null &amp;&amp; k.chars().filter(ch -&gt; ch == ':').count() == 1)</span>
+<span class="fc" id="L746">            .map(k -&gt; getValue(k))</span>
+<span class="fc" id="L747">                .map(v -&gt; marshaller.toJobRecord(v))</span>
+<span class="fc" id="L748">                .filter(java.util.Objects::nonNull)</span>
+<span class="fc" id="L749">                .filter(rec -&gt; {</span>
+<span class="pc bpc" id="L750" title="1 of 4 branches missed.">                    if (workflowFilter != null &amp;&amp; !workflowFilter.isBlank()) {</span>
+<span class="pc bpc" id="L751" title="1 of 4 branches missed.">                        if (rec.getWorkflow() == null || !rec.getWorkflow().equalsIgnoreCase(workflowFilter)) return false;</span>
+                    }
+<span class="pc bpc" id="L753" title="1 of 2 branches missed.">                    if (stateFilter != null) {</span>
+<span class="nc bnc" id="L754" title="All 2 branches missed.">                        if (rec.getState() != stateFilter) return false;</span>
+                    }
+<span class="fc" id="L756">                    return true;</span>
+                })
+<span class="fc" id="L758">                .sorted((a, b) -&gt; a.getCreatedAt().compareTo(b.getCreatedAt()))</span>
+<span class="fc" id="L759">                .skip((long) page * size)</span>
+<span class="pc bpc" id="L760" title="1 of 2 branches missed.">                .limit(size &lt;= 0 ? Integer.MAX_VALUE : size)</span>
+<span class="fc" id="L761">                .map(this::toResponse)</span>
+<span class="fc" id="L762">                .collect(Collectors.toList());</span>
+<span class="pc bpc" id="L763" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L764">            governanceRuntimeMetricsService.recordOperatorRead(&quot;job_list&quot;, jobs);</span>
+        }
+<span class="fc" id="L766">        return jobs;</span>
+    }
+
+    public List&lt;String&gt; getAuditEntriesForJob(String jobId) {
+<span class="fc" id="L770">        var logs = getAuditLog().stream()</span>
+<span class="fc" id="L771">                .filter(e -&gt; e.contains(jobId))</span>
+<span class="fc" id="L772">                .toList();</span>
+<span class="pc bpc" id="L773" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L774">            governanceRuntimeMetricsService.recordOperatorRead(&quot;job_audit&quot;, logs);</span>
+        }
+<span class="fc" id="L776">        return logs;</span>
+    }
+
+    // runtime config &amp; metrics for the scanner
+<span class="nc" id="L780">    public int getScannerIntervalSeconds() { return scannerIntervalSeconds; }</span>
+
+<span class="nc" id="L782">    public long getScannedCount() { return scannedCount.get(); }</span>
+
+<span class="nc" id="L784">    public long getDispatchedCount() { return dispatchedCount.get(); }</span>
+
+    public synchronized void setScannerIntervalSeconds(int seconds) {
+<span class="nc bnc" id="L787" title="All 2 branches missed.">        if (seconds &lt;= 0) return;</span>
+<span class="nc" id="L788">        scannerIntervalSeconds = seconds;</span>
+<span class="nc bnc" id="L789" title="All 2 branches missed.">        if (scannerFuture != null) {</span>
+<span class="nc" id="L790">            try { scannerFuture.cancel(false); } catch (Exception ignored) {}</span>
+        }
+<span class="nc" id="L792">        scannerFuture = scanner.scheduleAtFixedRate(this::dispatchQueuedJobs, scannerIntervalSeconds, scannerIntervalSeconds, TimeUnit.SECONDS);</span>
+<span class="nc" id="L793">        log.info(&quot;Scanner interval updated to {} seconds&quot;, scannerIntervalSeconds);</span>
+<span class="nc" id="L794">    }</span>
+
+    SchedulerSnapshot schedulerSnapshot() {
+<span class="fc" id="L797">        int queued = 0;</span>
+<span class="fc" id="L798">        int running = 0;</span>
+<span class="fc" id="L799">        int deferred = 0;</span>
+<span class="fc" id="L800">        int blocked = 0;</span>
+<span class="fc" id="L801">        double totalQueueAgeMs = 0.0d;</span>
+<span class="fc" id="L802">        double maxQueueAgeMs = 0.0d;</span>
+<span class="fc" id="L803">        int queueAgeSamples = 0;</span>
+
+<span class="fc" id="L805">        var keys = keys(KEY_PREFIX + &quot;*&quot;);</span>
+<span class="pc bpc" id="L806" title="1 of 4 branches missed.">        if (keys == null || keys.isEmpty()) {</span>
+<span class="fc" id="L807">            return new SchedulerSnapshot(0, 0, 0, 0, 0.0d, 0.0d, scannerIntervalSeconds);</span>
+        }
+
+<span class="fc" id="L810">        Instant now = Instant.now();</span>
+<span class="fc bfc" id="L811" title="All 2 branches covered.">        for (String key : keys) {</span>
+<span class="pc bpc" id="L812" title="1 of 6 branches missed.">            if (key == null || key.chars().filter(ch -&gt; ch == ':').count() != 1) {</span>
+<span class="fc" id="L813">                continue;</span>
+            }
+            try {
+<span class="fc" id="L816">                Object value = getValue(key);</span>
+<span class="fc" id="L817">                JobRecord rec = marshaller.toJobRecord(value);</span>
+<span class="pc bpc" id="L818" title="1 of 2 branches missed.">                if (rec == null) {</span>
+<span class="nc" id="L819">                    continue;</span>
+                }
+<span class="pc bpc" id="L821" title="1 of 2 branches missed.">                Map&lt;String, Object&gt; params = rec.getParameters() == null ? Map.of() : rec.getParameters();</span>
+<span class="fc" id="L822">                boolean isDeferred = isDeferred(params);</span>
+
+<span class="fc bfc" id="L824" title="All 2 branches covered.">                if (rec.getState() == JobState.RUNNING) {</span>
+<span class="fc" id="L825">                    running++;</span>
+<span class="fc" id="L826">                    continue;</span>
+                }
+<span class="fc bfc" id="L828" title="All 2 branches covered.">                if (rec.getState() != JobState.QUEUED) {</span>
+<span class="fc" id="L829">                    continue;</span>
+                }
+
+<span class="fc" id="L832">                queued++;</span>
+<span class="fc" id="L833">                double queueAgeMs = durationBetween(rec.getCreatedAt(), now).toMillis();</span>
+<span class="fc" id="L834">                totalQueueAgeMs += queueAgeMs;</span>
+<span class="fc" id="L835">                maxQueueAgeMs = Math.max(maxQueueAgeMs, queueAgeMs);</span>
+<span class="fc" id="L836">                queueAgeSamples++;</span>
+
+<span class="pc bpc" id="L838" title="1 of 2 branches missed.">                if (isDeferred) {</span>
+<span class="nc" id="L839">                    deferred++;</span>
+<span class="nc" id="L840">                    continue;</span>
+                }
+
+<span class="fc" id="L843">                String executorName = executorNameFor(rec);</span>
+<span class="pc bpc" id="L844" title="2 of 4 branches missed.">                if (!executorMap.containsKey(executorName) || executorMap.get(executorName) == null) {</span>
+<span class="nc" id="L845">                    blocked++;</span>
+                }
+<span class="nc" id="L847">            } catch (Exception ex) {</span>
+<span class="nc" id="L848">                log.debug(&quot;Ignoring job {} during scheduler snapshot: {}&quot;, key, ex.toString());</span>
+<span class="fc" id="L849">            }</span>
+<span class="fc" id="L850">        }</span>
+
+<span class="fc bfc" id="L852" title="All 2 branches covered.">        double avgQueueAgeMs = queueAgeSamples == 0 ? 0.0d : totalQueueAgeMs / queueAgeSamples;</span>
+<span class="fc" id="L853">        return new SchedulerSnapshot(queued, running, deferred, blocked, avgQueueAgeMs, maxQueueAgeMs, scannerIntervalSeconds);</span>
+    }
+
+    public Optional&lt;JobStatusResponse&gt; transition(String jobId, JobState newState, Long expectedVersion) {
+<span class="fc" id="L857">        String key = KEY_PREFIX + jobId;</span>
+<span class="fc" id="L858">        Object o = getValue(key);</span>
+<span class="fc bfc" id="L859" title="All 2 branches covered.">        if (o == null) return Optional.empty();</span>
+<span class="fc" id="L860">        JobRecord rec = marshaller.toJobRecord(o);</span>
+<span class="pc bpc" id="L861" title="1 of 2 branches missed.">        if (rec == null) return Optional.empty();</span>
+<span class="fc bfc" id="L862" title="All 4 branches covered.">        if (expectedVersion != null &amp;&amp; rec.getVersion() != expectedVersion) {</span>
+<span class="fc" id="L863">            throw new IllegalStateException(&quot;version_mismatch:&quot; + rec.getVersion());</span>
+        }
+<span class="fc" id="L865">        JobState current = rec.getState();</span>
+<span class="fc bfc" id="L866" title="All 2 branches covered.">        if (!isValidTransition(current, newState)) {</span>
+<span class="fc" id="L867">            log.warn(&quot;Invalid state transition attempted for {}: {} -&gt; {}&quot;, jobId, current, newState);</span>
+<span class="fc" id="L868">            return Optional.empty();</span>
+        }
+<span class="fc" id="L870">        recordAudit(&quot;job &quot; + jobId + &quot; transitioning &quot; + current + &quot; -&gt; &quot; + newState);</span>
+<span class="fc" id="L871">        rec.setState(newState);</span>
+<span class="fc" id="L872">        rec.setUpdatedAt(Instant.now().toString());</span>
+<span class="fc" id="L873">        rec.setVersion(rec.getVersion() + 1);</span>
+<span class="fc" id="L874">        setValue(key, rec);</span>
+<span class="pc bpc" id="L875" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L876">            governanceRuntimeMetricsService.recordJobTransition(rec.getWorkflow(), current.toString(), newState.toString());</span>
+        }
+<span class="fc" id="L878">        recordTerminalMetrics(rec, current, newState);</span>
+
+        // Publish job transition event to control plane
+<span class="fc" id="L881">        Map&lt;String, Object&gt; eventDetails = Map.of(</span>
+<span class="fc" id="L882">            &quot;fromState&quot;, current.toString(),</span>
+<span class="fc" id="L883">            &quot;toState&quot;, newState.toString(),</span>
+<span class="fc bfc" id="L884" title="All 2 branches covered.">            &quot;expectedVersion&quot;, expectedVersion != null ? expectedVersion : &quot;none&quot;</span>
+        );
+<span class="pc bpc" id="L886" title="1 of 2 branches missed.">        if (auditService != null) {</span>
+<span class="fc" id="L887">            auditService.publishJobEvent(jobId, &quot;transitioned&quot;, eventDetails);</span>
+        }
+
+<span class="fc" id="L890">        return Optional.of(toResponse(rec));</span>
+    }
+
+    /**
+     * Delete a job record from the backing store. Returns true if the job existed and was removed.
+     */
+    public boolean deleteJob(String jobId) {
+<span class="nc" id="L897">        String key = KEY_PREFIX + jobId;</span>
+        try {
+<span class="nc bnc" id="L899" title="All 2 branches missed.">            if (redisTemplate != null) {</span>
+<span class="nc" id="L900">                Boolean removed = redisTemplate.delete(key);</span>
+<span class="nc bnc" id="L901" title="All 4 branches missed.">                if (governanceRuntimeMetricsService != null &amp;&amp; Boolean.TRUE.equals(removed)) {</span>
+<span class="nc" id="L902">                    governanceRuntimeMetricsService.recordRedisWrite(&quot;redis&quot;, keyspaceOf(key), Map.of(&quot;deleted&quot;, key));</span>
+                }
+<span class="nc bnc" id="L904" title="All 4 branches missed.">                return removed != null &amp;&amp; removed;</span>
+            }
+<span class="nc" id="L906">        } catch (Throwable ignored) {}</span>
+<span class="nc" id="L907">        Object removed = inMemoryStore.remove(key);</span>
+<span class="nc bnc" id="L908" title="All 4 branches missed.">        if (governanceRuntimeMetricsService != null &amp;&amp; removed != null) {</span>
+<span class="nc" id="L909">            governanceRuntimeMetricsService.recordRedisWrite(&quot;memory&quot;, keyspaceOf(key), Map.of(&quot;deleted&quot;, key));</span>
+        }
+<span class="nc bnc" id="L911" title="All 2 branches missed.">        return removed != null;</span>
+    }
+
+    private boolean isValidTransition(JobState from, JobState to) {
+<span class="pc bpc" id="L915" title="1 of 2 branches missed.">        if (from == to) return true;</span>
+<span class="fc bfc" id="L916" title="All 3 branches covered.">        return switch (from) {</span>
+<span class="pc bpc" id="L917" title="1 of 8 branches missed.">            case QUEUED -&gt; to == JobState.RUNNING || to == JobState.CANCELED || to == JobState.TIMED_OUT || to == JobState.FAILED;</span>
+<span class="pc bpc" id="L918" title="7 of 8 branches missed.">            case RUNNING -&gt; to == JobState.COMPLETED || to == JobState.FAILED || to == JobState.CANCELED || to == JobState.TIMED_OUT;</span>
+<span class="fc" id="L919">            case COMPLETED, FAILED, CANCELED, TIMED_OUT -&gt; false;</span>
+        };
+    }
+
+    private void recordTerminalMetrics(JobRecord rec, JobState fromState, JobState toState) {
+<span class="pc bpc" id="L924" title="2 of 8 branches missed.">        if (governanceRuntimeMetricsService == null || rec == null || fromState == toState || !isTerminalState(toState)) {</span>
+<span class="fc" id="L925">            return;</span>
+        }
+        try {
+<span class="fc" id="L928">            Instant createdAt = Instant.parse(rec.getCreatedAt());</span>
+<span class="fc" id="L929">            Instant finishedAt = Instant.parse(rec.getUpdatedAt());</span>
+<span class="fc" id="L930">            governanceRuntimeMetricsService.recordJobTerminalState(</span>
+<span class="fc" id="L931">                    rec.getWorkflow(),</span>
+<span class="fc" id="L932">                    executorOf(rec),</span>
+<span class="fc" id="L933">                    toState.name(),</span>
+<span class="fc" id="L934">                    Duration.between(createdAt, finishedAt)</span>
+            );
+<span class="nc" id="L936">        } catch (Exception ex) {</span>
+<span class="nc" id="L937">            log.debug(&quot;Unable to record terminal runtime for job {}: {}&quot;, rec.getJobId(), ex.toString());</span>
+<span class="fc" id="L938">        }</span>
+<span class="fc" id="L939">    }</span>
+
+    private Duration durationBetween(String startedAt, Instant finishedAt) {
+        try {
+<span class="fc" id="L943">            return Duration.between(Instant.parse(startedAt), finishedAt);</span>
+<span class="nc" id="L944">        } catch (Exception ex) {</span>
+<span class="nc" id="L945">            return Duration.ZERO;</span>
+        }
+    }
+
+    private boolean isDeferred(Map&lt;String, Object&gt; params) {
+<span class="pc bpc" id="L950" title="2 of 4 branches missed.">        if (params == null || !params.containsKey(&quot;deferred&quot;)) {</span>
+<span class="fc" id="L951">            return false;</span>
+        }
+<span class="nc" id="L953">        Object deferred = params.get(&quot;deferred&quot;);</span>
+<span class="nc bnc" id="L954" title="All 2 branches missed.">        if (deferred instanceof Boolean value) {</span>
+<span class="nc" id="L955">            return value;</span>
+        }
+<span class="nc" id="L957">        return &quot;true&quot;.equalsIgnoreCase(String.valueOf(deferred));</span>
+    }
+
+    private String executorNameFor(JobRecord rec) {
+<span class="pc bpc" id="L961" title="1 of 2 branches missed.">        if (rec == null) {</span>
+<span class="nc" id="L962">            return &quot;simulator&quot;;</span>
+        }
+<span class="pc bpc" id="L964" title="1 of 2 branches missed.">        Map&lt;String, Object&gt; params = rec.getParameters() == null ? Map.of() : rec.getParameters();</span>
+<span class="pc bpc" id="L965" title="1 of 2 branches missed.">        if (params.containsKey(&quot;executor&quot;)) {</span>
+<span class="nc" id="L966">            return String.valueOf(params.get(&quot;executor&quot;));</span>
+        }
+<span class="pc bpc" id="L968" title="1 of 4 branches missed.">        if (rec.getWorkflow() != null &amp;&amp; rec.getWorkflow().equalsIgnoreCase(&quot;ingest&quot;)) {</span>
+<span class="fc" id="L969">            return &quot;tacc&quot;;</span>
+        }
+<span class="pc bpc" id="L971" title="2 of 4 branches missed.">        if (rec.getWorkflow() != null &amp;&amp; rec.getWorkflow().startsWith(&quot;vo.&quot;)) {</span>
+<span class="nc" id="L972">            return &quot;vo&quot;;</span>
+        }
+<span class="fc" id="L974">        return &quot;simulator&quot;;</span>
+    }
+
+    private boolean isTerminalState(JobState state) {
+<span class="pc bpc" id="L978" title="1 of 8 branches missed.">        return state == JobState.COMPLETED</span>
+                || state == JobState.FAILED
+                || state == JobState.CANCELED
+                || state == JobState.TIMED_OUT;
+    }
+
+    private String executorOf(JobRecord rec) {
+<span class="pc bpc" id="L985" title="2 of 4 branches missed.">        if (rec == null || rec.getParameters() == null) {</span>
+<span class="nc" id="L986">            return &quot;unknown&quot;;</span>
+        }
+<span class="fc" id="L988">        Object executor = rec.getParameters().get(&quot;executor&quot;);</span>
+<span class="fc bfc" id="L989" title="All 2 branches covered.">        return executor == null ? &quot;unknown&quot; : String.valueOf(executor);</span>
+    }
+
+    private void recordArtifactRead(String artifactKind, Object payload, boolean success, Duration duration) {
+<span class="nc bnc" id="L993" title="All 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L994">            governanceRuntimeMetricsService.recordArtifactRead(artifactKind, payload, success, duration);</span>
+        }
+<span class="nc" id="L996">    }</span>
+
+    private JobStatusResponse toResponse(JobRecord record) {
+        // extract any lineage object from parameters
+<span class="fc" id="L1000">        Map&lt;String,Object&gt; lineage = null;</span>
+<span class="pc bpc" id="L1001" title="1 of 4 branches missed.">        if (record.getParameters() != null &amp;&amp; record.getParameters().get(&quot;lineage&quot;) instanceof Map) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L1003">            Map&lt;String,Object&gt; tmp = (Map&lt;String,Object&gt;) record.getParameters().get(&quot;lineage&quot;);</span>
+<span class="fc" id="L1004">            lineage = tmp;</span>
+        }
+<span class="fc" id="L1006">        return new JobStatusResponse(</span>
+<span class="fc" id="L1007">                record.getJobId(),</span>
+<span class="fc" id="L1008">                record.getWorkflow(),</span>
+<span class="fc" id="L1009">                record.getDatasetId(),</span>
+<span class="fc" id="L1010">                record.getState().name(),</span>
+<span class="fc" id="L1011">                record.getCreatedAt(),</span>
+<span class="fc" id="L1012">                record.getUpdatedAt(),</span>
+<span class="fc" id="L1013">                record.getParameters(),</span>
+                lineage,
+<span class="fc" id="L1015">                record.getManifest(),</span>
+<span class="fc" id="L1016">                record.getRequestedBy(),</span>
+<span class="fc" id="L1017">                record.getVersion()</span>
+        );
+    }
+
+<span class="fc" id="L1021">    record SchedulerSnapshot(</span>
+            int queuedJobs,
+            int runningJobs,
+            int deferredJobs,
+            int blockedJobs,
+            double avgQueueAgeMs,
+            double maxQueueAgeMs,
+            int scannerIntervalSeconds
+    ) {}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

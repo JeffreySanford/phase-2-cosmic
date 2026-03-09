@@ -42,29 +42,37 @@
   color: #d7f0ff;
 }
 
-/* Material tab styling: make tab bar more vibrant and readable */
+/* Material tab styling — Angular Material 18 MDC selectors */
 ::ng-deep .mat-mdc-tab-list {
   background: linear-gradient(90deg, #04293a 0%, #0b5568 100%);
   border-radius: 8px;
   padding: 6px;
 }
 
-::ng-deep .mat-mdc-tab-label {
-  color: rgba(255, 255, 255, 0.9);
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: background 200ms ease, color 200ms ease, transform 150ms ease;
+/* Inactive tab labels */
+::ng-deep .mat-mdc-tab .mdc-tab__text-label,
+::ng-deep .mat-mdc-tab-label .mdc-tab__text-label {
+  color: rgba(200, 230, 255, 0.75) !important;
+  transition: color 200ms ease;
 }
 
-::ng-deep .mat-mdc-tab-label.mat-mdc-tab-label-active {
-  background: linear-gradient(90deg, #ff6b6b 0%, #7b61ff 100%);
-  color: #ffffff !important;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(123, 97, 255, 0.18);
+/* Active tab label — bright vibrant cyan */
+::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label,
+::ng-deep .mat-mdc-tab-label.mat-mdc-tab-label-active .mdc-tab__text-label {
+  color: #40e0ff !important;
+  text-shadow: 0 0 12px rgba(64, 224, 255, 0.55);
 }
 
-::ng-deep .mat-mdc-tab-label:hover {
-  background: rgba(255, 255, 255, 0.03);
+/* Active tab ink-bar indicator */
+::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab-indicator__content--underline,
+::ng-deep .mat-mdc-tab-ink-bar {
+  border-color: #40e0ff !important;
+  background-color: #40e0ff !important;
+}
+
+/* Hover state */
+::ng-deep .mat-mdc-tab:hover .mdc-tab__text-label {
+  color: rgba(200, 230, 255, 0.95) !important;
 }
 
 .tabs-container {

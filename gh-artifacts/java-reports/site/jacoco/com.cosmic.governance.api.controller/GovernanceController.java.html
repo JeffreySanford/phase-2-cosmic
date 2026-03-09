@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GovernanceController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.controller</a> &gt; <span class="el_source">GovernanceController.java</span></div><h1>GovernanceController.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.controller;
+
+import com.cosmic.governance.api.dto.IngestRequest;
+import com.cosmic.governance.api.dto.IngestResponse;
+import com.cosmic.governance.api.dto.JobStatusResponse;
+import com.cosmic.governance.api.dto.JobSubmitRequest;
+import com.cosmic.governance.api.dto.JobSubmitResponse;
+import com.cosmic.governance.api.service.JobService;
+import com.cosmic.governance.api.service.JobScenarioService;
+import com.cosmic.governance.api.service.DatasetService;
+import com.cosmic.governance.api.dto.DatasetRequest;
+import com.cosmic.governance.api.dto.DatasetResponse;
+import jakarta.validation.Valid;
+import java.time.Instant;
+import java.util.Map;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.apache.pulsar.client.admin.PulsarAdmin;
+import org.apache.pulsar.client.admin.PulsarAdminException;
+import org.apache.pulsar.common.policies.data.ClusterData;
+import org.apache.pulsar.common.policies.data.TenantInfo;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
+
+@RestController
+@RequestMapping(&quot;/api/v1&quot;)
+public class GovernanceController {
+    private final JobService jobService;
+    private final JobScenarioService jobScenarioService;
+    private final com.cosmic.governance.api.service.SchemaService schemaService;
+    private final DatasetService datasetService;
+    private final RabbitTemplate rabbitTemplate;
+
+    @Value(&quot;${pulsar.admin.url:http://localhost:8085}&quot;)
+    private String pulsarAdminUrl;
+
+<span class="fc" id="L48">    public GovernanceController(JobService jobService, JobScenarioService jobScenarioService, com.cosmic.governance.api.service.SchemaService schemaService, DatasetService datasetService, RabbitTemplate rabbitTemplate) {</span>
+<span class="fc" id="L49">        this.jobService = jobService;</span>
+<span class="fc" id="L50">        this.jobScenarioService = jobScenarioService;</span>
+<span class="fc" id="L51">        this.schemaService = schemaService;</span>
+<span class="fc" id="L52">        this.datasetService = datasetService;</span>
+<span class="fc" id="L53">        this.rabbitTemplate = rabbitTemplate;</span>
+<span class="fc" id="L54">    }</span>
+
+    @GetMapping(&quot;/health&quot;)
+    public Map&lt;String, String&gt; health() {
+<span class="fc" id="L58">        return Map.of(</span>
+                &quot;status&quot;, &quot;ok&quot;,
+                &quot;service&quot;, &quot;java-governance&quot;,
+<span class="fc" id="L61">                &quot;timestamp&quot;, Instant.now().toString()</span>
+        );
+    }
+
+    @PostMapping(&quot;/ingest&quot;)
+    public ResponseEntity&lt;IngestResponse&gt; ingest(@Valid @RequestBody IngestRequest request) {
+<span class="nc" id="L67">        String acceptedAt = Instant.now().toString();</span>
+<span class="nc" id="L68">        IngestResponse response = new IngestResponse(</span>
+<span class="nc" id="L69">                &quot;ing-&quot; + UUID.randomUUID(),</span>
+                &quot;ACCEPTED&quot;,
+                acceptedAt
+        );
+<span class="nc" id="L73">        return ResponseEntity.status(HttpStatus.CREATED).body(response);</span>
+    }
+
+    @PostMapping(&quot;/jobs&quot;)
+    public ResponseEntity&lt;?&gt; submitJob(@Valid @RequestBody JobSubmitRequest request) {
+        // server-side JSON Schema validation (if a schema exists for the workflow)
+<span class="fc" id="L79">        var vr = schemaService.validate(request.workflow(), request.parameters());</span>
+<span class="pc bpc" id="L80" title="1 of 4 branches missed.">        if (!vr.schemaFound() &amp;&amp; !vr.valid()) {</span>
+<span class="nc" id="L81">            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse(&quot;invalid_schema&quot;, null, null));</span>
+        }
+<span class="fc bfc" id="L83" title="All 4 branches covered.">        if (vr.schemaFound() &amp;&amp; !vr.valid()) {</span>
+<span class="fc" id="L84">            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse(&quot;validation_failed&quot;, null, null));</span>
+        }
+
+<span class="fc" id="L87">        JobStatusResponse created = jobService.submit(request);</span>
+<span class="fc" id="L88">        JobSubmitResponse response = new JobSubmitResponse(</span>
+<span class="fc" id="L89">            created.jobId(),</span>
+<span class="fc" id="L90">            created.status(),</span>
+<span class="fc" id="L91">            created.createdAt(),</span>
+<span class="fc" id="L92">            created.version()</span>
+        );
+<span class="fc" id="L94">        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);</span>
+    }
+
+    @GetMapping(&quot;/public-sources&quot;)
+    public ResponseEntity&lt;?&gt; publicSources() {
+        // simple hard-coded list used by e2e tests and UI when no backend catalog exists
+<span class="nc" id="L100">        var list = List.of(</span>
+<span class="nc" id="L101">            Map.&lt;String,Object&gt;of(&quot;name&quot;,&quot;Example Public Source&quot;,&quot;url&quot;,&quot;https://public.example.org&quot;),</span>
+<span class="nc" id="L102">            Map.&lt;String,Object&gt;of(&quot;name&quot;,&quot;Sample Archive&quot;,&quot;url&quot;,&quot;https://archive.example.org&quot;)</span>
+        );
+<span class="nc" id="L104">        return ResponseEntity.ok(list);</span>
+    }
+
+    @PostMapping(&quot;/jobs/validate&quot;)
+    public ResponseEntity&lt;?&gt; validatePayload(@RequestBody java.util.Map&lt;String, Object&gt; body) {
+<span class="nc" id="L109">        String type = (String) body.get(&quot;type&quot;);</span>
+<span class="nc" id="L110">        Object payload = body.get(&quot;payload&quot;);</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (type == null) return ResponseEntity.badRequest().body(Map.of(&quot;error&quot;,&quot;missing_type&quot;));</span>
+<span class="nc" id="L112">        var vr = schemaService.validate(type, payload);</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        if (!vr.schemaFound()) return ResponseEntity.ok(Map.of(&quot;valid&quot;, true, &quot;schemaFound&quot;, false));</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (vr.valid()) return ResponseEntity.ok(Map.of(&quot;valid&quot;, true));</span>
+<span class="nc" id="L115">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(&quot;valid&quot;, false, &quot;message&quot;, vr.message()));</span>
+    }
+
+    @GetMapping(&quot;/jobs/{id}&quot;)
+    public ResponseEntity&lt;?&gt; jobStatus(@PathVariable(&quot;id&quot;) String id) {
+<span class="fc" id="L120">        return jobService.get(id)</span>
+<span class="fc" id="L121">                .&lt;ResponseEntity&lt;?&gt;&gt;map(ResponseEntity::ok)</span>
+<span class="pc" id="L122">                .orElseGet(() -&gt; ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse(&quot;job_not_found&quot;, id, null)));</span>
+    }
+
+    @DeleteMapping(&quot;/jobs/{id}&quot;)
+    public ResponseEntity&lt;?&gt; deleteJob(@PathVariable(&quot;id&quot;) String id) {
+<span class="nc" id="L127">        boolean deleted = jobService.deleteJob(id);</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        if (deleted) return ResponseEntity.noContent().build();</span>
+<span class="nc" id="L129">        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse(&quot;job_not_found&quot;, id, null));</span>
+    }
+
+            @GetMapping(&quot;/jobs&quot;)
+            public ResponseEntity&lt;?&gt; listJobs(
+                    @org.springframework.web.bind.annotation.RequestParam(value = &quot;workflow&quot;, required = false) String workflow,
+                    @org.springframework.web.bind.annotation.RequestParam(value = &quot;state&quot;, required = false) String state,
+                    @org.springframework.web.bind.annotation.RequestParam(value = &quot;page&quot;, required = false, defaultValue = &quot;0&quot;) int page,
+                    @org.springframework.web.bind.annotation.RequestParam(value = &quot;size&quot;, required = false, defaultValue = &quot;50&quot;) int size
+            ) {
+<span class="fc" id="L139">                com.cosmic.governance.api.model.JobState stateFilter = null;</span>
+<span class="pc bpc" id="L140" title="1 of 4 branches missed.">                if (state != null &amp;&amp; !state.isBlank()) {</span>
+                    try {
+<span class="nc" id="L142">                        stateFilter = com.cosmic.governance.api.model.JobState.valueOf(state.toUpperCase());</span>
+<span class="fc" id="L143">                    } catch (IllegalArgumentException ex) {</span>
+                        // we include allowed list as extra info but still conform to ErrorResponse schema
+<span class="fc" id="L145">                        var details = Map.&lt;String,Object&gt;of(</span>
+<span class="fc" id="L146">                                &quot;allowed&quot;, List.of(&quot;QUEUED&quot;,&quot;RUNNING&quot;,&quot;COMPLETED&quot;,&quot;FAILED&quot;,&quot;CANCELED&quot;,&quot;TIMED_OUT&quot;)</span>
+                        );
+<span class="fc" id="L148">                        var err = new com.cosmic.governance.api.dto.ErrorResponse(&quot;invalid_state&quot;, null, null);</span>
+                        // merge into map
+<span class="fc" id="L150">                        Map&lt;String,Object&gt; resp = new java.util.HashMap&lt;&gt;(details);</span>
+<span class="fc" id="L151">                        resp.put(&quot;error&quot;, err.error());</span>
+<span class="fc" id="L152">                        return ResponseEntity.badRequest().body(resp);</span>
+<span class="nc" id="L153">                    }</span>
+                }
+<span class="fc" id="L155">                return ResponseEntity.ok(jobService.list(workflow, stateFilter, page, size));</span>
+            }
+
+            @GetMapping(&quot;/jobs/types&quot;)
+            public ResponseEntity&lt;?&gt; jobTypes() {
+<span class="fc" id="L160">            return ResponseEntity.ok(jobService.types());</span>
+            }
+
+            @GetMapping(&quot;/jobs/{id}/logs&quot;)
+            public ResponseEntity&lt;?&gt; jobLogs(@PathVariable(&quot;id&quot;) String id) {
+<span class="nc" id="L165">                String key = &quot;job:&quot; + id + &quot;:logs&quot;;</span>
+<span class="nc" id="L166">                var vals = jobService.getLogs(id);</span>
+<span class="nc" id="L167">                return ResponseEntity.ok(vals);</span>
+            }
+
+            @GetMapping(&quot;/jobs/{id}/artifacts&quot;)
+            public ResponseEntity&lt;?&gt; jobArtifacts(@PathVariable(&quot;id&quot;) String id) {
+<span class="nc" id="L172">                var arts = jobService.getArtifacts(id);</span>
+<span class="nc" id="L173">                return ResponseEntity.ok(arts);</span>
+            }
+
+            @PostMapping(&quot;/jobs/{id}/artifacts&quot;)
+            public ResponseEntity&lt;?&gt; postJobArtifact(@PathVariable(&quot;id&quot;) String id,
+                                                     @RequestBody Map&lt;String, Object&gt; artifact) {
+<span class="nc" id="L179">                boolean ok = jobService.attachArtifact(id, artifact);</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                if (ok) return ResponseEntity.ok(Map.of(&quot;status&quot;, &quot;attached&quot;));</span>
+<span class="nc" id="L181">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(&quot;error&quot;, &quot;job_not_found_or_attach_failed&quot;, &quot;id&quot;, id));</span>
+            }
+
+            @GetMapping(&quot;/jobs/{id}/artifacts/{name}&quot;)
+            public ResponseEntity&lt;String&gt; artifactContent(@PathVariable(&quot;id&quot;) String id, @PathVariable(&quot;name&quot;) String name) {
+<span class="nc" id="L186">                Instant startedAt = Instant.now();</span>
+                // try to serve a file from local artifact store
+                try {
+<span class="nc" id="L189">                    java.nio.file.Path base = java.nio.file.Paths.get(System.getProperty(&quot;java.io.tmpdir&quot;), &quot;governance-artifacts&quot;, id);</span>
+<span class="nc" id="L190">                    java.nio.file.Path file = base.resolve(name).normalize();</span>
+<span class="nc bnc" id="L191" title="All 4 branches missed.">                    if (java.nio.file.Files.exists(file) &amp;&amp; file.startsWith(base)) {</span>
+<span class="nc" id="L192">                        String content = java.nio.file.Files.readString(file);</span>
+<span class="nc" id="L193">                        jobService.recordArtifactDelivery(&quot;content&quot;, content, true, java.time.Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L194">                        return ResponseEntity.ok(content);</span>
+                    }
+<span class="nc" id="L196">                } catch (Exception ignored) {}</span>
+                // fallback to simulated artifact content for dev/testing
+<span class="nc" id="L198">                String content = &quot;Simulated artifact for job &quot; + id + &quot; - &quot; + name + &quot;\nResult: OK&quot;;</span>
+<span class="nc" id="L199">                jobService.recordArtifactDelivery(&quot;content&quot;, content, true, java.time.Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L200">                return ResponseEntity.ok(content);</span>
+            }
+
+            @GetMapping(&quot;/jobs/{id}/audit&quot;)
+            public ResponseEntity&lt;?&gt; jobAudit(@PathVariable(&quot;id&quot;) String id) {
+<span class="fc" id="L205">                var logs = jobService.getAuditEntriesForJob(id);</span>
+<span class="fc" id="L206">                return ResponseEntity.ok(logs);</span>
+            }
+
+            @GetMapping(&quot;/jobs/{id}/manifest&quot;)
+            public ResponseEntity&lt;?&gt; jobManifest(@PathVariable(&quot;id&quot;) String id) {
+<span class="fc" id="L211">                var opt = jobService.getManifest(id);</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">                if (opt.isPresent()) {</span>
+<span class="fc" id="L213">                    return ResponseEntity.ok(opt.get());</span>
+                }
+<span class="fc" id="L215">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(&quot;error&quot;,&quot;manifest_not_found&quot;,&quot;id&quot;,id));</span>
+            }
+
+            @PostMapping(&quot;/jobs/{id}/manifest&quot;)
+            public ResponseEntity&lt;?&gt; attachJobManifest(@PathVariable(&quot;id&quot;) String id,
+                                                       @RequestBody Map&lt;String, Object&gt; manifest) {
+<span class="fc" id="L221">                boolean ok = jobService.attachManifest(id, manifest);</span>
+<span class="fc bfc" id="L222" title="All 2 branches covered.">                if (ok) return ResponseEntity.ok(Map.of(&quot;status&quot;,&quot;attached&quot;));</span>
+<span class="fc" id="L223">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(&quot;error&quot;,&quot;job_not_found&quot;,&quot;id&quot;,id));</span>
+            }
+
+            @GetMapping(&quot;/jobs/{id}/lineage&quot;)
+            public ResponseEntity&lt;?&gt; jobLineage(@PathVariable(&quot;id&quot;) String id) {
+<span class="fc" id="L228">                var opt = jobService.getLineage(id);</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">                if (opt.isPresent()) {</span>
+<span class="fc" id="L230">                    return ResponseEntity.ok(opt.get());</span>
+                }
+<span class="fc" id="L232">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(&quot;error&quot;,&quot;lineage_not_found&quot;,&quot;id&quot;,id));</span>
+            }
+
+            @PutMapping(&quot;/jobs/{id}/lineage&quot;)
+            public ResponseEntity&lt;?&gt; updateJobLineage(@PathVariable(&quot;id&quot;) String id,
+                                                     @RequestBody Map&lt;String, Object&gt; lineage) {
+<span class="fc" id="L238">                boolean ok = jobService.updateLineage(id, lineage);</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">                if (ok) return ResponseEntity.ok(Map.of(&quot;status&quot;,&quot;updated&quot;));</span>
+<span class="fc" id="L240">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(&quot;error&quot;,&quot;job_not_found&quot;,&quot;id&quot;,id));</span>
+            }
+
+        @GetMapping(&quot;/admin/dispatch&quot;)
+        public ResponseEntity&lt;?&gt; getDispatchConfig() {
+<span class="nc" id="L245">            return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L246">                &quot;intervalSeconds&quot;, jobService.getScannerIntervalSeconds(),</span>
+<span class="nc" id="L247">                &quot;scannedCount&quot;, jobService.getScannedCount(),</span>
+<span class="nc" id="L248">                &quot;dispatchedCount&quot;, jobService.getDispatchedCount()</span>
+            ));
+        }
+
+        @PostMapping(&quot;/admin/dispatch&quot;)
+        public ResponseEntity&lt;?&gt; setDispatchInterval(@RequestBody Map&lt;String, Object&gt; body) {
+<span class="nc" id="L254">            Object v = body.get(&quot;intervalSeconds&quot;);</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">            if (v == null) return ResponseEntity.badRequest().body(Map.of(&quot;error&quot;,&quot;missing_intervalSeconds&quot;));</span>
+            try {
+<span class="nc" id="L257">                int seconds = Integer.parseInt(String.valueOf(v));</span>
+<span class="nc" id="L258">                jobService.setScannerIntervalSeconds(seconds);</span>
+<span class="nc" id="L259">                return ResponseEntity.ok(Map.of(&quot;intervalSeconds&quot;, seconds));</span>
+<span class="nc" id="L260">            } catch (Exception ex) {</span>
+<span class="nc" id="L261">                return ResponseEntity.badRequest().body(Map.of(&quot;error&quot;,&quot;invalid_intervalSeconds&quot;));</span>
+            }
+        }
+
+        @PostMapping(&quot;/admin/release-deferred&quot;)
+        public ResponseEntity&lt;?&gt; releaseDeferredSamples() {
+<span class="nc" id="L267">            int released = jobService.releaseDeferredJobs();</span>
+<span class="nc" id="L268">            return ResponseEntity.ok(Map.of(&quot;released&quot;, released));</span>
+        }
+
+        @PostMapping(&quot;/admin/sample-jobs&quot;)
+        public ResponseEntity&lt;?&gt; seedSampleJobs(@RequestBody(required = false) Map&lt;String, Object&gt; body) {
+<span class="nc" id="L273">            int deferredCount = 5;</span>
+<span class="nc" id="L274">            int ingestCount = 5;</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">            if (body != null) {</span>
+                try {
+<span class="nc" id="L277">                    Object dv = body.get(&quot;deferredCount&quot;);</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">                    if (dv != null) deferredCount = Math.max(0, Integer.parseInt(String.valueOf(dv)));</span>
+<span class="nc" id="L279">                    Object iv = body.get(&quot;ingestCount&quot;);</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">                    if (iv != null) ingestCount = Math.max(0, Integer.parseInt(String.valueOf(iv)));</span>
+<span class="nc" id="L281">                } catch (NumberFormatException ex) {</span>
+<span class="nc" id="L282">                    return ResponseEntity.badRequest().body(Map.of(&quot;error&quot;, &quot;invalid_seed_counts&quot;));</span>
+<span class="nc" id="L283">                }</span>
+            }
+<span class="nc" id="L285">            return ResponseEntity.ok(jobScenarioService.seedSampleJobs(deferredCount, ingestCount));</span>
+        }
+
+            @PostMapping(&quot;/datasets&quot;)
+            public ResponseEntity&lt;DatasetResponse&gt; createDataset(@RequestBody DatasetRequest req) {
+                // basic manifest validation: if present, require `job` and `version`
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">                if (req.manifest() != null) {</span>
+<span class="fc" id="L292">                    Object job = req.manifest().get(&quot;job&quot;);</span>
+<span class="fc" id="L293">                    Object ver = req.manifest().get(&quot;version&quot;);</span>
+<span class="pc bpc" id="L294" title="1 of 4 branches missed.">                    if (job == null || ver == null) {</span>
+<span class="fc" id="L295">                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L296">                                .body(null);</span>
+                    }
+                }
+<span class="fc" id="L299">                DatasetResponse d = datasetService.create(req);</span>
+<span class="fc" id="L300">                return ResponseEntity.status(HttpStatus.CREATED).body(d);</span>
+            }
+
+            @GetMapping(&quot;/datasets&quot;)
+            public ResponseEntity&lt;?&gt; listDatasets() {
+<span class="nc" id="L305">                return ResponseEntity.ok(datasetService.listAll());</span>
+            }
+
+            @GetMapping(&quot;/datasets/{id}&quot;)
+            public ResponseEntity&lt;?&gt; getDataset(@PathVariable(&quot;id&quot;) String id) {
+<span class="fc" id="L310">                return datasetService.get(id)</span>
+<span class="fc" id="L311">                        .&lt;ResponseEntity&lt;?&gt;&gt;map(ResponseEntity::ok)</span>
+<span class="pc" id="L312">                        .orElseGet(() -&gt; ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(&quot;error&quot;,&quot;dataset_not_found&quot;,&quot;id&quot;,id)));</span>
+            }
+
+        @PostMapping(&quot;/jobs/{id}/transition&quot;)
+        public ResponseEntity&lt;?&gt; transitionJob(@PathVariable(&quot;id&quot;) String id, @RequestBody(required = false) java.util.Map&lt;String,Object&gt; reqBody) {
+        // accept either { &quot;state&quot;: &quot;RUNNING&quot; } or legacy { &quot;newState&quot;: &quot;RUNNING&quot; } payloads
+<span class="fc" id="L318">        String stateStr = null;</span>
+<span class="fc" id="L319">        Long expectedVersion = null;</span>
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">        if (reqBody != null) {</span>
+<span class="pc bpc" id="L321" title="2 of 4 branches missed.">            if (reqBody.containsKey(&quot;state&quot;) &amp;&amp; reqBody.get(&quot;state&quot;) != null) stateStr = String.valueOf(reqBody.get(&quot;state&quot;));</span>
+<span class="nc bnc" id="L322" title="All 4 branches missed.">            else if (reqBody.containsKey(&quot;newState&quot;) &amp;&amp; reqBody.get(&quot;newState&quot;) != null) stateStr = String.valueOf(reqBody.get(&quot;newState&quot;));</span>
+<span class="pc bpc" id="L323" title="1 of 4 branches missed.">            if (reqBody.containsKey(&quot;expectedVersion&quot;) &amp;&amp; reqBody.get(&quot;expectedVersion&quot;) != null) {</span>
+<span class="pc" id="L324">                try { expectedVersion = Long.parseLong(String.valueOf(reqBody.get(&quot;expectedVersion&quot;))); } catch (Exception ignored) {}</span>
+            }
+        }
+<span class="pc bpc" id="L327" title="2 of 4 branches missed.">        if (stateStr == null || stateStr.isBlank()) {</span>
+<span class="nc" id="L328">            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(&quot;error&quot;, &quot;validation_failed&quot;, &quot;details&quot;, Map.of(&quot;state&quot;, &quot;must not be null&quot;)));</span>
+        }
+        com.cosmic.governance.api.model.JobState newState;
+<span class="fc" id="L331">        try { newState = com.cosmic.governance.api.model.JobState.valueOf(stateStr.toUpperCase()); }</span>
+<span class="nc" id="L332">        catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L333">            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse(&quot;invalid_state&quot;, null, null));</span>
+<span class="fc" id="L334">        }</span>
+        try {
+<span class="fc" id="L336">            var result = jobService.transition(id, newState, expectedVersion);</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">            if (result.isPresent()) {</span>
+<span class="fc" id="L338">                return ResponseEntity.ok(result.get());</span>
+            }
+<span class="fc" id="L340">        } catch (IllegalStateException ex) {</span>
+<span class="pc bpc" id="L341" title="1 of 2 branches missed.">            if (ex.getMessage().startsWith(&quot;version_mismatch&quot;)) {</span>
+<span class="fc" id="L342">                long current = -1;</span>
+<span class="fc" id="L343">                String[] parts = ex.getMessage().split(&quot;:&quot;);</span>
+<span class="pc bpc" id="L344" title="1 of 2 branches missed.">                if (parts.length &gt; 1) {</span>
+<span class="pc" id="L345">                    try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}</span>
+                }
+                // if the current job is already canceled, treat cancel as idempotent and return OK
+<span class="fc" id="L348">                var optCur = jobService.get(id);</span>
+<span class="pc bpc" id="L349" title="2 of 4 branches missed.">                if (optCur.isPresent() &amp;&amp; &quot;CANCELED&quot;.equalsIgnoreCase(optCur.get().status())) {</span>
+<span class="nc" id="L350">                    return ResponseEntity.ok(optCur.get());</span>
+                }
+<span class="fc" id="L352">                Map&lt;String,Object&gt; resp = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L353">                resp.put(&quot;error&quot;, &quot;version_mismatch&quot;);</span>
+<span class="fc" id="L354">                resp.put(&quot;jobId&quot;, id);</span>
+<span class="fc" id="L355">                resp.put(&quot;currentVersion&quot;, current);</span>
+<span class="fc" id="L356">                return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);</span>
+            }
+<span class="nc" id="L358">            throw ex;</span>
+<span class="fc" id="L359">        }</span>
+        // determine whether job existed
+<span class="fc bfc" id="L361" title="All 2 branches covered.">        if (jobService.get(id).isEmpty()) {</span>
+<span class="fc" id="L362">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse(&quot;job_not_found&quot;, id, null));</span>
+        }
+        // otherwise it was an invalid state transition
+<span class="fc" id="L365">        var err = new com.cosmic.governance.api.dto.ErrorResponse(&quot;invalid_transition&quot;, id, null);</span>
+<span class="fc" id="L366">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);</span>
+        }
+
+        @PostMapping(&quot;/jobs/{id}/cancel&quot;)
+        public ResponseEntity&lt;?&gt; cancelJob(@PathVariable(&quot;id&quot;) String id, @Valid @RequestBody(required = false) com.cosmic.governance.api.dto.JobCancelRequest req) {
+            try {
+<span class="fc bfc" id="L372" title="All 2 branches covered.">                Long expected = req == null ? null : req.expectedVersion();</span>
+<span class="fc" id="L373">                var res = jobService.cancel(id, expected);</span>
+<span class="fc bfc" id="L374" title="All 2 branches covered.">                if (res.isPresent()) {</span>
+<span class="fc" id="L375">                    return ResponseEntity.ok(res.get());</span>
+                }
+<span class="fc" id="L377">            } catch (IllegalStateException ex) {</span>
+<span class="pc bpc" id="L378" title="1 of 2 branches missed.">                if (ex.getMessage().startsWith(&quot;version_mismatch&quot;)) {</span>
+<span class="fc" id="L379">                    long current = -1;</span>
+<span class="fc" id="L380">                    String[] parts = ex.getMessage().split(&quot;:&quot;);</span>
+<span class="pc bpc" id="L381" title="1 of 2 branches missed.">                    if (parts.length &gt; 1) {</span>
+<span class="pc" id="L382">                        try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}</span>
+                    }
+                    // if the current job is already canceled, treat cancel as idempotent and return OK
+<span class="fc" id="L385">                    var optCur = jobService.get(id);</span>
+<span class="pc bpc" id="L386" title="2 of 4 branches missed.">                    if (optCur.isPresent() &amp;&amp; &quot;CANCELED&quot;.equalsIgnoreCase(optCur.get().status())) {</span>
+<span class="fc" id="L387">                        return ResponseEntity.ok(optCur.get());</span>
+                    }
+<span class="nc" id="L389">                    Map&lt;String,Object&gt; resp = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L390">                    resp.put(&quot;error&quot;, &quot;version_mismatch&quot;);</span>
+<span class="nc" id="L391">                    resp.put(&quot;jobId&quot;, id);</span>
+<span class="nc" id="L392">                    resp.put(&quot;currentVersion&quot;, current);</span>
+<span class="nc" id="L393">                    return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);</span>
+                }
+<span class="nc" id="L395">                throw ex;</span>
+<span class="fc" id="L396">            }</span>
+<span class="fc" id="L397">            var opt = jobService.get(id);</span>
+<span class="fc bfc" id="L398" title="All 2 branches covered.">            if (opt.isEmpty()) {</span>
+<span class="fc" id="L399">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse(&quot;job_not_found&quot;, id, null));</span>
+            }
+<span class="fc" id="L401">            var current = opt.get();</span>
+            // make cancel idempotent: if already canceled, return OK with current state
+<span class="pc bpc" id="L403" title="1 of 2 branches missed.">            if (&quot;CANCELED&quot;.equalsIgnoreCase(current.status())) {</span>
+<span class="nc" id="L404">                return ResponseEntity.ok(current);</span>
+            }
+<span class="fc" id="L406">            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse(&quot;cannot_cancel&quot;, id, null));</span>
+        }
+
+        @PostMapping(&quot;/jobs/{id}/retry&quot;)
+        public ResponseEntity&lt;?&gt; retryJob(@PathVariable(&quot;id&quot;) String id, @RequestBody(required = false) com.cosmic.governance.api.dto.JobTransitionRequest req) {
+                try {
+<span class="fc bfc" id="L412" title="All 2 branches covered.">                    Long expected = req == null ? null : req.expectedVersion();</span>
+<span class="fc" id="L413">                    var result = jobService.retry(id, expected);</span>
+<span class="fc bfc" id="L414" title="All 2 branches covered.">                    if (result.isPresent()) return ResponseEntity.ok(result.get());</span>
+<span class="nc" id="L415">                } catch (IllegalStateException ex) {</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                    if (ex.getMessage().startsWith(&quot;version_mismatch&quot;)) {</span>
+<span class="nc" id="L417">                        long current = -1;</span>
+<span class="nc" id="L418">                        String[] parts = ex.getMessage().split(&quot;:&quot;);</span>
+<span class="nc bnc" id="L419" title="All 2 branches missed.">                        if (parts.length &gt; 1) {</span>
+<span class="nc" id="L420">                            try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}</span>
+                        }
+<span class="nc" id="L422">                        Map&lt;String,Object&gt; resp = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L423">                        resp.put(&quot;error&quot;, &quot;version_mismatch&quot;);</span>
+<span class="nc" id="L424">                        resp.put(&quot;jobId&quot;, id);</span>
+<span class="nc" id="L425">                        resp.put(&quot;currentVersion&quot;, current);</span>
+<span class="nc" id="L426">                        return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);</span>
+                    }
+<span class="nc" id="L428">                    throw ex;</span>
+<span class="fc" id="L429">                }</span>
+<span class="fc bfc" id="L430" title="All 2 branches covered.">                if (jobService.get(id).isEmpty()) {</span>
+<span class="fc" id="L431">                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new com.cosmic.governance.api.dto.ErrorResponse(&quot;job_not_found&quot;, id, null));</span>
+                }
+<span class="fc" id="L433">                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new com.cosmic.governance.api.dto.ErrorResponse(&quot;cannot_retry&quot;, id, null));</span>
+            }
+
+    @GetMapping(&quot;/pulsar/status&quot;)
+    public ResponseEntity&lt;?&gt; getPulsarStatus() {
+<span class="fc" id="L438">        try (PulsarAdmin admin = PulsarAdmin.builder()</span>
+<span class="fc" id="L439">                .serviceHttpUrl(pulsarAdminUrl) // Configurable Pulsar admin URL</span>
+<span class="fc" id="L440">                .build()) {</span>
+
+            // Get cluster info
+<span class="nc" id="L443">            List&lt;String&gt; clusters = admin.clusters().getClusters();</span>
+<span class="nc" id="L444">            int brokers = 0;</span>
+<span class="nc bnc" id="L445" title="All 2 branches missed.">            if (!clusters.isEmpty()) {</span>
+<span class="nc" id="L446">                String clusterName = clusters.get(0);</span>
+<span class="nc" id="L447">                brokers = admin.brokers().getActiveBrokers(clusterName).size();</span>
+            }
+
+            // For topics and partitions, use a simpler approach
+            // This is approximate as it requires scanning all tenants/namespaces
+<span class="nc" id="L452">            int topics = 0;</span>
+<span class="nc" id="L453">            int partitions = 0;</span>
+            try {
+<span class="nc" id="L455">                List&lt;String&gt; tenants = admin.tenants().getTenants();</span>
+<span class="nc bnc" id="L456" title="All 2 branches missed.">                for (String tenant : tenants) {</span>
+<span class="nc" id="L457">                    List&lt;String&gt; namespaces = admin.namespaces().getNamespaces(tenant);</span>
+<span class="nc bnc" id="L458" title="All 2 branches missed.">                    for (String namespace : namespaces) {</span>
+<span class="nc" id="L459">                        List&lt;String&gt; topicList = admin.topics().getList(namespace);</span>
+<span class="nc" id="L460">                        topics += topicList.size();</span>
+                        // Count partitions for each topic
+<span class="nc bnc" id="L462" title="All 2 branches missed.">                        for (String topic : topicList) {</span>
+                            try {
+<span class="nc" id="L464">                                var partitionedMeta = admin.topics().getPartitionedTopicMetadata(topic);</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">                                partitions += partitionedMeta.partitions &gt; 0 ? partitionedMeta.partitions : 1;</span>
+<span class="nc" id="L466">                            } catch (Exception e) {</span>
+                                // Non-partitioned topic, count as 1 partition
+<span class="nc" id="L468">                                partitions += 1;</span>
+<span class="nc" id="L469">                            }</span>
+<span class="nc" id="L470">                        }</span>
+<span class="nc" id="L471">                    }</span>
+<span class="nc" id="L472">                }</span>
+<span class="nc" id="L473">            } catch (Exception e) {</span>
+                // If we can't get detailed stats, return basic info
+<span class="nc" id="L475">                topics = -1;</span>
+<span class="nc" id="L476">                partitions = -1;</span>
+<span class="nc" id="L477">            }</span>
+
+<span class="nc" id="L479">            Map&lt;String, Object&gt; status = Map.of(</span>
+<span class="nc" id="L480">                &quot;brokers&quot;, brokers,</span>
+<span class="nc" id="L481">                &quot;topics&quot;, topics,</span>
+<span class="nc" id="L482">                &quot;partitions&quot;, partitions,</span>
+<span class="nc bnc" id="L483" title="All 2 branches missed.">                &quot;status&quot;, brokers &gt; 0 ? &quot;healthy&quot; : &quot;degraded&quot;,</span>
+<span class="nc" id="L484">                &quot;lastUpdated&quot;, Instant.now().toString()</span>
+            );
+<span class="nc" id="L486">            return ResponseEntity.ok(status);</span>
+
+<span class="fc" id="L488">        } catch (Exception e) {</span>
+            // Fallback to mock data if Pulsar is not available
+<span class="fc" id="L490">            Map&lt;String, Object&gt; status = Map.of(</span>
+<span class="fc" id="L491">                &quot;brokers&quot;, 0,</span>
+<span class="fc" id="L492">                &quot;topics&quot;, 0,</span>
+<span class="fc" id="L493">                &quot;partitions&quot;, 0,</span>
+                &quot;status&quot;, &quot;unavailable&quot;,
+<span class="fc" id="L495">                &quot;error&quot;, e.getMessage(),</span>
+<span class="fc" id="L496">                &quot;lastUpdated&quot;, Instant.now().toString()</span>
+            );
+<span class="fc" id="L498">            return ResponseEntity.ok(status);</span>
+        }
+    }
+
+    @GetMapping(&quot;/rabbitmq/status&quot;)
+    public ResponseEntity&lt;?&gt; getRabbitMQStatus() {
+        try {
+            // Check RabbitMQ connection by attempting to declare a test queue
+<span class="fc" id="L506">            Queue testQueue = new Queue(&quot;cosmic.test.queue&quot;, false, true, true);</span>
+<span class="fc" id="L507">            rabbitTemplate.execute(channel -&gt; {</span>
+<span class="nc" id="L508">                channel.queueDeclare(testQueue.getName(), testQueue.isDurable(),</span>
+<span class="nc" id="L509">                    testQueue.isExclusive(), testQueue.isAutoDelete(), null);</span>
+<span class="nc" id="L510">                return null;</span>
+            });
+
+            // Get basic connection info
+<span class="fc" id="L514">            Map&lt;String, Object&gt; status = Map.of(</span>
+                &quot;status&quot;, &quot;healthy&quot;,
+                &quot;connection&quot;, &quot;established&quot;,
+<span class="fc" id="L517">                &quot;queues&quot;, Map.of(</span>
+                    &quot;audit&quot;, &quot;cosmic.audit.queue&quot;,
+                    &quot;control&quot;, &quot;cosmic.control.queue&quot;
+                ),
+<span class="fc" id="L521">                &quot;exchanges&quot;, Map.of(</span>
+                    &quot;audit&quot;, &quot;cosmic.audit.exchange&quot;,
+                    &quot;control&quot;, &quot;cosmic.control.exchange&quot;
+                ),
+<span class="fc" id="L525">                &quot;lastUpdated&quot;, Instant.now().toString()</span>
+            );
+<span class="fc" id="L527">            return ResponseEntity.ok(status);</span>
+
+<span class="fc" id="L529">        } catch (Exception e) {</span>
+<span class="fc" id="L530">            Map&lt;String, Object&gt; status = Map.of(</span>
+                &quot;status&quot;, &quot;unavailable&quot;,
+                &quot;connection&quot;, &quot;failed&quot;,
+<span class="fc" id="L533">                &quot;error&quot;, e.getMessage(),</span>
+<span class="fc" id="L534">                &quot;lastUpdated&quot;, Instant.now().toString()</span>
+            );
+<span class="fc" id="L536">            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(status);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

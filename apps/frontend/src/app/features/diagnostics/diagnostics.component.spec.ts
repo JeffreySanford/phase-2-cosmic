@@ -28,6 +28,14 @@ class DisclaimerBannerStubComponent {
   @Input() message?: string;
   @Input() ready?: boolean;
 }
+
+@Component({ selector: "app-trident-allocator", template: "" })
+class TridentAllocatorStubComponent {
+  @Input() dismissible?: boolean;
+  @Input() type?: string;
+  @Input() message?: string;
+  @Input() ready?: boolean;
+}
 import {
   HttpClientTestingModule,
   HttpTestingController,
@@ -69,6 +77,7 @@ describe("DiagnosticsComponent", () => {
         PulsarStatusStubComponent,
         RabbitMQStatusStubComponent,
         DisclaimerBannerStubComponent,
+        TridentAllocatorStubComponent,
       ],
       providers: [
         // Prevent real MockDataService construction which would call LoadProfileService

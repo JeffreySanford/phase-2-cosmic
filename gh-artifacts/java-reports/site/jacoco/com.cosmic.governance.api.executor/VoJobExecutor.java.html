@@ -1,0 +1,561 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VoJobExecutor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.executor</a> &gt; <span class="el_source">VoJobExecutor.java</span></div><h1>VoJobExecutor.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.executor;
+
+import com.cosmic.governance.api.model.JobRecord;
+import com.cosmic.governance.api.model.JobState;
+import com.cosmic.governance.api.service.GovernanceRuntimeMetricsService;
+import com.cosmic.governance.api.util.RedisMarshaller;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Executor for all {@code vo.*} workflow families.
+ * Dispatches to the appropriate VO/IVOA protocol based on the job workflow type,
+ * parses the response into a {@code {fields, rows, links}} JSON artifact, and
+ * transitions the job through RUNNING → COMPLETED (or FAILED).
+ */
+@Service
+public class VoJobExecutor implements JobExecutor {
+
+<span class="fc" id="L42">    private static final ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(2);</span>
+    private static final int TIMEOUT_SECONDS = 30;
+
+    private final RedisMarshaller marshaller;
+    private final ObjectMapper objectMapper;
+    private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
+
+    public VoJobExecutor(@Autowired RedisMarshaller marshaller,
+                         @Autowired ObjectMapper objectMapper,
+<span class="fc" id="L51">                         @Autowired GovernanceRuntimeMetricsService governanceRuntimeMetricsService) {</span>
+<span class="fc" id="L52">        this.marshaller = marshaller;</span>
+<span class="fc" id="L53">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L54">        this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;</span>
+<span class="fc" id="L55">    }</span>
+
+    @Override
+    public String name() {
+<span class="fc" id="L59">        return &quot;vo&quot;;</span>
+    }
+
+    @Override
+    public void execute(JobRecord record, RedisTemplate&lt;String, Object&gt; redisTemplate) {
+<span class="fc" id="L64">        String jobKey = &quot;job:&quot; + record.getJobId();</span>
+<span class="fc" id="L65">        String workflow = record.getWorkflow();</span>
+
+        // Transition to RUNNING immediately
+<span class="fc" id="L68">        EXEC.schedule(() -&gt; {</span>
+<span class="fc" id="L69">            JobRecord r = reload(jobKey, redisTemplate);</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">            if (r == null) return;</span>
+<span class="fc" id="L71">            r.setState(JobState.RUNNING);</span>
+<span class="fc" id="L72">            r.setUpdatedAt(Instant.now().toString());</span>
+<span class="fc" id="L73">            r.setVersion(r.getVersion() + 1);</span>
+<span class="fc" id="L74">            var params = mutableParams(r);</span>
+<span class="fc" id="L75">            params.put(&quot;executor&quot;, name());</span>
+<span class="fc" id="L76">            r.setParameters(params);</span>
+<span class="fc" id="L77">            writeRedisValue(jobKey, redisTemplate, r);</span>
+<span class="fc" id="L78">            pushLog(jobKey, redisTemplate, &quot;VO executor: starting &quot; + workflow);</span>
+<span class="fc" id="L79">        }, 1, TimeUnit.SECONDS);</span>
+
+        // Execute asynchronously and write artifact on completion
+<span class="fc" id="L82">        EXEC.schedule(() -&gt; {</span>
+<span class="fc" id="L83">            JobRecord r = reload(jobKey, redisTemplate);</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">            if (r == null) return;</span>
+            try {
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">                Map&lt;String, Object&gt; params = r.getParameters() == null ? Map.of() : r.getParameters();</span>
+<span class="fc" id="L87">                Map&lt;String, Object&gt; result = dispatch(workflow, params, jobKey, redisTemplate);</span>
+
+                // Write result.json artifact
+<span class="fc" id="L90">                String artifactName = &quot;result.json&quot;;</span>
+<span class="fc" id="L91">                Path base = Paths.get(System.getProperty(&quot;java.io.tmpdir&quot;), &quot;governance-artifacts&quot;, r.getJobId());</span>
+<span class="fc" id="L92">                Files.createDirectories(base);</span>
+<span class="fc" id="L93">                Path file = base.resolve(artifactName);</span>
+<span class="fc" id="L94">                String content = objectMapper.writeValueAsString(result);</span>
+<span class="fc" id="L95">                Files.writeString(file, content);</span>
+<span class="fc" id="L96">                recordObjectWrite(&quot;artifact-file&quot;, artifactName, &quot;vo&quot;, content);</span>
+
+<span class="fc" id="L98">                String artKey = jobKey + &quot;:artifacts&quot;;</span>
+<span class="fc" id="L99">                var artifact = Map.of(</span>
+                    &quot;name&quot;, artifactName,
+<span class="fc" id="L101">                    &quot;url&quot;, &quot;/api/v1/jobs/&quot; + r.getJobId() + &quot;/artifacts/&quot; + artifactName</span>
+                );
+<span class="fc" id="L103">                writeRedisValue(artKey, redisTemplate, artifact);</span>
+
+                // Transition to COMPLETED
+<span class="fc" id="L106">                r = reload(jobKey, redisTemplate);</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                if (r == null) return;</span>
+<span class="fc" id="L108">                Instant completedAt = Instant.now();</span>
+<span class="fc" id="L109">                Duration runtime = durationBetween(r.getUpdatedAt(), completedAt);</span>
+<span class="fc" id="L110">                r.setState(JobState.COMPLETED);</span>
+<span class="fc" id="L111">                r.setUpdatedAt(completedAt.toString());</span>
+<span class="fc" id="L112">                r.setVersion(r.getVersion() + 1);</span>
+<span class="fc" id="L113">                writeRedisValue(jobKey, redisTemplate, r);</span>
+<span class="fc" id="L114">                recordTerminalState(r.getWorkflow(), &quot;vo&quot;, JobState.COMPLETED, runtime);</span>
+<span class="fc" id="L115">                pushLog(jobKey, redisTemplate, &quot;VO executor: completed &quot; + workflow</span>
+<span class="fc" id="L116">                    + &quot; — &quot; + fieldsSummary(result));</span>
+
+<span class="fc" id="L118">            } catch (Exception e) {</span>
+<span class="fc" id="L119">                pushLog(jobKey, redisTemplate, &quot;VO executor: error — &quot; + e.getMessage());</span>
+<span class="fc" id="L120">                JobRecord failed = reload(jobKey, redisTemplate);</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">                if (failed != null) {</span>
+<span class="fc" id="L122">                    Instant failedAt = Instant.now();</span>
+<span class="fc" id="L123">                    Duration runtime = durationBetween(failed.getUpdatedAt(), failedAt);</span>
+<span class="fc" id="L124">                    failed.setState(JobState.FAILED);</span>
+<span class="fc" id="L125">                    failed.setUpdatedAt(failedAt.toString());</span>
+<span class="fc" id="L126">                    failed.setVersion(failed.getVersion() + 1);</span>
+<span class="fc" id="L127">                    writeRedisValue(jobKey, redisTemplate, failed);</span>
+<span class="fc" id="L128">                    recordTerminalState(failed.getWorkflow(), &quot;vo&quot;, JobState.FAILED, runtime);</span>
+                }
+<span class="fc" id="L130">            }</span>
+<span class="fc" id="L131">        }, 3, TimeUnit.SECONDS);</span>
+<span class="fc" id="L132">    }</span>
+
+    // ── Dispatch by workflow type ─────────────────────────────────────────────
+
+    private Map&lt;String, Object&gt; dispatch(String workflow, Map&lt;String, Object&gt; params,
+                                         String jobKey, RedisTemplate&lt;String, Object&gt; rt)
+            throws Exception {
+<span class="pc bpc" id="L139" title="8 of 9 branches missed.">        return switch (workflow) {</span>
+<span class="fc" id="L140">            case &quot;vo.adql.query&quot;      -&gt; runAdql(params, jobKey, rt);</span>
+<span class="nc" id="L141">            case &quot;vo.obscore.search&quot;  -&gt; runObscore(params, jobKey, rt);</span>
+<span class="nc" id="L142">            case &quot;vo.cone-search&quot;     -&gt; runConeSearch(params, jobKey, rt);</span>
+<span class="nc" id="L143">            case &quot;vo.votable.fetch&quot;   -&gt; runVotableFetch(params, jobKey, rt);</span>
+<span class="nc" id="L144">            case &quot;vo.datalink.resolve&quot;-&gt; runDatalink(params, jobKey, rt);</span>
+<span class="nc" id="L145">            case &quot;vo.product.fetch&quot;   -&gt; runProductFetch(params, jobKey, rt);</span>
+<span class="nc" id="L146">            case &quot;vo.soda.cutout&quot;     -&gt; runSodaCutout(params, jobKey, rt);</span>
+<span class="nc" id="L147">            case &quot;vo.preview.fetch&quot;   -&gt; runPreviewFetch(params, jobKey, rt);</span>
+            default -&gt; {
+<span class="nc" id="L149">                pushLog(jobKey, rt, &quot;VO executor: unknown workflow '&quot; + workflow + &quot;', returning stub&quot;);</span>
+<span class="nc" id="L150">                yield stub(workflow);</span>
+            }
+        };
+    }
+
+    // ── ADQL via TAP sync ────────────────────────────────────────────────────
+
+    private Map&lt;String, Object&gt; runAdql(Map&lt;String, Object&gt; params,
+                                        String jobKey, RedisTemplate&lt;String, Object&gt; rt)
+            throws Exception {
+<span class="fc" id="L160">        String tapUrl = str(params, &quot;tapUrl&quot;);</span>
+<span class="fc" id="L161">        String adql   = str(params, &quot;adql&quot;);</span>
+<span class="fc" id="L162">        int    limit  = intOrDefault(params, &quot;limit&quot;, 100);</span>
+<span class="fc" id="L163">        pushLog(jobKey, rt, &quot;VO/TAP ADQL query → &quot; + tapUrl);</span>
+
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">        String queryAdql = adql.contains(&quot;TOP&quot;) ? adql : adql.replaceFirst(&quot;(?i)SELECT&quot;, &quot;SELECT TOP &quot; + limit);</span>
+<span class="fc" id="L166">        String url = tapUrl + &quot;?REQUEST=doQuery&amp;LANG=ADQL&amp;FORMAT=votable&quot;</span>
+<span class="fc" id="L167">            + &quot;&amp;QUERY=&quot; + URLEncoder.encode(queryAdql, StandardCharsets.UTF_8);</span>
+
+<span class="fc" id="L169">        String body = httpGet(&quot;adql_query&quot;, url, Map.of(&quot;tapUrl&quot;, tapUrl, &quot;limit&quot;, limit));</span>
+<span class="fc" id="L170">        return parseVotable(body);</span>
+    }
+
+    // ── ObsCore via TAP sync ──────────────────────────────────────────────────
+
+    private Map&lt;String, Object&gt; runObscore(Map&lt;String, Object&gt; params,
+                                           String jobKey, RedisTemplate&lt;String, Object&gt; rt)
+            throws Exception {
+<span class="nc" id="L178">        String tapUrl = str(params, &quot;tapUrl&quot;);</span>
+<span class="nc" id="L179">        int limit = intOrDefault(params, &quot;limit&quot;, 100);</span>
+<span class="nc" id="L180">        pushLog(jobKey, rt, &quot;VO/ObsCore search → &quot; + tapUrl);</span>
+
+<span class="nc" id="L182">        StringBuilder adql = new StringBuilder(&quot;SELECT TOP &quot; + limit + &quot; * FROM ivoa.obscore WHERE 1=1&quot;);</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (params.containsKey(&quot;dataproductType&quot;))</span>
+<span class="nc" id="L184">            adql.append(&quot; AND dataproduct_type='&quot;).append(params.get(&quot;dataproductType&quot;)).append(&quot;'&quot;);</span>
+<span class="nc bnc" id="L185" title="All 4 branches missed.">        if (params.containsKey(&quot;spatialBoundsRa&quot;) &amp;&amp; params.containsKey(&quot;spatialBoundsDec&quot;)</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">                &amp;&amp; params.containsKey(&quot;spatialBoundsRadius&quot;)) {</span>
+<span class="nc" id="L187">            adql.append(&quot; AND 1=CONTAINS(POINT('ICRS',s_ra,s_dec),CIRCLE('ICRS',&quot;)</span>
+<span class="nc" id="L188">                .append(params.get(&quot;spatialBoundsRa&quot;)).append(&quot;,&quot;)</span>
+<span class="nc" id="L189">                .append(params.get(&quot;spatialBoundsDec&quot;)).append(&quot;,&quot;)</span>
+<span class="nc" id="L190">                .append(params.get(&quot;spatialBoundsRadius&quot;)).append(&quot;))&quot;);</span>
+        }
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (params.containsKey(&quot;spectralMin&quot;))</span>
+<span class="nc" id="L193">            adql.append(&quot; AND em_min&gt;=&quot;).append(params.get(&quot;spectralMin&quot;));</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (params.containsKey(&quot;spectralMax&quot;))</span>
+<span class="nc" id="L195">            adql.append(&quot; AND em_max&lt;=&quot;).append(params.get(&quot;spectralMax&quot;));</span>
+
+<span class="nc" id="L197">        String url = tapUrl + &quot;?REQUEST=doQuery&amp;LANG=ADQL&amp;FORMAT=votable&quot;</span>
+<span class="nc" id="L198">            + &quot;&amp;QUERY=&quot; + URLEncoder.encode(adql.toString(), StandardCharsets.UTF_8);</span>
+<span class="nc" id="L199">        String body = httpGet(&quot;obscore_search&quot;, url, params);</span>
+<span class="nc" id="L200">        return parseVotable(body);</span>
+    }
+
+    // ── Simple cone search ────────────────────────────────────────────────────
+
+    private Map&lt;String, Object&gt; runConeSearch(Map&lt;String, Object&gt; params,
+                                              String jobKey, RedisTemplate&lt;String, Object&gt; rt)
+            throws Exception {
+<span class="fc" id="L208">        String serviceUrl = str(params, &quot;serviceUrl&quot;);</span>
+<span class="fc" id="L209">        double ra     = doubleOrDefault(params, &quot;ra&quot;, 0.0);</span>
+<span class="fc" id="L210">        double dec    = doubleOrDefault(params, &quot;dec&quot;, 0.0);</span>
+<span class="fc" id="L211">        double radius = doubleOrDefault(params, &quot;radius&quot;, 0.1);</span>
+<span class="fc" id="L212">        pushLog(jobKey, rt, &quot;VO/ConeSearch → &quot; + serviceUrl);</span>
+
+<span class="fc" id="L214">        String url = serviceUrl + &quot;?RA=&quot; + ra + &quot;&amp;DEC=&quot; + dec + &quot;&amp;SR=&quot; + radius + &quot;&amp;FORMAT=votable&quot;;</span>
+<span class="nc" id="L215">        String body = httpGet(&quot;cone_search&quot;, url, params);</span>
+<span class="nc" id="L216">        return parseVotable(body);</span>
+    }
+
+    // ── VOTable direct fetch ──────────────────────────────────────────────────
+
+    private Map&lt;String, Object&gt; runVotableFetch(Map&lt;String, Object&gt; params,
+                                                String jobKey, RedisTemplate&lt;String, Object&gt; rt)
+            throws Exception {
+<span class="nc" id="L224">        String votableUrl = str(params, &quot;votableUrl&quot;);</span>
+<span class="nc" id="L225">        pushLog(jobKey, rt, &quot;VO/VOTable fetch → &quot; + votableUrl);</span>
+<span class="nc" id="L226">        String body = httpGet(&quot;votable_fetch&quot;, votableUrl, params);</span>
+<span class="nc" id="L227">        return parseVotable(body);</span>
+    }
+
+    // ── DataLink resolve ──────────────────────────────────────────────────────
+
+    private Map&lt;String, Object&gt; runDatalink(Map&lt;String, Object&gt; params,
+                                            String jobKey, RedisTemplate&lt;String, Object&gt; rt)
+            throws Exception {
+<span class="nc" id="L235">        String datalinkUrl = str(params, &quot;datalinkUrl&quot;);</span>
+<span class="nc" id="L236">        String id          = str(params, &quot;datasetIdentifier&quot;);</span>
+<span class="nc" id="L237">        pushLog(jobKey, rt, &quot;VO/DataLink resolve → &quot; + datalinkUrl);</span>
+
+<span class="nc" id="L239">        String url = datalinkUrl + &quot;?ID=&quot; + URLEncoder.encode(id, StandardCharsets.UTF_8);</span>
+<span class="nc" id="L240">        String body = httpGet(&quot;datalink_resolve&quot;, url, params);</span>
+        // DataLink response is VOTable; links point to access_url
+<span class="nc" id="L242">        Map&lt;String, Object&gt; parsed = parseVotable(body);</span>
+        // Promote access_url column values into structured links list
+<span class="nc" id="L244">        parsed.put(&quot;links&quot;, extractDatalinkLinks(parsed));</span>
+<span class="nc" id="L245">        return parsed;</span>
+    }
+
+    // ── Product fetch (metadata only — no binary download) ───────────────────
+
+    private Map&lt;String, Object&gt; runProductFetch(Map&lt;String, Object&gt; params,
+                                                String jobKey, RedisTemplate&lt;String, Object&gt; rt) {
+<span class="nc" id="L252">        String productUrl = str(params, &quot;productUrl&quot;);</span>
+<span class="nc" id="L253">        String mimeType   = (String) params.getOrDefault(&quot;expectedMimeType&quot;, &quot;application/octet-stream&quot;);</span>
+<span class="nc" id="L254">        pushLog(jobKey, rt, &quot;VO/ProductFetch recorded → &quot; + productUrl);</span>
+<span class="nc" id="L255">        recordExternalAdapterRequest(&quot;product_fetch&quot;, productUrl, params, true, null, Duration.ZERO);</span>
+        // Record the product reference without downloading the binary payload
+<span class="nc" id="L257">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L258">        result.put(&quot;fields&quot;, List.of(&quot;accessUrl&quot;, &quot;mimeType&quot;, &quot;retrievedAt&quot;));</span>
+<span class="nc" id="L259">        result.put(&quot;rows&quot;,   List.of(List.of(productUrl, mimeType, Instant.now().toString())));</span>
+<span class="nc" id="L260">        result.put(&quot;links&quot;,  List.of(Map.of(&quot;accessUrl&quot;, productUrl, &quot;semantics&quot;, &quot;#this&quot;, &quot;contentType&quot;, mimeType)));</span>
+<span class="nc" id="L261">        return result;</span>
+    }
+
+    // ── SODA cutout ──────────────────────────────────────────────────────────
+
+    private Map&lt;String, Object&gt; runSodaCutout(Map&lt;String, Object&gt; params,
+                                              String jobKey, RedisTemplate&lt;String, Object&gt; rt)
+            throws Exception {
+<span class="nc" id="L269">        String sodaUrl = str(params, &quot;sodaUrl&quot;);</span>
+<span class="nc" id="L270">        String id      = str(params, &quot;datasetIdentifier&quot;);</span>
+<span class="nc" id="L271">        pushLog(jobKey, rt, &quot;VO/SODA cutout → &quot; + sodaUrl);</span>
+
+<span class="nc" id="L273">        StringBuilder sb = new StringBuilder(sodaUrl + &quot;?ID=&quot; + URLEncoder.encode(id, StandardCharsets.UTF_8));</span>
+<span class="nc bnc" id="L274" title="All 4 branches missed.">        if (params.containsKey(&quot;spatialBoundsRa&quot;) &amp;&amp; params.containsKey(&quot;spatialBoundsDec&quot;)</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">                &amp;&amp; params.containsKey(&quot;spatialBoundsRadius&quot;)) {</span>
+<span class="nc" id="L276">            sb.append(&quot;&amp;CIRCLE=&quot;).append(params.get(&quot;spatialBoundsRa&quot;)).append(&quot; &quot;)</span>
+<span class="nc" id="L277">              .append(params.get(&quot;spatialBoundsDec&quot;)).append(&quot; &quot;)</span>
+<span class="nc" id="L278">              .append(params.get(&quot;spatialBoundsRadius&quot;));</span>
+        }
+<span class="nc bnc" id="L280" title="All 2 branches missed.">        if (params.containsKey(&quot;outputFormat&quot;))</span>
+<span class="nc" id="L281">            sb.append(&quot;&amp;FORMAT=&quot;).append(URLEncoder.encode(str(params, &quot;outputFormat&quot;), StandardCharsets.UTF_8));</span>
+
+<span class="nc" id="L283">        recordExternalAdapterRequest(&quot;soda_cutout&quot;, sb.toString(), params, true, null, Duration.ZERO);</span>
+        // SODA sync returns a binary product; we record the request as a product link
+<span class="nc" id="L285">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L286">        result.put(&quot;fields&quot;, List.of(&quot;requestUrl&quot;, &quot;format&quot;, &quot;requestedAt&quot;));</span>
+<span class="nc" id="L287">        result.put(&quot;rows&quot;,   List.of(List.of(sb.toString(),</span>
+<span class="nc" id="L288">                                             params.getOrDefault(&quot;outputFormat&quot;, &quot;fits&quot;),</span>
+<span class="nc" id="L289">                                             Instant.now().toString())));</span>
+<span class="nc" id="L290">        result.put(&quot;links&quot;,  List.of(Map.of(&quot;accessUrl&quot;, sb.toString(),</span>
+                                            &quot;semantics&quot;, &quot;#cutout&quot;,
+                                            &quot;contentType&quot;, &quot;application/fits&quot;)));
+<span class="nc" id="L293">        return result;</span>
+    }
+
+    // ── Preview fetch ─────────────────────────────────────────────────────────
+
+    private Map&lt;String, Object&gt; runPreviewFetch(Map&lt;String, Object&gt; params,
+                                                String jobKey, RedisTemplate&lt;String, Object&gt; rt) {
+<span class="nc" id="L300">        String previewUrl = str(params, &quot;previewUrl&quot;);</span>
+<span class="nc" id="L301">        pushLog(jobKey, rt, &quot;VO/PreviewFetch recorded → &quot; + previewUrl);</span>
+<span class="nc" id="L302">        recordExternalAdapterRequest(&quot;preview_fetch&quot;, previewUrl, params, true, null, Duration.ZERO);</span>
+<span class="nc" id="L303">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L304">        result.put(&quot;fields&quot;, List.of(&quot;previewUrl&quot;, &quot;retrievedAt&quot;));</span>
+<span class="nc" id="L305">        result.put(&quot;rows&quot;,   List.of(List.of(previewUrl, Instant.now().toString())));</span>
+<span class="nc" id="L306">        result.put(&quot;links&quot;,  List.of(Map.of(&quot;accessUrl&quot;, previewUrl,</span>
+                                            &quot;semantics&quot;, &quot;#preview&quot;,
+                                            &quot;contentType&quot;, &quot;image/jpeg&quot;)));
+<span class="nc" id="L309">        return result;</span>
+    }
+
+    // ── VOTable XML parsing ───────────────────────────────────────────────────
+
+    private Map&lt;String, Object&gt; parseVotable(String xml) throws Exception {
+<span class="fc" id="L315">        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();</span>
+<span class="fc" id="L316">        dbf.setNamespaceAware(true);</span>
+        // Disable external entity processing (XXE hardening)
+<span class="fc" id="L318">        dbf.setFeature(&quot;http://apache.org/xml/features/disallow-doctype-decl&quot;, true);</span>
+<span class="fc" id="L319">        dbf.setFeature(&quot;http://xml.org/sax/features/external-general-entities&quot;, false);</span>
+<span class="fc" id="L320">        dbf.setFeature(&quot;http://xml.org/sax/features/external-parameter-entities&quot;, false);</span>
+<span class="fc" id="L321">        Document doc = dbf.newDocumentBuilder()</span>
+<span class="fc" id="L322">                .parse(new java.io.ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));</span>
+
+        // FIELD names
+<span class="fc" id="L325">        List&lt;String&gt; fields = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L326">        NodeList fieldNodes = doc.getElementsByTagName(&quot;FIELD&quot;);</span>
+<span class="fc bfc" id="L327" title="All 2 branches covered.">        for (int i = 0; i &lt; fieldNodes.getLength(); i++) {</span>
+<span class="fc" id="L328">            Element f = (Element) fieldNodes.item(i);</span>
+<span class="fc" id="L329">            String name = f.getAttribute(&quot;name&quot;);</span>
+<span class="pc bpc" id="L330" title="2 of 4 branches missed.">            if (name == null || name.isBlank()) name = f.getAttribute(&quot;ID&quot;);</span>
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">            fields.add(name == null ? &quot;&quot; : name);</span>
+        }
+
+        // TABLEDATA rows
+<span class="fc" id="L335">        List&lt;List&lt;String&gt;&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L336">        NodeList trNodes = doc.getElementsByTagName(&quot;TR&quot;);</span>
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">        for (int i = 0; i &lt; trNodes.getLength(); i++) {</span>
+<span class="nc" id="L338">            Element tr = (Element) trNodes.item(i);</span>
+<span class="nc" id="L339">            NodeList tdNodes = tr.getElementsByTagName(&quot;TD&quot;);</span>
+<span class="nc" id="L340">            List&lt;String&gt; row = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">            for (int j = 0; j &lt; tdNodes.getLength(); j++)</span>
+<span class="nc" id="L342">                row.add(tdNodes.item(j).getTextContent());</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">            if (!row.isEmpty()) rows.add(row);</span>
+        }
+
+        // LINK hrefs + accessURL text nodes
+<span class="fc" id="L347">        List&lt;Map&lt;String, String&gt;&gt; links = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L348">        NodeList linkNodes = doc.getElementsByTagName(&quot;LINK&quot;);</span>
+<span class="pc bpc" id="L349" title="1 of 2 branches missed.">        for (int i = 0; i &lt; linkNodes.getLength(); i++) {</span>
+<span class="nc" id="L350">            Element l = (Element) linkNodes.item(i);</span>
+<span class="nc" id="L351">            String href = l.getAttribute(&quot;href&quot;);</span>
+<span class="nc bnc" id="L352" title="All 4 branches missed.">            if (href == null || href.isBlank()) href = l.getAttribute(&quot;xlink:href&quot;);</span>
+<span class="nc bnc" id="L353" title="All 4 branches missed.">            if (href != null &amp;&amp; !href.isBlank())</span>
+<span class="nc" id="L354">                links.add(Map.of(&quot;accessUrl&quot;, href, &quot;semantics&quot;, &quot;#link&quot;, &quot;contentType&quot;, &quot;&quot;));</span>
+        }
+<span class="fc" id="L356">        NodeList accessNodes = doc.getElementsByTagName(&quot;accessURL&quot;);</span>
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">        for (int i = 0; i &lt; accessNodes.getLength(); i++) {</span>
+<span class="nc" id="L358">            String text = accessNodes.item(i).getTextContent();</span>
+<span class="nc bnc" id="L359" title="All 4 branches missed.">            if (text != null &amp;&amp; !text.isBlank())</span>
+<span class="nc" id="L360">                links.add(Map.of(&quot;accessUrl&quot;, text.trim(), &quot;semantics&quot;, &quot;#access&quot;, &quot;contentType&quot;, &quot;&quot;));</span>
+        }
+
+<span class="fc" id="L363">        Map&lt;String, Object&gt; out = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L364">        out.put(&quot;fields&quot;, fields);</span>
+<span class="fc" id="L365">        out.put(&quot;rows&quot;, rows);</span>
+<span class="fc" id="L366">        out.put(&quot;links&quot;, links);</span>
+<span class="fc" id="L367">        return out;</span>
+    }
+
+    /** Promote row values under the 'access_url' column into the links list. */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private List&lt;Map&lt;String, String&gt;&gt; extractDatalinkLinks(Map&lt;String, Object&gt; parsed) {
+<span class="nc" id="L373">        List&lt;String&gt; fields = (List&lt;String&gt;) parsed.getOrDefault(&quot;fields&quot;, List.of());</span>
+<span class="nc" id="L374">        List&lt;List&lt;String&gt;&gt; rows = (List&lt;List&lt;String&gt;&gt;) parsed.getOrDefault(&quot;rows&quot;, List.of());</span>
+<span class="nc" id="L375">        int urlIdx = -1, semIdx = -1, typeIdx = -1;</span>
+<span class="nc bnc" id="L376" title="All 2 branches missed.">        for (int i = 0; i &lt; fields.size(); i++) {</span>
+<span class="nc" id="L377">            String f = fields.get(i).toLowerCase();</span>
+<span class="nc bnc" id="L378" title="All 2 branches missed.">            if (f.contains(&quot;access_url&quot;))  urlIdx  = i;</span>
+<span class="nc bnc" id="L379" title="All 2 branches missed.">            if (f.contains(&quot;semantics&quot;))   semIdx  = i;</span>
+<span class="nc bnc" id="L380" title="All 4 branches missed.">            if (f.contains(&quot;content_type&quot;) || f.contains(&quot;contenttype&quot;)) typeIdx = i;</span>
+        }
+<span class="nc" id="L382">        List&lt;Map&lt;String, String&gt;&gt; links = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">        if (urlIdx &lt; 0) return links;</span>
+<span class="nc bnc" id="L384" title="All 2 branches missed.">        for (List&lt;String&gt; row : rows) {</span>
+<span class="nc bnc" id="L385" title="All 2 branches missed.">            if (urlIdx &gt;= row.size()) continue;</span>
+<span class="nc" id="L386">            String url  = row.get(urlIdx);</span>
+<span class="nc bnc" id="L387" title="All 4 branches missed.">            String sem  = semIdx  &gt;= 0 &amp;&amp; semIdx  &lt; row.size() ? row.get(semIdx)  : &quot;#this&quot;;</span>
+<span class="nc bnc" id="L388" title="All 4 branches missed.">            String type = typeIdx &gt;= 0 &amp;&amp; typeIdx &lt; row.size() ? row.get(typeIdx) : &quot;&quot;;</span>
+<span class="nc bnc" id="L389" title="All 4 branches missed.">            if (url != null &amp;&amp; !url.isBlank())</span>
+<span class="nc" id="L390">                links.add(Map.of(&quot;accessUrl&quot;, url, &quot;semantics&quot;, sem, &quot;contentType&quot;, type));</span>
+<span class="nc" id="L391">        }</span>
+<span class="nc" id="L392">        return links;</span>
+    }
+
+    // ── HTTP helper ───────────────────────────────────────────────────────────
+
+    private String httpGet(String operation, String url, Object payload) throws Exception {
+<span class="fc" id="L398">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L399">        HttpClient client = HttpClient.newBuilder()</span>
+<span class="fc" id="L400">                .connectTimeout(Duration.ofSeconds(TIMEOUT_SECONDS))</span>
+<span class="fc" id="L401">                .build();</span>
+<span class="fc" id="L402">        HttpRequest req = HttpRequest.newBuilder()</span>
+<span class="fc" id="L403">                .uri(URI.create(url))</span>
+<span class="fc" id="L404">                .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))</span>
+<span class="fc" id="L405">                .GET()</span>
+<span class="fc" id="L406">                .build();</span>
+        try {
+<span class="fc" id="L408">            HttpResponse&lt;String&gt; resp = client.send(req, HttpResponse.BodyHandlers.ofString());</span>
+<span class="fc" id="L409">            Duration duration = Duration.between(startedAt, Instant.now());</span>
+<span class="fc bfc" id="L410" title="All 2 branches covered.">            if (resp.statusCode() &gt;= 400) {</span>
+<span class="fc" id="L411">                recordExternalAdapterRequest(operation, url, payload, false, httpErrorClass(resp.statusCode()), duration);</span>
+<span class="fc" id="L412">                throw new RuntimeException(&quot;HTTP &quot; + resp.statusCode() + &quot; from &quot; + url);</span>
+            }
+<span class="fc" id="L414">            recordExternalAdapterRequest(operation, url, payload, true, null, duration);</span>
+<span class="fc" id="L415">            return resp.body();</span>
+<span class="fc" id="L416">        } catch (Exception ex) {</span>
+<span class="fc" id="L417">            recordExternalAdapterRequest(operation, url, payload, false, externalErrorClass(ex), Duration.between(startedAt, Instant.now()));</span>
+<span class="fc" id="L418">            throw ex;</span>
+        }
+    }
+
+    // ── Utility helpers ───────────────────────────────────────────────────────
+
+    private JobRecord reload(String jobKey, RedisTemplate&lt;String, Object&gt; rt) {
+<span class="fc" id="L425">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L426">        Object o = rt.opsForValue().get(jobKey);</span>
+<span class="pc bpc" id="L427" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L428">            governanceRuntimeMetricsService.recordRedisRead(&quot;redis&quot;, keyspaceOf(jobKey), o, true, Duration.between(startedAt, Instant.now()));</span>
+        }
+<span class="fc" id="L430">        return marshaller.toJobRecord(o);</span>
+    }
+
+    private void pushLog(String jobKey, RedisTemplate&lt;String, Object&gt; rt, String msg) {
+<span class="fc" id="L434">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L435">        rt.opsForList().rightPush(jobKey + &quot;:logs&quot;, msg);</span>
+<span class="pc bpc" id="L436" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L437">            governanceRuntimeMetricsService.recordRedisWrite(&quot;redis&quot;, keyspaceOf(jobKey + &quot;:logs&quot;), msg, true, Duration.between(startedAt, Instant.now()));</span>
+        }
+<span class="fc" id="L439">    }</span>
+
+    private void writeRedisValue(String key, RedisTemplate&lt;String, Object&gt; rt, Object value) {
+<span class="fc" id="L442">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L443">        rt.opsForValue().set(key, value);</span>
+<span class="pc bpc" id="L444" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L445">            governanceRuntimeMetricsService.recordRedisWrite(&quot;redis&quot;, keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));</span>
+        }
+<span class="fc" id="L447">    }</span>
+
+    private void recordObjectWrite(String storage, String objectKind, String executor, Object payload) {
+<span class="pc bpc" id="L450" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L451">            governanceRuntimeMetricsService.recordObjectWrite(storage, objectKind, executor, payload);</span>
+        }
+<span class="fc" id="L453">    }</span>
+
+    private void recordExternalAdapterRequest(
+            String operation,
+            String target,
+            Object payload,
+            boolean success,
+            String errorClass,
+            Duration duration
+    ) {
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L464">            governanceRuntimeMetricsService.recordExternalAdapterRequest(</span>
+                    &quot;vo&quot;,
+                    operation,
+                    target,
+                    payload,
+                    success,
+                    errorClass,
+                    duration
+            );
+        }
+<span class="fc" id="L474">    }</span>
+
+    private void recordTerminalState(String workflow, String executor, JobState state, Duration runtime) {
+<span class="pc bpc" id="L477" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService == null) {</span>
+<span class="nc" id="L478">            return;</span>
+        }
+<span class="fc" id="L480">        governanceRuntimeMetricsService.recordJobTerminalState(workflow, executor, state.name(), runtime);</span>
+<span class="fc" id="L481">        governanceRuntimeMetricsService.recordWorkflowRuntime(workflow, executor, state.name(), runtime);</span>
+<span class="fc" id="L482">    }</span>
+
+    private Duration durationBetween(String startedAt, Instant finishedAt) {
+        try {
+<span class="fc" id="L486">            return Duration.between(Instant.parse(startedAt), finishedAt);</span>
+<span class="nc" id="L487">        } catch (Exception ex) {</span>
+<span class="nc" id="L488">            return Duration.ZERO;</span>
+        }
+    }
+
+    private String keyspaceOf(String key) {
+<span class="pc bpc" id="L493" title="2 of 4 branches missed.">        if (key == null || key.isBlank()) {</span>
+<span class="nc" id="L494">            return &quot;unknown&quot;;</span>
+        }
+<span class="fc" id="L496">        int idx = key.indexOf(':');</span>
+<span class="pc bpc" id="L497" title="1 of 2 branches missed.">        return idx &gt; 0 ? key.substring(0, idx) : key;</span>
+    }
+
+    private String httpErrorClass(int statusCode) {
+<span class="pc bpc" id="L501" title="1 of 2 branches missed.">        if (statusCode &gt;= 500) {</span>
+<span class="nc" id="L502">            return &quot;http_5xx&quot;;</span>
+        }
+<span class="pc bpc" id="L504" title="1 of 2 branches missed.">        if (statusCode &gt;= 400) {</span>
+<span class="fc" id="L505">            return &quot;http_4xx&quot;;</span>
+        }
+<span class="nc" id="L507">        return &quot;http_other&quot;;</span>
+    }
+
+    private String externalErrorClass(Exception ex) {
+<span class="pc bpc" id="L511" title="1 of 2 branches missed.">        if (ex == null) {</span>
+<span class="nc" id="L512">            return &quot;unknown&quot;;</span>
+        }
+<span class="fc" id="L514">        String simple = ex.getClass().getSimpleName();</span>
+<span class="pc bpc" id="L515" title="3 of 4 branches missed.">        return switch (simple) {</span>
+<span class="nc" id="L516">            case &quot;HttpTimeoutException&quot; -&gt; &quot;timeout&quot;;</span>
+<span class="nc" id="L517">            case &quot;ConnectException&quot; -&gt; &quot;connect&quot;;</span>
+<span class="nc" id="L518">            case &quot;IllegalArgumentException&quot; -&gt; &quot;invalid_request&quot;;</span>
+<span class="pc bpc" id="L519" title="2 of 4 branches missed.">            default -&gt; simple == null || simple.isBlank() ? &quot;unknown&quot; : simple;</span>
+        };
+    }
+
+    private Map&lt;String, Object&gt; mutableParams(JobRecord r) {
+<span class="pc bpc" id="L524" title="1 of 2 branches missed.">        return r.getParameters() == null ? new HashMap&lt;&gt;() : new HashMap&lt;&gt;(r.getParameters());</span>
+    }
+
+    private String str(Map&lt;String, Object&gt; params, String key) {
+<span class="fc" id="L528">        Object v = params.get(key);</span>
+<span class="pc bpc" id="L529" title="1 of 2 branches missed.">        return v == null ? &quot;&quot; : v.toString();</span>
+    }
+
+    private int intOrDefault(Map&lt;String, Object&gt; params, String key, int def) {
+<span class="fc" id="L533">        Object v = params.get(key);</span>
+<span class="pc bpc" id="L534" title="1 of 2 branches missed.">        if (v == null) return def;</span>
+<span class="nc" id="L535">        try { return Integer.parseInt(v.toString()); } catch (NumberFormatException e) { return def; }</span>
+    }
+
+    private double doubleOrDefault(Map&lt;String, Object&gt; params, String key, double def) {
+<span class="fc" id="L539">        Object v = params.get(key);</span>
+<span class="pc bpc" id="L540" title="1 of 2 branches missed.">        if (v == null) return def;</span>
+<span class="nc" id="L541">        try { return Double.parseDouble(v.toString()); } catch (NumberFormatException e) { return def; }</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private String fieldsSummary(Map&lt;String, Object&gt; result) {
+<span class="fc" id="L546">        Object fields = result.get(&quot;fields&quot;);</span>
+<span class="fc" id="L547">        Object rows   = result.get(&quot;rows&quot;);</span>
+<span class="pc bpc" id="L548" title="1 of 2 branches missed.">        int fc = fields instanceof List ? ((List&lt;?&gt;) fields).size() : 0;</span>
+<span class="pc bpc" id="L549" title="1 of 2 branches missed.">        int rc = rows   instanceof List ? ((List&lt;?&gt;) rows).size()   : 0;</span>
+<span class="fc" id="L550">        return fc + &quot; fields, &quot; + rc + &quot; rows&quot;;</span>
+    }
+
+    private Map&lt;String, Object&gt; stub(String workflow) {
+<span class="nc" id="L554">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L555">        result.put(&quot;fields&quot;, List.of(&quot;note&quot;));</span>
+<span class="nc" id="L556">        result.put(&quot;rows&quot;,   List.of(List.of(&quot;No executor for &quot; + workflow)));</span>
+<span class="nc" id="L557">        result.put(&quot;links&quot;,  List.of());</span>
+<span class="nc" id="L558">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

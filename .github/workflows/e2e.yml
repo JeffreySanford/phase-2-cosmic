@@ -76,6 +76,10 @@ jobs:
 
       - name: Install Cypress binary
         run: pnpm exec cypress install
+      - name: Disable Cypress cache during run
+        run: |
+          # ensure parallel jobs don't reuse cache to avoid flaky state
+          echo "export CYPRESS_CACHE_FOLDER=/tmp/nonexistent" >> $GITHUB_ENV
 
       - name: E2E smoke
         run: pnpm run e2e-smoke

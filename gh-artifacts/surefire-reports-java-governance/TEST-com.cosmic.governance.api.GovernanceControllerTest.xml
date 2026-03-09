@@ -1,0 +1,869 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.cosmic.governance.api.GovernanceControllerTest" time="31.856" tests="21" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="17"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/test-classes:/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/classes:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-web/3.3.0/spring-boot-starter-web-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter/3.3.0/spring-boot-starter-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot/3.3.0/spring-boot-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/3.3.0/spring-boot-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-logging/3.3.0/spring-boot-starter-logging-3.3.0.jar:/home/runner/.m2/repository/ch/qos/logback/logback-classic/1.5.6/logback-classic-1.5.6.jar:/home/runner/.m2/repository/ch/qos/logback/logback-core/1.5.6/logback-core-1.5.6.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.23.1/log4j-to-slf4j-2.23.1.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-api/2.23.1/log4j-api-2.23.1.jar:/home/runner/.m2/repository/org/slf4j/jul-to-slf4j/2.0.13/jul-to-slf4j-2.0.13.jar:/home/runner/.m2/repository/jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar:/home/runner/.m2/repository/org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-json/3.3.0/spring-boot-starter-json-3.3.0.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.17.1/jackson-databind-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.17.1/jackson-datatype-jdk8-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.17.1/jackson-datatype-jsr310-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/module/jackson-module-parameter-names/2.17.1/jackson-module-parameter-names-2.17.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat/3.3.0/spring-boot-starter-tomcat-3.3.0.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/10.1.24/tomcat-embed-core-10.1.24.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/10.1.24/tomcat-embed-websocket-10.1.24.jar:/home/runner/.m2/repository/org/springframework/spring-web/6.1.8/spring-web-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-beans/6.1.8/spring-beans-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-webmvc/6.1.8/spring-webmvc-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-aop/6.1.8/spring-aop-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-expression/6.1.8/spring-expression-6.1.8.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-validation/3.3.0/spring-boot-starter-validation-3.3.0.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/10.1.24/tomcat-embed-el-10.1.24.jar:/home/runner/.m2/repository/org/hibernate/validator/hibernate-validator/8.0.1.Final/hibernate-validator-8.0.1.Final.jar:/home/runner/.m2/repository/jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2.jar:/home/runner/.m2/repository/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.jar:/home/runner/.m2/repository/com/fasterxml/classmate/1.7.0/classmate-1.7.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-actuator/3.3.0/spring-boot-starter-actuator-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-actuator-autoconfigure/3.3.0/spring-boot-actuator-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-actuator/3.3.0/spring-boot-actuator-3.3.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-observation/1.13.0/micrometer-observation-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-commons/1.13.0/micrometer-commons-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-jakarta9/1.13.0/micrometer-jakarta9-1.13.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-data-redis/3.3.0/spring-boot-starter-data-redis-3.3.0.jar:/home/runner/.m2/repository/io/lettuce/lettuce-core/6.3.2.RELEASE/lettuce-core-6.3.2.RELEASE.jar:/home/runner/.m2/repository/io/netty/netty-common/4.1.110.Final/netty-common-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-handler/4.1.110.Final/netty-handler-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-resolver/4.1.110.Final/netty-resolver-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-buffer/4.1.110.Final/netty-buffer-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-codec/4.1.110.Final/netty-codec-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-transport/4.1.110.Final/netty-transport-4.1.110.Final.jar:/home/runner/.m2/repository/io/projectreactor/reactor-core/3.6.6/reactor-core-3.6.6.jar:/home/runner/.m2/repository/org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-redis/3.3.0/spring-data-redis-3.3.0.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-keyvalue/3.3.0/spring-data-keyvalue-3.3.0.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-commons/3.3.0/spring-data-commons-3.3.0.jar:/home/runner/.m2/repository/org/springframework/spring-oxm/6.1.8/spring-oxm-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-context-support/6.1.8/spring-context-support-6.1.8.jar:/home/runner/.m2/repository/io/micrometer/micrometer-registry-prometheus/1.13.0/micrometer-registry-prometheus-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-core/1.13.0/micrometer-core-1.13.0.jar:/home/runner/.m2/repository/org/hdrhistogram/HdrHistogram/2.2.1/HdrHistogram-2.2.1.jar:/home/runner/.m2/repository/org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-core/1.2.1/prometheus-metrics-core-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-model/1.2.1/prometheus-metrics-model-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-config/1.2.1/prometheus-metrics-config-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-tracer-common/1.2.1/prometheus-metrics-tracer-common-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-exposition-formats/1.2.1/prometheus-metrics-exposition-formats-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-shaded-protobuf/1.2.1/prometheus-metrics-shaded-protobuf-1.2.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-test/3.3.0/spring-boot-starter-test-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test/3.3.0/spring-boot-test-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test-autoconfigure/3.3.0/spring-boot-test-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0.jar:/home/runner/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.jar:/home/runner/.m2/repository/net/minidev/json-smart/2.5.1/json-smart-2.5.1.jar:/home/runner/.m2/repository/net/minidev/accessors-smart/2.5.1/accessors-smart-2.5.1.jar:/home/runner/.m2/repository/org/ow2/asm/asm/9.6/asm-9.6.jar:/home/runner/.m2/repository/org/assertj/assertj-core/3.25.3/assertj-core-3.25.3.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy/1.14.16/byte-buddy-1.14.16.jar:/home/runner/.m2/repository/org/awaitility/awaitility/4.2.1/awaitility-4.2.1.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest/2.2/hamcrest-2.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter/5.10.2/junit-jupiter-5.10.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.2/junit-jupiter-api-5.10.2.jar:/home/runner/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-commons/1.10.2/junit-platform-commons-1.10.2.jar:/home/runner/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.10.2/junit-jupiter-params-5.10.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.2/junit-jupiter-engine-5.10.2.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-engine/1.10.2/junit-platform-engine-1.10.2.jar:/home/runner/.m2/repository/org/mockito/mockito-core/5.11.0/mockito-core-5.11.0.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.16/byte-buddy-agent-1.14.16.jar:/home/runner/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/home/runner/.m2/repository/org/mockito/mockito-junit-jupiter/5.11.0/mockito-junit-jupiter-5.11.0.jar:/home/runner/.m2/repository/org/springframework/spring-core/6.1.8/spring-core-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-jcl/6.1.8/spring-jcl-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-test/6.1.8/spring-test-6.1.8.jar:/home/runner/.m2/repository/org/xmlunit/xmlunit-core/2.9.1/xmlunit-core-2.9.1.jar:/home/runner/.m2/repository/org/testcontainers/junit-jupiter/1.19.8/junit-jupiter-1.19.8.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers/1.19.8/testcontainers-1.19.8.jar:/home/runner/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest-core/2.2/hamcrest-core-2.2.jar:/home/runner/.m2/repository/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar:/home/runner/.m2/repository/org/apache/commons/commons-compress/1.24.0/commons-compress-1.24.0.jar:/home/runner/.m2/repository/org/rnorth/duct-tape/duct-tape/1.0.8/duct-tape-1.0.8.jar:/home/runner/.m2/repository/org/jetbrains/annotations/17.0.0/annotations-17.0.0.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-api/3.3.6/docker-java-api-3.3.6.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport-zerodep/3.3.6/docker-java-transport-zerodep-3.3.6.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport/3.3.6/docker-java-transport-3.3.6.jar:/home/runner/.m2/repository/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar:/home/runner/.m2/repository/org/testcontainers/kafka/1.19.8/kafka-1.19.8.jar:/home/runner/.m2/repository/org/testcontainers/rabbitmq/1.19.8/rabbitmq-1.19.8.jar:/home/runner/.m2/repository/org/skyscreamer/jsonassert/1.5.1/jsonassert-1.5.1.jar:/home/runner/.m2/repository/org/json/json/20220320/json-20220320.jar:/home/runner/.m2/repository/org/springframework/kafka/spring-kafka/3.2.0/spring-kafka-3.2.0.jar:/home/runner/.m2/repository/org/springframework/spring-context/6.1.8/spring-context-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-messaging/6.1.8/spring-messaging-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-tx/6.1.8/spring-tx-6.1.8.jar:/home/runner/.m2/repository/org/springframework/retry/spring-retry/2.0.6/spring-retry-2.0.6.jar:/home/runner/.m2/repository/org/apache/kafka/kafka-clients/3.7.0/kafka-clients-3.7.0.jar:/home/runner/.m2/repository/com/github/luben/zstd-jni/1.5.5-6/zstd-jni-1.5.5-6.jar:/home/runner/.m2/repository/org/lz4/lz4-java/1.8.0/lz4-java-1.8.0.jar:/home/runner/.m2/repository/org/xerial/snappy/snappy-java/1.1.10.5/snappy-java-1.1.10.5.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-amqp/3.3.0/spring-boot-starter-amqp-3.3.0.jar:/home/runner/.m2/repository/org/springframework/amqp/spring-rabbit/3.1.5/spring-rabbit-3.1.5.jar:/home/runner/.m2/repository/org/springframework/amqp/spring-amqp/3.1.5/spring-amqp-3.1.5.jar:/home/runner/.m2/repository/com/rabbitmq/amqp-client/5.21.0/amqp-client-5.21.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-webmvc-ui/2.1.0/springdoc-openapi-starter-webmvc-ui-2.1.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-webmvc-api/2.1.0/springdoc-openapi-starter-webmvc-api-2.1.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-common/2.1.0/springdoc-openapi-starter-common-2.1.0.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-core-jakarta/2.2.9/swagger-core-jakarta-2.2.9.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-annotations-jakarta/2.2.9/swagger-annotations-jakarta-2.2.9.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-models-jakarta/2.2.9/swagger-models-jakarta-2.2.9.jar:/home/runner/.m2/repository/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.17.1/jackson-dataformat-yaml-2.17.1.jar:/home/runner/.m2/repository/org/webjars/swagger-ui/4.18.2/swagger-ui-4.18.2.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client/3.2.4/pulsar-client-3.2.4.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-api/3.2.3/pulsar-client-api-3.2.3.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-admin-api/3.2.3/pulsar-client-admin-api-3.2.3.jar:/home/runner/.m2/repository/javax/ws/rs/javax.ws.rs-api/2.1/javax.ws.rs-api-2.1.jar:/home/runner/.m2/repository/com/google/protobuf/protobuf-java/3.19.6/protobuf-java-3.19.6.jar:/home/runner/.m2/repository/org/apache/pulsar/bouncy-castle-bc/3.2.4/bouncy-castle-bc-3.2.4-pkg.jar:/home/runner/.m2/repository/org/bouncycastle/bcpkix-jdk18on/1.78.1/bcpkix-jdk18on-1.78.1.jar:/home/runner/.m2/repository/org/bouncycastle/bcutil-jdk18on/1.78.1/bcutil-jdk18on-1.78.1.jar:/home/runner/.m2/repository/org/bouncycastle/bcprov-jdk18on/1.78.1/bcprov-jdk18on-1.78.1.jar:/home/runner/.m2/repository/com/sun/activation/javax.activation/1.2.0/javax.activation-1.2.0.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.17.1/jackson-annotations-2.17.1.jar:/home/runner/.m2/repository/javax/validation/validation-api/1.1.0.Final/validation-api-1.1.0.Final.jar:/home/runner/.m2/repository/net/jcip/jcip-annotations/1.0/jcip-annotations-1.0.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-admin/3.2.4/pulsar-client-admin-3.2.4.jar:/home/runner/.m2/repository/io/airlift/aircompressor/0.20/aircompressor-0.20.jar:/home/runner/.m2/repository/org/apache/avro/avro/1.11.3/avro-1.11.3.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.17.1/jackson-core-2.17.1.jar:/home/runner/.m2/repository/org/apache/avro/avro-protobuf/1.11.3/avro-protobuf-1.11.3.jar:/home/runner/.m2/repository/jakarta/ws/rs/jakarta.ws.rs-api/3.1.0/jakarta.ws.rs-api-3.1.0.jar:/home/runner/.m2/repository/jakarta/activation/jakarta.activation-api/2.1.3/jakarta.activation-api-2.1.3.jar:/home/runner/.m2/repository/org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-package-core/3.2.3/pulsar-package-core-3.2.3.jar:/home/runner/.m2/repository/com/google/guava/guava/32.1.2-jre/guava-32.1.2-jre.jar:/home/runner/.m2/repository/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar:/home/runner/.m2/repository/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar:/home/runner/.m2/repository/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar:/home/runner/.m2/repository/com/google/errorprone/error_prone_annotations/2.18.0/error_prone_annotations-2.18.0.jar:/home/runner/.m2/repository/com/google/j2objc/j2objc-annotations/2.8/j2objc-annotations-2.8.jar:/home/runner/.m2/repository/org/apache/commons/commons-lang3/3.14.0/commons-lang3-3.14.0.jar:"/>
+    <property name="java.vm.vendor" value="Eclipse Adoptium"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://adoptium.net/"/>
+    <property name="user.timezone" value="Etc/UTC"/>
+    <property name="org.jboss.logging.provider" value="slf4j"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="17"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/temurin-17-jdk-amd64/lib"/>
+    <property name="sun.java.command" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/surefire/surefirebooter-20260306194233490_3.jar /home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/surefire 2026-03-06T19-42-33_070-jvmRun1 surefire-20260306194233490_1tmp surefire_0-20260306194233490_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/test-classes:/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/classes:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-web/3.3.0/spring-boot-starter-web-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter/3.3.0/spring-boot-starter-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot/3.3.0/spring-boot-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/3.3.0/spring-boot-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-logging/3.3.0/spring-boot-starter-logging-3.3.0.jar:/home/runner/.m2/repository/ch/qos/logback/logback-classic/1.5.6/logback-classic-1.5.6.jar:/home/runner/.m2/repository/ch/qos/logback/logback-core/1.5.6/logback-core-1.5.6.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.23.1/log4j-to-slf4j-2.23.1.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-api/2.23.1/log4j-api-2.23.1.jar:/home/runner/.m2/repository/org/slf4j/jul-to-slf4j/2.0.13/jul-to-slf4j-2.0.13.jar:/home/runner/.m2/repository/jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar:/home/runner/.m2/repository/org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-json/3.3.0/spring-boot-starter-json-3.3.0.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.17.1/jackson-databind-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.17.1/jackson-datatype-jdk8-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.17.1/jackson-datatype-jsr310-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/module/jackson-module-parameter-names/2.17.1/jackson-module-parameter-names-2.17.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat/3.3.0/spring-boot-starter-tomcat-3.3.0.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/10.1.24/tomcat-embed-core-10.1.24.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/10.1.24/tomcat-embed-websocket-10.1.24.jar:/home/runner/.m2/repository/org/springframework/spring-web/6.1.8/spring-web-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-beans/6.1.8/spring-beans-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-webmvc/6.1.8/spring-webmvc-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-aop/6.1.8/spring-aop-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-expression/6.1.8/spring-expression-6.1.8.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-validation/3.3.0/spring-boot-starter-validation-3.3.0.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/10.1.24/tomcat-embed-el-10.1.24.jar:/home/runner/.m2/repository/org/hibernate/validator/hibernate-validator/8.0.1.Final/hibernate-validator-8.0.1.Final.jar:/home/runner/.m2/repository/jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2.jar:/home/runner/.m2/repository/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.jar:/home/runner/.m2/repository/com/fasterxml/classmate/1.7.0/classmate-1.7.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-actuator/3.3.0/spring-boot-starter-actuator-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-actuator-autoconfigure/3.3.0/spring-boot-actuator-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-actuator/3.3.0/spring-boot-actuator-3.3.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-observation/1.13.0/micrometer-observation-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-commons/1.13.0/micrometer-commons-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-jakarta9/1.13.0/micrometer-jakarta9-1.13.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-data-redis/3.3.0/spring-boot-starter-data-redis-3.3.0.jar:/home/runner/.m2/repository/io/lettuce/lettuce-core/6.3.2.RELEASE/lettuce-core-6.3.2.RELEASE.jar:/home/runner/.m2/repository/io/netty/netty-common/4.1.110.Final/netty-common-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-handler/4.1.110.Final/netty-handler-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-resolver/4.1.110.Final/netty-resolver-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-buffer/4.1.110.Final/netty-buffer-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-codec/4.1.110.Final/netty-codec-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-transport/4.1.110.Final/netty-transport-4.1.110.Final.jar:/home/runner/.m2/repository/io/projectreactor/reactor-core/3.6.6/reactor-core-3.6.6.jar:/home/runner/.m2/repository/org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-redis/3.3.0/spring-data-redis-3.3.0.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-keyvalue/3.3.0/spring-data-keyvalue-3.3.0.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-commons/3.3.0/spring-data-commons-3.3.0.jar:/home/runner/.m2/repository/org/springframework/spring-oxm/6.1.8/spring-oxm-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-context-support/6.1.8/spring-context-support-6.1.8.jar:/home/runner/.m2/repository/io/micrometer/micrometer-registry-prometheus/1.13.0/micrometer-registry-prometheus-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-core/1.13.0/micrometer-core-1.13.0.jar:/home/runner/.m2/repository/org/hdrhistogram/HdrHistogram/2.2.1/HdrHistogram-2.2.1.jar:/home/runner/.m2/repository/org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-core/1.2.1/prometheus-metrics-core-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-model/1.2.1/prometheus-metrics-model-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-config/1.2.1/prometheus-metrics-config-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-tracer-common/1.2.1/prometheus-metrics-tracer-common-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-exposition-formats/1.2.1/prometheus-metrics-exposition-formats-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-shaded-protobuf/1.2.1/prometheus-metrics-shaded-protobuf-1.2.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-test/3.3.0/spring-boot-starter-test-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test/3.3.0/spring-boot-test-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test-autoconfigure/3.3.0/spring-boot-test-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0.jar:/home/runner/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.jar:/home/runner/.m2/repository/net/minidev/json-smart/2.5.1/json-smart-2.5.1.jar:/home/runner/.m2/repository/net/minidev/accessors-smart/2.5.1/accessors-smart-2.5.1.jar:/home/runner/.m2/repository/org/ow2/asm/asm/9.6/asm-9.6.jar:/home/runner/.m2/repository/org/assertj/assertj-core/3.25.3/assertj-core-3.25.3.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy/1.14.16/byte-buddy-1.14.16.jar:/home/runner/.m2/repository/org/awaitility/awaitility/4.2.1/awaitility-4.2.1.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest/2.2/hamcrest-2.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter/5.10.2/junit-jupiter-5.10.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.2/junit-jupiter-api-5.10.2.jar:/home/runner/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-commons/1.10.2/junit-platform-commons-1.10.2.jar:/home/runner/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.10.2/junit-jupiter-params-5.10.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.2/junit-jupiter-engine-5.10.2.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-engine/1.10.2/junit-platform-engine-1.10.2.jar:/home/runner/.m2/repository/org/mockito/mockito-core/5.11.0/mockito-core-5.11.0.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.16/byte-buddy-agent-1.14.16.jar:/home/runner/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/home/runner/.m2/repository/org/mockito/mockito-junit-jupiter/5.11.0/mockito-junit-jupiter-5.11.0.jar:/home/runner/.m2/repository/org/springframework/spring-core/6.1.8/spring-core-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-jcl/6.1.8/spring-jcl-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-test/6.1.8/spring-test-6.1.8.jar:/home/runner/.m2/repository/org/xmlunit/xmlunit-core/2.9.1/xmlunit-core-2.9.1.jar:/home/runner/.m2/repository/org/testcontainers/junit-jupiter/1.19.8/junit-jupiter-1.19.8.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers/1.19.8/testcontainers-1.19.8.jar:/home/runner/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest-core/2.2/hamcrest-core-2.2.jar:/home/runner/.m2/repository/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar:/home/runner/.m2/repository/org/apache/commons/commons-compress/1.24.0/commons-compress-1.24.0.jar:/home/runner/.m2/repository/org/rnorth/duct-tape/duct-tape/1.0.8/duct-tape-1.0.8.jar:/home/runner/.m2/repository/org/jetbrains/annotations/17.0.0/annotations-17.0.0.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-api/3.3.6/docker-java-api-3.3.6.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport-zerodep/3.3.6/docker-java-transport-zerodep-3.3.6.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport/3.3.6/docker-java-transport-3.3.6.jar:/home/runner/.m2/repository/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar:/home/runner/.m2/repository/org/testcontainers/kafka/1.19.8/kafka-1.19.8.jar:/home/runner/.m2/repository/org/testcontainers/rabbitmq/1.19.8/rabbitmq-1.19.8.jar:/home/runner/.m2/repository/org/skyscreamer/jsonassert/1.5.1/jsonassert-1.5.1.jar:/home/runner/.m2/repository/org/json/json/20220320/json-20220320.jar:/home/runner/.m2/repository/org/springframework/kafka/spring-kafka/3.2.0/spring-kafka-3.2.0.jar:/home/runner/.m2/repository/org/springframework/spring-context/6.1.8/spring-context-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-messaging/6.1.8/spring-messaging-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-tx/6.1.8/spring-tx-6.1.8.jar:/home/runner/.m2/repository/org/springframework/retry/spring-retry/2.0.6/spring-retry-2.0.6.jar:/home/runner/.m2/repository/org/apache/kafka/kafka-clients/3.7.0/kafka-clients-3.7.0.jar:/home/runner/.m2/repository/com/github/luben/zstd-jni/1.5.5-6/zstd-jni-1.5.5-6.jar:/home/runner/.m2/repository/org/lz4/lz4-java/1.8.0/lz4-java-1.8.0.jar:/home/runner/.m2/repository/org/xerial/snappy/snappy-java/1.1.10.5/snappy-java-1.1.10.5.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-amqp/3.3.0/spring-boot-starter-amqp-3.3.0.jar:/home/runner/.m2/repository/org/springframework/amqp/spring-rabbit/3.1.5/spring-rabbit-3.1.5.jar:/home/runner/.m2/repository/org/springframework/amqp/spring-amqp/3.1.5/spring-amqp-3.1.5.jar:/home/runner/.m2/repository/com/rabbitmq/amqp-client/5.21.0/amqp-client-5.21.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-webmvc-ui/2.1.0/springdoc-openapi-starter-webmvc-ui-2.1.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-webmvc-api/2.1.0/springdoc-openapi-starter-webmvc-api-2.1.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-common/2.1.0/springdoc-openapi-starter-common-2.1.0.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-core-jakarta/2.2.9/swagger-core-jakarta-2.2.9.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-annotations-jakarta/2.2.9/swagger-annotations-jakarta-2.2.9.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-models-jakarta/2.2.9/swagger-models-jakarta-2.2.9.jar:/home/runner/.m2/repository/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.17.1/jackson-dataformat-yaml-2.17.1.jar:/home/runner/.m2/repository/org/webjars/swagger-ui/4.18.2/swagger-ui-4.18.2.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client/3.2.4/pulsar-client-3.2.4.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-api/3.2.3/pulsar-client-api-3.2.3.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-admin-api/3.2.3/pulsar-client-admin-api-3.2.3.jar:/home/runner/.m2/repository/javax/ws/rs/javax.ws.rs-api/2.1/javax.ws.rs-api-2.1.jar:/home/runner/.m2/repository/com/google/protobuf/protobuf-java/3.19.6/protobuf-java-3.19.6.jar:/home/runner/.m2/repository/org/apache/pulsar/bouncy-castle-bc/3.2.4/bouncy-castle-bc-3.2.4-pkg.jar:/home/runner/.m2/repository/org/bouncycastle/bcpkix-jdk18on/1.78.1/bcpkix-jdk18on-1.78.1.jar:/home/runner/.m2/repository/org/bouncycastle/bcutil-jdk18on/1.78.1/bcutil-jdk18on-1.78.1.jar:/home/runner/.m2/repository/org/bouncycastle/bcprov-jdk18on/1.78.1/bcprov-jdk18on-1.78.1.jar:/home/runner/.m2/repository/com/sun/activation/javax.activation/1.2.0/javax.activation-1.2.0.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.17.1/jackson-annotations-2.17.1.jar:/home/runner/.m2/repository/javax/validation/validation-api/1.1.0.Final/validation-api-1.1.0.Final.jar:/home/runner/.m2/repository/net/jcip/jcip-annotations/1.0/jcip-annotations-1.0.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-admin/3.2.4/pulsar-client-admin-3.2.4.jar:/home/runner/.m2/repository/io/airlift/aircompressor/0.20/aircompressor-0.20.jar:/home/runner/.m2/repository/org/apache/avro/avro/1.11.3/avro-1.11.3.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.17.1/jackson-core-2.17.1.jar:/home/runner/.m2/repository/org/apache/avro/avro-protobuf/1.11.3/avro-protobuf-1.11.3.jar:/home/runner/.m2/repository/jakarta/ws/rs/jakarta.ws.rs-api/3.1.0/jakarta.ws.rs-api-3.1.0.jar:/home/runner/.m2/repository/jakarta/activation/jakarta.activation-api/2.1.3/jakarta.activation-api-2.1.3.jar:/home/runner/.m2/repository/org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-package-core/3.2.3/pulsar-package-core-3.2.3.jar:/home/runner/.m2/repository/com/google/guava/guava/32.1.2-jre/guava-32.1.2-jre.jar:/home/runner/.m2/repository/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar:/home/runner/.m2/repository/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar:/home/runner/.m2/repository/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar:/home/runner/.m2/repository/com/google/errorprone/error_prone_annotations/2.18.0/error_prone_annotations-2.18.0.jar:/home/runner/.m2/repository/com/google/j2objc/j2objc-annotations/2.8/j2objc-annotations-2.8.jar:/home/runner/.m2/repository/org/apache/commons/commons-lang3/3.14.0/commons-lang3-3.14.0.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/home/runner"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2026-01-20"/>
+    <property name="java.home" value="/usr/lib/jvm/temurin-17-jdk-amd64"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="FILE_LOG_CHARSET" value="UTF-8"/>
+    <property name="java.awt.headless" value="true"/>
+    <property name="surefire.real.class.path" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/surefire/surefirebooter-20260306194233490_3.jar"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="17.0.18+8"/>
+    <property name="user.name" value="runner"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="6.14.0-1017-azure"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="jnidispatch.path" value="/home/runner/.cache/JNA/temp/jna7772087728726188676.tmp"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="jna.platform.library.path" value="/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/usr/lib64:/lib64:/usr/lib:/lib:/lib32:/usr/local/lib:/usr/lib/x86_64-linux-gnu/libfakeroot"/>
+    <property name="java.vendor.version" value="Temurin-17.0.18+8"/>
+    <property name="localRepository" value="/home/runner/.m2/repository"/>
+    <property name="jna.loaded" value="true"/>
+    <property name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="java.version" value="17.0.18"/>
+    <property name="user.dir" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="PID" value="2627"/>
+    <property name="CONSOLE_LOG_CHARSET" value="UTF-8"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="java.vendor" value="Eclipse Adoptium"/>
+    <property name="java.vm.version" value="17.0.18+8"/>
+    <property name="java.specification.maintenance.version" value="1"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="61.0"/>
+  </properties>
+  <testcase name="retryEndpointTransitionsFailedJobs" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.043">
+    <system-out><![CDATA[2026-03-06T19:44:03.011Z  INFO 2627 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.cosmic.governance.api.GovernanceControllerTest]: GovernanceControllerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-03-06T19:44:03.015Z  INFO 2627 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.cosmic.governance.GovernanceApplication for test class com.cosmic.governance.api.GovernanceControllerTest
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.0)
+
+2026-03-06T19:44:03.037Z  INFO 2627 --- [           main] tc.redis:7-alpine                        : Creating container for image: redis:7-alpine
+2026-03-06T19:44:03.067Z  INFO 2627 --- [           main] tc.redis:7-alpine                        : Container redis:7-alpine is starting: 031653ef4401c8ee12892d6cf2d8613a022875bdf6dd9a778e076d958c6b0285
+2026-03-06T19:44:03.319Z  INFO 2627 --- [           main] tc.redis:7-alpine                        : Container redis:7-alpine started in PT0.282515583S
+[test] Testcontainers Redis started: localhost:32772
+2026-03-06T19:44:03.321Z  INFO 2627 --- [           main] c.c.g.api.GovernanceControllerTest       : Starting GovernanceControllerTest using Java 17.0.18 with PID 2627 (started by runner in /home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance)
+2026-03-06T19:44:03.321Z  INFO 2627 --- [           main] c.c.g.api.GovernanceControllerTest       : No active profile set, falling back to 1 default profile: "default"
+2026-03-06T19:44:03.444Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:03.444Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:03.444Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:03.564Z  INFO 2627 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-03-06T19:44:03.564Z  INFO 2627 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-03-06T19:44:03.570Z  INFO 2627 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 5 ms. Found 0 Redis repository interfaces.
+2026-03-06T19:44:03.656Z  WARN 2627 --- [-client-io-30-4] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-06T19:44:03.697Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:03.697Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:03.697Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:03.756Z  WARN 2627 --- [-scheduled-40-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 100 ms
+2026-03-06T19:44:03.757Z  WARN 2627 --- [-client-io-30-2] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-06T19:44:03.955Z  WARN 2627 --- [-scheduled-41-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 197 ms
+2026-03-06T19:44:03.956Z  WARN 2627 --- [-client-io-30-4] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-06T19:44:04.317Z  WARN 2627 --- [-scheduled-42-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 361 ms
+2026-03-06T19:44:04.318Z  WARN 2627 --- [-client-io-30-2] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-06T19:44:04.444Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:04.444Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:04.444Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:04.707Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:04.707Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:04.707Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:05.043Z  WARN 2627 --- [-scheduled-39-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 725 ms
+2026-03-06T19:44:05.044Z  WARN 2627 --- [-client-io-30-4] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-06T19:44:05.448Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:05.448Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:05.448Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:05.708Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:05.708Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:05.708Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:06.392Z  WARN 2627 --- [ntContainer#0-8] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:06.393Z  INFO 2627 --- [ntContainer#0-8] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@3416262: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:06.394Z  INFO 2627 --- [ntContainer#0-9] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:06.404Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:06.404Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:06.404Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:06.551Z  WARN 2627 --- [-scheduled-40-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 1507 ms
+2026-03-06T19:44:06.553Z  WARN 2627 --- [-client-io-30-2] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-06T19:44:06.715Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:06.715Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:06.715Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:07.351Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:07.351Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:07.351Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:07.612Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:07.613Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:07.613Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:07.946Z  WARN 2627 --- [ntContainer#0-1] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:07.946Z  INFO 2627 --- [ntContainer#0-1] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@2e5c842a: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:07.947Z  INFO 2627 --- [ntContainer#0-2] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:08.321Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:08.321Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:08.321Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:08.616Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:08.616Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:08.616Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:09.155Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:09.155Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:09.155Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:09.519Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:09.519Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:09.519Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:09.708Z  WARN 2627 --- [-scheduled-41-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 3155 ms
+2026-03-06T19:44:09.709Z  WARN 2627 --- [-client-io-30-4] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-06T19:44:10.156Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:10.156Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:10.156Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:10.369Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:10.369Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:10.369Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:11.156Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:11.156Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:11.157Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:11.397Z  WARN 2627 --- [ntContainer#0-9] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:11.397Z  INFO 2627 --- [ntContainer#0-9] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@30594142: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:11.398Z  INFO 2627 --- [tContainer#0-10] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:11.402Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:11.402Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:11.402Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:12.202Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:12.202Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:12.202Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:12.255Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:12.255Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:12.255Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:12.950Z  WARN 2627 --- [ntContainer#0-2] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:12.951Z  INFO 2627 --- [ntContainer#0-2] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@554c22d2: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:12.952Z  INFO 2627 --- [ntContainer#0-3] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:13.205Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:13.205Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:13.205Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:13.205Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:13.205Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:13.205Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:14.208Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:14.209Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:14.209Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:14.251Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:14.251Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:14.251Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:15.212Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:15.212Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:15.212Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:15.255Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:15.255Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:15.255Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:15.737Z  WARN 2627 --- [-scheduled-42-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 6028 ms
+2026-03-06T19:44:15.738Z  WARN 2627 --- [-client-io-30-2] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-06T19:44:16.165Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:16.165Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:16.165Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:16.259Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:16.259Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:16.259Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:16.401Z  WARN 2627 --- [tContainer#0-10] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:16.402Z  INFO 2627 --- [tContainer#0-10] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@28214220: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:16.403Z  INFO 2627 --- [tContainer#0-11] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:17.138Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:17.138Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:17.138Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:17.166Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:17.166Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:17.166Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:17.955Z  WARN 2627 --- [ntContainer#0-3] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:17.955Z  INFO 2627 --- [ntContainer#0-3] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@578999b0: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:17.956Z  INFO 2627 --- [ntContainer#0-4] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:18.012Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:18.012Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:18.012Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:18.068Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:18.068Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:18.069Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:19.013Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:19.013Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:19.013Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:19.063Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:19.063Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:19.063Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:20.014Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:20.014Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:20.014Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:20.067Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:20.067Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:20.067Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:21.017Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:21.018Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:21.018Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:21.068Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:21.068Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:21.068Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:21.406Z  WARN 2627 --- [tContainer#0-11] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:21.406Z  INFO 2627 --- [tContainer#0-11] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@1cad4f24: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:21.407Z  INFO 2627 --- [tContainer#0-12] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:21.938Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:21.938Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:21.938Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:22.018Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:22.018Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:22.018Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:22.959Z  WARN 2627 --- [ntContainer#0-4] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:22.959Z  INFO 2627 --- [ntContainer#0-4] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@79ade0fd: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:22.960Z  INFO 2627 --- [ntContainer#0-5] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:22.971Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:22.971Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:22.971Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:23.013Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:23.013Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:23.013Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:23.924Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:23.924Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:23.924Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:24.060Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:24.060Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:24.060Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:24.925Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:24.925Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:24.925Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:25.060Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:25.060Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:25.060Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:25.895Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:25.895Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:25.895Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:26.009Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:26.009Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:26.009Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:26.410Z  WARN 2627 --- [tContainer#0-12] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:26.410Z  INFO 2627 --- [tContainer#0-12] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@75d389e1: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:26.411Z  INFO 2627 --- [tContainer#0-13] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:26.766Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:26.766Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:26.766Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:26.860Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:26.861Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:26.861Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:27.764Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:27.764Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:27.764Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:27.798Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:27.799Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:27.799Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:27.963Z  WARN 2627 --- [ntContainer#0-5] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:27.964Z  INFO 2627 --- [ntContainer#0-5] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@4dc57e: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:27.965Z  INFO 2627 --- [ntContainer#0-6] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:28.170Z  WARN 2627 --- [-scheduled-39-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 12432 ms
+2026-03-06T19:44:28.172Z  WARN 2627 --- [-client-io-30-4] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-06T19:44:28.717Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:28.717Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:28.717Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:28.799Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:28.799Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:28.799Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:29.652Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:29.653Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:29.653Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:29.755Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:29.756Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:29.756Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:30.551Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:30.552Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:30.552Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:30.708Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:30.709Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:30.709Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:31.414Z  WARN 2627 --- [tContainer#0-13] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:31.414Z  INFO 2627 --- [tContainer#0-13] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@4e725ff2: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:31.415Z  INFO 2627 --- [tContainer#0-14] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:31.581Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:31.581Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:31.581Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:31.660Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:31.660Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:31.660Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:32.384Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:32.384Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:32.384Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:32.663Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:32.663Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:32.663Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:32.968Z  WARN 2627 --- [ntContainer#0-6] o.s.a.r.l.SimpleMessageListenerContainer : Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+2026-03-06T19:44:32.968Z  INFO 2627 --- [ntContainer#0-6] o.s.a.r.l.SimpleMessageListenerContainer : Restarting Consumer@5ad7475b: tags=[[]], channel=null, acknowledgeMode=AUTO local queue size=0
+2026-03-06T19:44:32.969Z  INFO 2627 --- [ntContainer#0-7] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:33.233Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:33.234Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:33.234Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:33.616Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:33.616Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:33.616Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:33.661Z  WARN 2627 --- [-scheduled-40-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 5489 ms
+2026-03-06T19:44:33.662Z  WARN 2627 --- [-client-io-30-2] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-06T19:44:33.662Z  WARN 2627 --- [-client-io-30-2] o.a.pulsar.client.impl.PulsarClientImpl  : [phase2-events] Failed to get partitioned topic metadata
+
+java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+	at java.base/java.util.concurrent.CompletableFuture.encodeThrowable(CompletableFuture.java:332) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.completeThrowable(CompletableFuture.java:347) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture$UniAccept.tryFire(CompletableFuture.java:708) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:510) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.completeExceptionally(CompletableFuture.java:2162) ~[na:na]
+	at org.apache.pulsar.client.impl.BinaryProtoLookupService.lambda$getPartitionedTopicMetadata$10(BinaryProtoLookupService.java:251) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at java.base/java.util.concurrent.CompletableFuture.uniExceptionally(CompletableFuture.java:990) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture$UniExceptionally.tryFire(CompletableFuture.java:974) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:510) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.completeExceptionally(CompletableFuture.java:2162) ~[na:na]
+	at org.apache.pulsar.client.impl.ConnectionPool.lambda$createConnection$14(ConnectionPool.java:311) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.AbstractEventExecutor.runTask(AbstractEventExecutor.java:173) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.AbstractEventExecutor.safeExecute(AbstractEventExecutor.java:166) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.SingleThreadEventExecutor.runAllTasks(SingleThreadEventExecutor.java:469) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.EpollEventLoop.run(EpollEventLoop.java:405) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:994) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+Caused by: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+	... 9 common frames omitted
+Caused by: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+	at java.base/java.util.concurrent.CompletableFuture.encodeRelay(CompletableFuture.java:368) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.completeRelay(CompletableFuture.java:377) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture$UniRelay.tryFire(CompletableFuture.java:1097) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:510) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.completeExceptionally(CompletableFuture.java:2162) ~[na:na]
+	at org.apache.pulsar.common.util.netty.ChannelFutures.lambda$toCompletableFuture$0(ChannelFutures.java:58) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.notifyListener0(DefaultPromise.java:590) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.notifyListeners0(DefaultPromise.java:583) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.notifyListenersNow(DefaultPromise.java:559) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.notifyListeners(DefaultPromise.java:492) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.setValue0(DefaultPromise.java:636) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.setFailure0(DefaultPromise.java:629) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.tryFailure(DefaultPromise.java:118) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.fulfillConnectPromise(AbstractEpollChannel.java:679) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.finishConnect(AbstractEpollChannel.java:698) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.epollOutReady(AbstractEpollChannel.java:567) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.EpollEventLoop.processReady(EpollEventLoop.java:491) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.EpollEventLoop.run(EpollEventLoop.java:399) ~[pulsar-client-3.2.4.jar:3.2.4]
+	... 4 common frames omitted
+Caused by: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+Caused by: java.net.ConnectException: finishConnect(..) failed: Connection refused
+	at org.apache.pulsar.shade.io.netty.channel.unix.Errors.newConnectException0(Errors.java:166) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.unix.Errors.handleConnectErrno(Errors.java:131) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.unix.Socket.finishConnect(Socket.java:359) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.doFinishConnect(AbstractEpollChannel.java:715) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.finishConnect(AbstractEpollChannel.java:692) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.epollOutReady(AbstractEpollChannel.java:567) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.EpollEventLoop.processReady(EpollEventLoop.java:491) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.EpollEventLoop.run(EpollEventLoop.java:399) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:994) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+
+2026-03-06T19:44:33.663Z ERROR 2627 --- [           main] c.c.g.a.messaging.PulsarIngestListener   : Failed to start Pulsar listener
+
+org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.ExecutionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650{"previous":[{"attempt":0,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":1,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":2,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":3,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":4,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":5,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":6,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":7,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":8,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"}]}
+	at org.apache.pulsar.client.api.PulsarClientException.unwrap(PulsarClientException.java:1131) ~[pulsar-client-api-3.2.3.jar:3.2.3]
+	at org.apache.pulsar.client.impl.ConsumerBuilderImpl.subscribe(ConsumerBuilderImpl.java:103) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at com.cosmic.governance.api.messaging.PulsarIngestListener.start(PulsarIngestListener.java:56) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMethod.invoke(InitDestroyAnnotationBeanPostProcessor.java:457) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeInitMethods(InitDestroyAnnotationBeanPostProcessor.java:401) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:219) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInitialization(AbstractAutowireCapableBeanFactory.java:422) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1780) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:600) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975) ~[spring-beans-6.1.8.jar:6.1.8]
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:962) ~[spring-context-6.1.8.jar:6.1.8]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:624) ~[spring-context-6.1.8.jar:6.1.8]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754) ~[spring-boot-3.3.0.jar:3.3.0]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456) ~[spring-boot-3.3.0.jar:3.3.0]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:335) ~[spring-boot-3.3.0.jar:3.3.0]
+	at org.springframework.boot.test.context.SpringBootContextLoader.lambda$loadContext$3(SpringBootContextLoader.java:137) ~[spring-boot-test-3.3.0.jar:3.3.0]
+	at org.springframework.util.function.ThrowingSupplier.get(ThrowingSupplier.java:58) ~[spring-core-6.1.8.jar:6.1.8]
+	at org.springframework.util.function.ThrowingSupplier.get(ThrowingSupplier.java:46) ~[spring-core-6.1.8.jar:6.1.8]
+	at org.springframework.boot.SpringApplication.withHook(SpringApplication.java:1463) ~[spring-boot-3.3.0.jar:3.3.0]
+	at org.springframework.boot.test.context.SpringBootContextLoader$ContextLoaderHook.run(SpringBootContextLoader.java:553) ~[spring-boot-test-3.3.0.jar:3.3.0]
+	at org.springframework.boot.test.context.SpringBootContextLoader.loadContext(SpringBootContextLoader.java:137) ~[spring-boot-test-3.3.0.jar:3.3.0]
+	at org.springframework.boot.test.context.SpringBootContextLoader.loadContext(SpringBootContextLoader.java:108) ~[spring-boot-test-3.3.0.jar:3.3.0]
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContextInternal(DefaultCacheAwareContextLoaderDelegate.java:225) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:152) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.test.context.support.DefaultTestContext.getApplicationContext(DefaultTestContext.java:130) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.test.context.web.ServletTestExecutionListener.setUpRequestContextIfNecessary(ServletTestExecutionListener.java:191) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.test.context.web.ServletTestExecutionListener.prepareTestInstance(ServletTestExecutionListener.java:130) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.test.context.TestContextManager.prepareTestInstance(TestContextManager.java:260) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.test.context.junit.jupiter.SpringExtension.postProcessTestInstance(SpringExtension.java:163) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor.lambda$invokeTestInstancePostProcessors$10(ClassBasedTestDescriptor.java:378) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor.executeAndMaskThrowable(ClassBasedTestDescriptor.java:383) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor.lambda$invokeTestInstancePostProcessors$11(ClassBasedTestDescriptor.java:378) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179) ~[na:na]
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1625) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.StreamSpliterators$WrappingSpliterator.forEachRemaining(StreamSpliterators.java:310) ~[na:na]
+	at java.base/java.util.stream.Streams$ConcatSpliterator.forEachRemaining(Streams.java:735) ~[na:na]
+	at java.base/java.util.stream.Streams$ConcatSpliterator.forEachRemaining(Streams.java:734) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline$Head.forEach(ReferencePipeline.java:762) ~[na:na]
+	at org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor.invokeTestInstancePostProcessors(ClassBasedTestDescriptor.java:377) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor.lambda$instantiateAndPostProcessTestInstance$6(ClassBasedTestDescriptor.java:290) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor.instantiateAndPostProcessTestInstance(ClassBasedTestDescriptor.java:289) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor.lambda$testInstancesProvider$4(ClassBasedTestDescriptor.java:279) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at java.base/java.util.Optional.orElseGet(Optional.java:364) ~[na:na]
+	at org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor.lambda$testInstancesProvider$5(ClassBasedTestDescriptor.java:278) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.TestInstancesProvider.getTestInstances(TestInstancesProvider.java:31) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$prepare$0(TestMethodTestDescriptor.java:106) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.prepare(TestMethodTestDescriptor.java:105) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.prepare(TestMethodTestDescriptor.java:69) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$prepare$2(NodeTestTask.java:123) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.prepare(NodeTestTask.java:123) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:90) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
+Caused by: java.util.concurrent.ExecutionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650{"previous":[{"attempt":0,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":1,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":2,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":3,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":4,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":5,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":6,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":7,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"},{"attempt":8,"error":"java.util.concurrent.CompletionException: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650"}]}
+	at java.base/java.util.concurrent.CompletableFuture.reportGet(CompletableFuture.java:396) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.get(CompletableFuture.java:2073) ~[na:na]
+	at org.apache.pulsar.client.impl.ConsumerBuilderImpl.subscribe(ConsumerBuilderImpl.java:101) ~[pulsar-client-3.2.4.jar:3.2.4]
+	... 104 common frames omitted
+Caused by: org.apache.pulsar.client.api.PulsarClientException: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+	at org.apache.pulsar.client.impl.ConnectionPool.lambda$createConnection$14(ConnectionPool.java:311) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.AbstractEventExecutor.runTask(AbstractEventExecutor.java:173) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.AbstractEventExecutor.safeExecute(AbstractEventExecutor.java:166) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.SingleThreadEventExecutor.runAllTasks(SingleThreadEventExecutor.java:469) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.EpollEventLoop.run(EpollEventLoop.java:405) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:994) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+Caused by: java.util.concurrent.CompletionException: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+	at java.base/java.util.concurrent.CompletableFuture.encodeRelay(CompletableFuture.java:368) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.completeRelay(CompletableFuture.java:377) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture$UniRelay.tryFire(CompletableFuture.java:1097) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:510) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.completeExceptionally(CompletableFuture.java:2162) ~[na:na]
+	at org.apache.pulsar.common.util.netty.ChannelFutures.lambda$toCompletableFuture$0(ChannelFutures.java:58) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.notifyListener0(DefaultPromise.java:590) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.notifyListeners0(DefaultPromise.java:583) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.notifyListenersNow(DefaultPromise.java:559) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.notifyListeners(DefaultPromise.java:492) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.setValue0(DefaultPromise.java:636) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.setFailure0(DefaultPromise.java:629) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.DefaultPromise.tryFailure(DefaultPromise.java:118) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.fulfillConnectPromise(AbstractEpollChannel.java:679) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.finishConnect(AbstractEpollChannel.java:698) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.epollOutReady(AbstractEpollChannel.java:567) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.EpollEventLoop.processReady(EpollEventLoop.java:491) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.EpollEventLoop.run(EpollEventLoop.java:399) ~[pulsar-client-3.2.4.jar:3.2.4]
+	... 4 common frames omitted
+Caused by: org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+Caused by: java.net.ConnectException: finishConnect(..) failed: Connection refused
+	at org.apache.pulsar.shade.io.netty.channel.unix.Errors.newConnectException0(Errors.java:166) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.unix.Errors.handleConnectErrno(Errors.java:131) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.unix.Socket.finishConnect(Socket.java:359) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.doFinishConnect(AbstractEpollChannel.java:715) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.finishConnect(AbstractEpollChannel.java:692) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.epollOutReady(AbstractEpollChannel.java:567) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.EpollEventLoop.processReady(EpollEventLoop.java:491) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.channel.epoll.EpollEventLoop.run(EpollEventLoop.java:399) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:994) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at org.apache.pulsar.shade.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30) ~[pulsar-client-3.2.4.jar:3.2.4]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+
+2026-03-06T19:44:33.839Z  INFO 2627 --- [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-03-06T19:44:33.839Z  INFO 2627 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-03-06T19:44:33.841Z  INFO 2627 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-03-06T19:44:33.844Z  INFO 2627 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 5 ms
+2026-03-06T19:44:33.858Z  INFO 2627 --- [           main] o.a.k.clients.consumer.ConsumerConfig    : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.include.jmx.reporter = true
+	auto.offset.reset = latest
+	bootstrap.servers = [localhost:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-audit-mirror-3
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = false
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = audit-mirror
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metric.reporters = []
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+
+2026-03-06T19:44:33.858Z  INFO 2627 --- [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-03-06T19:44:33.877Z  INFO 2627 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 3.7.0
+2026-03-06T19:44:33.878Z  INFO 2627 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: 2ae524ed625438c5
+2026-03-06T19:44:33.878Z  INFO 2627 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1772826273877
+2026-03-06T19:44:33.883Z  INFO 2627 --- [           main] o.a.k.c.c.internals.LegacyKafkaConsumer  : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Subscribed to topic(s): cosmic-audit
+2026-03-06T19:44:33.887Z  INFO 2627 --- [           main] o.a.k.clients.consumer.ConsumerConfig    : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.include.jmx.reporter = true
+	auto.offset.reset = latest
+	bootstrap.servers = [localhost:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-governance-group-4
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = false
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = governance-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metric.reporters = []
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+
+2026-03-06T19:44:33.887Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:33.887Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:33.887Z  INFO 2627 --- [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-03-06T19:44:33.887Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:33.901Z  INFO 2627 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 3.7.0
+2026-03-06T19:44:33.901Z  INFO 2627 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: 2ae524ed625438c5
+2026-03-06T19:44:33.901Z  INFO 2627 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1772826273901
+2026-03-06T19:44:33.905Z  INFO 2627 --- [           main] o.a.k.c.c.internals.LegacyKafkaConsumer  : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Subscribed to topic(s): phase2-events
+2026-03-06T19:44:33.908Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:33.908Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:33.908Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:33.909Z  INFO 2627 --- [           main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:33.910Z  INFO 2627 --- [           main] o.s.a.r.l.SimpleMessageListenerContainer : Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused
+2026-03-06T19:44:33.910Z  INFO 2627 --- [ntContainer#0-1] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-06T19:44:33.917Z  INFO 2627 --- [           main] c.c.g.api.GovernanceControllerTest       : Started GovernanceControllerTest in 30.899 seconds (process running for 120.382)
+2026-03-06T19:44:33.936Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted 4fa6d943-df45-43f8-884f-b21f96803bfd workflow=a dataset=b
+2026-03-06T19:44:33.949Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job 4fa6d943-df45-43f8-884f-b21f96803bfd transitioning QUEUED -> FAILED
+2026-03-06T19:44:33.958Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job 4fa6d943-df45-43f8-884f-b21f96803bfd retried (version now 3)
+]]></system-out>
+  </testcase>
+  <testcase name="submitJobAndReadStatus" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.014">
+    <system-out><![CDATA[2026-03-06T19:44:33.968Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted 215b8a69-537d-4238-b066-af05909dcd3d workflow=casa-imaging dataset=VLASS_J1347+1217 lineage={parentJobId=orig-1}
+2026-03-06T19:44:33.969Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:33.969Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:33.969Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+]]></system-out>
+  </testcase>
+  <testcase name="publicSourcesEndpointReturnsList" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.018"/>
+  <testcase name="createDatasetRejectsIncompleteManifest" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.008"/>
+  <testcase name="healthEndpointReturnsOk" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.005"/>
+  <testcase name="requestIdHeaderIsPropagated" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.005"/>
+  <testcase name="cancelAndRetryEndpoints" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.014">
+    <system-out><![CDATA[2026-03-06T19:44:34.019Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:34.019Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:34.020Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:34.022Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted 965028d5-44ca-4b9c-b9ee-f07c01280703 workflow=bar dataset=ds2
+2026-03-06T19:44:34.025Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job 965028d5-44ca-4b9c-b9ee-f07c01280703 transitioning QUEUED -> CANCELED
+2026-03-06T19:44:34.029Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job 965028d5-44ca-4b9c-b9ee-f07c01280703 retried (version now 3)
+]]></system-out>
+  </testcase>
+  <testcase name="voServicesEndpointReturnsUrls" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.005"/>
+  <testcase name="pulsarStatusEndpointReturnsMockData" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.645">
+    <system-out><![CDATA[2026-03-06T19:44:34.070Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:34.071Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:34.071Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:34.122Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:34.122Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:34.122Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:34.189Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:34.189Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:34.189Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:34.240Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:34.241Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:34.241Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:34.351Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:34.352Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:34.352Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:34.647Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:34.647Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:34.647Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+]]></system-out>
+  </testcase>
+  <testcase name="createDatasetAndFetchItRoundTripsManifestAndMetadata" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.025">
+    <system-out><![CDATA[2026-03-06T19:44:34.695Z  INFO 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Node -1 disconnected.
+2026-03-06T19:44:34.695Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:34.695Z  WARN 2627 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-3, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+]]></system-out>
+  </testcase>
+  <testcase name="sciTransitionQualityGateEnforced" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.013">
+    <system-out><![CDATA[2026-03-06T19:44:34.712Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: timing_budget_violation job d015f5b6-3df3-4f10-862d-225517e72317 offset=5000
+2026-03-06T19:44:34.714Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted d015f5b6-3df3-4f10-862d-225517e72317 workflow=sci-wf dataset=ds2 manifest={processingLevel=SCI, clockOffsetNs=5000}
+2026-03-06T19:44:34.716Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job d015f5b6-3df3-4f10-862d-225517e72317 transitioning QUEUED -> RUNNING
+2026-03-06T19:44:34.720Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: quality_gate_failed:DQ-TIM-001 job d015f5b6-3df3-4f10-862d-225517e72317
+]]></system-out>
+  </testcase>
+  <testcase name="listJobsFilteringAndPagination" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.029">
+    <system-out><![CDATA[2026-03-06T19:44:34.727Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted 52d75d6e-97f3-4712-9a3d-ff6ea11bfd87 workflow=test-fw-7bc705a6-a3ec-4e06-8e5a-94f165346f6f dataset=DS1
+2026-03-06T19:44:34.730Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted 12577d51-0476-4e32-9551-97de272eb3e7 workflow=test-fw-7bc705a6-a3ec-4e06-8e5a-94f165346f6f dataset=DS2
+2026-03-06T19:44:34.732Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted b4bcb3f5-693c-4b05-82ce-b026666cb702 workflow=other-workflow dataset=DS3
+]]></system-out>
+  </testcase>
+  <testcase name="versioningAndLockingWorks" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.021">
+    <system-out><![CDATA[2026-03-06T19:44:34.759Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted 66a04474-ee7e-447a-b7a7-ee021dec7830 workflow=foo dataset=ds
+2026-03-06T19:44:34.763Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job 66a04474-ee7e-447a-b7a7-ee021dec7830 transitioning QUEUED -> RUNNING
+]]></system-out>
+  </testcase>
+  <testcase name="transitionInvalidStateReturnsBadRequest" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.012">
+    <system-out><![CDATA[2026-03-06T19:44:34.779Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted e56e84b6-c10c-40a3-8308-e555a93af755 workflow=x dataset=y
+2026-03-06T19:44:34.782Z  WARN 2627 --- [           main] c.c.governance.api.service.JobService    : Invalid state transition attempted for e56e84b6-c10c-40a3-8308-e555a93af755: QUEUED -> COMPLETED
+]]></system-out>
+  </testcase>
+  <testcase name="requestIdIsPropagatedToResponses" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.005"/>
+  <testcase name="submitJobInvalidJsonReturnsBadRequest" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.006">
+    <system-out><![CDATA[2026-03-06T19:44:34.799Z  WARN 2627 --- [           main] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.http.converter.HttpMessageNotReadableException: JSON parse error: Unexpected character ('n' (code 110)): was expecting double-quote to start field name]
+]]></system-out>
+  </testcase>
+  <testcase name="transitionWithVersionMismatchReturnsConflict" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.011">
+    <system-out><![CDATA[2026-03-06T19:44:34.804Z  INFO 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Node -1 disconnected.
+2026-03-06T19:44:34.804Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-06T19:44:34.804Z  WARN 2627 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-4, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-06T19:44:34.805Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted 5ebec2b9-8c11-4012-8a54-5c2e3ca1e740 workflow=x dataset=y
+]]></system-out>
+  </testcase>
+  <testcase name="cancelEndpointWorksAndIsIdempotent" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.019">
+    <system-out><![CDATA[2026-03-06T19:44:34.817Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted 8d1cb3eb-5b46-44b0-8ea2-deab6a0d050d workflow=a dataset=b
+2026-03-06T19:44:34.826Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job 8d1cb3eb-5b46-44b0-8ea2-deab6a0d050d transitioning QUEUED -> CANCELED
+]]></system-out>
+  </testcase>
+  <testcase name="submitJobMissingWorkflowReturnsBadRequest" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.016"/>
+  <testcase name="auditEndpointReturnsEntries" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.009">
+    <system-out><![CDATA[2026-03-06T19:44:34.854Z  INFO 2627 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted 79ffba1a-9350-4bd9-a90a-8141a60ff546 workflow=audit-test dataset=DS-AUD
+]]></system-out>
+  </testcase>
+  <testcase name="listJobsInvalidStateReturnsBadRequest" classname="com.cosmic.governance.api.GovernanceControllerTest" time="0.005"/>
+</testsuite>

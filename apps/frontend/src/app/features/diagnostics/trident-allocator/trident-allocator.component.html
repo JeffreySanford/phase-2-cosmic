@@ -1,0 +1,155 @@
+<div class="allocator-container">
+  <div class="heading-row">
+    <h2>FSP Allocator Simulator</h2>
+    <button
+      mat-icon-button
+      class="info-btn"
+      [class.info-btn--active]="showHeaderInfo"
+      (click)="showHeaderInfo = !showHeaderInfo"
+      aria-label="About FSP Allocator"
+    >
+      <mat-icon>info_outline</mat-icon>
+    </button>
+  </div>
+  <div class="info-panel" *ngIf="showHeaderInfo">
+    <strong>FSP</strong> (Frequency Slice Processor) units are the compute
+    resources in the telescope array that process chunks of the incoming radio
+    frequency band — each FSP handles a slice of the spectrum. Before a real
+    observation runs, this tool answers:
+    <em
+      >"If I schedule this block, will the compute resources be available and
+      non-conflicting?"</em
+    >
+  </div>
+  <p class="description">
+    Submit a <code>SchedulingBlock</code> to validate FSP capacity, detect
+    subarray contention, and receive an <code>FspAllocationPlan</code> or typed
+    conflict diagnostics. Requires the local simulator at
+    <code>http://localhost:7777</code>.
+  </p>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="allocator-form">
+    <p *ngIf="!simulatorAvailable" class="simulator-warning">
+      ⚠️ {{ simulatorMessage }}
+    </p>
+    <h3>Scheduling Block</h3>
+
+    <mat-form-field appearance="outline" class="field">
+      <mat-label>ID</mat-label>
+      <input matInput formControlName="id" placeholder="sb-001" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="field">
+      <mat-label>Subarray</mat-label>
+      <input matInput formControlName="subarray" placeholder="subarray-1" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="field">
+      <mat-label>Start Time (ISO 8601)</mat-label>
+      <input
+        matInput
+        formControlName="startTime"
+        placeholder="2026-04-01T08:00:00Z"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="field">
+      <mat-label>End Time (ISO 8601)</mat-label>
+      <input
+        matInput
+        formControlName="endTime"
+        placeholder="2026-04-01T10:00:00Z"
+      />
+    </mat-form-field>
+
+    <h3>Spectral Configuration (optional)</h3>
+
+    <mat-form-field appearance="outline" class="field field--narrow">
+      <mat-label>Band</mat-label>
+      <mat-select formControlName="band">
+        <mat-option value="">— none —</mat-option>
+        <mat-option
+          *ngFor="let b of ['UHF', 'L', 'S', 'C', 'X', 'Ka', 'Ku']"
+          [value]="b"
+          >{{ b }}</mat-option
+        >
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="field field--narrow">
+      <mat-label>Channel Width (Hz)</mat-label>
+      <input matInput type="number" formControlName="channelWidth" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="field field--narrow">
+      <mat-label>Num Channels</mat-label>
+      <input matInput type="number" formControlName="numChannels" />
+    </mat-form-field>
+
+    <div class="info-panel info-panel--inline" *ngIf="showResultInfo">
+      A successful result shows how many FSPs would be committed and their
+      assignments. If another subarray already holds those FSPs you will receive
+      a <code>CONTENTION</code> error; if the array is fully loaded,
+      <code>CAPACITY_EXHAUSTED</code>. Expand <strong>Full plan JSON</strong> to
+      see per-FSP details including specific IDs and frequency ranges.
+    </div>
+
+    <div class="actions">
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        [disabled]="loading || form.invalid"
+      >
+        {{ loading ? "Allocating…" : "Allocate" }}
+      </button>
+      <button
+        mat-icon-button
+        class="info-btn"
+        [class.info-btn--active]="showResultInfo"
+        type="button"
+        (click)="showResultInfo = !showResultInfo"
+        aria-label="About allocation results"
+      >
+        <mat-icon>info_outline</mat-icon>
+      </button>
+      <!-- note: we allow clicks even if simulator health probe failed; error will surface when the request fails -->
+      <button mat-stroked-button type="button" (click)="reset()">Reset</button>
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="downloadReport()"
+        [disabled]="!plan && !error"
+        matTooltip="Download JSON report"
+      >
+        Download report
+      </button>
+    </div>
+  </form>
+
+  <!-- Success -->
+  <div *ngIf="plan" class="result result--success">
+    <h3>Allocation Plan</h3>
+    <dl>
+      <dt>Plan ID</dt>
+      <dd>{{ plan.planId }}</dd>
+      <dt>Subarray</dt>
+      <dd>{{ plan.subarray }}</dd>
+      <dt>FSPs assigned</dt>
+      <dd>{{ plan.allocations.length }}</dd>
+    </dl>
+    <details>
+      <summary>Full plan JSON</summary>
+      <pre>{{ plan | json }}</pre>
+    </details>
+  </div>
+
+  <!-- Conflict / error -->
+  <div *ngIf="error" class="result result--error">
+    <h3>Allocation Failed — {{ error.code }}</h3>
+    <p class="error-message">{{ error.message }}</p>
+    <ul *ngIf="error.conflicts?.length">
+      <li *ngFor="let c of error.conflicts">{{ c }}</li>
+    </ul>
+  </div>
+</div>

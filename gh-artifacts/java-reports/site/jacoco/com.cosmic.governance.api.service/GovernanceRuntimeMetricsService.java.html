@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GovernanceRuntimeMetricsService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.service</a> &gt; <span class="el_source">GovernanceRuntimeMetricsService.java</span></div><h1>GovernanceRuntimeMetricsService.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.service;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+
+@Service
+public class GovernanceRuntimeMetricsService {
+    private final MeterRegistry meterRegistry;
+
+<span class="fc" id="L17">    public GovernanceRuntimeMetricsService(MeterRegistry meterRegistry) {</span>
+<span class="fc" id="L18">        this.meterRegistry = meterRegistry;</span>
+<span class="fc" id="L19">    }</span>
+
+    public void recordJobSubmitted(String workflow) {
+<span class="fc" id="L22">        counter(&quot;governance_job_submissions_total&quot;, &quot;workflow&quot;, safe(workflow)).increment();</span>
+<span class="fc" id="L23">    }</span>
+
+    public void recordJobTransition(String workflow, String fromState, String toState) {
+<span class="fc" id="L26">        counter(</span>
+                &quot;governance_job_transitions_total&quot;,
+<span class="fc" id="L28">                &quot;workflow&quot;, safe(workflow),</span>
+<span class="fc" id="L29">                &quot;from_state&quot;, safe(fromState),</span>
+<span class="fc" id="L30">                &quot;to_state&quot;, safe(toState)</span>
+<span class="fc" id="L31">        ).increment();</span>
+<span class="fc" id="L32">    }</span>
+
+    public void recordJobDispatch(String workflow, String executor) {
+<span class="fc" id="L35">        counter(</span>
+                &quot;governance_job_dispatch_total&quot;,
+<span class="fc" id="L37">                &quot;workflow&quot;, safe(workflow),</span>
+<span class="fc" id="L38">                &quot;executor&quot;, safe(executor)</span>
+<span class="fc" id="L39">        ).increment();</span>
+<span class="fc" id="L40">    }</span>
+
+    public void recordJobDispatchWait(String workflow, String executor, Duration waitTime) {
+<span class="pc bpc" id="L43" title="2 of 4 branches missed.">        if (waitTime == null || waitTime.isNegative()) {</span>
+<span class="nc" id="L44">            return;</span>
+        }
+<span class="fc" id="L46">        Timer.builder(&quot;governance_job_dispatch_wait_seconds&quot;)</span>
+<span class="fc" id="L47">                .publishPercentileHistogram()</span>
+<span class="fc" id="L48">                .tag(&quot;workflow&quot;, safe(workflow))</span>
+<span class="fc" id="L49">                .tag(&quot;executor&quot;, safe(executor))</span>
+<span class="fc" id="L50">                .register(meterRegistry)</span>
+<span class="fc" id="L51">                .record(waitTime);</span>
+<span class="fc" id="L52">    }</span>
+
+    public void recordJobTerminalState(String workflow, String executor, String result, Duration runtime) {
+<span class="fc" id="L55">        counter(</span>
+                &quot;governance_job_terminal_total&quot;,
+<span class="fc" id="L57">                &quot;workflow&quot;, safe(workflow),</span>
+<span class="fc" id="L58">                &quot;executor&quot;, safe(executor),</span>
+<span class="fc" id="L59">                &quot;result&quot;, safe(result)</span>
+<span class="fc" id="L60">        ).increment();</span>
+
+<span class="pc bpc" id="L62" title="2 of 4 branches missed.">        if (runtime == null || runtime.isNegative()) {</span>
+<span class="nc" id="L63">            return;</span>
+        }
+
+<span class="fc" id="L66">        Timer.builder(&quot;governance_job_terminal_duration_seconds&quot;)</span>
+<span class="fc" id="L67">                .publishPercentileHistogram()</span>
+<span class="fc" id="L68">                .tag(&quot;workflow&quot;, safe(workflow))</span>
+<span class="fc" id="L69">                .tag(&quot;executor&quot;, safe(executor))</span>
+<span class="fc" id="L70">                .tag(&quot;result&quot;, safe(result))</span>
+<span class="fc" id="L71">                .register(meterRegistry)</span>
+<span class="fc" id="L72">                .record(runtime);</span>
+<span class="fc" id="L73">    }</span>
+
+    public void recordWorkflowRuntime(String workflow, String executor, String result, Duration runtime) {
+<span class="pc bpc" id="L76" title="2 of 4 branches missed.">        if (runtime == null || runtime.isNegative()) {</span>
+<span class="nc" id="L77">            return;</span>
+        }
+<span class="fc" id="L79">        Timer.builder(&quot;governance_job_runtime_seconds&quot;)</span>
+<span class="fc" id="L80">                .publishPercentileHistogram()</span>
+<span class="fc" id="L81">                .tag(&quot;workflow&quot;, safe(workflow))</span>
+<span class="fc" id="L82">                .tag(&quot;executor&quot;, safe(executor))</span>
+<span class="fc" id="L83">                .tag(&quot;result&quot;, safe(result))</span>
+<span class="fc" id="L84">                .register(meterRegistry)</span>
+<span class="fc" id="L85">                .record(runtime);</span>
+<span class="fc" id="L86">    }</span>
+
+    public void recordArtifactAttached(String workflow, String artifactName, Object artifactPayload) {
+<span class="nc" id="L89">        counter(</span>
+                &quot;governance_job_artifacts_total&quot;,
+<span class="nc" id="L91">                &quot;workflow&quot;, safe(workflow),</span>
+<span class="nc" id="L92">                &quot;artifact_name&quot;, safe(artifactName)</span>
+<span class="nc" id="L93">        ).increment();</span>
+
+<span class="nc" id="L95">        DistributionSummary.builder(&quot;governance_job_artifact_payload_bytes&quot;)</span>
+<span class="nc" id="L96">                .publishPercentileHistogram()</span>
+<span class="nc" id="L97">                .baseUnit(&quot;bytes&quot;)</span>
+<span class="nc" id="L98">                .tag(&quot;workflow&quot;, safe(workflow))</span>
+<span class="nc" id="L99">                .tag(&quot;artifact_name&quot;, safe(artifactName))</span>
+<span class="nc" id="L100">                .register(meterRegistry)</span>
+<span class="nc" id="L101">                .record(approxPayloadBytes(artifactPayload));</span>
+<span class="nc" id="L102">    }</span>
+
+    public void recordArtifactRead(String artifactKind, Object payload, boolean success, Duration duration) {
+<span class="nc" id="L105">        counter(</span>
+                &quot;governance_artifact_reads_total&quot;,
+<span class="nc" id="L107">                &quot;artifact_kind&quot;, safe(artifactKind),</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                &quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;</span>
+<span class="nc" id="L109">        ).increment();</span>
+
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (success) {</span>
+<span class="nc" id="L112">            DistributionSummary.builder(&quot;governance_artifact_read_payload_bytes&quot;)</span>
+<span class="nc" id="L113">                    .publishPercentileHistogram()</span>
+<span class="nc" id="L114">                    .baseUnit(&quot;bytes&quot;)</span>
+<span class="nc" id="L115">                    .tag(&quot;artifact_kind&quot;, safe(artifactKind))</span>
+<span class="nc" id="L116">                    .register(meterRegistry)</span>
+<span class="nc" id="L117">                    .record(approxPayloadBytes(payload));</span>
+        }
+
+<span class="nc bnc" id="L120" title="All 4 branches missed.">        if (duration != null &amp;&amp; !duration.isNegative()) {</span>
+<span class="nc" id="L121">            Timer.builder(&quot;governance_artifact_read_duration_seconds&quot;)</span>
+<span class="nc" id="L122">                    .publishPercentileHistogram()</span>
+<span class="nc" id="L123">                    .tag(&quot;artifact_kind&quot;, safe(artifactKind))</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                    .tag(&quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;)</span>
+<span class="nc" id="L125">                    .register(meterRegistry)</span>
+<span class="nc" id="L126">                    .record(duration);</span>
+        }
+<span class="nc" id="L128">    }</span>
+
+    public void recordRabbitPublish(String exchange, String routingKey, Object payload, boolean success) {
+<span class="nc" id="L131">        recordRabbitPublish(exchange, routingKey, payload, success, null);</span>
+<span class="nc" id="L132">    }</span>
+
+    public void recordRabbitPublish(
+            String exchange,
+            String routingKey,
+            Object payload,
+            boolean success,
+            Duration duration
+    ) {
+<span class="fc" id="L141">        counter(</span>
+                &quot;governance_rabbitmq_publish_total&quot;,
+<span class="fc" id="L143">                &quot;exchange&quot;, safe(exchange),</span>
+<span class="fc" id="L144">                &quot;routing_key&quot;, safe(routingKey),</span>
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">                &quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;</span>
+<span class="fc" id="L146">        ).increment();</span>
+
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">        if (success) {</span>
+<span class="nc" id="L149">            DistributionSummary.builder(&quot;governance_rabbitmq_publish_payload_bytes&quot;)</span>
+<span class="nc" id="L150">                    .baseUnit(&quot;bytes&quot;)</span>
+<span class="nc" id="L151">                    .tag(&quot;exchange&quot;, safe(exchange))</span>
+<span class="nc" id="L152">                    .tag(&quot;routing_key&quot;, safe(routingKey))</span>
+<span class="nc" id="L153">                    .register(meterRegistry)</span>
+<span class="nc" id="L154">                    .record(approxPayloadBytes(payload));</span>
+        }
+<span class="pc bpc" id="L156" title="2 of 4 branches missed.">        if (duration != null &amp;&amp; !duration.isNegative()) {</span>
+<span class="fc" id="L157">            Timer.builder(&quot;governance_rabbitmq_publish_duration_seconds&quot;)</span>
+<span class="fc" id="L158">                    .publishPercentileHistogram()</span>
+<span class="fc" id="L159">                    .tag(&quot;exchange&quot;, safe(exchange))</span>
+<span class="fc" id="L160">                    .tag(&quot;routing_key&quot;, safe(routingKey))</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">                    .tag(&quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;)</span>
+<span class="fc" id="L162">                    .register(meterRegistry)</span>
+<span class="fc" id="L163">                    .record(duration);</span>
+        }
+<span class="fc" id="L165">    }</span>
+
+    public void recordKafkaPublish(String topic, String eventType, Object payload, boolean success) {
+<span class="nc" id="L168">        recordKafkaPublish(topic, eventType, payload, success, null);</span>
+<span class="nc" id="L169">    }</span>
+
+    public void recordKafkaPublish(
+            String topic,
+            String eventType,
+            Object payload,
+            boolean success,
+            Duration duration
+    ) {
+<span class="fc" id="L178">        counter(</span>
+                &quot;governance_kafka_publish_total&quot;,
+<span class="fc" id="L180">                &quot;topic&quot;, safe(topic),</span>
+<span class="fc" id="L181">                &quot;event_type&quot;, safe(eventType),</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">                &quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;</span>
+<span class="fc" id="L183">        ).increment();</span>
+
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        if (success) {</span>
+<span class="fc" id="L186">            DistributionSummary.builder(&quot;governance_kafka_publish_payload_bytes&quot;)</span>
+<span class="fc" id="L187">                    .baseUnit(&quot;bytes&quot;)</span>
+<span class="fc" id="L188">                    .tag(&quot;topic&quot;, safe(topic))</span>
+<span class="fc" id="L189">                    .tag(&quot;event_type&quot;, safe(eventType))</span>
+<span class="fc" id="L190">                    .register(meterRegistry)</span>
+<span class="fc" id="L191">                    .record(approxPayloadBytes(payload));</span>
+        }
+<span class="pc bpc" id="L193" title="2 of 4 branches missed.">        if (duration != null &amp;&amp; !duration.isNegative()) {</span>
+<span class="fc" id="L194">            Timer.builder(&quot;governance_kafka_publish_duration_seconds&quot;)</span>
+<span class="fc" id="L195">                    .publishPercentileHistogram()</span>
+<span class="fc" id="L196">                    .tag(&quot;topic&quot;, safe(topic))</span>
+<span class="fc" id="L197">                    .tag(&quot;event_type&quot;, safe(eventType))</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">                    .tag(&quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;)</span>
+<span class="fc" id="L199">                    .register(meterRegistry)</span>
+<span class="fc" id="L200">                    .record(duration);</span>
+        }
+<span class="fc" id="L202">    }</span>
+
+    public void recordRedisRead(String store, String keyspace, Object payload) {
+<span class="nc" id="L205">        recordRedisRead(store, keyspace, payload, true, null);</span>
+<span class="nc" id="L206">    }</span>
+
+    public void recordRedisRead(
+            String store,
+            String keyspace,
+            Object payload,
+            boolean success,
+            Duration duration
+    ) {
+<span class="fc" id="L215">        counter(</span>
+                &quot;governance_redis_operations_total&quot;,
+<span class="fc" id="L217">                &quot;store&quot;, safe(store),</span>
+<span class="fc" id="L218">                &quot;keyspace&quot;, safe(keyspace),</span>
+                &quot;operation&quot;, &quot;read&quot;,
+<span class="fc bfc" id="L220" title="All 2 branches covered.">                &quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;</span>
+<span class="fc" id="L221">        ).increment();</span>
+
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        if (success) {</span>
+<span class="fc" id="L224">            counter(</span>
+                    &quot;governance_redis_reads_total&quot;,
+<span class="fc" id="L226">                    &quot;store&quot;, safe(store),</span>
+<span class="fc" id="L227">                    &quot;keyspace&quot;, safe(keyspace)</span>
+<span class="fc" id="L228">            ).increment();</span>
+
+<span class="fc" id="L230">            DistributionSummary.builder(&quot;governance_redis_read_payload_bytes&quot;)</span>
+<span class="fc" id="L231">                    .baseUnit(&quot;bytes&quot;)</span>
+<span class="fc" id="L232">                    .tag(&quot;store&quot;, safe(store))</span>
+<span class="fc" id="L233">                    .tag(&quot;keyspace&quot;, safe(keyspace))</span>
+<span class="fc" id="L234">                    .register(meterRegistry)</span>
+<span class="fc" id="L235">                    .record(approxPayloadBytes(payload));</span>
+        }
+
+<span class="pc bpc" id="L238" title="2 of 4 branches missed.">        if (duration != null &amp;&amp; !duration.isNegative()) {</span>
+<span class="fc" id="L239">            Timer.builder(&quot;governance_redis_operation_duration_seconds&quot;)</span>
+<span class="fc" id="L240">                    .publishPercentileHistogram()</span>
+<span class="fc" id="L241">                    .tag(&quot;store&quot;, safe(store))</span>
+<span class="fc" id="L242">                    .tag(&quot;keyspace&quot;, safe(keyspace))</span>
+<span class="fc" id="L243">                    .tag(&quot;operation&quot;, &quot;read&quot;)</span>
+<span class="fc bfc" id="L244" title="All 2 branches covered.">                    .tag(&quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;)</span>
+<span class="fc" id="L245">                    .register(meterRegistry)</span>
+<span class="fc" id="L246">                    .record(duration);</span>
+        }
+<span class="fc" id="L248">    }</span>
+
+    public void recordRedisWrite(String store, String keyspace, Object payload) {
+<span class="nc" id="L251">        recordRedisWrite(store, keyspace, payload, true, null);</span>
+<span class="nc" id="L252">    }</span>
+
+    public void recordRedisWrite(
+            String store,
+            String keyspace,
+            Object payload,
+            boolean success,
+            Duration duration
+    ) {
+<span class="fc" id="L261">        counter(</span>
+                &quot;governance_redis_operations_total&quot;,
+<span class="fc" id="L263">                &quot;store&quot;, safe(store),</span>
+<span class="fc" id="L264">                &quot;keyspace&quot;, safe(keyspace),</span>
+                &quot;operation&quot;, &quot;write&quot;,
+<span class="fc bfc" id="L266" title="All 2 branches covered.">                &quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;</span>
+<span class="fc" id="L267">        ).increment();</span>
+
+<span class="fc bfc" id="L269" title="All 2 branches covered.">        if (success) {</span>
+<span class="fc" id="L270">            counter(</span>
+                    &quot;governance_redis_writes_total&quot;,
+<span class="fc" id="L272">                    &quot;store&quot;, safe(store),</span>
+<span class="fc" id="L273">                    &quot;keyspace&quot;, safe(keyspace)</span>
+<span class="fc" id="L274">            ).increment();</span>
+
+<span class="fc" id="L276">            DistributionSummary.builder(&quot;governance_redis_write_payload_bytes&quot;)</span>
+<span class="fc" id="L277">                    .baseUnit(&quot;bytes&quot;)</span>
+<span class="fc" id="L278">                    .tag(&quot;store&quot;, safe(store))</span>
+<span class="fc" id="L279">                    .tag(&quot;keyspace&quot;, safe(keyspace))</span>
+<span class="fc" id="L280">                    .register(meterRegistry)</span>
+<span class="fc" id="L281">                    .record(approxPayloadBytes(payload));</span>
+        }
+
+<span class="pc bpc" id="L284" title="2 of 4 branches missed.">        if (duration != null &amp;&amp; !duration.isNegative()) {</span>
+<span class="fc" id="L285">            Timer.builder(&quot;governance_redis_operation_duration_seconds&quot;)</span>
+<span class="fc" id="L286">                    .publishPercentileHistogram()</span>
+<span class="fc" id="L287">                    .tag(&quot;store&quot;, safe(store))</span>
+<span class="fc" id="L288">                    .tag(&quot;keyspace&quot;, safe(keyspace))</span>
+<span class="fc" id="L289">                    .tag(&quot;operation&quot;, &quot;write&quot;)</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">                    .tag(&quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;)</span>
+<span class="fc" id="L291">                    .register(meterRegistry)</span>
+<span class="fc" id="L292">                    .record(duration);</span>
+        }
+<span class="fc" id="L294">    }</span>
+
+    public void recordObjectWrite(String storage, String objectKind, String executor, Object payload) {
+<span class="fc" id="L297">        recordObjectWrite(storage, objectKind, executor, payload, true, null);</span>
+<span class="fc" id="L298">    }</span>
+
+    public void recordObjectWrite(
+            String storage,
+            String objectKind,
+            String executor,
+            Object payload,
+            boolean success,
+            Duration duration
+    ) {
+<span class="fc" id="L308">        counter(</span>
+                &quot;governance_object_write_attempts_total&quot;,
+<span class="fc" id="L310">                &quot;storage&quot;, safe(storage),</span>
+<span class="fc" id="L311">                &quot;object_kind&quot;, safe(objectKind),</span>
+<span class="fc" id="L312">                &quot;executor&quot;, safe(executor),</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">                &quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;</span>
+<span class="fc" id="L314">        ).increment();</span>
+
+<span class="fc bfc" id="L316" title="All 2 branches covered.">        if (success) {</span>
+<span class="fc" id="L317">            counter(</span>
+                    &quot;governance_object_writes_total&quot;,
+<span class="fc" id="L319">                    &quot;storage&quot;, safe(storage),</span>
+<span class="fc" id="L320">                    &quot;object_kind&quot;, safe(objectKind),</span>
+<span class="fc" id="L321">                    &quot;executor&quot;, safe(executor)</span>
+<span class="fc" id="L322">            ).increment();</span>
+
+<span class="fc" id="L324">            DistributionSummary.builder(&quot;governance_object_write_payload_bytes&quot;)</span>
+<span class="fc" id="L325">                    .baseUnit(&quot;bytes&quot;)</span>
+<span class="fc" id="L326">                    .tag(&quot;storage&quot;, safe(storage))</span>
+<span class="fc" id="L327">                    .tag(&quot;object_kind&quot;, safe(objectKind))</span>
+<span class="fc" id="L328">                    .tag(&quot;executor&quot;, safe(executor))</span>
+<span class="fc" id="L329">                    .register(meterRegistry)</span>
+<span class="fc" id="L330">                    .record(approxPayloadBytes(payload));</span>
+        }
+
+<span class="pc bpc" id="L333" title="1 of 4 branches missed.">        if (duration != null &amp;&amp; !duration.isNegative()) {</span>
+<span class="fc" id="L334">            Timer.builder(&quot;governance_object_write_duration_seconds&quot;)</span>
+<span class="fc" id="L335">                    .publishPercentileHistogram()</span>
+<span class="fc" id="L336">                    .tag(&quot;storage&quot;, safe(storage))</span>
+<span class="fc" id="L337">                    .tag(&quot;object_kind&quot;, safe(objectKind))</span>
+<span class="fc" id="L338">                    .tag(&quot;executor&quot;, safe(executor))</span>
+<span class="fc bfc" id="L339" title="All 2 branches covered.">                    .tag(&quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;)</span>
+<span class="fc" id="L340">                    .register(meterRegistry)</span>
+<span class="fc" id="L341">                    .record(duration);</span>
+        }
+<span class="fc" id="L343">    }</span>
+
+    public void recordDatasetMutation(String operation, Object payload) {
+<span class="fc" id="L346">        counter(</span>
+                &quot;governance_dataset_mutations_total&quot;,
+<span class="fc" id="L348">                &quot;operation&quot;, safe(operation)</span>
+<span class="fc" id="L349">        ).increment();</span>
+
+<span class="fc" id="L351">        DistributionSummary.builder(&quot;governance_dataset_mutation_payload_bytes&quot;)</span>
+<span class="fc" id="L352">                .baseUnit(&quot;bytes&quot;)</span>
+<span class="fc" id="L353">                .tag(&quot;operation&quot;, safe(operation))</span>
+<span class="fc" id="L354">                .register(meterRegistry)</span>
+<span class="fc" id="L355">                .record(approxPayloadBytes(payload));</span>
+<span class="fc" id="L356">    }</span>
+
+    public void recordBusinessAction(String resource, String action, Object payload) {
+<span class="fc" id="L359">        recordBusinessAction(resource, action, payload, true);</span>
+<span class="fc" id="L360">    }</span>
+
+    public void recordBusinessAction(String resource, String action, Object payload, boolean success) {
+<span class="fc" id="L363">        counter(</span>
+                &quot;governance_business_actions_total&quot;,
+<span class="fc" id="L365">                &quot;resource&quot;, safe(resource),</span>
+<span class="fc" id="L366">                &quot;action&quot;, safe(action),</span>
+<span class="pc bpc" id="L367" title="1 of 2 branches missed.">                &quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;</span>
+<span class="fc" id="L368">        ).increment();</span>
+
+<span class="fc" id="L370">        DistributionSummary.builder(&quot;governance_business_action_payload_bytes&quot;)</span>
+<span class="fc" id="L371">                .baseUnit(&quot;bytes&quot;)</span>
+<span class="fc" id="L372">                .tag(&quot;resource&quot;, safe(resource))</span>
+<span class="fc" id="L373">                .tag(&quot;action&quot;, safe(action))</span>
+<span class="pc bpc" id="L374" title="1 of 2 branches missed.">                .tag(&quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;)</span>
+<span class="fc" id="L375">                .register(meterRegistry)</span>
+<span class="fc" id="L376">                .record(approxPayloadBytes(payload));</span>
+<span class="fc" id="L377">    }</span>
+
+    public void recordJobMetadataMutation(String mutationType, Object payload) {
+<span class="fc" id="L380">        counter(</span>
+                &quot;governance_job_metadata_mutations_total&quot;,
+<span class="fc" id="L382">                &quot;mutation_type&quot;, safe(mutationType)</span>
+<span class="fc" id="L383">        ).increment();</span>
+
+<span class="fc" id="L385">        DistributionSummary.builder(&quot;governance_job_metadata_mutation_payload_bytes&quot;)</span>
+<span class="fc" id="L386">                .baseUnit(&quot;bytes&quot;)</span>
+<span class="fc" id="L387">                .tag(&quot;mutation_type&quot;, safe(mutationType))</span>
+<span class="fc" id="L388">                .register(meterRegistry)</span>
+<span class="fc" id="L389">                .record(approxPayloadBytes(payload));</span>
+<span class="fc" id="L390">    }</span>
+
+    public void recordOperatorRead(String resourceType, Object payload) {
+<span class="fc" id="L393">        String resourceFamily = operatorReadFamily(resourceType);</span>
+<span class="fc" id="L394">        counter(</span>
+                &quot;governance_operator_reads_total&quot;,
+<span class="fc" id="L396">                &quot;resource_type&quot;, safe(resourceType),</span>
+                &quot;resource_family&quot;, resourceFamily
+<span class="fc" id="L398">        ).increment();</span>
+
+<span class="fc" id="L400">        DistributionSummary.builder(&quot;governance_operator_read_payload_bytes&quot;)</span>
+<span class="fc" id="L401">                .baseUnit(&quot;bytes&quot;)</span>
+<span class="fc" id="L402">                .tag(&quot;resource_type&quot;, safe(resourceType))</span>
+<span class="fc" id="L403">                .tag(&quot;resource_family&quot;, resourceFamily)</span>
+<span class="fc" id="L404">                .register(meterRegistry)</span>
+<span class="fc" id="L405">                .record(approxPayloadBytes(payload));</span>
+<span class="fc" id="L406">    }</span>
+
+    public void recordRestoreDrill(boolean success, long durationMs, Object payload) {
+<span class="fc" id="L409">        counter(</span>
+                &quot;governance_restore_drills_total&quot;,
+<span class="pc bpc" id="L411" title="1 of 2 branches missed.">                &quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;</span>
+<span class="fc" id="L412">        ).increment();</span>
+
+<span class="fc" id="L414">        DistributionSummary.builder(&quot;governance_restore_drill_duration_ms&quot;)</span>
+<span class="fc" id="L415">                .baseUnit(&quot;ms&quot;)</span>
+<span class="pc bpc" id="L416" title="1 of 2 branches missed.">                .tag(&quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;)</span>
+<span class="fc" id="L417">                .register(meterRegistry)</span>
+<span class="fc" id="L418">                .record(Math.max(durationMs, 0));</span>
+
+<span class="fc" id="L420">        DistributionSummary.builder(&quot;governance_restore_drill_payload_bytes&quot;)</span>
+<span class="fc" id="L421">                .baseUnit(&quot;bytes&quot;)</span>
+<span class="pc bpc" id="L422" title="1 of 2 branches missed.">                .tag(&quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;)</span>
+<span class="fc" id="L423">                .register(meterRegistry)</span>
+<span class="fc" id="L424">                .record(approxPayloadBytes(payload));</span>
+<span class="fc" id="L425">    }</span>
+
+    public void recordDeferredRelease(int releasedCount) {
+<span class="nc bnc" id="L428" title="All 2 branches missed.">        if (releasedCount &lt;= 0) {</span>
+<span class="nc" id="L429">            return;</span>
+        }
+<span class="nc" id="L431">        counter(&quot;governance_scheduler_deferred_releases_total&quot;)</span>
+<span class="nc" id="L432">                .increment(releasedCount);</span>
+<span class="nc" id="L433">    }</span>
+
+    public void recordExternalAdapterRequest(
+            String adapter,
+            String operation,
+            String target,
+            Object payload,
+            boolean success,
+            String errorClass,
+            Duration duration
+    ) {
+<span class="fc" id="L444">        String targetHost = targetHost(target);</span>
+<span class="fc" id="L445">        counter(</span>
+                &quot;governance_external_adapter_requests_total&quot;,
+<span class="fc" id="L447">                &quot;adapter&quot;, safe(adapter),</span>
+<span class="fc" id="L448">                &quot;operation&quot;, safe(operation),</span>
+                &quot;target_host&quot;, targetHost,
+<span class="fc bfc" id="L450" title="All 2 branches covered.">                &quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;,</span>
+<span class="fc bfc" id="L451" title="All 2 branches covered.">                &quot;error_class&quot;, success ? &quot;none&quot; : safe(errorClass)</span>
+<span class="fc" id="L452">        ).increment();</span>
+
+<span class="fc" id="L454">        DistributionSummary.builder(&quot;governance_external_adapter_request_payload_bytes&quot;)</span>
+<span class="fc" id="L455">                .baseUnit(&quot;bytes&quot;)</span>
+<span class="fc" id="L456">                .tag(&quot;adapter&quot;, safe(adapter))</span>
+<span class="fc" id="L457">                .tag(&quot;operation&quot;, safe(operation))</span>
+<span class="fc" id="L458">                .tag(&quot;target_host&quot;, targetHost)</span>
+<span class="fc" id="L459">                .register(meterRegistry)</span>
+<span class="fc" id="L460">                .record(approxPayloadBytes(payload));</span>
+
+<span class="pc bpc" id="L462" title="2 of 4 branches missed.">        if (duration != null &amp;&amp; !duration.isNegative()) {</span>
+<span class="fc" id="L463">            Timer.builder(&quot;governance_external_adapter_request_duration_seconds&quot;)</span>
+<span class="fc" id="L464">                    .publishPercentileHistogram()</span>
+<span class="fc" id="L465">                    .tag(&quot;adapter&quot;, safe(adapter))</span>
+<span class="fc" id="L466">                    .tag(&quot;operation&quot;, safe(operation))</span>
+<span class="fc" id="L467">                    .tag(&quot;target_host&quot;, targetHost)</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">                    .tag(&quot;result&quot;, success ? &quot;success&quot; : &quot;failure&quot;)</span>
+<span class="fc" id="L469">                    .register(meterRegistry)</span>
+<span class="fc" id="L470">                    .record(duration);</span>
+        }
+<span class="fc" id="L472">    }</span>
+
+    private Counter counter(String name, String... tags) {
+<span class="fc" id="L475">        return Counter.builder(name)</span>
+<span class="fc" id="L476">                .tags(tags)</span>
+<span class="fc" id="L477">                .register(meterRegistry);</span>
+    }
+
+    private double approxPayloadBytes(Object payload) {
+<span class="fc bfc" id="L481" title="All 2 branches covered.">        if (payload == null) {</span>
+<span class="fc" id="L482">            return 0.0d;</span>
+        }
+<span class="fc" id="L484">        return String.valueOf(payload).getBytes(StandardCharsets.UTF_8).length;</span>
+    }
+
+    private String targetHost(String target) {
+<span class="pc bpc" id="L488" title="2 of 4 branches missed.">        if (target == null || target.isBlank()) {</span>
+<span class="nc" id="L489">            return &quot;unknown&quot;;</span>
+        }
+        try {
+<span class="fc" id="L492">            URI uri = URI.create(target);</span>
+<span class="fc" id="L493">            String host = uri.getHost();</span>
+<span class="pc bpc" id="L494" title="2 of 4 branches missed.">            return safe(host == null || host.isBlank() ? target : host);</span>
+<span class="nc" id="L495">        } catch (Exception ex) {</span>
+<span class="nc" id="L496">            return safe(target);</span>
+        }
+    }
+
+    private String safe(String value) {
+<span class="pc bpc" id="L501" title="2 of 4 branches missed.">        return value == null || value.isBlank() ? &quot;unknown&quot; : value;</span>
+    }
+
+    private String operatorReadFamily(String resourceType) {
+<span class="fc" id="L505">        String value = safe(resourceType);</span>
+<span class="fc bfc" id="L506" title="All 2 branches covered.">        if (value.startsWith(&quot;job_&quot;)) {</span>
+<span class="fc" id="L507">            return &quot;jobs&quot;;</span>
+        }
+<span class="pc bpc" id="L509" title="1 of 2 branches missed.">        if (value.startsWith(&quot;dataset_&quot;)) {</span>
+<span class="fc" id="L510">            return &quot;datasets&quot;;</span>
+        }
+<span class="nc bnc" id="L512" title="All 2 branches missed.">        if (value.startsWith(&quot;alert_&quot;)) {</span>
+<span class="nc" id="L513">            return &quot;alerts&quot;;</span>
+        }
+<span class="nc bnc" id="L515" title="All 2 branches missed.">        if (value.startsWith(&quot;archive_&quot;)) {</span>
+<span class="nc" id="L516">            return &quot;archive&quot;;</span>
+        }
+<span class="nc" id="L518">        return &quot;other&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

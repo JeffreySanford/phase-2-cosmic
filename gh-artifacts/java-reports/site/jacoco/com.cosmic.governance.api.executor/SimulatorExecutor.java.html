@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SimulatorExecutor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.executor</a> &gt; <span class="el_source">SimulatorExecutor.java</span></div><h1>SimulatorExecutor.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.executor;
+
+import com.cosmic.governance.api.model.JobRecord;
+import com.cosmic.governance.api.model.JobState;
+import java.time.Instant;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.time.Duration;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URI;
+import java.io.StringReader;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+import org.springframework.beans.factory.annotation.Value;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import com.cosmic.governance.api.service.GovernanceRuntimeMetricsService;
+import com.cosmic.governance.api.util.RedisMarshaller;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@Service
+public class SimulatorExecutor implements JobExecutor {
+<span class="fc" id="L33">    private static final ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(2);</span>
+    private final RedisMarshaller marshaller;
+    private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
+<span class="fc" id="L36">    @Value(&quot;${executor.network.enabled:false}&quot;)</span>
+    private boolean networkEnabled = false;
+
+    public SimulatorExecutor(@Autowired RedisMarshaller marshaller,
+<span class="fc" id="L40">                             @Autowired GovernanceRuntimeMetricsService governanceRuntimeMetricsService) {</span>
+<span class="fc" id="L41">        this.marshaller = marshaller;</span>
+<span class="fc" id="L42">        this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;</span>
+<span class="fc" id="L43">    }</span>
+
+    @Override
+<span class="fc" id="L46">    public String name() { return &quot;simulator&quot;; }</span>
+
+    @Override
+    public void execute(JobRecord record, RedisTemplate&lt;String, Object&gt; redisTemplate) {
+<span class="fc" id="L50">        String jobKey = &quot;job:&quot; + record.getJobId();</span>
+<span class="fc" id="L51">        int complexity = complexity(record);</span>
+<span class="fc" id="L52">        int startDelaySeconds = Math.max(1, complexity);</span>
+<span class="fc" id="L53">        int completionDelaySeconds = Math.max(startDelaySeconds + 2, 2 + (complexity * 2));</span>
+        // schedule running
+<span class="fc" id="L55">        EXEC.schedule(() -&gt; {</span>
+<span class="fc" id="L56">            Object o = readRedisValue(redisTemplate, jobKey);</span>
+<span class="fc" id="L57">            JobRecord r = null;</span>
+<span class="fc" id="L58">            r = marshaller.toJobRecord(o);</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">            if (r != null) {</span>
+<span class="fc" id="L60">                r.setState(JobState.RUNNING);</span>
+<span class="fc" id="L61">                r.setUpdatedAt(Instant.now().toString());</span>
+<span class="fc" id="L62">                r.setVersion(r.getVersion() + 1);</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">                var newParams = r.getParameters() == null ? new java.util.HashMap&lt;String, Object&gt;() : new java.util.HashMap&lt;String, Object&gt;(r.getParameters());</span>
+<span class="fc" id="L64">                newParams.put(&quot;externalJobId&quot;, &quot;sim-&quot; + UUID.randomUUID());</span>
+<span class="fc" id="L65">                newParams.put(&quot;executor&quot;, name());</span>
+<span class="fc" id="L66">                newParams.put(&quot;complexity&quot;, complexity);</span>
+<span class="fc" id="L67">                r.setParameters(newParams);</span>
+<span class="fc" id="L68">                writeRedisValue(redisTemplate, jobKey, r);</span>
+                // push a running log
+<span class="fc" id="L70">                pushRedisLog(redisTemplate, jobKey + &quot;:logs&quot;, &quot;Simulator: job running (complexity=&quot; + complexity + &quot;)&quot;);</span>
+            }
+<span class="fc" id="L72">        }, startDelaySeconds, TimeUnit.SECONDS);</span>
+
+<span class="fc" id="L74">        EXEC.schedule(() -&gt; {</span>
+<span class="fc" id="L75">            Object o = readRedisValue(redisTemplate, jobKey);</span>
+<span class="fc" id="L76">            JobRecord r2 = null;</span>
+<span class="fc" id="L77">            r2 = marshaller.toJobRecord(o);</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">            if (r2 != null) {</span>
+<span class="fc" id="L79">                Instant completedAt = Instant.now();</span>
+<span class="fc" id="L80">                Duration runtime = durationBetween(r2.getUpdatedAt(), completedAt);</span>
+<span class="fc" id="L81">                r2.setState(JobState.COMPLETED);</span>
+<span class="fc" id="L82">                r2.setUpdatedAt(completedAt.toString());</span>
+<span class="fc" id="L83">                r2.setVersion(r2.getVersion() + 1);</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">                var newParams = r2.getParameters() == null ? new java.util.HashMap&lt;String, Object&gt;() : new java.util.HashMap&lt;String, Object&gt;(r2.getParameters());</span>
+<span class="fc" id="L85">                newParams.put(&quot;completedAt&quot;, completedAt.toString());</span>
+<span class="fc" id="L86">                r2.setParameters(newParams);</span>
+<span class="fc" id="L87">                writeRedisValue(redisTemplate, jobKey, r2);</span>
+<span class="fc" id="L88">                recordTerminalState(r2.getWorkflow(), &quot;simulator&quot;, JobState.COMPLETED, runtime);</span>
+<span class="fc" id="L89">                pushRedisLog(redisTemplate, jobKey + &quot;:logs&quot;, &quot;Simulator: job completed (complexity=&quot; + complexity + &quot;)&quot;);</span>
+                // create a small artifact marker and write a file to tmp artifact store
+<span class="fc" id="L91">                String artKey = jobKey + &quot;:artifacts&quot;;</span>
+<span class="fc" id="L92">                String name = &quot;result.txt&quot;;</span>
+<span class="fc" id="L93">                var artifact = Map.of(&quot;name&quot;, name, &quot;url&quot;, &quot;/api/v1/jobs/&quot; + r2.getJobId() + &quot;/artifacts/&quot; + name);</span>
+<span class="fc" id="L94">                writeRedisValue(redisTemplate, artKey, artifact);</span>
+                try {
+<span class="fc" id="L96">                    java.nio.file.Path base = java.nio.file.Paths.get(System.getProperty(&quot;java.io.tmpdir&quot;), &quot;governance-artifacts&quot;, r2.getJobId());</span>
+<span class="fc" id="L97">                    java.nio.file.Files.createDirectories(base);</span>
+<span class="fc" id="L98">                    java.nio.file.Path file = base.resolve(name);</span>
+<span class="fc" id="L99">                    String content = &quot;Simulator artifact for job &quot; + r2.getJobId() + &quot;\nOK\n&quot;;</span>
+<span class="fc" id="L100">                    java.nio.file.Files.writeString(file, content);</span>
+<span class="fc" id="L101">                    recordObjectWrite(&quot;artifact-file&quot;, name, &quot;simulator&quot;, content);</span>
+<span class="pc" id="L102">                } catch (Exception ignored) {}</span>
+                // Optionally perform VO/TAP harvesting when requested by job parameters
+                try {
+<span class="fc" id="L105">                    Map&lt;String, Object&gt; params = r2.getParameters();</span>
+<span class="fc" id="L106">                    boolean wantsHarvest = false;</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                    if (params != null) {</span>
+<span class="fc" id="L108">                        Object hv = params.get(&quot;harvestVo&quot;);</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">                        if (hv instanceof Boolean) wantsHarvest = (Boolean) hv;</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">                        else if (hv != null) wantsHarvest = &quot;true&quot;.equalsIgnoreCase(String.valueOf(hv));</span>
+<span class="pc bpc" id="L111" title="2 of 4 branches missed.">                        if (params.containsKey(&quot;voQuery&quot;) || params.containsKey(&quot;externalSources&quot;)) wantsHarvest = true;</span>
+                    }
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">                    if (wantsHarvest) {</span>
+<span class="nc" id="L114">                        String jsonName = &quot;external-sources.json&quot;;</span>
+<span class="nc" id="L115">                        Map&lt;String,Object&gt; external = null;</span>
+                        // If network calls are enabled, attempt real TAP/VOTable harvest
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                        if (networkEnabled) {</span>
+                            try {
+<span class="nc bnc" id="L119" title="All 4 branches missed.">                                String tapUrl = params != null &amp;&amp; params.get(&quot;tapUrl&quot;) != null ? String.valueOf(params.get(&quot;tapUrl&quot;)) : &quot;https://heasarc.gsfc.nasa.gov/xamin&quot;;</span>
+<span class="nc bnc" id="L120" title="All 4 branches missed.">                                String voQuery = params != null &amp;&amp; params.get(&quot;voQuery&quot;) != null ? String.valueOf(params.get(&quot;voQuery&quot;)) : null;</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                                if (voQuery == null) {</span>
+                                    // fallback simple example query for demonstration
+<span class="nc" id="L123">                                    voQuery = &quot;table=chanmaster&amp;position=3c273&amp;format=stream&quot;;</span>
+                                }
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                                String fullUrl = tapUrl.endsWith(&quot;/&quot;) ? tapUrl + &quot;query?&quot; + voQuery : tapUrl + &quot;/query?&quot; + voQuery;</span>
+<span class="nc" id="L126">                                HttpClient hc = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();</span>
+<span class="nc" id="L127">                                HttpRequest req = HttpRequest.newBuilder().uri(URI.create(fullUrl)).timeout(Duration.ofSeconds(15)).GET().build();</span>
+<span class="nc" id="L128">                                HttpResponse&lt;String&gt; resp = hc.send(req, HttpResponse.BodyHandlers.ofString());</span>
+<span class="nc" id="L129">                                String body = resp.body();</span>
+<span class="nc" id="L130">                                java.util.List&lt;String&gt; sampleFields = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L131">                                java.util.List&lt;Map&lt;String,Object&gt;&gt; sampleRows = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L132" title="All 4 branches missed.">                                if (body != null &amp;&amp; body.contains(&quot;&lt;VOTABLE&quot;)) {</span>
+                                    // parse VOTable (simple DOM parse of first TABLE)
+<span class="nc" id="L134">                                    Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(body)));</span>
+<span class="nc" id="L135">                                    NodeList fieldNodes = doc.getElementsByTagName(&quot;FIELD&quot;);</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                                    for (int i=0;i&lt;fieldNodes.getLength();i++) {</span>
+<span class="nc" id="L137">                                        Element f = (Element) fieldNodes.item(i);</span>
+<span class="nc" id="L138">                                        String fname = f.getAttribute(&quot;name&quot;);</span>
+<span class="nc bnc" id="L139" title="All 4 branches missed.">                                        if (fname == null || fname.isBlank()) fname = f.getAttribute(&quot;ID&quot;);</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                                        sampleFields.add(fname == null ? &quot;col&quot;+i : fname);</span>
+                                    }
+<span class="nc" id="L142">                                    NodeList trNodes = doc.getElementsByTagName(&quot;TR&quot;);</span>
+<span class="nc bnc" id="L143" title="All 4 branches missed.">                                    for (int i=0;i&lt;trNodes.getLength() &amp;&amp; i&lt;5;i++) {</span>
+<span class="nc" id="L144">                                        Element tr = (Element) trNodes.item(i);</span>
+<span class="nc" id="L145">                                        NodeList td = tr.getElementsByTagName(&quot;TD&quot;);</span>
+<span class="nc" id="L146">                                        Map&lt;String,Object&gt; row = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                                        for (int j=0;j&lt;td.getLength();j++) {</span>
+<span class="nc" id="L148">                                            String val = td.item(j).getTextContent();</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                                            String key = j &lt; sampleFields.size() ? sampleFields.get(j) : &quot;col&quot;+j;</span>
+<span class="nc" id="L150">                                            row.put(key, val);</span>
+                                        }
+<span class="nc" id="L152">                                        sampleRows.add(row);</span>
+                                    }
+<span class="nc" id="L154">                                } else {</span>
+                                    // assume stream format: header|col1|col2\nrows
+<span class="nc" id="L156">                                    String[] lines = body.split(&quot;\\r?\\n&quot;);</span>
+<span class="nc" id="L157">                                    String header = null;</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                                    for (String L : lines) {</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                                        if (L == null) continue;</span>
+<span class="nc" id="L160">                                        String t = L.trim();</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">                                        if (t.isEmpty()) continue;</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                                        if (t.startsWith(&quot;#&quot;)) continue;</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                                        if (header == null) { header = t; continue; }</span>
+                                        // process a data line
+<span class="nc" id="L165">                                        String[] parts = t.split(&quot;\\\\|&quot;);</span>
+<span class="nc bnc" id="L166" title="All 4 branches missed.">                                        if (sampleFields.isEmpty() &amp;&amp; header != null) {</span>
+<span class="nc" id="L167">                                            sampleFields.addAll(java.util.Arrays.asList(header.split(&quot;\\\\|&quot;)));</span>
+                                        }
+<span class="nc" id="L169">                                        Map&lt;String,Object&gt; row = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">                                        for (int j=0;j&lt;parts.length;j++) {</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                                            String key = j &lt; sampleFields.size() ? sampleFields.get(j) : &quot;col&quot;+j;</span>
+<span class="nc" id="L172">                                            row.put(key, parts[j]);</span>
+                                        }
+<span class="nc" id="L174">                                        sampleRows.add(row);</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                                        if (sampleRows.size() &gt;= 5) break;</span>
+                                    }
+                                }
+<span class="nc" id="L178">                                external = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L179">                                external.put(&quot;name&quot;, jsonName);</span>
+<span class="nc" id="L180">                                external.put(&quot;url&quot;, &quot;/api/v1/jobs/&quot; + r2.getJobId() + &quot;/artifacts/&quot; + jsonName);</span>
+<span class="nc" id="L181">                                external.put(&quot;type&quot;, &quot;external-source&quot;);</span>
+<span class="nc bnc" id="L182" title="All 4 branches missed.">                                external.put(&quot;provider&quot;, params != null &amp;&amp; params.get(&quot;provider&quot;) != null ? String.valueOf(params.get(&quot;provider&quot;)) : &quot;vo-tap&quot;);</span>
+<span class="nc" id="L183">                                external.put(&quot;tapUrl&quot;, fullUrl);</span>
+<span class="nc" id="L184">                                external.put(&quot;citationUrl&quot;, tapUrl);</span>
+<span class="nc" id="L185">                                external.put(&quot;links&quot;, java.util.List.of(tapUrl));</span>
+<span class="nc" id="L186">                                external.put(&quot;sampleFields&quot;, sampleFields);</span>
+<span class="nc" id="L187">                                external.put(&quot;sampleRows&quot;, sampleRows);</span>
+                                // cache the harvested result for short TTL to reduce repeated TAP queries
+                                try {
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                                    if (redisTemplate != null) {</span>
+<span class="nc" id="L191">                                        String cacheKey = &quot;vo:cache:&quot; + java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(java.security.MessageDigest.getInstance(&quot;SHA-256&quot;).digest(fullUrl.getBytes(java.nio.charset.StandardCharsets.UTF_8)));</span>
+<span class="nc" id="L192">                                        writeRedisValue(redisTemplate, cacheKey, external);</span>
+<span class="nc" id="L193">                                        try { redisTemplate.expire(cacheKey, 300, java.util.concurrent.TimeUnit.SECONDS); } catch (Exception ignored) {}</span>
+                                    }
+<span class="nc" id="L195">                                } catch (Exception ignored) {}</span>
+<span class="nc" id="L196">                            } catch (Exception ex) {</span>
+                                // network harvest failed; fall back to simulated payload below
+<span class="nc" id="L198">                                external = null;</span>
+<span class="nc" id="L199">                            }</span>
+                        }
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                        if (external == null) {</span>
+<span class="nc" id="L202">                            external = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L203">                            external.put(&quot;name&quot;, jsonName);</span>
+<span class="nc" id="L204">                            external.put(&quot;url&quot;, &quot;/api/v1/jobs/&quot; + r2.getJobId() + &quot;/artifacts/&quot; + jsonName);</span>
+<span class="nc" id="L205">                            external.put(&quot;type&quot;, &quot;external-source&quot;);</span>
+<span class="nc" id="L206">                            external.put(</span>
+                                &quot;provider&quot;,
+<span class="nc bnc" id="L208" title="All 4 branches missed.">                                params != null &amp;&amp; params.get(&quot;provider&quot;) != null</span>
+<span class="nc" id="L209">                                    ? String.valueOf(params.get(&quot;provider&quot;))</span>
+<span class="nc" id="L210">                                    : &quot;simulated-vo&quot;</span>
+                            );
+<span class="nc" id="L212">                            external.put(</span>
+                                &quot;tapUrl&quot;,
+<span class="nc bnc" id="L214" title="All 4 branches missed.">                                params != null &amp;&amp; params.get(&quot;tapUrl&quot;) != null</span>
+<span class="nc" id="L215">                                    ? String.valueOf(params.get(&quot;tapUrl&quot;))</span>
+<span class="nc" id="L216">                                    : &quot;https://heasarc.gsfc.nasa.gov/xamin&quot;</span>
+                            );
+<span class="nc" id="L218">                            external.put(&quot;citationUrl&quot;, &quot;https://heasarc.gsfc.nasa.gov&quot;);</span>
+<span class="nc" id="L219">                            external.put(&quot;links&quot;, java.util.List.of(&quot;https://heasarc.gsfc.nasa.gov&quot;));</span>
+<span class="nc" id="L220">                            external.put(&quot;sampleFields&quot;, java.util.List.of(&quot;ra&quot;, &quot;dec&quot;, &quot;obs_id&quot;, &quot;title&quot;));</span>
+<span class="nc" id="L221">                            external.put(</span>
+                                &quot;sampleRows&quot;,
+<span class="nc" id="L223">                                java.util.List.of(</span>
+<span class="nc" id="L224">                                    new HashMap&lt;String, Object&gt;(Map.of(</span>
+<span class="nc" id="L225">                                        &quot;ra&quot;, 123.45,</span>
+<span class="nc" id="L226">                                        &quot;dec&quot;, -22.1,</span>
+                                        &quot;obs_id&quot;, &quot;obs-001&quot;,
+                                        &quot;title&quot;, &quot;Simulated Source A&quot;
+                                    )),
+<span class="nc" id="L230">                                    new HashMap&lt;String, Object&gt;(Map.of(</span>
+<span class="nc" id="L231">                                        &quot;ra&quot;, 124.12,</span>
+<span class="nc" id="L232">                                        &quot;dec&quot;, -21.9,</span>
+                                        &quot;obs_id&quot;, &quot;obs-002&quot;,
+                                        &quot;title&quot;, &quot;Simulated Source B&quot;
+                                    ))
+                                )
+                            );
+                        }
+                        // persist artifact map and write JSON file so API can serve content
+<span class="nc" id="L240">                        String externalArtifactsKey = jobKey + &quot;:artifacts&quot;;</span>
+                        try {
+<span class="nc" id="L242">                            pushRedisLog(redisTemplate, externalArtifactsKey, external);</span>
+<span class="nc" id="L243">                        } catch (Exception ignored) {}</span>
+                        try {
+<span class="nc" id="L245">                            java.nio.file.Path base = java.nio.file.Paths.get(System.getProperty(&quot;java.io.tmpdir&quot;), &quot;governance-artifacts&quot;, r2.getJobId());</span>
+<span class="nc" id="L246">                            java.nio.file.Files.createDirectories(base);</span>
+<span class="nc" id="L247">                            java.nio.file.Path file = base.resolve(jsonName);</span>
+<span class="nc" id="L248">                            com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();</span>
+<span class="nc" id="L249">                            String content = om.writerWithDefaultPrettyPrinter().writeValueAsString(external);</span>
+<span class="nc" id="L250">                            java.nio.file.Files.writeString(file, content);</span>
+<span class="nc" id="L251">                            recordObjectWrite(&quot;artifact-file&quot;, jsonName, &quot;simulator&quot;, content);</span>
+<span class="nc" id="L252">                        } catch (Exception ignored) {}</span>
+                    }
+<span class="pc" id="L254">                } catch (Exception ignored) {}</span>
+            }
+<span class="fc" id="L256">        }, completionDelaySeconds, TimeUnit.SECONDS);</span>
+<span class="fc" id="L257">    }</span>
+
+    private int complexity(JobRecord record) {
+        try {
+<span class="fc" id="L261">            Map&lt;String, Object&gt; params = record.getParameters();</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">            if (params == null) return 1;</span>
+<span class="fc" id="L263">            Object raw = params.get(&quot;complexity&quot;);</span>
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">            if (raw == null) return 1;</span>
+<span class="nc" id="L265">            return Math.max(1, Math.min(5, Integer.parseInt(String.valueOf(raw))));</span>
+<span class="nc" id="L266">        } catch (Exception ignored) {</span>
+<span class="nc" id="L267">            return 1;</span>
+        }
+    }
+
+    private Object readRedisValue(RedisTemplate&lt;String, Object&gt; redisTemplate, String key) {
+<span class="fc" id="L272">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L273">        Object value = redisTemplate.opsForValue().get(key);</span>
+<span class="pc bpc" id="L274" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L275">            governanceRuntimeMetricsService.recordRedisRead(&quot;redis&quot;, keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));</span>
+        }
+<span class="fc" id="L277">        return value;</span>
+    }
+
+    private void writeRedisValue(RedisTemplate&lt;String, Object&gt; redisTemplate, String key, Object value) {
+<span class="fc" id="L281">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L282">        redisTemplate.opsForValue().set(key, value);</span>
+<span class="pc bpc" id="L283" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L284">            governanceRuntimeMetricsService.recordRedisWrite(&quot;redis&quot;, keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));</span>
+        }
+<span class="fc" id="L286">    }</span>
+
+    private void pushRedisLog(RedisTemplate&lt;String, Object&gt; redisTemplate, String key, Object value) {
+<span class="fc" id="L289">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L290">        redisTemplate.opsForList().rightPush(key, value);</span>
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L292">            governanceRuntimeMetricsService.recordRedisWrite(&quot;redis&quot;, keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));</span>
+        }
+<span class="fc" id="L294">    }</span>
+
+    private void recordObjectWrite(String storage, String objectKind, String executor, Object payload) {
+<span class="pc bpc" id="L297" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L298">            governanceRuntimeMetricsService.recordObjectWrite(storage, objectKind, executor, payload);</span>
+        }
+<span class="fc" id="L300">    }</span>
+
+    private void recordTerminalState(String workflow, String executor, JobState state, Duration runtime) {
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService == null) {</span>
+<span class="nc" id="L304">            return;</span>
+        }
+<span class="fc" id="L306">        governanceRuntimeMetricsService.recordJobTerminalState(workflow, executor, state.name(), runtime);</span>
+<span class="fc" id="L307">        governanceRuntimeMetricsService.recordWorkflowRuntime(workflow, executor, state.name(), runtime);</span>
+<span class="fc" id="L308">    }</span>
+
+    private Duration durationBetween(String startedAt, Instant finishedAt) {
+        try {
+<span class="fc" id="L312">            return Duration.between(Instant.parse(startedAt), finishedAt);</span>
+<span class="nc" id="L313">        } catch (Exception ex) {</span>
+<span class="nc" id="L314">            return Duration.ZERO;</span>
+        }
+    }
+
+    private String keyspaceOf(String key) {
+<span class="pc bpc" id="L319" title="2 of 4 branches missed.">        if (key == null || key.isBlank()) {</span>
+<span class="nc" id="L320">            return &quot;unknown&quot;;</span>
+        }
+<span class="fc" id="L322">        int idx = key.indexOf(':');</span>
+<span class="pc bpc" id="L323" title="1 of 2 branches missed.">        return idx &gt; 0 ? key.substring(0, idx) : key;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

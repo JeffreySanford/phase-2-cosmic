@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransientAlertService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.service</a> &gt; <span class="el_source">TransientAlertService.java</span></div><h1>TransientAlertService.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.service;
+
+import com.cosmic.governance.api.model.AlertSloMetrics;
+import com.cosmic.governance.api.model.TransientAlert;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
+
+@Service
+public class TransientAlertService {
+
+    private final Counter alertIngestedCounter;
+    private final Counter replaysCounter;
+    private final MeterRegistry meterRegistry;
+
+    // In-memory DLQ store (finite bound, evict oldest on overflow)
+    private static final int DLQ_MAX = 500;
+<span class="fc" id="L29">    private final CopyOnWriteArrayList&lt;TransientAlert&gt; dlqStore = new CopyOnWriteArrayList&lt;&gt;();</span>
+
+    // Latency samples (ms) — last 1000 ingest events
+<span class="fc" id="L32">    private final CopyOnWriteArrayList&lt;Double&gt; latencySamples = new CopyOnWriteArrayList&lt;&gt;();</span>
+    private static final int LATENCY_SAMPLES_MAX = 1000;
+
+<span class="fc" id="L35">    private final AtomicLong alertTotal = new AtomicLong(0);</span>
+<span class="fc" id="L36">    private final AtomicLong replayTotal = new AtomicLong(0);</span>
+
+<span class="fc" id="L38">    public TransientAlertService(MeterRegistry meterRegistry) {</span>
+<span class="fc" id="L39">        this.meterRegistry = meterRegistry;</span>
+<span class="fc" id="L40">        this.alertIngestedCounter = Counter.builder(&quot;alert_ingested_total&quot;)</span>
+<span class="fc" id="L41">                .description(&quot;Total transient alerts ingested&quot;)</span>
+<span class="fc" id="L42">                .register(meterRegistry);</span>
+<span class="fc" id="L43">        this.replaysCounter = Counter.builder(&quot;alert_replays_total&quot;)</span>
+<span class="fc" id="L44">                .description(&quot;Total alerts replayed from DLQ&quot;)</span>
+<span class="fc" id="L45">                .register(meterRegistry);</span>
+<span class="fc" id="L46">        Gauge.builder(&quot;alert_dlq_depth&quot;, dlqStore, List::size)</span>
+<span class="fc" id="L47">                .description(&quot;Current transient alert DLQ depth&quot;)</span>
+<span class="fc" id="L48">                .register(meterRegistry);</span>
+<span class="fc" id="L49">    }</span>
+
+    public TransientAlert ingest(String eventType, String severity, String sourceSystem,
+                                  String correlationId, String message, List&lt;String&gt; tags,
+                                  double latencyMs) {
+<span class="fc" id="L54">        TransientAlert alert = new TransientAlert(</span>
+<span class="fc" id="L55">                UUID.randomUUID().toString(),</span>
+                eventType,
+                severity,
+                sourceSystem,
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                correlationId != null ? correlationId : UUID.randomUUID().toString(),</span>
+                message,
+<span class="fc" id="L61">                Instant.now().toString(),</span>
+                false,
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">                tags != null ? List.copyOf(tags) : List.of());</span>
+
+<span class="fc" id="L65">        alertIngestedCounter.increment();</span>
+<span class="fc" id="L66">        alertTotal.incrementAndGet();</span>
+<span class="fc" id="L67">        recordLatency(latencyMs);</span>
+<span class="fc" id="L68">        return alert;</span>
+    }
+
+    public void sendToDlq(TransientAlert alert) {
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        if (dlqStore.size() &gt;= DLQ_MAX) {</span>
+<span class="nc" id="L73">            dlqStore.remove(0);</span>
+        }
+<span class="fc" id="L75">        dlqStore.add(alert);</span>
+<span class="fc" id="L76">    }</span>
+
+    public List&lt;TransientAlert&gt; getDlq() {
+<span class="fc" id="L79">        return Collections.unmodifiableList(new ArrayList&lt;&gt;(dlqStore));</span>
+    }
+
+    public Optional&lt;TransientAlert&gt; replayFromDlq(String alertId) {
+<span class="fc" id="L83">        long startedAt = System.nanoTime();</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        for (TransientAlert a : dlqStore) {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            if (a.id().equals(alertId)) {</span>
+<span class="nc" id="L86">                dlqStore.remove(a);</span>
+<span class="nc" id="L87">                TransientAlert replayed = new TransientAlert(</span>
+<span class="nc" id="L88">                        a.id(), a.eventType(), a.severity(), a.sourceSystem(),</span>
+<span class="nc" id="L89">                        a.correlationId(), a.message(), a.issuedAt(), true, a.tags());</span>
+<span class="nc" id="L90">                replaysCounter.increment();</span>
+<span class="nc" id="L91">                replayTotal.incrementAndGet();</span>
+<span class="nc" id="L92">                recordReplayMetric(&quot;single&quot;, &quot;success&quot;, 1, startedAt);</span>
+<span class="nc" id="L93">                return Optional.of(replayed);</span>
+            }
+<span class="nc" id="L95">        }</span>
+<span class="fc" id="L96">        recordReplayMetric(&quot;single&quot;, &quot;miss&quot;, 0, startedAt);</span>
+<span class="fc" id="L97">        return Optional.empty();</span>
+    }
+
+    public int replayAllFromDlq() {
+<span class="fc" id="L101">        long startedAt = System.nanoTime();</span>
+<span class="fc" id="L102">        List&lt;TransientAlert&gt; pending = new ArrayList&lt;&gt;(dlqStore);</span>
+<span class="fc" id="L103">        dlqStore.clear();</span>
+<span class="fc" id="L104">        int count = pending.size();</span>
+<span class="fc" id="L105">        replaysCounter.increment(count);</span>
+<span class="fc" id="L106">        replayTotal.addAndGet(count);</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        recordReplayMetric(&quot;all&quot;, count &gt; 0 ? &quot;success&quot; : &quot;empty&quot;, count, startedAt);</span>
+<span class="fc" id="L108">        return count;</span>
+    }
+
+    public AlertSloMetrics getMetrics() {
+<span class="fc" id="L112">        List&lt;Double&gt; samples = new ArrayList&lt;&gt;(latencySamples);</span>
+<span class="fc" id="L113">        return new AlertSloMetrics(</span>
+<span class="fc" id="L114">                alertTotal.get(),</span>
+<span class="fc" id="L115">                percentile(samples, 50),</span>
+<span class="fc" id="L116">                percentile(samples, 95),</span>
+<span class="fc" id="L117">                percentile(samples, 99),</span>
+<span class="fc" id="L118">                dlqStore.size(),</span>
+<span class="fc" id="L119">                replayTotal.get(),</span>
+<span class="fc" id="L120">                Instant.now().toString());</span>
+    }
+
+    private void recordLatency(double ms) {
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (ms &lt; 0) return;</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        if (latencySamples.size() &gt;= LATENCY_SAMPLES_MAX) {</span>
+<span class="nc" id="L126">            latencySamples.remove(0);</span>
+        }
+<span class="fc" id="L128">        latencySamples.add(ms);</span>
+<span class="fc" id="L129">    }</span>
+
+    private double percentile(List&lt;Double&gt; sorted, int pct) {
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        if (sorted.isEmpty()) return 0.0;</span>
+<span class="fc" id="L133">        List&lt;Double&gt; s = new ArrayList&lt;&gt;(sorted);</span>
+<span class="fc" id="L134">        Collections.sort(s);</span>
+<span class="fc" id="L135">        int index = (int) Math.ceil(pct / 100.0 * s.size()) - 1;</span>
+<span class="fc" id="L136">        return s.get(Math.max(0, Math.min(index, s.size() - 1)));</span>
+    }
+
+    private void recordReplayMetric(String path, String result, int replayCount, long startedAtNanos) {
+<span class="fc" id="L140">        Counter.builder(&quot;alert_replay_attempts_total&quot;)</span>
+<span class="fc" id="L141">                .description(&quot;Total transient alert replay attempts by path and outcome&quot;)</span>
+<span class="fc" id="L142">                .tag(&quot;path&quot;, path)</span>
+<span class="fc" id="L143">                .tag(&quot;result&quot;, result)</span>
+<span class="fc" id="L144">                .register(meterRegistry)</span>
+<span class="fc" id="L145">                .increment();</span>
+<span class="fc" id="L146">        Counter.builder(&quot;alert_replay_items_total&quot;)</span>
+<span class="fc" id="L147">                .description(&quot;Total transient alerts replayed by path and outcome&quot;)</span>
+<span class="fc" id="L148">                .tag(&quot;path&quot;, path)</span>
+<span class="fc" id="L149">                .tag(&quot;result&quot;, result)</span>
+<span class="fc" id="L150">                .register(meterRegistry)</span>
+<span class="fc" id="L151">                .increment(replayCount);</span>
+<span class="fc" id="L152">        Timer.builder(&quot;alert_replay_duration_seconds&quot;)</span>
+<span class="fc" id="L153">                .description(&quot;Transient alert replay duration by path and outcome&quot;)</span>
+<span class="fc" id="L154">                .tag(&quot;path&quot;, path)</span>
+<span class="fc" id="L155">                .tag(&quot;result&quot;, result)</span>
+<span class="fc" id="L156">                .register(meterRegistry)</span>
+<span class="fc" id="L157">                .record(System.nanoTime() - startedAtNanos, java.util.concurrent.TimeUnit.NANOSECONDS);</span>
+<span class="fc" id="L158">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.cosmic.governance.integration.CorrelationPropagationTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.010 s -- in com.cosmic.governance.integration.CorrelationPropagationTest

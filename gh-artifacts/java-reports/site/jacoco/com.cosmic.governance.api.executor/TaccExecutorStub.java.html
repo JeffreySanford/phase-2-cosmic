@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TaccExecutorStub.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.executor</a> &gt; <span class="el_source">TaccExecutorStub.java</span></div><h1>TaccExecutorStub.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.executor;
+
+import com.cosmic.governance.api.model.JobRecord;
+import com.cosmic.governance.api.model.JobState;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import com.cosmic.governance.api.service.GovernanceRuntimeMetricsService;
+import com.cosmic.governance.api.util.RedisMarshaller;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@Service
+public class TaccExecutorStub implements JobExecutor {
+<span class="fc" id="L21">    private final ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(1);</span>
+    private final RedisMarshaller marshaller;
+    private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
+
+    public TaccExecutorStub(@Autowired RedisMarshaller marshaller,
+<span class="fc" id="L26">                            @Autowired GovernanceRuntimeMetricsService governanceRuntimeMetricsService) {</span>
+<span class="fc" id="L27">        this.marshaller = marshaller;</span>
+<span class="fc" id="L28">        this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;</span>
+<span class="fc" id="L29">    }</span>
+
+    @Override
+<span class="fc" id="L32">    public String name() { return &quot;tacc&quot;; }</span>
+
+    @Override
+    public void execute(JobRecord record, RedisTemplate&lt;String, Object&gt; redisTemplate) {
+<span class="fc" id="L36">        String jobKey = &quot;job:&quot; + record.getJobId();</span>
+<span class="fc" id="L37">        int complexity = complexity(record);</span>
+<span class="fc" id="L38">        int submitDelaySeconds = Math.max(1, complexity);</span>
+<span class="fc" id="L39">        int completionDelaySeconds = Math.max(3, 2 + (complexity * 2));</span>
+        // simulate network submission delay
+<span class="fc" id="L41">        EXEC.schedule(() -&gt; {</span>
+<span class="fc" id="L42">            Instant submitStartedAt = Instant.now();</span>
+            try {
+<span class="fc" id="L44">                Object o = readRedisValue(redisTemplate, jobKey);</span>
+<span class="fc" id="L45">                JobRecord r = marshaller.toJobRecord(o);</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">                if (r == null) return;</span>
+<span class="fc" id="L47">                r.setState(JobState.RUNNING);</span>
+<span class="fc" id="L48">                r.setUpdatedAt(Instant.now().toString());</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">                var newParams = r.getParameters() == null ? new HashMap&lt;String, Object&gt;() : new HashMap&lt;String, Object&gt;(r.getParameters());</span>
+                // simulate external submission id and endpoint
+<span class="fc" id="L51">                newParams.put(&quot;externalJobId&quot;, &quot;tacc-&quot; + UUID.randomUUID());</span>
+<span class="fc" id="L52">                newParams.put(&quot;executor&quot;, name());</span>
+<span class="fc" id="L53">                newParams.put(&quot;submittedTo&quot;, &quot;https://tacc.example/sim&quot;);</span>
+<span class="fc" id="L54">                newParams.put(&quot;complexity&quot;, complexity);</span>
+<span class="fc" id="L55">                r.setParameters(newParams);</span>
+<span class="fc" id="L56">                writeRedisValue(redisTemplate, jobKey, r);</span>
+<span class="fc" id="L57">                recordExternalAdapterRequest(</span>
+                        &quot;submit&quot;,
+                        &quot;https://tacc.example/sim&quot;,
+                        newParams,
+                        true,
+                        null,
+<span class="fc" id="L63">                        Duration.between(submitStartedAt, Instant.now())</span>
+                );
+<span class="fc" id="L65">                pushRedisList(redisTemplate, jobKey + &quot;:logs&quot;, &quot;TACC: submitted job to remote API (complexity=&quot; + complexity + &quot;)&quot;);</span>
+
+                // simulate remote work and artifact creation
+<span class="fc" id="L68">                EXEC.schedule(() -&gt; {</span>
+<span class="fc" id="L69">                    Object o2 = readRedisValue(redisTemplate, jobKey);</span>
+<span class="fc" id="L70">                    JobRecord r2 = marshaller.toJobRecord(o2);</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                    if (r2 == null) return;</span>
+<span class="fc" id="L72">                    Instant completedAt = Instant.now();</span>
+<span class="fc" id="L73">                    Duration runtime = durationBetween(r2.getUpdatedAt(), completedAt);</span>
+<span class="fc" id="L74">                    r2.setState(JobState.COMPLETED);</span>
+<span class="fc" id="L75">                    r2.setUpdatedAt(completedAt.toString());</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">                    var p2 = r2.getParameters() == null ? new HashMap&lt;String, Object&gt;() : new HashMap&lt;String, Object&gt;(r2.getParameters());</span>
+<span class="fc" id="L77">                    p2.put(&quot;completedAt&quot;, completedAt.toString());</span>
+<span class="fc" id="L78">                    r2.setParameters(p2);</span>
+<span class="fc" id="L79">                    writeRedisValue(redisTemplate, jobKey, r2);</span>
+<span class="fc" id="L80">                    recordTerminalState(r2.getWorkflow(), &quot;tacc&quot;, JobState.COMPLETED, runtime);</span>
+<span class="fc" id="L81">                    pushRedisList(redisTemplate, jobKey + &quot;:logs&quot;, &quot;TACC: remote job completed (complexity=&quot; + complexity + &quot;)&quot;);</span>
+<span class="fc" id="L82">                    String artKey = jobKey + &quot;:artifacts&quot;;</span>
+<span class="fc" id="L83">                    String name = &quot;tacc-output.txt&quot;;</span>
+<span class="fc" id="L84">                    var artifact = Map.of(&quot;name&quot;, name, &quot;url&quot;, &quot;/api/v1/jobs/&quot; + r2.getJobId() + &quot;/artifacts/&quot; + name);</span>
+<span class="fc" id="L85">                    writeRedisValue(redisTemplate, artKey, artifact);</span>
+                    try {
+<span class="fc" id="L87">                        java.nio.file.Path base = java.nio.file.Paths.get(System.getProperty(&quot;java.io.tmpdir&quot;), &quot;governance-artifacts&quot;, r2.getJobId());</span>
+<span class="fc" id="L88">                        java.nio.file.Files.createDirectories(base);</span>
+<span class="fc" id="L89">                        java.nio.file.Path file = base.resolve(name);</span>
+<span class="fc" id="L90">                        String content = &quot;TACC stub artifact for job &quot; + r2.getJobId() + &quot;\nOK\n&quot;;</span>
+<span class="fc" id="L91">                        java.nio.file.Files.writeString(file, content);</span>
+<span class="fc" id="L92">                        recordObjectWrite(&quot;artifact-file&quot;, name, &quot;tacc&quot;, content);</span>
+<span class="pc" id="L93">                    } catch (Exception ignored) {}</span>
+<span class="fc" id="L94">                }, completionDelaySeconds, TimeUnit.SECONDS);</span>
+<span class="fc" id="L95">            } catch (Exception ex) {</span>
+<span class="fc" id="L96">                recordExternalAdapterRequest(</span>
+                        &quot;submit&quot;,
+                        &quot;https://tacc.example/sim&quot;,
+<span class="fc" id="L99">                        record.getParameters(),</span>
+                        false,
+<span class="fc" id="L101">                        ex.getClass().getSimpleName(),</span>
+<span class="fc" id="L102">                        Duration.between(submitStartedAt, Instant.now())</span>
+                );
+<span class="fc" id="L104">                throw ex;</span>
+<span class="fc" id="L105">            }</span>
+<span class="fc" id="L106">        }, submitDelaySeconds, TimeUnit.SECONDS);</span>
+<span class="fc" id="L107">    }</span>
+
+    private int complexity(JobRecord record) {
+        try {
+<span class="fc" id="L111">            Map&lt;String, Object&gt; params = record.getParameters();</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">            if (params == null) return 2;</span>
+<span class="fc" id="L113">            Object raw = params.get(&quot;complexity&quot;);</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">            if (raw == null) return 2;</span>
+<span class="nc" id="L115">            return Math.max(1, Math.min(5, Integer.parseInt(String.valueOf(raw))));</span>
+<span class="nc" id="L116">        } catch (Exception ignored) {</span>
+<span class="nc" id="L117">            return 2;</span>
+        }
+    }
+
+    private Object readRedisValue(RedisTemplate&lt;String, Object&gt; redisTemplate, String key) {
+<span class="fc" id="L122">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L123">        Object value = redisTemplate.opsForValue().get(key);</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L125">            governanceRuntimeMetricsService.recordRedisRead(&quot;redis&quot;, keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));</span>
+        }
+<span class="fc" id="L127">        return value;</span>
+    }
+
+    private void writeRedisValue(RedisTemplate&lt;String, Object&gt; redisTemplate, String key, Object value) {
+<span class="fc" id="L131">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L132">        redisTemplate.opsForValue().set(key, value);</span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L134">            governanceRuntimeMetricsService.recordRedisWrite(&quot;redis&quot;, keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));</span>
+        }
+<span class="fc" id="L136">    }</span>
+
+    private void pushRedisList(RedisTemplate&lt;String, Object&gt; redisTemplate, String key, Object value) {
+<span class="fc" id="L139">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L140">        redisTemplate.opsForList().rightPush(key, value);</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L142">            governanceRuntimeMetricsService.recordRedisWrite(&quot;redis&quot;, keyspaceOf(key), value, true, Duration.between(startedAt, Instant.now()));</span>
+        }
+<span class="fc" id="L144">    }</span>
+
+    private void recordObjectWrite(String storage, String objectKind, String executor, Object payload) {
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L148">            governanceRuntimeMetricsService.recordObjectWrite(storage, objectKind, executor, payload);</span>
+        }
+<span class="fc" id="L150">    }</span>
+
+    private void recordExternalAdapterRequest(
+            String operation,
+            String target,
+            Object payload,
+            boolean success,
+            String errorClass,
+            Duration duration
+    ) {
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L161">            governanceRuntimeMetricsService.recordExternalAdapterRequest(</span>
+                    &quot;tacc&quot;,
+                    operation,
+                    target,
+                    payload,
+                    success,
+                    errorClass,
+                    duration
+            );
+        }
+<span class="fc" id="L171">    }</span>
+
+    private void recordTerminalState(String workflow, String executor, JobState state, Duration runtime) {
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService == null) {</span>
+<span class="nc" id="L175">            return;</span>
+        }
+<span class="fc" id="L177">        governanceRuntimeMetricsService.recordJobTerminalState(workflow, executor, state.name(), runtime);</span>
+<span class="fc" id="L178">        governanceRuntimeMetricsService.recordWorkflowRuntime(workflow, executor, state.name(), runtime);</span>
+<span class="fc" id="L179">    }</span>
+
+    private Duration durationBetween(String startedAt, Instant finishedAt) {
+        try {
+<span class="fc" id="L183">            return Duration.between(Instant.parse(startedAt), finishedAt);</span>
+<span class="nc" id="L184">        } catch (Exception ex) {</span>
+<span class="nc" id="L185">            return Duration.ZERO;</span>
+        }
+    }
+
+    private String keyspaceOf(String key) {
+<span class="pc bpc" id="L190" title="2 of 4 branches missed.">        if (key == null || key.isBlank()) {</span>
+<span class="nc" id="L191">            return &quot;unknown&quot;;</span>
+        }
+<span class="fc" id="L193">        int idx = key.indexOf(':');</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">        return idx &gt; 0 ? key.substring(0, idx) : key;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

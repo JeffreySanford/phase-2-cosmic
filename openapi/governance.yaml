@@ -82,12 +82,12 @@ paths:
 components:
   schemas:
     SchedulingBlock:
-      $ref: '../apps/java-governance/src/main/resources/schemas/trident.scheduling-block.json'
+      $ref: "../apps/java-governance/src/main/resources/schemas/trident.scheduling-block.json"
     ExecutionBlock:
-      $ref: '../apps/java-governance/src/main/resources/schemas/trident.execution-block.json'
+      $ref: "../apps/java-governance/src/main/resources/schemas/trident.execution-block.json"
     SubarrayConfiguration:
-      $ref: '../apps/java-governance/src/main/resources/schemas/trident.subarray-configuration.json'
+      $ref: "../apps/java-governance/src/main/resources/schemas/trident.subarray-configuration.json"
     SpectralConfiguration:
-      $ref: '../apps/java-governance/src/main/resources/schemas/trident.spectral-configuration.json'
+      $ref: "../apps/java-governance/src/main/resources/schemas/trident.spectral-configuration.json"
     FspAllocationPlan:
-      $ref: '../apps/java-governance/src/main/resources/schemas/trident.fsp-allocation-plan.json'
+      $ref: "../apps/java-governance/src/main/resources/schemas/trident.fsp-allocation-plan.json"

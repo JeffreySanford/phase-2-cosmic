@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlertController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.controller</a> &gt; <span class="el_source">AlertController.java</span></div><h1>AlertController.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.controller;
+
+import com.cosmic.governance.api.dto.AlertIngestRequest;
+import com.cosmic.governance.api.model.AlertSloMetrics;
+import com.cosmic.governance.api.model.TransientAlert;
+import com.cosmic.governance.api.service.TransientAlertService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/v1/alerts&quot;)
+public class AlertController {
+
+    private final TransientAlertService alertService;
+
+<span class="fc" id="L23">    public AlertController(TransientAlertService alertService) {</span>
+<span class="fc" id="L24">        this.alertService = alertService;</span>
+<span class="fc" id="L25">    }</span>
+
+    /**
+     * Ingest a transient alert. Returns 201 with the stored alert.
+     */
+    @PostMapping(&quot;/ingest&quot;)
+    public ResponseEntity&lt;TransientAlert&gt; ingest(@RequestBody AlertIngestRequest request) {
+<span class="fc" id="L32">        TransientAlert alert = alertService.ingest(</span>
+<span class="fc" id="L33">                request.eventType(),</span>
+<span class="fc" id="L34">                request.severity(),</span>
+<span class="fc" id="L35">                request.sourceSystem(),</span>
+<span class="fc" id="L36">                request.correlationId(),</span>
+<span class="fc" id="L37">                request.message(),</span>
+<span class="fc" id="L38">                request.tags(),</span>
+<span class="fc" id="L39">                request.latencyMs());</span>
+<span class="fc" id="L40">        return ResponseEntity.status(201).body(alert);</span>
+    }
+
+    /**
+     * Returns current alert SLO metrics snapshot.
+     */
+    @GetMapping(&quot;/slo&quot;)
+    public ResponseEntity&lt;AlertSloMetrics&gt; getSlo() {
+<span class="fc" id="L48">        return ResponseEntity.ok(alertService.getMetrics());</span>
+    }
+
+    /**
+     * Returns all alerts currently in the DLQ.
+     */
+    @GetMapping(&quot;/dlq&quot;)
+    public ResponseEntity&lt;List&lt;TransientAlert&gt;&gt; getDlq() {
+<span class="fc" id="L56">        return ResponseEntity.ok(alertService.getDlq());</span>
+    }
+
+    /**
+     * Replay a single alert from the DLQ by its ID. Returns 404 if not found.
+     */
+    @PostMapping(&quot;/dlq/replay/{alertId}&quot;)
+    public ResponseEntity&lt;TransientAlert&gt; replayFromDlq(@PathVariable String alertId) {
+<span class="fc" id="L64">        return alertService.replayFromDlq(alertId)</span>
+<span class="pc" id="L65">                .map(a -&gt; ResponseEntity.ok(a))</span>
+<span class="fc" id="L66">                .orElseGet(() -&gt; ResponseEntity.notFound().build());</span>
+    }
+
+    /**
+     * Replay all alerts currently in the DLQ. Returns the count replayed.
+     */
+    @PostMapping(&quot;/dlq/replay-all&quot;)
+    public ResponseEntity&lt;Integer&gt; replayAll() {
+<span class="fc" id="L74">        return ResponseEntity.ok(alertService.replayAllFromDlq());</span>
+    }
+
+    /**
+     * Push an alert to the DLQ (for testing/simulation).
+     */
+    @PostMapping(&quot;/dlq&quot;)
+    public ResponseEntity&lt;Void&gt; sendToDlq(@RequestBody AlertIngestRequest request) {
+<span class="fc" id="L82">        TransientAlert alert = alertService.ingest(</span>
+<span class="fc" id="L83">                request.eventType(),</span>
+<span class="fc" id="L84">                request.severity(),</span>
+<span class="fc" id="L85">                request.sourceSystem(),</span>
+<span class="fc" id="L86">                request.correlationId(),</span>
+<span class="fc" id="L87">                request.message(),</span>
+<span class="fc" id="L88">                request.tags(),</span>
+<span class="fc" id="L89">                request.latencyMs());</span>
+<span class="fc" id="L90">        alertService.sendToDlq(alert);</span>
+<span class="fc" id="L91">        return ResponseEntity.status(201).build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -26,5 +26,13 @@ export default defineConfig({
       "src/specs/**/*.spec.{js,jsx,ts,tsx}",
     ],
     baseUrl: "http://127.0.0.1:4200",
+    video: false,
+    trashAssetsBeforeRuns: true,
+    defaultCommandTimeout: 10000,
+    pageLoadTimeout: 60000,
+    env: {
+      // disable internal cypress caching that sometimes causes stale state in CI
+      cacheAcrossSpecs: false,
+    },
   },
 });

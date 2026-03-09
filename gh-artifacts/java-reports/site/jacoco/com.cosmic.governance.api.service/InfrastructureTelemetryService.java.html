@@ -1,0 +1,1290 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InfrastructureTelemetryService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.service</a> &gt; <span class="el_source">InfrastructureTelemetryService.java</span></div><h1>InfrastructureTelemetryService.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.pulsar.client.admin.PulsarAdmin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class InfrastructureTelemetryService {
+<span class="fc" id="L23">    private static final Logger log = LoggerFactory.getLogger(InfrastructureTelemetryService.class);</span>
+<span class="fc" id="L24">    private final RestTemplate restTemplate = new RestTemplate();</span>
+<span class="fc" id="L25">    private final ObjectMapper objectMapper = new ObjectMapper();</span>
+    private final JobService jobService;
+
+<span class="fc" id="L28">    public InfrastructureTelemetryService(JobService jobService) {</span>
+<span class="fc" id="L29">        this.jobService = jobService;</span>
+<span class="fc" id="L30">    }</span>
+
+    @Value(&quot;${prometheus.baseUrl:}&quot;)
+    private String prometheusBaseUrl;
+
+    @Value(&quot;${pulsar.admin.url:http://localhost:8085}&quot;)
+    private String pulsarAdminUrl;
+
+    public Map&lt;String, Object&gt; snapshot() {
+<span class="fc" id="L39">        ServiceSnapshot redis = redisSnapshot();</span>
+<span class="fc" id="L40">        ServiceSnapshot rabbitmq = rabbitmqSnapshot();</span>
+<span class="fc" id="L41">        ServiceSnapshot minio = minioSnapshot();</span>
+<span class="fc" id="L42">        ServiceSnapshot nginx = nginxSnapshot();</span>
+<span class="fc" id="L43">        ServiceSnapshot frontendSsr = frontendSsrSnapshot();</span>
+<span class="fc" id="L44">        ServiceSnapshot dataGenerator = dataGeneratorSnapshot();</span>
+<span class="fc" id="L45">        ServiceSnapshot kafka = kafkaSnapshot();</span>
+<span class="fc" id="L46">        ServiceSnapshot javaIngest = javaIngestSnapshot();</span>
+<span class="fc" id="L47">        ServiceSnapshot pulsar = pulsarSnapshot();</span>
+<span class="fc" id="L48">        ServiceSnapshot grafana = grafanaSnapshot();</span>
+<span class="fc" id="L49">        ServiceSnapshot loki = lokiSnapshot();</span>
+<span class="fc" id="L50">        ServiceSnapshot alertmanager = alertmanagerSnapshot();</span>
+<span class="fc" id="L51">        ServiceSnapshot governanceRuntime = governanceRuntimeSnapshot();</span>
+
+<span class="fc" id="L53">        Map&lt;String, Object&gt; out = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L54">        out.put(&quot;measuredAt&quot;, Instant.now().toString());</span>
+<span class="fc" id="L55">        out.put(&quot;source&quot;, overallSource(</span>
+                redis,
+                rabbitmq,
+                minio,
+                nginx,
+                frontendSsr,
+                dataGenerator,
+                kafka,
+                javaIngest,
+                pulsar,
+                grafana,
+                loki,
+                alertmanager,
+                governanceRuntime
+        ));
+<span class="fc" id="L70">        Map&lt;String, Object&gt; services = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L71">        services.put(&quot;redis&quot;, redis.payload());</span>
+<span class="fc" id="L72">        services.put(&quot;rabbitmq&quot;, rabbitmq.payload());</span>
+<span class="fc" id="L73">        services.put(&quot;minio&quot;, minio.payload());</span>
+<span class="fc" id="L74">        services.put(&quot;nginx&quot;, nginx.payload());</span>
+<span class="fc" id="L75">        services.put(&quot;frontendSsr&quot;, frontendSsr.payload());</span>
+<span class="fc" id="L76">        services.put(&quot;dataGenerator&quot;, dataGenerator.payload());</span>
+<span class="fc" id="L77">        services.put(&quot;kafka&quot;, kafka.payload());</span>
+<span class="fc" id="L78">        services.put(&quot;javaIngest&quot;, javaIngest.payload());</span>
+<span class="fc" id="L79">        services.put(&quot;pulsar&quot;, pulsar.payload());</span>
+<span class="fc" id="L80">        services.put(&quot;grafana&quot;, grafana.payload());</span>
+<span class="fc" id="L81">        services.put(&quot;loki&quot;, loki.payload());</span>
+<span class="fc" id="L82">        services.put(&quot;alertmanager&quot;, alertmanager.payload());</span>
+<span class="fc" id="L83">        services.put(&quot;governanceRuntime&quot;, governanceRuntime.payload());</span>
+<span class="fc" id="L84">        out.put(&quot;services&quot;, services);</span>
+<span class="fc" id="L85">        return out;</span>
+    }
+
+    private ServiceSnapshot redisSnapshot() {
+<span class="fc" id="L89">        MetricValue opsPerSec = queryScalar(&quot;sum(redis_commands_processed_total offset 1m)&quot;);</span>
+<span class="fc" id="L90">        MetricValue opsRate = queryScalar(&quot;sum(rate(redis_commands_processed_total[1m]))&quot;);</span>
+<span class="fc" id="L91">        MetricValue ingressBps = queryScalar(&quot;sum(rate(redis_net_input_bytes_total[1m]))&quot;);</span>
+<span class="fc" id="L92">        MetricValue egressBps = queryScalar(&quot;sum(rate(redis_net_output_bytes_total[1m]))&quot;);</span>
+<span class="fc" id="L93">        MetricValue connectedClients = queryScalar(&quot;sum(redis_connected_clients)&quot;);</span>
+<span class="fc" id="L94">        MetricValue memoryUsedBytes = queryScalar(&quot;sum(redis_memory_used_bytes)&quot;);</span>
+
+<span class="fc" id="L96">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L97">        payload.put(&quot;source&quot;, sourceOf(opsRate, ingressBps, egressBps, connectedClients, memoryUsedBytes));</span>
+<span class="fc" id="L98">        payload.put(&quot;opsPerSec&quot;, round2(opsRate.value()));</span>
+<span class="fc" id="L99">        payload.put(&quot;ingressBytesPerSec&quot;, round2(ingressBps.value()));</span>
+<span class="fc" id="L100">        payload.put(&quot;egressBytesPerSec&quot;, round2(egressBps.value()));</span>
+<span class="fc" id="L101">        payload.put(&quot;connectedClients&quot;, round2(connectedClients.value()));</span>
+<span class="fc" id="L102">        payload.put(&quot;memoryUsedBytes&quot;, round2(memoryUsedBytes.value()));</span>
+<span class="fc" id="L103">        payload.put(&quot;counterSample&quot;, round2(opsPerSec.value()));</span>
+<span class="fc" id="L104">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private ServiceSnapshot rabbitmqSnapshot() {
+<span class="fc" id="L108">        MetricValue queueDepth = queryScalar(&quot;sum(rabbitmq_queue_messages)&quot;);</span>
+<span class="fc" id="L109">        MetricValue readyDepth = queryScalar(&quot;sum(rabbitmq_queue_messages_ready)&quot;);</span>
+<span class="fc" id="L110">        MetricValue unackedDepth = queryScalar(&quot;sum(rabbitmq_queue_messages_unacknowledged)&quot;);</span>
+<span class="fc" id="L111">        MetricValue publishRate = queryScalar(</span>
+                &quot;sum(rate(rabbitmq_published_total[1m]))&quot;
+                        + &quot; or sum(rate(rabbitmq_queue_messages_published_total[1m]))&quot;
+        );
+<span class="fc" id="L115">        MetricValue deliverRate = queryScalar(</span>
+                &quot;sum(rate(rabbitmq_consumed_total[1m]))&quot;
+                        + &quot; or sum(rate(rabbitmq_queue_messages_delivered_total[1m]))&quot;
+        );
+<span class="fc" id="L119">        MetricValue consumers = queryScalar(&quot;sum(rabbitmq_consumers)&quot;);</span>
+
+<span class="fc" id="L121">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L122">        payload.put(&quot;source&quot;, sourceOf(queueDepth, publishRate, deliverRate, consumers));</span>
+<span class="fc" id="L123">        payload.put(&quot;queueDepth&quot;, round2(queueDepth.value()));</span>
+<span class="fc" id="L124">        payload.put(&quot;readyMessages&quot;, round2(readyDepth.value()));</span>
+<span class="fc" id="L125">        payload.put(&quot;unackedMessages&quot;, round2(unackedDepth.value()));</span>
+<span class="fc" id="L126">        payload.put(&quot;publishRatePerSec&quot;, round2(publishRate.value()));</span>
+<span class="fc" id="L127">        payload.put(&quot;deliverRatePerSec&quot;, round2(deliverRate.value()));</span>
+<span class="fc" id="L128">        payload.put(&quot;consumers&quot;, round2(consumers.value()));</span>
+<span class="fc" id="L129">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private ServiceSnapshot minioSnapshot() {
+<span class="fc" id="L133">        MetricValue ingressBps = queryScalar(&quot;sum(rate(minio_s3_traffic_received_bytes[1m]))&quot;);</span>
+<span class="fc" id="L134">        MetricValue egressBps = queryScalar(&quot;sum(rate(minio_s3_traffic_sent_bytes[1m]))&quot;);</span>
+<span class="fc" id="L135">        MetricValue requestRate = queryScalar(&quot;sum(rate(minio_s3_requests_incoming_total[1m]))&quot;);</span>
+<span class="fc" id="L136">        MetricValue errorsRate = queryScalar(</span>
+                &quot;sum(rate(minio_s3_requests_rejected_auth_total[1m]))&quot;
+                        + &quot; or sum(rate(minio_s3_requests_rejected_header_total[1m]))&quot;
+                        + &quot; or sum(rate(minio_s3_requests_rejected_invalid_total[1m]))&quot;
+                        + &quot; or sum(rate(minio_s3_requests_rejected_timestamp_total[1m]))&quot;
+        );
+
+<span class="fc" id="L143">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L144">        payload.put(&quot;source&quot;, sourceOf(ingressBps, egressBps, requestRate, errorsRate));</span>
+<span class="fc" id="L145">        payload.put(&quot;ingressBytesPerSec&quot;, round2(ingressBps.value()));</span>
+<span class="fc" id="L146">        payload.put(&quot;egressBytesPerSec&quot;, round2(egressBps.value()));</span>
+<span class="fc" id="L147">        payload.put(&quot;requestsPerSec&quot;, round2(requestRate.value()));</span>
+<span class="fc" id="L148">        payload.put(&quot;errorRatePerSec&quot;, round2(errorsRate.value()));</span>
+<span class="fc" id="L149">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private ServiceSnapshot nginxSnapshot() {
+<span class="fc" id="L153">        MetricValue requestRate = queryScalar(&quot;sum(rate(nginx_static_http_response_count_total[1m]))&quot;);</span>
+<span class="fc" id="L154">        MetricValue ingressBps = queryScalar(&quot;sum(rate(nginx_static_http_request_size_bytes[1m]))&quot;);</span>
+<span class="fc" id="L155">        MetricValue egressBps = queryScalar(&quot;sum(rate(nginx_static_http_response_size_bytes[1m]))&quot;);</span>
+<span class="fc" id="L156">        MetricValue errorRate = queryScalar(&quot;sum(rate(nginx_static_http_response_count_total{status=~\&quot;4..|5..\&quot;}[1m]))&quot;);</span>
+<span class="fc" id="L157">        MetricValue avgLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(nginx_static_http_response_time_seconds_sum[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(nginx_static_http_response_time_seconds_count[5m])), 0.0001)) * 1000&quot;
+        );
+
+<span class="fc" id="L162">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L163">        payload.put(&quot;source&quot;, sourceOf(requestRate, ingressBps, egressBps, errorRate, avgLatencyMs));</span>
+<span class="fc" id="L164">        payload.put(&quot;requestsPerSec&quot;, round2(requestRate.value()));</span>
+<span class="fc" id="L165">        payload.put(&quot;ingressBytesPerSec&quot;, round2(ingressBps.value()));</span>
+<span class="fc" id="L166">        payload.put(&quot;egressBytesPerSec&quot;, round2(egressBps.value()));</span>
+<span class="fc" id="L167">        payload.put(&quot;errorRatePerSec&quot;, round2(errorRate.value()));</span>
+<span class="fc" id="L168">        payload.put(&quot;avgLatencyMs&quot;, round2(avgLatencyMs.value()));</span>
+<span class="fc" id="L169">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private ServiceSnapshot frontendSsrSnapshot() {
+<span class="fc" id="L173">        MetricValue connected = queryScalar(&quot;sum(frontend_ssr_redis_client_connected)&quot;);</span>
+<span class="fc" id="L174">        MetricValue hitRate = queryScalar(&quot;sum(rate(frontend_ssr_redis_cache_requests_total{result=\&quot;hit\&quot;}[1m]))&quot;);</span>
+<span class="fc" id="L175">        MetricValue missRate = queryScalar(&quot;sum(rate(frontend_ssr_redis_cache_requests_total{result=\&quot;miss\&quot;}[1m]))&quot;);</span>
+<span class="fc" id="L176">        MetricValue bypassRate = queryScalar(&quot;sum(rate(frontend_ssr_redis_cache_requests_total{result=\&quot;bypass\&quot;}[1m]))&quot;);</span>
+<span class="fc" id="L177">        MetricValue servedBps = queryScalar(&quot;sum(rate(frontend_ssr_redis_cache_bytes_served_total[1m]))&quot;);</span>
+<span class="fc" id="L178">        MetricValue writtenBps = queryScalar(&quot;sum(rate(frontend_ssr_redis_cache_bytes_written_total[1m]))&quot;);</span>
+<span class="fc" id="L179">        MetricValue errorRate = queryScalar(&quot;sum(rate(frontend_ssr_redis_cache_errors_total[1m]))&quot;);</span>
+<span class="fc" id="L180">        MetricValue avgLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(frontend_ssr_redis_cache_request_duration_seconds_sum[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(frontend_ssr_redis_cache_request_duration_seconds_count[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L184">        MetricValue governanceProxyRate = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_governance_proxy_requests_total{route=~\&quot;governance_api|telemetry_infrastructure|topology_metrics\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L187">        MetricValue governanceProxyBps = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_governance_proxy_response_bytes_total{route=~\&quot;governance_api|telemetry_infrastructure|topology_metrics\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L190">        MetricValue governanceProxyErrorRate = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_governance_proxy_requests_total{route=~\&quot;governance_api|telemetry_infrastructure|topology_metrics\&quot;,status_class=~\&quot;4xx|5xx\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L193">        MetricValue governanceProxyLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(frontend_ssr_governance_proxy_request_duration_seconds_sum{route=~\&quot;governance_api|telemetry_infrastructure|topology_metrics\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(frontend_ssr_governance_proxy_request_duration_seconds_count{route=~\&quot;governance_api|telemetry_infrastructure|topology_metrics\&quot;}[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L197">        MetricValue prometheusProxyRate = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_prometheus_proxy_requests_total[1m]))&quot;
+        );
+<span class="fc" id="L200">        MetricValue prometheusProxyBps = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_prometheus_proxy_response_bytes_total[1m]))&quot;
+        );
+<span class="fc" id="L203">        MetricValue prometheusProxyErrorRate = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_prometheus_proxy_requests_total{status_class=~\&quot;4xx|5xx\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L206">        MetricValue prometheusProxyLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(frontend_ssr_prometheus_proxy_request_duration_seconds_sum[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(frontend_ssr_prometheus_proxy_request_duration_seconds_count[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L210">        MetricValue frontendRequestRate = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_frontend_requests_total[1m]))&quot;
+        );
+<span class="fc" id="L213">        MetricValue frontendResponseBps = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_frontend_response_bytes_total[1m]))&quot;
+        );
+<span class="fc" id="L216">        MetricValue frontendErrorRate = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_frontend_requests_total{status_class=~\&quot;4xx|5xx\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L219">        MetricValue frontendLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(frontend_ssr_frontend_request_duration_seconds_sum[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(frontend_ssr_frontend_request_duration_seconds_count[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L223">        MetricValue frontendApiRequestRate = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_frontend_api_requests_total[1m]))&quot;
+        );
+<span class="fc" id="L226">        MetricValue frontendApiResponseBps = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_frontend_api_response_bytes_total[1m]))&quot;
+        );
+<span class="fc" id="L229">        MetricValue frontendApiErrorRate = queryScalar(</span>
+                &quot;sum(rate(frontend_ssr_frontend_api_requests_total{status_class=~\&quot;4xx|5xx\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L232">        MetricValue frontendApiLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(frontend_ssr_frontend_api_request_duration_seconds_sum[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(frontend_ssr_frontend_api_request_duration_seconds_count[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L236">        Map&lt;String, Double&gt; routeRequestRates = frontendRouteRequestRates();</span>
+<span class="fc" id="L237">        Map&lt;String, Double&gt; apiRouteRequestRates = frontendApiRouteRequestRates();</span>
+
+<span class="fc" id="L239">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L240">        payload.put(&quot;source&quot;, sourceOf(</span>
+                connected,
+                hitRate,
+                missRate,
+                bypassRate,
+                servedBps,
+                writtenBps,
+                errorRate,
+                avgLatencyMs,
+                governanceProxyRate,
+                governanceProxyBps,
+                governanceProxyErrorRate,
+                governanceProxyLatencyMs,
+                prometheusProxyRate,
+                prometheusProxyBps,
+                prometheusProxyErrorRate,
+                prometheusProxyLatencyMs,
+                frontendRequestRate,
+                frontendResponseBps,
+                frontendErrorRate,
+                frontendLatencyMs,
+                frontendApiRequestRate,
+                frontendApiResponseBps,
+                frontendApiErrorRate,
+                frontendApiLatencyMs
+        ));
+<span class="fc" id="L266">        payload.put(&quot;connectedClients&quot;, round2(connected.value()));</span>
+<span class="fc" id="L267">        payload.put(&quot;hitRatePerSec&quot;, round2(hitRate.value()));</span>
+<span class="fc" id="L268">        payload.put(&quot;missRatePerSec&quot;, round2(missRate.value()));</span>
+<span class="fc" id="L269">        payload.put(&quot;bypassRatePerSec&quot;, round2(bypassRate.value()));</span>
+<span class="fc" id="L270">        payload.put(&quot;ingressBytesPerSec&quot;, round2(writtenBps.value()));</span>
+<span class="fc" id="L271">        payload.put(&quot;egressBytesPerSec&quot;, round2(servedBps.value()));</span>
+<span class="fc" id="L272">        payload.put(&quot;errorRatePerSec&quot;, round2(errorRate.value()));</span>
+<span class="fc" id="L273">        payload.put(&quot;avgLatencyMs&quot;, round2(avgLatencyMs.value()));</span>
+<span class="fc" id="L274">        payload.put(&quot;governanceProxyRatePerSec&quot;, round2(governanceProxyRate.value()));</span>
+<span class="fc" id="L275">        payload.put(&quot;governanceProxyBytesPerSec&quot;, round2(governanceProxyBps.value()));</span>
+<span class="fc" id="L276">        payload.put(&quot;governanceProxyErrorRatePerSec&quot;, round2(governanceProxyErrorRate.value()));</span>
+<span class="fc" id="L277">        payload.put(&quot;governanceProxyLatencyMs&quot;, round2(governanceProxyLatencyMs.value()));</span>
+<span class="fc" id="L278">        payload.put(&quot;prometheusProxyRatePerSec&quot;, round2(prometheusProxyRate.value()));</span>
+<span class="fc" id="L279">        payload.put(&quot;prometheusProxyBytesPerSec&quot;, round2(prometheusProxyBps.value()));</span>
+<span class="fc" id="L280">        payload.put(&quot;prometheusProxyErrorRatePerSec&quot;, round2(prometheusProxyErrorRate.value()));</span>
+<span class="fc" id="L281">        payload.put(&quot;prometheusProxyLatencyMs&quot;, round2(prometheusProxyLatencyMs.value()));</span>
+<span class="fc" id="L282">        payload.put(&quot;frontendRequestRatePerSec&quot;, round2(frontendRequestRate.value()));</span>
+<span class="fc" id="L283">        payload.put(&quot;frontendResponseBytesPerSec&quot;, round2(frontendResponseBps.value()));</span>
+<span class="fc" id="L284">        payload.put(&quot;frontendErrorRatePerSec&quot;, round2(frontendErrorRate.value()));</span>
+<span class="fc" id="L285">        payload.put(&quot;frontendRequestLatencyMs&quot;, round2(frontendLatencyMs.value()));</span>
+<span class="fc" id="L286">        payload.put(&quot;frontendApiRequestRatePerSec&quot;, round2(frontendApiRequestRate.value()));</span>
+<span class="fc" id="L287">        payload.put(&quot;frontendApiResponseBytesPerSec&quot;, round2(frontendApiResponseBps.value()));</span>
+<span class="fc" id="L288">        payload.put(&quot;frontendApiErrorRatePerSec&quot;, round2(frontendApiErrorRate.value()));</span>
+<span class="fc" id="L289">        payload.put(&quot;frontendApiLatencyMs&quot;, round2(frontendApiLatencyMs.value()));</span>
+<span class="fc" id="L290">        payload.put(&quot;routeRequestRatesPerSec&quot;, routeRequestRates);</span>
+<span class="fc" id="L291">        payload.put(&quot;apiRouteRequestRatesPerSec&quot;, apiRouteRequestRates);</span>
+<span class="fc" id="L292">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private Map&lt;String, Double&gt; frontendRouteRequestRates() {
+<span class="fc" id="L296">        List&lt;String&gt; routeGroups = List.of(</span>
+                &quot;landing&quot;,
+                &quot;dashboard&quot;,
+                &quot;telemetry&quot;,
+                &quot;topology&quot;,
+                &quot;jobs&quot;,
+                &quot;viewer&quot;,
+                &quot;datasets&quot;,
+                &quot;diagnostics&quot;,
+                &quot;settings&quot;,
+                &quot;other&quot;
+        );
+<span class="fc" id="L308">        Map&lt;String, Double&gt; out = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L309" title="All 2 branches covered.">        for (String routeGroup : routeGroups) {</span>
+<span class="fc" id="L310">            MetricValue rate = queryScalar(</span>
+                    &quot;sum(rate(frontend_ssr_frontend_requests_total{route_group=\&quot;&quot; + routeGroup + &quot;\&quot;}[1m]))&quot;
+            );
+<span class="pc bpc" id="L313" title="2 of 4 branches missed.">            if (rate.live() || rate.value() &gt; 0) {</span>
+<span class="nc" id="L314">                out.put(routeGroup, round2(rate.value()));</span>
+            }
+<span class="fc" id="L316">        }</span>
+<span class="fc" id="L317">        return out;</span>
+    }
+
+    private Map&lt;String, Double&gt; frontendApiRouteRequestRates() {
+<span class="fc" id="L321">        List&lt;String&gt; routeGroups = List.of(</span>
+                &quot;telemetry&quot;,
+                &quot;alerts&quot;,
+                &quot;commissioning&quot;,
+                &quot;health&quot;,
+                &quot;pulsar&quot;,
+                &quot;rabbitmq&quot;,
+                &quot;vo&quot;,
+                &quot;jobs&quot;,
+                &quot;admin&quot;,
+                &quot;public_sources&quot;,
+                &quot;other&quot;
+        );
+<span class="fc" id="L334">        Map&lt;String, Double&gt; out = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L335" title="All 2 branches covered.">        for (String routeGroup : routeGroups) {</span>
+<span class="fc" id="L336">            MetricValue rate = queryScalar(</span>
+                    &quot;sum(rate(frontend_ssr_frontend_api_requests_total{api_group=\&quot;&quot; + routeGroup + &quot;\&quot;}[1m]))&quot;
+            );
+<span class="pc bpc" id="L339" title="2 of 4 branches missed.">            if (rate.live() || rate.value() &gt; 0) {</span>
+<span class="nc" id="L340">                out.put(routeGroup, round2(rate.value()));</span>
+            }
+<span class="fc" id="L342">        }</span>
+<span class="fc" id="L343">        return out;</span>
+    }
+
+    private ServiceSnapshot dataGeneratorSnapshot() {
+<span class="fc" id="L347">        MetricValue totalBps = queryScalar(&quot;sum(rate(generator_bytes_produced_total[1m]))&quot;);</span>
+<span class="fc" id="L348">        MetricValue totalRecordsPerSec = queryScalar(&quot;sum(rate(generator_records_produced_total[1m]))&quot;);</span>
+<span class="fc" id="L349">        MetricValue mainSegmentBps = queryScalar(</span>
+                &quot;sum(rate(generator_bytes_produced_by_segment_total{array_segment=\&quot;main\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L352">        MetricValue lblSegmentBps = queryScalar(</span>
+                &quot;sum(rate(generator_bytes_produced_by_segment_total{array_segment=\&quot;lbl\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L355">        MetricValue sbaSegmentBps = queryScalar(</span>
+                &quot;sum(rate(generator_bytes_produced_by_segment_total{array_segment=\&quot;sba\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L358">        MetricValue mainSegmentRecordsPerSec = queryScalar(</span>
+                &quot;sum(rate(generator_records_produced_by_segment_total{array_segment=\&quot;main\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L361">        MetricValue lblSegmentRecordsPerSec = queryScalar(</span>
+                &quot;sum(rate(generator_records_produced_by_segment_total{array_segment=\&quot;lbl\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L364">        MetricValue sbaSegmentRecordsPerSec = queryScalar(</span>
+                &quot;sum(rate(generator_records_produced_by_segment_total{array_segment=\&quot;sba\&quot;}[1m]))&quot;
+        );
+
+<span class="fc" id="L368">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L369">        payload.put(&quot;source&quot;, sourceOf(</span>
+                totalBps,
+                totalRecordsPerSec,
+                mainSegmentBps,
+                lblSegmentBps,
+                sbaSegmentBps,
+                mainSegmentRecordsPerSec,
+                lblSegmentRecordsPerSec,
+                sbaSegmentRecordsPerSec
+        ));
+<span class="fc" id="L379">        payload.put(&quot;egressBytesPerSec&quot;, round2(totalBps.value()));</span>
+<span class="fc" id="L380">        payload.put(&quot;recordsPerSec&quot;, round2(totalRecordsPerSec.value()));</span>
+<span class="fc" id="L381">        payload.put(&quot;mainSegmentBytesPerSec&quot;, round2(mainSegmentBps.value()));</span>
+<span class="fc" id="L382">        payload.put(&quot;lblSegmentBytesPerSec&quot;, round2(lblSegmentBps.value()));</span>
+<span class="fc" id="L383">        payload.put(&quot;sbaSegmentBytesPerSec&quot;, round2(sbaSegmentBps.value()));</span>
+<span class="fc" id="L384">        payload.put(&quot;mainSegmentRecordsPerSec&quot;, round2(mainSegmentRecordsPerSec.value()));</span>
+<span class="fc" id="L385">        payload.put(&quot;lblSegmentRecordsPerSec&quot;, round2(lblSegmentRecordsPerSec.value()));</span>
+<span class="fc" id="L386">        payload.put(&quot;sbaSegmentRecordsPerSec&quot;, round2(sbaSegmentRecordsPerSec.value()));</span>
+<span class="fc" id="L387">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private ServiceSnapshot kafkaSnapshot() {
+<span class="fc" id="L391">        MetricValue brokers = queryScalar(&quot;sum(kafka_brokers)&quot;);</span>
+<span class="fc" id="L392">        MetricValue topics = queryScalar(&quot;count(count by (topic) (kafka_topic_partitions))&quot;);</span>
+<span class="fc" id="L393">        MetricValue consumerLag = queryScalar(&quot;sum(kafka_consumergroup_lag_sum)&quot;);</span>
+<span class="fc" id="L394">        MetricValue ingressBps = queryScalar(&quot;sum(rate(generator_bytes_produced_total[1m]))&quot;);</span>
+<span class="fc" id="L395">        MetricValue egressBps = queryScalar(</span>
+                &quot;sum(rate(kafka_consumer_fetch_manager_bytes_consumed_total{job=\&quot;java-ingest\&quot;}[1m]))&quot;
+                        + &quot; or sum(rate(kafka_consumer_consumer_fetch_manager_metrics_bytes_consumed_total{job=\&quot;java-ingest\&quot;}[1m]))&quot;
+        );
+
+<span class="fc" id="L400">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L401">        payload.put(&quot;source&quot;, sourceOf(brokers, topics, consumerLag, ingressBps, egressBps));</span>
+<span class="fc" id="L402">        payload.put(&quot;brokers&quot;, round2(brokers.value()));</span>
+<span class="fc" id="L403">        payload.put(&quot;topics&quot;, round2(topics.value()));</span>
+<span class="fc" id="L404">        payload.put(&quot;consumerLag&quot;, round2(consumerLag.value()));</span>
+<span class="fc" id="L405">        payload.put(&quot;ingressBytesPerSec&quot;, round2(ingressBps.value()));</span>
+<span class="fc" id="L406">        payload.put(&quot;egressBytesPerSec&quot;, round2(egressBps.value()));</span>
+<span class="fc" id="L407">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private ServiceSnapshot javaIngestSnapshot() {
+<span class="fc" id="L411">        MetricValue receiveRate = queryScalar(&quot;sum(rate(java_ingest_received_total[1m]))&quot;);</span>
+<span class="fc" id="L412">        MetricValue processedRate = queryScalar(&quot;sum(rate(java_ingest_processed_total[1m]))&quot;);</span>
+<span class="fc" id="L413">        MetricValue validationFailureRate = queryScalar(&quot;sum(rate(java_ingest_validation_failures_total[1m]))&quot;);</span>
+<span class="fc" id="L414">        MetricValue failureRate = queryScalar(&quot;sum(rate(java_ingest_failures_total[1m]))&quot;);</span>
+<span class="fc" id="L415">        MetricValue retryRate = queryScalar(&quot;sum(rate(java_ingest_retry_total[1m]))&quot;);</span>
+<span class="fc" id="L416">        MetricValue dlqRate = queryScalar(&quot;sum(rate(java_ingest_dlq_total[1m]))&quot;);</span>
+<span class="fc" id="L417">        MetricValue payloadBps = queryScalar(&quot;sum(rate(java_ingest_payload_bytes_sum[1m]))&quot;);</span>
+<span class="fc" id="L418">        MetricValue avgLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(java_ingest_processing_duration_seconds_sum[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(java_ingest_processing_duration_seconds_count[5m])), 0.0001)) * 1000&quot;
+        );
+
+<span class="fc" id="L423">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L424">        payload.put(&quot;source&quot;, sourceOf(</span>
+                receiveRate,
+                processedRate,
+                validationFailureRate,
+                failureRate,
+                retryRate,
+                dlqRate,
+                payloadBps,
+                avgLatencyMs
+        ));
+<span class="fc" id="L434">        payload.put(&quot;receiveRatePerSec&quot;, round2(receiveRate.value()));</span>
+<span class="fc" id="L435">        payload.put(&quot;processedRatePerSec&quot;, round2(processedRate.value()));</span>
+<span class="fc" id="L436">        payload.put(&quot;validationFailureRatePerSec&quot;, round2(validationFailureRate.value()));</span>
+<span class="fc" id="L437">        payload.put(&quot;failureRatePerSec&quot;, round2(failureRate.value()));</span>
+<span class="fc" id="L438">        payload.put(&quot;retryRatePerSec&quot;, round2(retryRate.value()));</span>
+<span class="fc" id="L439">        payload.put(&quot;dlqRatePerSec&quot;, round2(dlqRate.value()));</span>
+<span class="fc" id="L440">        payload.put(&quot;payloadBytesPerSec&quot;, round2(payloadBps.value()));</span>
+<span class="fc" id="L441">        payload.put(&quot;avgLatencyMs&quot;, round2(avgLatencyMs.value()));</span>
+<span class="fc" id="L442">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private ServiceSnapshot pulsarSnapshot() {
+<span class="fc" id="L446">        MetricValue ingressBps = queryScalar(</span>
+                &quot;sum(rate(pulsar_broker_in_bytes_total[1m]))&quot;
+                        + &quot; or sum(rate(pulsar_in_bytes_total[1m]))&quot;
+                        + &quot; or sum(pulsar_broker_throughput_in)&quot;
+                        + &quot; or sum(pulsar_rate_in * pulsar_average_msg_size)&quot;
+                        + &quot; or sum(pulsar_throughput_in)&quot;
+        );
+<span class="fc" id="L453">        MetricValue egressBps = queryScalar(</span>
+                &quot;sum(rate(pulsar_broker_out_bytes_total[1m]))&quot;
+                        + &quot; or sum(rate(pulsar_out_bytes_total[1m]))&quot;
+                        + &quot; or sum(pulsar_broker_throughput_out)&quot;
+                        + &quot; or sum(pulsar_throughput_out)&quot;
+        );
+<span class="fc" id="L459">        MetricValue msgInRate = queryScalar(</span>
+                &quot;sum(rate(pulsar_broker_in_messages_total[1m]))&quot;
+                        + &quot; or sum(rate(pulsar_in_messages_total[1m]))&quot;
+                        + &quot; or sum(pulsar_broker_rate_in)&quot;
+                        + &quot; or sum(pulsar_rate_in)&quot;
+        );
+<span class="fc" id="L465">        MetricValue msgOutRate = queryScalar(</span>
+                &quot;sum(rate(pulsar_broker_out_messages_total[1m]))&quot;
+                        + &quot; or sum(rate(pulsar_out_messages_total[1m]))&quot;
+                        + &quot; or sum(pulsar_broker_rate_out)&quot;
+                        + &quot; or sum(pulsar_rate_out)&quot;
+        );
+
+<span class="fc" id="L472">        try (PulsarAdmin admin = PulsarAdmin.builder()</span>
+<span class="fc" id="L473">                .serviceHttpUrl(pulsarAdminUrl)</span>
+<span class="fc" id="L474">                .build()) {</span>
+<span class="fc" id="L475">            int brokers = 0;</span>
+<span class="nc" id="L476">            List&lt;String&gt; clusters = admin.clusters().getClusters();</span>
+<span class="nc bnc" id="L477" title="All 2 branches missed.">            if (!clusters.isEmpty()) {</span>
+<span class="nc" id="L478">                brokers = admin.brokers().getActiveBrokers(clusters.get(0)).size();</span>
+            }
+
+<span class="nc" id="L481">            int topics = 0;</span>
+<span class="nc" id="L482">            int partitions = 0;</span>
+            try {
+<span class="nc" id="L484">                List&lt;String&gt; tenants = admin.tenants().getTenants();</span>
+<span class="nc bnc" id="L485" title="All 2 branches missed.">                for (String tenant : tenants) {</span>
+<span class="nc" id="L486">                    List&lt;String&gt; namespaces = admin.namespaces().getNamespaces(tenant);</span>
+<span class="nc bnc" id="L487" title="All 2 branches missed.">                    for (String namespace : namespaces) {</span>
+<span class="nc" id="L488">                        List&lt;String&gt; topicList = admin.topics().getList(namespace);</span>
+<span class="nc" id="L489">                        topics += topicList.size();</span>
+<span class="nc bnc" id="L490" title="All 2 branches missed.">                        for (String topic : topicList) {</span>
+                            try {
+<span class="nc" id="L492">                                var metadata = admin.topics().getPartitionedTopicMetadata(topic);</span>
+<span class="nc bnc" id="L493" title="All 2 branches missed.">                                partitions += metadata.partitions &gt; 0 ? metadata.partitions : 1;</span>
+<span class="nc" id="L494">                            } catch (Exception ignored) {</span>
+<span class="nc" id="L495">                                partitions += 1;</span>
+<span class="nc" id="L496">                            }</span>
+<span class="nc" id="L497">                        }</span>
+<span class="nc" id="L498">                    }</span>
+<span class="nc" id="L499">                }</span>
+<span class="nc" id="L500">            } catch (Exception e) {</span>
+<span class="nc" id="L501">                log.debug(&quot;Pulsar admin namespace enumeration failed: {}&quot;, e.toString());</span>
+<span class="nc" id="L502">                topics = -1;</span>
+<span class="nc" id="L503">                partitions = -1;</span>
+<span class="nc" id="L504">            }</span>
+
+<span class="nc" id="L506">            Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L507" title="All 2 branches missed.">            payload.put(&quot;source&quot;, sourceOf(ingressBps, egressBps, msgInRate, msgOutRate).equals(&quot;prometheus&quot;)</span>
+<span class="nc" id="L508">                    ? &quot;prometheus&quot;</span>
+<span class="nc" id="L509">                    : &quot;admin&quot;);</span>
+<span class="nc" id="L510">            payload.put(&quot;brokers&quot;, round2(brokers));</span>
+<span class="nc" id="L511">            payload.put(&quot;topics&quot;, round2(topics));</span>
+<span class="nc" id="L512">            payload.put(&quot;partitions&quot;, round2(partitions));</span>
+<span class="nc bnc" id="L513" title="All 2 branches missed.">            payload.put(&quot;status&quot;, brokers &gt; 0 ? &quot;healthy&quot; : &quot;degraded&quot;);</span>
+<span class="nc" id="L514">            payload.put(&quot;ingressBytesPerSec&quot;, round2(ingressBps.value()));</span>
+<span class="nc" id="L515">            payload.put(&quot;egressBytesPerSec&quot;, round2(egressBps.value()));</span>
+<span class="nc" id="L516">            payload.put(&quot;publishRatePerSec&quot;, round2(msgInRate.value()));</span>
+<span class="nc" id="L517">            payload.put(&quot;deliverRatePerSec&quot;, round2(msgOutRate.value()));</span>
+<span class="nc" id="L518">            return new ServiceSnapshot(payload);</span>
+<span class="fc" id="L519">        } catch (Exception e) {</span>
+<span class="fc" id="L520">            log.warn(&quot;Pulsar admin snapshot unavailable from {}: {}&quot;, pulsarAdminUrl, e.toString());</span>
+<span class="fc" id="L521">            Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L522">            payload.put(&quot;source&quot;, &quot;unavailable&quot;);</span>
+<span class="fc" id="L523">            payload.put(&quot;brokers&quot;, 0.0d);</span>
+<span class="fc" id="L524">            payload.put(&quot;topics&quot;, 0.0d);</span>
+<span class="fc" id="L525">            payload.put(&quot;partitions&quot;, 0.0d);</span>
+<span class="fc" id="L526">            payload.put(&quot;status&quot;, &quot;unavailable&quot;);</span>
+<span class="fc" id="L527">            return new ServiceSnapshot(payload);</span>
+        }
+    }
+
+    private ServiceSnapshot grafanaSnapshot() {
+<span class="fc" id="L532">        MetricValue requestRate = queryScalar(</span>
+                &quot;sum(rate(grafana_http_request_duration_seconds_count{handler!=\&quot;/metrics\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L535">        MetricValue errorRate = queryScalar(</span>
+                &quot;sum(rate(grafana_http_request_duration_seconds_count{handler!=\&quot;/metrics\&quot;,status_code=~\&quot;4..|5..\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L538">        MetricValue avgLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(grafana_http_request_duration_seconds_sum{handler!=\&quot;/metrics\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(grafana_http_request_duration_seconds_count{handler!=\&quot;/metrics\&quot;}[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L542">        MetricValue dataproxyRate = queryScalar(</span>
+                &quot;sum(rate(grafana_api_dataproxy_request_all_milliseconds_count[1m]))&quot;
+        );
+<span class="fc" id="L545">        MetricValue dataproxyLatencyMs = queryScalar(</span>
+                &quot;sum(rate(grafana_api_dataproxy_request_all_milliseconds_sum[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(grafana_api_dataproxy_request_all_milliseconds_count[5m])), 0.0001)&quot;
+        );
+<span class="fc" id="L549">        MetricValue datasources = queryScalar(&quot;sum(grafana_stat_totals_datasource)&quot;);</span>
+<span class="fc" id="L550">        MetricValue activeAlerts = queryScalar(&quot;sum(grafana_alerting_active_alerts)&quot;);</span>
+
+<span class="fc" id="L552">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L553">        payload.put(&quot;source&quot;, sourceOf(</span>
+                requestRate,
+                errorRate,
+                avgLatencyMs,
+                dataproxyRate,
+                dataproxyLatencyMs,
+                datasources,
+                activeAlerts
+        ));
+<span class="fc" id="L562">        payload.put(&quot;requestsPerSec&quot;, round2(requestRate.value()));</span>
+<span class="fc" id="L563">        payload.put(&quot;errorRatePerSec&quot;, round2(errorRate.value()));</span>
+<span class="fc" id="L564">        payload.put(&quot;avgLatencyMs&quot;, round2(avgLatencyMs.value()));</span>
+<span class="fc" id="L565">        payload.put(&quot;dataproxyRatePerSec&quot;, round2(dataproxyRate.value()));</span>
+<span class="fc" id="L566">        payload.put(&quot;dataproxyLatencyMs&quot;, round2(dataproxyLatencyMs.value()));</span>
+<span class="fc" id="L567">        payload.put(&quot;datasources&quot;, round2(datasources.value()));</span>
+<span class="fc" id="L568">        payload.put(&quot;activeAlerts&quot;, round2(activeAlerts.value()));</span>
+<span class="fc" id="L569">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private ServiceSnapshot lokiSnapshot() {
+<span class="fc" id="L573">        MetricValue requestRate = queryScalar(</span>
+                &quot;sum(rate(loki_request_duration_seconds_count{route!~\&quot;metrics|ready\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L576">        MetricValue ingressBps = queryScalar(</span>
+                &quot;sum(rate(loki_request_message_bytes_sum{route!~\&quot;metrics|ready\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L579">        MetricValue egressBps = queryScalar(</span>
+                &quot;sum(rate(loki_response_message_bytes_sum{route!~\&quot;metrics|ready\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L582">        MetricValue errorRate = queryScalar(</span>
+                &quot;sum(rate(loki_request_duration_seconds_count{route!~\&quot;metrics|ready\&quot;,status_code=~\&quot;4..|5..\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L585">        MetricValue avgLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(loki_request_duration_seconds_sum{route!~\&quot;metrics|ready\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(loki_request_duration_seconds_count{route!~\&quot;metrics|ready\&quot;}[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L589">        MetricValue inflight = queryScalar(&quot;sum(loki_inflight_requests{route!~\&quot;metrics|ready\&quot;})&quot;);</span>
+
+<span class="fc" id="L591">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L592">        payload.put(&quot;source&quot;, sourceOf(requestRate, ingressBps, egressBps, errorRate, avgLatencyMs, inflight));</span>
+<span class="fc" id="L593">        payload.put(&quot;requestsPerSec&quot;, round2(requestRate.value()));</span>
+<span class="fc" id="L594">        payload.put(&quot;ingressBytesPerSec&quot;, round2(ingressBps.value()));</span>
+<span class="fc" id="L595">        payload.put(&quot;egressBytesPerSec&quot;, round2(egressBps.value()));</span>
+<span class="fc" id="L596">        payload.put(&quot;errorRatePerSec&quot;, round2(errorRate.value()));</span>
+<span class="fc" id="L597">        payload.put(&quot;avgLatencyMs&quot;, round2(avgLatencyMs.value()));</span>
+<span class="fc" id="L598">        payload.put(&quot;inflightRequests&quot;, round2(inflight.value()));</span>
+<span class="fc" id="L599">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private ServiceSnapshot alertmanagerSnapshot() {
+<span class="fc" id="L603">        MetricValue requestRate = queryScalar(</span>
+                &quot;sum(rate(alertmanager_http_request_duration_seconds_count{handler!=\&quot;/metrics\&quot;,handler!=\&quot;/-/ready\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L606">        MetricValue egressBps = queryScalar(</span>
+                &quot;sum(rate(alertmanager_http_response_size_bytes_sum{handler!=\&quot;/metrics\&quot;,handler!=\&quot;/-/ready\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L609">        MetricValue errorRate = queryScalar(</span>
+                &quot;sum(rate(alertmanager_http_request_duration_seconds_count{handler!=\&quot;/metrics\&quot;,handler!=\&quot;/-/ready\&quot;,code=~\&quot;4..|5..\&quot;}[1m]))&quot;
+        );
+<span class="fc" id="L612">        MetricValue avgLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(alertmanager_http_request_duration_seconds_sum{handler!=\&quot;/metrics\&quot;,handler!=\&quot;/-/ready\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(alertmanager_http_request_duration_seconds_count{handler!=\&quot;/metrics\&quot;,handler!=\&quot;/-/ready\&quot;}[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L616">        MetricValue alertsReceived = queryScalar(&quot;sum(rate(alertmanager_alerts_received_total[1m]))&quot;);</span>
+<span class="fc" id="L617">        MetricValue activeAlerts = queryScalar(&quot;sum(alertmanager_alerts{state=\&quot;active\&quot;})&quot;);</span>
+
+<span class="fc" id="L619">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L620">        payload.put(&quot;source&quot;, sourceOf(requestRate, egressBps, errorRate, avgLatencyMs, alertsReceived, activeAlerts));</span>
+<span class="fc" id="L621">        payload.put(&quot;requestsPerSec&quot;, round2(requestRate.value()));</span>
+<span class="fc" id="L622">        payload.put(&quot;egressBytesPerSec&quot;, round2(egressBps.value()));</span>
+<span class="fc" id="L623">        payload.put(&quot;errorRatePerSec&quot;, round2(errorRate.value()));</span>
+<span class="fc" id="L624">        payload.put(&quot;avgLatencyMs&quot;, round2(avgLatencyMs.value()));</span>
+<span class="fc" id="L625">        payload.put(&quot;alertsReceivedRatePerSec&quot;, round2(alertsReceived.value()));</span>
+<span class="fc" id="L626">        payload.put(&quot;activeAlerts&quot;, round2(activeAlerts.value()));</span>
+<span class="fc" id="L627">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private ServiceSnapshot governanceRuntimeSnapshot() {
+<span class="fc" id="L631">        MetricValue submissionRate = queryScalar(&quot;sum(rate(governance_job_submissions_total[5m]))&quot;);</span>
+<span class="fc" id="L632">        MetricValue dispatchRate = queryScalar(&quot;sum(rate(governance_job_dispatch_total[5m]))&quot;);</span>
+<span class="fc" id="L633">        MetricValue transitionRate = queryScalar(&quot;sum(rate(governance_job_transitions_total[5m]))&quot;);</span>
+<span class="fc" id="L634">        MetricValue artifactRate = queryScalar(&quot;sum(rate(governance_job_artifacts_total[5m]))&quot;);</span>
+<span class="fc" id="L635">        MetricValue artifactPayloadBps = queryScalar(&quot;sum(rate(governance_job_artifact_payload_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L636">        MetricValue rabbitmqPublishRate = queryScalar(&quot;sum(rate(governance_rabbitmq_publish_total{result=\&quot;success\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L637">        MetricValue rabbitmqPublishBps = queryScalar(&quot;sum(rate(governance_rabbitmq_publish_payload_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L638">        MetricValue kafkaPublishRate = queryScalar(&quot;sum(rate(governance_kafka_publish_total{result=\&quot;success\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L639">        MetricValue kafkaPublishBps = queryScalar(&quot;sum(rate(governance_kafka_publish_payload_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L640">        MetricValue kafkaPublishLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(governance_kafka_publish_duration_seconds_sum[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_kafka_publish_duration_seconds_count[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L644">        MetricValue kafkaPublishErrorRate = queryScalar(&quot;sum(rate(governance_kafka_publish_total{result=\&quot;failure\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L645">        MetricValue redisReadRate = queryScalar(&quot;sum(rate(governance_redis_reads_total[5m]))&quot;);</span>
+<span class="fc" id="L646">        MetricValue redisWriteRate = queryScalar(&quot;sum(rate(governance_redis_writes_total[5m]))&quot;);</span>
+<span class="fc" id="L647">        MetricValue redisReadBps = queryScalar(&quot;sum(rate(governance_redis_read_payload_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L648">        MetricValue redisWriteBps = queryScalar(&quot;sum(rate(governance_redis_write_payload_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L649">        MetricValue redisAvgLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(governance_redis_operation_duration_seconds_sum{store=\&quot;redis\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_redis_operation_duration_seconds_count{store=\&quot;redis\&quot;}[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L653">        MetricValue redisErrorRatePct = queryScalar(</span>
+                &quot;(sum(rate(governance_redis_operations_total{store=\&quot;redis\&quot;,result=\&quot;failure\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_redis_operations_total{store=\&quot;redis\&quot;}[5m])), 0.0001)) * 100&quot;
+        );
+<span class="fc" id="L657">        MetricValue objectWriteRate = queryScalar(&quot;sum(rate(governance_object_writes_total[5m]))&quot;);</span>
+<span class="fc" id="L658">        MetricValue objectWriteBps = queryScalar(&quot;sum(rate(governance_object_write_payload_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L659">        MetricValue minioObjectWriteRate = queryScalar(&quot;sum(rate(governance_object_writes_total{storage=\&quot;minio\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L660">        MetricValue minioObjectWriteBps = queryScalar(&quot;sum(rate(governance_object_write_payload_bytes_sum{storage=\&quot;minio\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L661">        MetricValue minioObjectWriteAvgLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(governance_object_write_duration_seconds_sum{storage=\&quot;minio\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_object_write_duration_seconds_count{storage=\&quot;minio\&quot;}[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L665">        MetricValue minioObjectWriteErrorRatePct = queryScalar(</span>
+                &quot;(sum(rate(governance_object_write_attempts_total{storage=\&quot;minio\&quot;,result=\&quot;failure\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_object_write_attempts_total{storage=\&quot;minio\&quot;}[5m])), 0.0001)) * 100&quot;
+        );
+<span class="fc" id="L669">        MetricValue localObjectWriteRate = queryScalar(&quot;sum(rate(governance_object_writes_total{storage!=\&quot;minio\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L670">        MetricValue localObjectWriteBps = queryScalar(&quot;sum(rate(governance_object_write_payload_bytes_sum{storage!=\&quot;minio\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L671">        MetricValue artifactReadRate = queryScalar(&quot;sum(rate(governance_artifact_reads_total{result=\&quot;success\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L672">        MetricValue artifactReadBps = queryScalar(&quot;sum(rate(governance_artifact_read_payload_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L673">        MetricValue artifactReadAvgLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(governance_artifact_read_duration_seconds_sum{result=\&quot;success\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_artifact_read_duration_seconds_count{result=\&quot;success\&quot;}[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L677">        MetricValue artifactReadErrorRate = queryScalar(&quot;sum(rate(governance_artifact_reads_total{result=\&quot;failure\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L678">        MetricValue artifactAvgSizeBytes = queryScalar(</span>
+                &quot;sum(rate(governance_job_artifact_payload_bytes_sum[15m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_job_artifact_payload_bytes_count[15m])), 0.0001)&quot;
+        );
+<span class="fc" id="L682">        MetricValue kafkaIngestReceiveRate = queryScalar(&quot;sum(rate(governance_ingest_received_total{broker=\&quot;kafka\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L683">        MetricValue kafkaIngestSuccessRate = queryScalar(&quot;sum(rate(governance_ingest_processed_total{broker=\&quot;kafka\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L684">        MetricValue kafkaIngestValidationFailureRate = queryScalar(&quot;sum(rate(governance_ingest_validation_failures_total{broker=\&quot;kafka\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L685">        MetricValue kafkaIngestDlqRate = queryScalar(&quot;sum(rate(governance_ingest_dlq_total{broker=\&quot;kafka\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L686">        MetricValue kafkaIngestFailureRate = queryScalar(&quot;sum(rate(governance_ingest_failures_total{broker=\&quot;kafka\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L687">        MetricValue kafkaIngestPayloadBps = queryScalar(&quot;sum(rate(governance_ingest_payload_bytes_sum{broker=\&quot;kafka\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L688">        MetricValue rabbitIngestReceiveRate = queryScalar(&quot;sum(rate(governance_ingest_received_total{broker=\&quot;rabbitmq\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L689">        MetricValue rabbitIngestSuccessRate = queryScalar(&quot;sum(rate(governance_ingest_processed_total{broker=\&quot;rabbitmq\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L690">        MetricValue rabbitIngestValidationFailureRate = queryScalar(&quot;sum(rate(governance_ingest_validation_failures_total{broker=\&quot;rabbitmq\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L691">        MetricValue rabbitIngestDlqRate = queryScalar(&quot;sum(rate(governance_ingest_dlq_total{broker=\&quot;rabbitmq\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L692">        MetricValue rabbitIngestFailureRate = queryScalar(&quot;sum(rate(governance_ingest_failures_total{broker=\&quot;rabbitmq\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L693">        MetricValue rabbitIngestPayloadBps = queryScalar(&quot;sum(rate(governance_ingest_payload_bytes_sum{broker=\&quot;rabbitmq\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L694">        MetricValue pulsarIngestReceiveRate = queryScalar(&quot;sum(rate(governance_ingest_received_total{broker=\&quot;pulsar\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L695">        MetricValue pulsarIngestSuccessRate = queryScalar(&quot;sum(rate(governance_ingest_processed_total{broker=\&quot;pulsar\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L696">        MetricValue pulsarIngestValidationFailureRate = queryScalar(&quot;sum(rate(governance_ingest_validation_failures_total{broker=\&quot;pulsar\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L697">        MetricValue pulsarIngestDlqRate = queryScalar(&quot;sum(rate(governance_ingest_dlq_total{broker=\&quot;pulsar\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L698">        MetricValue pulsarIngestFailureRate = queryScalar(&quot;sum(rate(governance_ingest_failures_total{broker=\&quot;pulsar\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L699">        MetricValue pulsarIngestPayloadBps = queryScalar(&quot;sum(rate(governance_ingest_payload_bytes_sum{broker=\&quot;pulsar\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L700">        MetricValue datasetMutationRate = queryScalar(&quot;sum(rate(governance_dataset_mutations_total[5m]))&quot;);</span>
+<span class="fc" id="L701">        MetricValue datasetMutationPayloadBps = queryScalar(&quot;sum(rate(governance_dataset_mutation_payload_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L702">        MetricValue jobMetadataMutationRate = queryScalar(&quot;sum(rate(governance_job_metadata_mutations_total[5m]))&quot;);</span>
+<span class="fc" id="L703">        MetricValue jobMetadataMutationPayloadBps = queryScalar(&quot;sum(rate(governance_job_metadata_mutation_payload_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L704">        MetricValue datasetPublishRate = queryScalar(&quot;sum(rate(governance_business_actions_total{resource=\&quot;dataset\&quot;,action=\&quot;publish\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L705">        MetricValue datasetPublishPayloadBps = queryScalar(&quot;sum(rate(governance_business_action_payload_bytes_sum{resource=\&quot;dataset\&quot;,action=\&quot;publish\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L706">        MetricValue datasetReadRate = queryScalar(&quot;sum(rate(governance_business_actions_total{resource=\&quot;dataset\&quot;,action=\&quot;read\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L707">        MetricValue datasetReadPayloadBps = queryScalar(&quot;sum(rate(governance_business_action_payload_bytes_sum{resource=\&quot;dataset\&quot;,action=\&quot;read\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L708">        MetricValue manifestPublishRate = queryScalar(&quot;sum(rate(governance_business_actions_total{resource=\&quot;manifest\&quot;,action=\&quot;publish\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L709">        MetricValue manifestPublishPayloadBps = queryScalar(&quot;sum(rate(governance_business_action_payload_bytes_sum{resource=\&quot;manifest\&quot;,action=\&quot;publish\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L710">        MetricValue manifestReadRate = queryScalar(&quot;sum(rate(governance_business_actions_total{resource=\&quot;manifest\&quot;,action=\&quot;read\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L711">        MetricValue manifestReadPayloadBps = queryScalar(&quot;sum(rate(governance_business_action_payload_bytes_sum{resource=\&quot;manifest\&quot;,action=\&quot;read\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L712">        MetricValue operatorReadRate = queryScalar(&quot;sum(rate(governance_operator_reads_total[5m]))&quot;);</span>
+<span class="fc" id="L713">        MetricValue operatorReadPayloadBps = queryScalar(&quot;sum(rate(governance_operator_read_payload_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L714">        MetricValue httpRequestRate = queryScalar(&quot;sum(rate(governance_http_requests_total[5m]))&quot;);</span>
+<span class="fc" id="L715">        MetricValue httpResponseBps = queryScalar(&quot;sum(rate(governance_http_response_bytes_sum[5m]))&quot;);</span>
+<span class="fc" id="L716">        MetricValue httpErrorRate = queryScalar(</span>
+                &quot;sum(rate(governance_http_requests_total{status_class=~\&quot;4xx|5xx\&quot;}[5m]))&quot;
+        );
+<span class="fc" id="L719">        MetricValue httpLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(governance_http_request_duration_seconds_sum[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_http_request_duration_seconds_count[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L723">        MetricValue restoreDrillRate = queryScalar(&quot;sum(rate(governance_restore_drills_total[15m]))&quot;);</span>
+<span class="fc" id="L724">        MetricValue restoreDrillSuccessRate = queryScalar(&quot;sum(rate(governance_restore_drills_total{result=\&quot;success\&quot;}[15m]))&quot;);</span>
+<span class="fc" id="L725">        MetricValue restoreDrillFailureRate = queryScalar(&quot;sum(rate(governance_restore_drills_total{result=\&quot;failure\&quot;}[15m]))&quot;);</span>
+<span class="fc" id="L726">        MetricValue restoreDrillAvgMs = queryScalar(</span>
+                &quot;(sum(rate(governance_restore_drill_duration_ms_sum[15m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_restore_drill_duration_ms_count[15m])), 0.0001))&quot;
+        );
+<span class="fc" id="L730">        MetricValue voAdapterRequestRate = queryScalar(&quot;sum(rate(governance_external_adapter_requests_total{adapter=\&quot;vo\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L731">        MetricValue voAdapterPayloadBps = queryScalar(&quot;sum(rate(governance_external_adapter_request_payload_bytes_sum{adapter=\&quot;vo\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L732">        MetricValue voAdapterLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(governance_external_adapter_request_duration_seconds_sum{adapter=\&quot;vo\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_external_adapter_request_duration_seconds_count{adapter=\&quot;vo\&quot;}[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L736">        MetricValue voAdapterErrorRate = queryScalar(&quot;sum(rate(governance_external_adapter_requests_total{adapter=\&quot;vo\&quot;,result=\&quot;failure\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L737">        MetricValue taccAdapterRequestRate = queryScalar(&quot;sum(rate(governance_external_adapter_requests_total{adapter=\&quot;tacc\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L738">        MetricValue taccAdapterPayloadBps = queryScalar(&quot;sum(rate(governance_external_adapter_request_payload_bytes_sum{adapter=\&quot;tacc\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L739">        MetricValue taccAdapterLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(governance_external_adapter_request_duration_seconds_sum{adapter=\&quot;tacc\&quot;}[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_external_adapter_request_duration_seconds_count{adapter=\&quot;tacc\&quot;}[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L743">        MetricValue taccAdapterErrorRate = queryScalar(&quot;sum(rate(governance_external_adapter_requests_total{adapter=\&quot;tacc\&quot;,result=\&quot;failure\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L744">        MetricValue alertIngestedTotal = queryScalar(&quot;sum(alert_ingested_total)&quot;);</span>
+<span class="fc" id="L745">        MetricValue alertIngestRate = queryScalar(&quot;sum(rate(alert_ingested_total[5m]))&quot;);</span>
+<span class="fc" id="L746">        MetricValue alertReplaysTotal = queryScalar(&quot;sum(alert_replays_total)&quot;);</span>
+<span class="fc" id="L747">        MetricValue alertReplayRate = queryScalar(&quot;sum(rate(alert_replays_total[5m]))&quot;);</span>
+<span class="fc" id="L748">        MetricValue alertDlqDepth = queryScalar(&quot;sum(alert_dlq_depth)&quot;);</span>
+<span class="fc" id="L749">        MetricValue alertReplaySingleSuccessRate = queryScalar(&quot;sum(rate(alert_replay_attempts_total{path=\&quot;single\&quot;,result=\&quot;success\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L750">        MetricValue alertReplaySingleMissRate = queryScalar(&quot;sum(rate(alert_replay_attempts_total{path=\&quot;single\&quot;,result=\&quot;miss\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L751">        MetricValue alertReplayAllSuccessRate = queryScalar(&quot;sum(rate(alert_replay_attempts_total{path=\&quot;all\&quot;,result=\&quot;success\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L752">        MetricValue alertReplayAllEmptyRate = queryScalar(&quot;sum(rate(alert_replay_attempts_total{path=\&quot;all\&quot;,result=\&quot;empty\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L753">        MetricValue alertReplayItemsRate = queryScalar(&quot;sum(rate(alert_replay_items_total[5m]))&quot;);</span>
+<span class="fc" id="L754">        MetricValue alertReplayAvgBatchSize = queryScalar(</span>
+                &quot;sum(rate(alert_replay_items_total{path=\&quot;all\&quot;,result=\&quot;success\&quot;}[15m]))&quot;
+                        + &quot; / clamp_min(sum(rate(alert_replay_attempts_total{path=\&quot;all\&quot;,result=\&quot;success\&quot;}[15m])), 0.0001)&quot;
+        );
+<span class="fc" id="L758">        MetricValue alertReplayAvgLatencyMs = queryScalar(</span>
+                &quot;(sum(rate(alert_replay_duration_seconds_sum[5m]))&quot;
+                        + &quot; / clamp_min(sum(rate(alert_replay_duration_seconds_count[5m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L762">        MetricValue deferredReleaseRate = queryScalar(&quot;sum(rate(governance_scheduler_deferred_releases_total[15m]))&quot;);</span>
+<span class="fc" id="L763">        MetricValue deferredReleaseTotal = queryScalar(&quot;sum(governance_scheduler_deferred_releases_total)&quot;);</span>
+<span class="fc" id="L764">        MetricValue completedTotal = queryScalar(&quot;sum(governance_job_terminal_total{result=\&quot;COMPLETED\&quot;})&quot;);</span>
+<span class="fc" id="L765">        MetricValue failedTotal = queryScalar(&quot;sum(governance_job_terminal_total{result=\&quot;FAILED\&quot;})&quot;);</span>
+<span class="fc" id="L766">        MetricValue completedRate = queryScalar(&quot;sum(rate(governance_job_terminal_total{result=\&quot;COMPLETED\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L767">        MetricValue failedRate = queryScalar(&quot;sum(rate(governance_job_terminal_total{result=\&quot;FAILED\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L768">        MetricValue avgCompletionMs = queryScalar(</span>
+                &quot;(sum(rate(governance_job_terminal_duration_seconds_sum{result=\&quot;COMPLETED\&quot;}[15m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_job_terminal_duration_seconds_count{result=\&quot;COMPLETED\&quot;}[15m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L772">        MetricValue avgFailureMs = queryScalar(</span>
+                &quot;(sum(rate(governance_job_terminal_duration_seconds_sum{result=\&quot;FAILED\&quot;}[15m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_job_terminal_duration_seconds_count{result=\&quot;FAILED\&quot;}[15m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L776">        JobService.SchedulerSnapshot scheduler = jobService.schedulerSnapshot();</span>
+
+<span class="fc" id="L778">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L779">        payload.put(&quot;source&quot;, sourceOf(</span>
+                submissionRate,
+                dispatchRate,
+                transitionRate,
+                artifactRate,
+                artifactPayloadBps,
+                rabbitmqPublishRate,
+                rabbitmqPublishBps,
+                kafkaPublishRate,
+                kafkaPublishBps,
+                kafkaPublishLatencyMs,
+                kafkaPublishErrorRate,
+                redisReadRate,
+                redisWriteRate,
+                redisReadBps,
+                redisWriteBps,
+                redisAvgLatencyMs,
+                redisErrorRatePct,
+                objectWriteRate,
+                objectWriteBps,
+                minioObjectWriteRate,
+                minioObjectWriteBps,
+                minioObjectWriteAvgLatencyMs,
+                minioObjectWriteErrorRatePct,
+                localObjectWriteRate,
+                localObjectWriteBps,
+                artifactReadRate,
+                artifactReadBps,
+                artifactReadAvgLatencyMs,
+                artifactReadErrorRate,
+                artifactAvgSizeBytes,
+                kafkaIngestReceiveRate,
+                kafkaIngestSuccessRate,
+                kafkaIngestValidationFailureRate,
+                kafkaIngestDlqRate,
+                kafkaIngestFailureRate,
+                kafkaIngestPayloadBps,
+                rabbitIngestReceiveRate,
+                rabbitIngestSuccessRate,
+                rabbitIngestValidationFailureRate,
+                rabbitIngestDlqRate,
+                rabbitIngestFailureRate,
+                rabbitIngestPayloadBps,
+                pulsarIngestReceiveRate,
+                pulsarIngestSuccessRate,
+                pulsarIngestValidationFailureRate,
+                pulsarIngestDlqRate,
+                pulsarIngestFailureRate,
+                pulsarIngestPayloadBps,
+                datasetMutationRate,
+                datasetMutationPayloadBps,
+                jobMetadataMutationRate,
+                jobMetadataMutationPayloadBps,
+                datasetPublishRate,
+                datasetPublishPayloadBps,
+                datasetReadRate,
+                datasetReadPayloadBps,
+                manifestPublishRate,
+                manifestPublishPayloadBps,
+                manifestReadRate,
+                manifestReadPayloadBps,
+                operatorReadRate,
+                operatorReadPayloadBps,
+                httpRequestRate,
+                httpResponseBps,
+                httpErrorRate,
+                httpLatencyMs,
+                voAdapterRequestRate,
+                voAdapterPayloadBps,
+                voAdapterLatencyMs,
+                voAdapterErrorRate,
+                taccAdapterRequestRate,
+                taccAdapterPayloadBps,
+                taccAdapterLatencyMs,
+                taccAdapterErrorRate,
+                restoreDrillRate,
+                restoreDrillSuccessRate,
+                restoreDrillFailureRate,
+                restoreDrillAvgMs,
+                alertIngestedTotal,
+                alertIngestRate,
+                alertReplaysTotal,
+                alertReplayRate,
+                alertDlqDepth,
+                alertReplaySingleSuccessRate,
+                alertReplaySingleMissRate,
+                alertReplayAllSuccessRate,
+                alertReplayAllEmptyRate,
+                alertReplayItemsRate,
+                alertReplayAvgBatchSize,
+                alertReplayAvgLatencyMs,
+                deferredReleaseRate,
+                deferredReleaseTotal,
+                completedTotal,
+                failedTotal,
+                completedRate,
+                failedRate,
+                avgCompletionMs,
+                avgFailureMs
+        ));
+<span class="fc" id="L879">        payload.put(&quot;submissionRatePerSec&quot;, round2(submissionRate.value()));</span>
+<span class="fc" id="L880">        payload.put(&quot;dispatchRatePerSec&quot;, round2(dispatchRate.value()));</span>
+<span class="fc" id="L881">        payload.put(&quot;transitionRatePerSec&quot;, round2(transitionRate.value()));</span>
+<span class="fc" id="L882">        payload.put(&quot;artifactRatePerSec&quot;, round2(artifactRate.value()));</span>
+<span class="fc" id="L883">        payload.put(&quot;artifactPayloadBytesPerSec&quot;, round2(artifactPayloadBps.value()));</span>
+<span class="fc" id="L884">        payload.put(&quot;rabbitmqPublishRatePerSec&quot;, round2(rabbitmqPublishRate.value()));</span>
+<span class="fc" id="L885">        payload.put(&quot;rabbitmqPublishBytesPerSec&quot;, round2(rabbitmqPublishBps.value()));</span>
+<span class="fc" id="L886">        payload.put(&quot;kafkaPublishRatePerSec&quot;, round2(kafkaPublishRate.value()));</span>
+<span class="fc" id="L887">        payload.put(&quot;kafkaPublishBytesPerSec&quot;, round2(kafkaPublishBps.value()));</span>
+<span class="fc" id="L888">        payload.put(&quot;kafkaPublishLatencyMs&quot;, round2(kafkaPublishLatencyMs.value()));</span>
+<span class="fc" id="L889">        payload.put(&quot;kafkaPublishErrorRatePerSec&quot;, round2(kafkaPublishErrorRate.value()));</span>
+<span class="fc" id="L890">        payload.put(&quot;redisReadRatePerSec&quot;, round2(redisReadRate.value()));</span>
+<span class="fc" id="L891">        payload.put(&quot;redisWriteRatePerSec&quot;, round2(redisWriteRate.value()));</span>
+<span class="fc" id="L892">        payload.put(&quot;redisReadBytesPerSec&quot;, round2(redisReadBps.value()));</span>
+<span class="fc" id="L893">        payload.put(&quot;redisWriteBytesPerSec&quot;, round2(redisWriteBps.value()));</span>
+<span class="fc" id="L894">        payload.put(&quot;redisAvgLatencyMs&quot;, round2(redisAvgLatencyMs.value()));</span>
+<span class="fc" id="L895">        payload.put(&quot;redisErrorRatePct&quot;, round2(redisErrorRatePct.value()));</span>
+<span class="fc" id="L896">        payload.put(&quot;objectWriteRatePerSec&quot;, round2(objectWriteRate.value()));</span>
+<span class="fc" id="L897">        payload.put(&quot;objectWriteBytesPerSec&quot;, round2(objectWriteBps.value()));</span>
+<span class="fc" id="L898">        payload.put(&quot;minioObjectWriteRatePerSec&quot;, round2(minioObjectWriteRate.value()));</span>
+<span class="fc" id="L899">        payload.put(&quot;minioObjectWriteBytesPerSec&quot;, round2(minioObjectWriteBps.value()));</span>
+<span class="fc" id="L900">        payload.put(&quot;minioObjectWriteAvgLatencyMs&quot;, round2(minioObjectWriteAvgLatencyMs.value()));</span>
+<span class="fc" id="L901">        payload.put(&quot;minioObjectWriteErrorRatePct&quot;, round2(minioObjectWriteErrorRatePct.value()));</span>
+<span class="fc" id="L902">        payload.put(&quot;localObjectWriteRatePerSec&quot;, round2(localObjectWriteRate.value()));</span>
+<span class="fc" id="L903">        payload.put(&quot;localObjectWriteBytesPerSec&quot;, round2(localObjectWriteBps.value()));</span>
+<span class="fc" id="L904">        payload.put(&quot;artifactReadRatePerSec&quot;, round2(artifactReadRate.value()));</span>
+<span class="fc" id="L905">        payload.put(&quot;artifactReadBytesPerSec&quot;, round2(artifactReadBps.value()));</span>
+<span class="fc" id="L906">        payload.put(&quot;artifactReadAvgLatencyMs&quot;, round2(artifactReadAvgLatencyMs.value()));</span>
+<span class="fc" id="L907">        payload.put(&quot;artifactReadErrorRatePerSec&quot;, round2(artifactReadErrorRate.value()));</span>
+<span class="fc" id="L908">        payload.put(&quot;artifactAvgSizeBytes&quot;, round2(artifactAvgSizeBytes.value()));</span>
+<span class="fc" id="L909">        payload.put(&quot;kafkaIngestReceiveRatePerSec&quot;, round2(kafkaIngestReceiveRate.value()));</span>
+<span class="fc" id="L910">        payload.put(&quot;kafkaIngestSuccessRatePerSec&quot;, round2(kafkaIngestSuccessRate.value()));</span>
+<span class="fc" id="L911">        payload.put(&quot;kafkaIngestValidationFailureRatePerSec&quot;, round2(kafkaIngestValidationFailureRate.value()));</span>
+<span class="fc" id="L912">        payload.put(&quot;kafkaIngestDlqRatePerSec&quot;, round2(kafkaIngestDlqRate.value()));</span>
+<span class="fc" id="L913">        payload.put(&quot;kafkaIngestFailureRatePerSec&quot;, round2(kafkaIngestFailureRate.value()));</span>
+<span class="fc" id="L914">        payload.put(&quot;kafkaIngestPayloadBytesPerSec&quot;, round2(kafkaIngestPayloadBps.value()));</span>
+<span class="fc" id="L915">        payload.put(&quot;kafkaIngestValidationReasonRatesPerSec&quot;, ingestReasonRates(&quot;kafka&quot;, &quot;validation&quot;));</span>
+<span class="fc" id="L916">        payload.put(&quot;kafkaIngestDuplicateReasonRatesPerSec&quot;, ingestReasonRates(&quot;kafka&quot;, &quot;duplicate&quot;));</span>
+<span class="fc" id="L917">        payload.put(&quot;rabbitIngestReceiveRatePerSec&quot;, round2(rabbitIngestReceiveRate.value()));</span>
+<span class="fc" id="L918">        payload.put(&quot;rabbitIngestSuccessRatePerSec&quot;, round2(rabbitIngestSuccessRate.value()));</span>
+<span class="fc" id="L919">        payload.put(&quot;rabbitIngestValidationFailureRatePerSec&quot;, round2(rabbitIngestValidationFailureRate.value()));</span>
+<span class="fc" id="L920">        payload.put(&quot;rabbitIngestDlqRatePerSec&quot;, round2(rabbitIngestDlqRate.value()));</span>
+<span class="fc" id="L921">        payload.put(&quot;rabbitIngestFailureRatePerSec&quot;, round2(rabbitIngestFailureRate.value()));</span>
+<span class="fc" id="L922">        payload.put(&quot;rabbitIngestPayloadBytesPerSec&quot;, round2(rabbitIngestPayloadBps.value()));</span>
+<span class="fc" id="L923">        payload.put(&quot;rabbitIngestValidationReasonRatesPerSec&quot;, ingestReasonRates(&quot;rabbitmq&quot;, &quot;validation&quot;));</span>
+<span class="fc" id="L924">        payload.put(&quot;rabbitIngestDuplicateReasonRatesPerSec&quot;, ingestReasonRates(&quot;rabbitmq&quot;, &quot;duplicate&quot;));</span>
+<span class="fc" id="L925">        payload.put(&quot;pulsarIngestReceiveRatePerSec&quot;, round2(pulsarIngestReceiveRate.value()));</span>
+<span class="fc" id="L926">        payload.put(&quot;pulsarIngestSuccessRatePerSec&quot;, round2(pulsarIngestSuccessRate.value()));</span>
+<span class="fc" id="L927">        payload.put(&quot;pulsarIngestValidationFailureRatePerSec&quot;, round2(pulsarIngestValidationFailureRate.value()));</span>
+<span class="fc" id="L928">        payload.put(&quot;pulsarIngestDlqRatePerSec&quot;, round2(pulsarIngestDlqRate.value()));</span>
+<span class="fc" id="L929">        payload.put(&quot;pulsarIngestFailureRatePerSec&quot;, round2(pulsarIngestFailureRate.value()));</span>
+<span class="fc" id="L930">        payload.put(&quot;pulsarIngestPayloadBytesPerSec&quot;, round2(pulsarIngestPayloadBps.value()));</span>
+<span class="fc" id="L931">        payload.put(&quot;pulsarIngestValidationReasonRatesPerSec&quot;, ingestReasonRates(&quot;pulsar&quot;, &quot;validation&quot;));</span>
+<span class="fc" id="L932">        payload.put(&quot;pulsarIngestDuplicateReasonRatesPerSec&quot;, ingestReasonRates(&quot;pulsar&quot;, &quot;duplicate&quot;));</span>
+<span class="fc" id="L933">        payload.put(&quot;datasetMutationRatePerSec&quot;, round2(datasetMutationRate.value()));</span>
+<span class="fc" id="L934">        payload.put(&quot;datasetMutationPayloadBytesPerSec&quot;, round2(datasetMutationPayloadBps.value()));</span>
+<span class="fc" id="L935">        payload.put(&quot;jobMetadataMutationRatePerSec&quot;, round2(jobMetadataMutationRate.value()));</span>
+<span class="fc" id="L936">        payload.put(&quot;jobMetadataMutationPayloadBytesPerSec&quot;, round2(jobMetadataMutationPayloadBps.value()));</span>
+<span class="fc" id="L937">        payload.put(&quot;datasetPublishRatePerSec&quot;, round2(datasetPublishRate.value()));</span>
+<span class="fc" id="L938">        payload.put(&quot;datasetPublishPayloadBytesPerSec&quot;, round2(datasetPublishPayloadBps.value()));</span>
+<span class="fc" id="L939">        payload.put(&quot;datasetReadRatePerSec&quot;, round2(datasetReadRate.value()));</span>
+<span class="fc" id="L940">        payload.put(&quot;datasetReadPayloadBytesPerSec&quot;, round2(datasetReadPayloadBps.value()));</span>
+<span class="fc" id="L941">        payload.put(&quot;manifestPublishRatePerSec&quot;, round2(manifestPublishRate.value()));</span>
+<span class="fc" id="L942">        payload.put(&quot;manifestPublishPayloadBytesPerSec&quot;, round2(manifestPublishPayloadBps.value()));</span>
+<span class="fc" id="L943">        payload.put(&quot;manifestReadRatePerSec&quot;, round2(manifestReadRate.value()));</span>
+<span class="fc" id="L944">        payload.put(&quot;manifestReadPayloadBytesPerSec&quot;, round2(manifestReadPayloadBps.value()));</span>
+<span class="fc" id="L945">        payload.put(&quot;operatorReadRatePerSec&quot;, round2(operatorReadRate.value()));</span>
+<span class="fc" id="L946">        payload.put(&quot;operatorReadBytesPerSec&quot;, round2(operatorReadPayloadBps.value()));</span>
+<span class="fc" id="L947">        payload.put(&quot;operatorReadRouteRatesPerSec&quot;, operatorReadRouteRates());</span>
+<span class="fc" id="L948">        payload.put(&quot;httpRequestRatePerSec&quot;, round2(httpRequestRate.value()));</span>
+<span class="fc" id="L949">        payload.put(&quot;httpResponseBytesPerSec&quot;, round2(httpResponseBps.value()));</span>
+<span class="fc" id="L950">        payload.put(&quot;httpErrorRatePerSec&quot;, round2(httpErrorRate.value()));</span>
+<span class="fc" id="L951">        payload.put(&quot;httpLatencyMs&quot;, round2(httpLatencyMs.value()));</span>
+<span class="fc" id="L952">        payload.put(&quot;httpRouteRequestRatesPerSec&quot;, governanceHttpRouteRequestRates());</span>
+<span class="fc" id="L953">        payload.put(&quot;voAdapterRequestRatePerSec&quot;, round2(voAdapterRequestRate.value()));</span>
+<span class="fc" id="L954">        payload.put(&quot;voAdapterPayloadBytesPerSec&quot;, round2(voAdapterPayloadBps.value()));</span>
+<span class="fc" id="L955">        payload.put(&quot;voAdapterLatencyMs&quot;, round2(voAdapterLatencyMs.value()));</span>
+<span class="fc" id="L956">        payload.put(&quot;voAdapterErrorRatePerSec&quot;, round2(voAdapterErrorRate.value()));</span>
+<span class="fc" id="L957">        payload.put(&quot;voAdapterFailureClassRatesPerSec&quot;, externalAdapterFailureRates(&quot;vo&quot;));</span>
+<span class="fc" id="L958">        payload.put(&quot;voAdapterOperationRatesPerSec&quot;, externalAdapterOperationRates(&quot;vo&quot;));</span>
+<span class="fc" id="L959">        payload.put(&quot;taccAdapterRequestRatePerSec&quot;, round2(taccAdapterRequestRate.value()));</span>
+<span class="fc" id="L960">        payload.put(&quot;taccAdapterPayloadBytesPerSec&quot;, round2(taccAdapterPayloadBps.value()));</span>
+<span class="fc" id="L961">        payload.put(&quot;taccAdapterLatencyMs&quot;, round2(taccAdapterLatencyMs.value()));</span>
+<span class="fc" id="L962">        payload.put(&quot;taccAdapterErrorRatePerSec&quot;, round2(taccAdapterErrorRate.value()));</span>
+<span class="fc" id="L963">        payload.put(&quot;taccAdapterFailureClassRatesPerSec&quot;, externalAdapterFailureRates(&quot;tacc&quot;));</span>
+<span class="fc" id="L964">        payload.put(&quot;taccAdapterOperationRatesPerSec&quot;, externalAdapterOperationRates(&quot;tacc&quot;));</span>
+<span class="fc" id="L965">        payload.put(&quot;restoreDrillRatePerSec&quot;, round2(restoreDrillRate.value()));</span>
+<span class="fc" id="L966">        payload.put(&quot;restoreDrillSuccessRatePerSec&quot;, round2(restoreDrillSuccessRate.value()));</span>
+<span class="fc" id="L967">        payload.put(&quot;restoreDrillFailureRatePerSec&quot;, round2(restoreDrillFailureRate.value()));</span>
+<span class="fc" id="L968">        payload.put(&quot;avgRestoreDrillLatencyMs&quot;, round2(restoreDrillAvgMs.value()));</span>
+<span class="fc" id="L969">        payload.put(&quot;alertIngestedTotal&quot;, round2(alertIngestedTotal.value()));</span>
+<span class="fc" id="L970">        payload.put(&quot;alertIngestRatePerSec&quot;, round2(alertIngestRate.value()));</span>
+<span class="fc" id="L971">        payload.put(&quot;alertReplaysTotal&quot;, round2(alertReplaysTotal.value()));</span>
+<span class="fc" id="L972">        payload.put(&quot;alertReplayRatePerSec&quot;, round2(alertReplayRate.value()));</span>
+<span class="fc" id="L973">        payload.put(&quot;alertDlqDepth&quot;, round2(alertDlqDepth.value()));</span>
+<span class="fc" id="L974">        payload.put(&quot;alertReplaySingleSuccessRatePerSec&quot;, round2(alertReplaySingleSuccessRate.value()));</span>
+<span class="fc" id="L975">        payload.put(&quot;alertReplaySingleMissRatePerSec&quot;, round2(alertReplaySingleMissRate.value()));</span>
+<span class="fc" id="L976">        payload.put(&quot;alertReplayAllSuccessRatePerSec&quot;, round2(alertReplayAllSuccessRate.value()));</span>
+<span class="fc" id="L977">        payload.put(&quot;alertReplayAllEmptyRatePerSec&quot;, round2(alertReplayAllEmptyRate.value()));</span>
+<span class="fc" id="L978">        payload.put(&quot;alertReplayItemsRatePerSec&quot;, round2(alertReplayItemsRate.value()));</span>
+<span class="fc" id="L979">        payload.put(&quot;alertReplayAvgBatchSize&quot;, round2(alertReplayAvgBatchSize.value()));</span>
+<span class="fc" id="L980">        payload.put(&quot;alertReplayAvgLatencyMs&quot;, round2(alertReplayAvgLatencyMs.value()));</span>
+<span class="fc" id="L981">        payload.put(&quot;queuedJobs&quot;, scheduler.queuedJobs());</span>
+<span class="fc" id="L982">        payload.put(&quot;runningJobs&quot;, scheduler.runningJobs());</span>
+<span class="fc" id="L983">        payload.put(&quot;deferredJobs&quot;, scheduler.deferredJobs());</span>
+<span class="fc" id="L984">        payload.put(&quot;blockedJobs&quot;, scheduler.blockedJobs());</span>
+<span class="fc" id="L985">        payload.put(&quot;avgQueueAgeMs&quot;, round2(scheduler.avgQueueAgeMs()));</span>
+<span class="fc" id="L986">        payload.put(&quot;maxQueueAgeMs&quot;, round2(scheduler.maxQueueAgeMs()));</span>
+<span class="fc" id="L987">        payload.put(&quot;scannerIntervalSeconds&quot;, scheduler.scannerIntervalSeconds());</span>
+<span class="fc" id="L988">        payload.put(&quot;deferredReleaseRatePerSec&quot;, round2(deferredReleaseRate.value()));</span>
+<span class="fc" id="L989">        payload.put(&quot;deferredReleaseTotal&quot;, round2(deferredReleaseTotal.value()));</span>
+<span class="fc" id="L990">        payload.put(&quot;completedTotal&quot;, round2(completedTotal.value()));</span>
+<span class="fc" id="L991">        payload.put(&quot;failedTotal&quot;, round2(failedTotal.value()));</span>
+<span class="fc" id="L992">        payload.put(&quot;completedRatePerSec&quot;, round2(completedRate.value()));</span>
+<span class="fc" id="L993">        payload.put(&quot;failedRatePerSec&quot;, round2(failedRate.value()));</span>
+<span class="fc" id="L994">        payload.put(&quot;avgCompletionLatencyMs&quot;, round2(avgCompletionMs.value()));</span>
+<span class="fc" id="L995">        payload.put(&quot;avgFailureLatencyMs&quot;, round2(avgFailureMs.value()));</span>
+<span class="fc" id="L996">        payload.put(&quot;workflowOutcomes&quot;, workflowOutcomeSnapshots());</span>
+<span class="fc" id="L997">        payload.put(&quot;executors&quot;, Map.of(</span>
+<span class="fc" id="L998">                &quot;simulator&quot;, executorRuntimeSnapshot(&quot;simulator&quot;),</span>
+<span class="fc" id="L999">                &quot;vo&quot;, executorRuntimeSnapshot(&quot;vo&quot;),</span>
+<span class="fc" id="L1000">                &quot;tacc&quot;, executorRuntimeSnapshot(&quot;tacc&quot;)</span>
+        ));
+<span class="fc" id="L1002">        return new ServiceSnapshot(payload);</span>
+    }
+
+    private Map&lt;String, Object&gt; executorRuntimeSnapshot(String executor) {
+<span class="fc" id="L1006">        MetricValue dispatchRate = queryScalar(&quot;sum(rate(governance_job_dispatch_total{executor=\&quot;&quot; + executor + &quot;\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L1007">        MetricValue completedTotal = queryScalar(&quot;sum(governance_job_terminal_total{executor=\&quot;&quot; + executor + &quot;\&quot;,result=\&quot;COMPLETED\&quot;})&quot;);</span>
+<span class="fc" id="L1008">        MetricValue failedTotal = queryScalar(&quot;sum(governance_job_terminal_total{executor=\&quot;&quot; + executor + &quot;\&quot;,result=\&quot;FAILED\&quot;})&quot;);</span>
+<span class="fc" id="L1009">        MetricValue completedRate = queryScalar(&quot;sum(rate(governance_job_terminal_total{executor=\&quot;&quot; + executor + &quot;\&quot;,result=\&quot;COMPLETED\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L1010">        MetricValue failedRate = queryScalar(&quot;sum(rate(governance_job_terminal_total{executor=\&quot;&quot; + executor + &quot;\&quot;,result=\&quot;FAILED\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L1011">        MetricValue objectWriteRate = queryScalar(&quot;sum(rate(governance_object_writes_total{executor=\&quot;&quot; + executor + &quot;\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L1012">        MetricValue objectWriteBps = queryScalar(&quot;sum(rate(governance_object_write_payload_bytes_sum{executor=\&quot;&quot; + executor + &quot;\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L1013">        MetricValue avgCompletionMs = queryScalar(</span>
+                &quot;(sum(rate(governance_job_terminal_duration_seconds_sum{executor=\&quot;&quot; + executor + &quot;\&quot;,result=\&quot;COMPLETED\&quot;}[15m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_job_terminal_duration_seconds_count{executor=\&quot;&quot; + executor + &quot;\&quot;,result=\&quot;COMPLETED\&quot;}[15m])), 0.0001)) * 1000&quot;
+        );
+
+<span class="fc" id="L1018">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L1019">        payload.put(&quot;source&quot;, sourceOf(</span>
+                dispatchRate,
+                completedTotal,
+                failedTotal,
+                completedRate,
+                failedRate,
+                objectWriteRate,
+                objectWriteBps,
+                avgCompletionMs
+        ));
+<span class="fc" id="L1029">        payload.put(&quot;dispatchRatePerSec&quot;, round2(dispatchRate.value()));</span>
+<span class="fc" id="L1030">        payload.put(&quot;completedTotal&quot;, round2(completedTotal.value()));</span>
+<span class="fc" id="L1031">        payload.put(&quot;failedTotal&quot;, round2(failedTotal.value()));</span>
+<span class="fc" id="L1032">        payload.put(&quot;completedRatePerSec&quot;, round2(completedRate.value()));</span>
+<span class="fc" id="L1033">        payload.put(&quot;failedRatePerSec&quot;, round2(failedRate.value()));</span>
+<span class="fc" id="L1034">        payload.put(&quot;objectWriteRatePerSec&quot;, round2(objectWriteRate.value()));</span>
+<span class="fc" id="L1035">        payload.put(&quot;objectWriteBytesPerSec&quot;, round2(objectWriteBps.value()));</span>
+<span class="fc" id="L1036">        payload.put(&quot;avgCompletionLatencyMs&quot;, round2(avgCompletionMs.value()));</span>
+<span class="fc" id="L1037">        return payload;</span>
+    }
+
+    private Map&lt;String, Object&gt; workflowOutcomeSnapshots() {
+<span class="fc" id="L1041">        Map&lt;String, Object&gt; workflows = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L1042" title="All 2 branches covered.">        for (String workflow : List.of(&quot;ingest&quot;, &quot;vo.adql.query&quot;, &quot;simulate.visibility&quot;)) {</span>
+<span class="fc" id="L1043">            workflows.put(workflow, workflowOutcomeSnapshot(workflow));</span>
+<span class="fc" id="L1044">        }</span>
+<span class="fc" id="L1045">        return workflows;</span>
+    }
+
+    private Map&lt;String, Object&gt; workflowOutcomeSnapshot(String workflow) {
+<span class="fc" id="L1049">        MetricValue completedTotal = queryScalar(&quot;sum(governance_job_terminal_total{workflow=\&quot;&quot; + workflow + &quot;\&quot;,result=\&quot;COMPLETED\&quot;})&quot;);</span>
+<span class="fc" id="L1050">        MetricValue failedTotal = queryScalar(&quot;sum(governance_job_terminal_total{workflow=\&quot;&quot; + workflow + &quot;\&quot;,result=\&quot;FAILED\&quot;})&quot;);</span>
+<span class="fc" id="L1051">        MetricValue completedRate = queryScalar(&quot;sum(rate(governance_job_terminal_total{workflow=\&quot;&quot; + workflow + &quot;\&quot;,result=\&quot;COMPLETED\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L1052">        MetricValue failedRate = queryScalar(&quot;sum(rate(governance_job_terminal_total{workflow=\&quot;&quot; + workflow + &quot;\&quot;,result=\&quot;FAILED\&quot;}[5m]))&quot;);</span>
+<span class="fc" id="L1053">        MetricValue avgDispatchWaitMs = queryScalar(</span>
+                &quot;(sum(rate(governance_job_dispatch_wait_seconds_sum{workflow=\&quot;&quot; + workflow + &quot;\&quot;}[15m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_job_dispatch_wait_seconds_count{workflow=\&quot;&quot; + workflow + &quot;\&quot;}[15m])), 0.0001)) * 1000&quot;
+        );
+<span class="fc" id="L1057">        MetricValue avgRuntimeMs = queryScalar(</span>
+                &quot;(sum(rate(governance_job_runtime_seconds_sum{workflow=\&quot;&quot; + workflow + &quot;\&quot;}[15m]))&quot;
+                        + &quot; / clamp_min(sum(rate(governance_job_runtime_seconds_count{workflow=\&quot;&quot; + workflow + &quot;\&quot;}[15m])), 0.0001)) * 1000&quot;
+        );
+
+<span class="fc" id="L1062">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L1063">        payload.put(&quot;source&quot;, sourceOf(</span>
+                completedTotal,
+                failedTotal,
+                completedRate,
+                failedRate,
+                avgDispatchWaitMs,
+                avgRuntimeMs
+        ));
+<span class="fc" id="L1071">        payload.put(&quot;completedTotal&quot;, round2(completedTotal.value()));</span>
+<span class="fc" id="L1072">        payload.put(&quot;failedTotal&quot;, round2(failedTotal.value()));</span>
+<span class="fc" id="L1073">        payload.put(&quot;completedRatePerSec&quot;, round2(completedRate.value()));</span>
+<span class="fc" id="L1074">        payload.put(&quot;failedRatePerSec&quot;, round2(failedRate.value()));</span>
+<span class="fc" id="L1075">        payload.put(&quot;avgDispatchWaitMs&quot;, round2(avgDispatchWaitMs.value()));</span>
+<span class="fc" id="L1076">        payload.put(&quot;avgRuntimeMs&quot;, round2(avgRuntimeMs.value()));</span>
+<span class="fc" id="L1077">        return payload;</span>
+    }
+
+    private Map&lt;String, Double&gt; governanceHttpRouteRequestRates() {
+<span class="fc" id="L1081">        Map&lt;String, Double&gt; rates = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L1082">        String[] routeFamilies = {</span>
+                &quot;jobs&quot;,
+                &quot;datasets&quot;,
+                &quot;telemetry&quot;,
+                &quot;metrics&quot;,
+                &quot;alerts&quot;,
+                &quot;broker&quot;,
+                &quot;rabbitmq&quot;,
+                &quot;pulsar&quot;,
+                &quot;vo&quot;,
+                &quot;archive&quot;,
+                &quot;admin&quot;,
+                &quot;api_other&quot;,
+                &quot;other&quot;
+        };
+<span class="fc bfc" id="L1097" title="All 2 branches covered.">        for (String routeFamily : routeFamilies) {</span>
+<span class="fc" id="L1098">            MetricValue rate = queryScalar(</span>
+                    &quot;sum(rate(governance_http_requests_total{route_family=\&quot;&quot; + routeFamily + &quot;\&quot;}[5m]))&quot;
+            );
+<span class="pc bpc" id="L1101" title="1 of 2 branches missed.">            if (rate.live()) {</span>
+<span class="nc" id="L1102">                rates.put(routeFamily, round2(rate.value()));</span>
+            }
+        }
+<span class="fc" id="L1105">        return rates;</span>
+    }
+
+    private Map&lt;String, Double&gt; operatorReadRouteRates() {
+<span class="fc" id="L1109">        Map&lt;String, Double&gt; rates = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L1110">        String[] resourceFamilies = {</span>
+                &quot;jobs&quot;,
+                &quot;datasets&quot;,
+                &quot;alerts&quot;,
+                &quot;archive&quot;,
+                &quot;other&quot;
+        };
+<span class="fc bfc" id="L1117" title="All 2 branches covered.">        for (String resourceFamily : resourceFamilies) {</span>
+<span class="fc" id="L1118">            MetricValue rate = queryScalar(</span>
+                    &quot;sum(rate(governance_operator_reads_total{resource_family=\&quot;&quot; + resourceFamily + &quot;\&quot;}[5m]))&quot;
+            );
+<span class="pc bpc" id="L1121" title="1 of 2 branches missed.">            if (rate.live()) {</span>
+<span class="nc" id="L1122">                rates.put(resourceFamily, round2(rate.value()));</span>
+            }
+        }
+<span class="fc" id="L1125">        return rates;</span>
+    }
+
+    private Map&lt;String, Double&gt; externalAdapterOperationRates(String adapter) {
+<span class="fc" id="L1129">        Map&lt;String, Double&gt; rates = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L1130">        String[] operations = {</span>
+                &quot;adql_query&quot;,
+                &quot;obscore_search&quot;,
+                &quot;cone_search&quot;,
+                &quot;votable_fetch&quot;,
+                &quot;datalink_resolve&quot;,
+                &quot;product_fetch&quot;,
+                &quot;soda_cutout&quot;,
+                &quot;preview_fetch&quot;,
+                &quot;submit&quot;
+        };
+<span class="fc bfc" id="L1141" title="All 2 branches covered.">        for (String operation : operations) {</span>
+<span class="fc" id="L1142">            MetricValue rate = queryScalar(</span>
+                    &quot;sum(rate(governance_external_adapter_requests_total{adapter=\&quot;&quot; + adapter + &quot;\&quot;,operation=\&quot;&quot; + operation + &quot;\&quot;}[5m]))&quot;
+            );
+<span class="pc bpc" id="L1145" title="1 of 2 branches missed.">            if (rate.live()) {</span>
+<span class="nc" id="L1146">                rates.put(operation, round2(rate.value()));</span>
+            }
+        }
+<span class="fc" id="L1149">        return rates;</span>
+    }
+
+    private Map&lt;String, Double&gt; externalAdapterFailureRates(String adapter) {
+<span class="fc" id="L1153">        Map&lt;String, Double&gt; rates = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L1154">        String[] failureClasses = {</span>
+                &quot;http_4xx&quot;,
+                &quot;http_5xx&quot;,
+                &quot;timeout&quot;,
+                &quot;connect&quot;,
+                &quot;invalid_request&quot;,
+                &quot;RuntimeException&quot;,
+                &quot;none&quot;,
+                &quot;unknown&quot;
+        };
+<span class="fc bfc" id="L1164" title="All 2 branches covered.">        for (String failureClass : failureClasses) {</span>
+<span class="fc" id="L1165">            MetricValue rate = queryScalar(</span>
+                    &quot;sum(rate(governance_external_adapter_requests_total{adapter=\&quot;&quot; + adapter + &quot;\&quot;,result=\&quot;failure\&quot;,error_class=\&quot;&quot; + failureClass + &quot;\&quot;}[5m]))&quot;
+            );
+<span class="pc bpc" id="L1168" title="3 of 4 branches missed.">            if (rate.live() &amp;&amp; rate.value() &gt; 0.0d) {</span>
+<span class="nc" id="L1169">                rates.put(failureClass, round2(rate.value()));</span>
+            }
+        }
+<span class="fc" id="L1172">        return rates;</span>
+    }
+
+    private Map&lt;String, Double&gt; ingestReasonRates(String broker, String kind) {
+<span class="fc" id="L1176">        Map&lt;String, Double&gt; rates = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L1177" title="All 2 branches covered.">        String metric = &quot;validation&quot;.equals(kind)</span>
+<span class="fc" id="L1178">                ? &quot;governance_ingest_validation_failures_total&quot;</span>
+<span class="fc" id="L1179">                : &quot;governance_ingest_duplicates_total&quot;;</span>
+<span class="fc" id="L1180">        String[] reasons = {</span>
+                &quot;workflow&quot;,
+                &quot;datasetId&quot;,
+                &quot;request_id&quot;,
+                &quot;payload&quot;,
+                &quot;unknown&quot;
+        };
+<span class="fc bfc" id="L1187" title="All 2 branches covered.">        for (String reason : reasons) {</span>
+<span class="fc" id="L1188">            MetricValue rate = queryScalar(</span>
+                    &quot;sum(rate(&quot; + metric + &quot;{broker=\&quot;&quot; + broker + &quot;\&quot;,reason=\&quot;&quot; + reason + &quot;\&quot;}[5m]))&quot;
+            );
+<span class="pc bpc" id="L1191" title="1 of 2 branches missed.">            if (rate.live()) {</span>
+<span class="nc" id="L1192">                rates.put(reason, round2(rate.value()));</span>
+            }
+        }
+<span class="fc" id="L1195">        return rates;</span>
+    }
+
+    private MetricValue queryScalar(String query) {
+<span class="fc" id="L1199">        String base = resolvePrometheusBaseUrl();</span>
+<span class="pc bpc" id="L1200" title="3 of 4 branches missed.">        if (base == null || base.isBlank()) {</span>
+<span class="fc" id="L1201">            log.debug(&quot;Prometheus base URL missing; query unavailable: {}&quot;, query);</span>
+<span class="fc" id="L1202">            return MetricValue.unavailable();</span>
+        }
+
+        try {
+<span class="nc" id="L1206">            URI uri = URI.create(</span>
+                    base + &quot;/api/v1/query?query=&quot;
+<span class="nc" id="L1208">                            + URLEncoder.encode(query, StandardCharsets.UTF_8)</span>
+            );
+<span class="nc" id="L1210">            ResponseEntity&lt;String&gt; response = restTemplate.getForEntity(uri, String.class);</span>
+<span class="nc bnc" id="L1211" title="All 4 branches missed.">            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {</span>
+<span class="nc" id="L1212">                log.warn(&quot;Prometheus query failed status={} query={}&quot;, response.getStatusCode(), query);</span>
+<span class="nc" id="L1213">                return MetricValue.unavailable();</span>
+            }
+
+<span class="nc" id="L1216">            JsonNode root = objectMapper.readTree(response.getBody());</span>
+<span class="nc bnc" id="L1217" title="All 2 branches missed.">            if (!&quot;success&quot;.equals(root.path(&quot;status&quot;).asText())) {</span>
+<span class="nc" id="L1218">                log.warn(&quot;Prometheus query returned non-success payload for query={}: {}&quot;, query, response.getBody());</span>
+<span class="nc" id="L1219">                return MetricValue.unavailable();</span>
+            }
+<span class="nc" id="L1221">            JsonNode result = root.path(&quot;data&quot;).path(&quot;result&quot;);</span>
+<span class="nc bnc" id="L1222" title="All 4 branches missed.">            if (!result.isArray() || result.isEmpty()) {</span>
+<span class="nc" id="L1223">                log.debug(&quot;Prometheus query returned no series for query={}&quot;, query);</span>
+<span class="nc" id="L1224">                return MetricValue.live(0.0d);</span>
+            }
+
+<span class="nc" id="L1227">            JsonNode value = result.get(0).path(&quot;value&quot;);</span>
+<span class="nc bnc" id="L1228" title="All 4 branches missed.">            if (!value.isArray() || value.size() &lt; 2) {</span>
+<span class="nc" id="L1229">                log.warn(&quot;Prometheus query returned malformed value for query={}: {}&quot;, query, response.getBody());</span>
+<span class="nc" id="L1230">                return MetricValue.unavailable();</span>
+            }
+
+<span class="nc" id="L1233">            return MetricValue.live(Double.parseDouble(value.get(1).asText()));</span>
+<span class="nc" id="L1234">        } catch (Exception e) {</span>
+<span class="nc" id="L1235">            log.warn(&quot;Prometheus query exception for query={}: {}&quot;, query, e.toString());</span>
+<span class="nc" id="L1236">            return MetricValue.unavailable();</span>
+        }
+    }
+
+    private String resolvePrometheusBaseUrl() {
+<span class="fc" id="L1241">        String base = prometheusBaseUrl;</span>
+<span class="pc bpc" id="L1242" title="2 of 4 branches missed.">        if (base == null || base.isBlank()) {</span>
+<span class="fc" id="L1243">            base = System.getenv(&quot;PROMETHEUS_BASE_URL&quot;);</span>
+        }
+<span class="pc bpc" id="L1245" title="3 of 4 branches missed.">        if (base == null || base.isBlank()) {</span>
+<span class="fc" id="L1246">            base = System.getenv(&quot;PROMETHEUS_BASEURL&quot;);</span>
+        }
+<span class="fc" id="L1248">        return base;</span>
+    }
+
+    private String sourceOf(MetricValue... values) {
+<span class="fc bfc" id="L1252" title="All 2 branches covered.">        for (MetricValue value : values) {</span>
+<span class="pc bpc" id="L1253" title="1 of 2 branches missed.">            if (value.live()) {</span>
+<span class="nc" id="L1254">                return &quot;prometheus&quot;;</span>
+            }
+        }
+<span class="fc" id="L1257">        return &quot;unavailable&quot;;</span>
+    }
+
+    private String overallSource(ServiceSnapshot... snapshots) {
+<span class="fc bfc" id="L1261" title="All 2 branches covered.">        for (ServiceSnapshot snapshot : snapshots) {</span>
+<span class="pc bpc" id="L1262" title="1 of 2 branches missed.">            if (&quot;prometheus&quot;.equals(snapshot.payload().get(&quot;source&quot;))) {</span>
+<span class="nc" id="L1263">                return &quot;prometheus&quot;;</span>
+            }
+        }
+<span class="fc bfc" id="L1266" title="All 2 branches covered.">        for (ServiceSnapshot snapshot : snapshots) {</span>
+<span class="pc bpc" id="L1267" title="1 of 2 branches missed.">            if (&quot;admin&quot;.equals(snapshot.payload().get(&quot;source&quot;))) {</span>
+<span class="nc" id="L1268">                return &quot;admin&quot;;</span>
+            }
+        }
+<span class="fc" id="L1271">        return &quot;unavailable&quot;;</span>
+    }
+
+    private double round2(double value) {
+<span class="fc" id="L1275">        return Math.round(value * 100.0d) / 100.0d;</span>
+    }
+
+<span class="fc" id="L1278">    private record MetricValue(double value, boolean live) {</span>
+        static MetricValue unavailable() {
+<span class="fc" id="L1280">            return new MetricValue(0.0d, false);</span>
+        }
+
+        static MetricValue live(double value) {
+<span class="nc" id="L1284">            return new MetricValue(value, true);</span>
+        }
+    }
+
+<span class="fc" id="L1288">    private record ServiceSnapshot(Map&lt;String, Object&gt; payload) {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -120,23 +120,23 @@ Sections:
 - ownership/source
 - created/updated timestamps
 
-2. Readiness
+1. Readiness
 
 - readiness state (`ready`, `warning`, `blocked`)
 - blocking reasons
 - suggested next action
 
-3. Related jobs
+1. Related jobs
 
 - recent jobs list with status badges
 - direct deep-link to jobs detail
 
-4. Provenance
+1. Provenance
 
 - lineage link
 - trust/audit indicators
 
-5. Artifacts
+1. Artifacts
 
 - known output references (when available)
 

@@ -1,0 +1,321 @@
+.allocator-container {
+  padding: 16px 0;
+  max-width: 720px;
+}
+
+.description {
+  color: var(--mat-sys-on-surface, #fff);
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+
+  code {
+    // light translucent background with a vibrant cyan tint so the text reads clearly
+    background: rgba(255, 255, 255, 0.1);
+    color: #80d8ff;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+}
+
+.description-detail {
+  color: rgba(180, 220, 255, 0.8);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  padding: 10px 14px;
+  background: rgba(4, 34, 54, 0.55);
+  border-left: 3px solid rgba(64, 224, 255, 0.4);
+  border-radius: 4px;
+
+  p {
+    margin: 0 0 8px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  strong {
+    color: #7dd8f8;
+  }
+
+  em {
+    color: #b0e8ff;
+    font-style: italic;
+  }
+
+  code {
+    background: rgba(255, 255, 255, 0.1);
+    color: #80d8ff;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+}
+
+.heading-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+
+  h2 {
+    margin: 0;
+    color: var(--mat-sys-on-surface, #fff);
+  }
+
+  .info-btn {
+    top: -0.25em;
+  }
+}
+
+.info-btn {
+  color: #42a5f5; // blue at rest
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  position: relative;
+  transition: color 150ms ease;
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  &:hover {
+    color: #90caf9; // lighter blue on hover
+  }
+
+  &--active {
+    color: #26c6da !important; // teal when panel is open
+  }
+
+  &--active:hover {
+    color: #80deea !important; // lighter teal on hover when active
+  }
+}
+
+.info-panel {
+  background: rgba(4, 34, 54, 0.7);
+  border-left: 3px solid #40e0ff;
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 0.87rem;
+  line-height: 1.6;
+  color: rgba(180, 220, 255, 0.85);
+  animation: slideDown 0.2s ease;
+
+  &--inline {
+    margin-top: 8px;
+    margin-bottom: 0;
+  }
+
+  strong {
+    color: #7dd8f8;
+  }
+
+  em {
+    color: #b0e8ff;
+  }
+
+  code {
+    background: rgba(255, 255, 255, 0.1);
+    color: #80d8ff;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.allocator-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  h3 {
+    margin: 16px 0 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface, #fff);
+  }
+}
+
+.field {
+  width: 100%;
+  margin-bottom: 8px;
+
+  &--narrow {
+    max-width: 260px;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+
+  .info-btn {
+    top: -0.5em;
+  }
+}
+
+.simulator-warning {
+  color: #ff8a65;
+  background: rgba(244, 67, 54, 0.15);
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+
+.result {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 6px;
+
+  h3 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    color: var(--mat-sys-on-surface, #fff);
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 16px;
+    font-size: 0.9rem;
+  }
+
+  dt {
+    font-weight: 600;
+    color: var(--mat-sys-on-surface, #fff);
+  }
+
+  dd {
+    color: var(--mat-sys-on-surface, #e0e0e0);
+  }
+
+  details {
+    margin-top: 12px;
+
+    summary {
+      cursor: pointer;
+      font-size: 0.85rem;
+      // vibrant cyan — clearly visible on dark backgrounds
+      color: #40c4ff;
+    }
+  }
+
+  pre {
+    background: rgba(255, 255, 255, 0.06);
+    color: #e0f7fa;
+    padding: 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    overflow-x: auto;
+    max-height: 300px;
+  }
+
+  &--success {
+    background: rgba(46, 125, 50, 0.12);
+    border-left: 4px solid #69f0ae;
+  }
+
+  &--error {
+    background: rgba(198, 40, 40, 0.12);
+    border-left: 4px solid #ff5252;
+
+    .error-message {
+      font-weight: 500;
+      // vibrant red — readable on both light and dark backgrounds
+      color: #ff6b6b;
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      font-size: 0.88rem;
+      color: var(--mat-sys-on-surface, #e0e0e0);
+    }
+  }
+}
+
+// ── Angular Material MDC form-field overrides ─────────────────────────────────
+// Override the MDC design-token CSS custom properties so labels, input text,
+// placeholders, and outlines are legible on the dark diagnostics background.
+.allocator-form {
+  // Input text and floating label (resting + floating + focused)
+  --mdc-outlined-text-field-input-text-color: #e8f4fd;
+  --mdc-outlined-text-field-label-text-color: rgba(180, 220, 255, 0.75);
+  --mdc-outlined-text-field-focus-label-text-color: #40e0ff;
+  --mdc-outlined-text-field-hover-label-text-color: rgba(200, 235, 255, 0.9);
+  --mdc-outlined-text-field-placeholder-text-color: rgba(160, 200, 240, 0.5);
+
+  // Outline / border
+  --mdc-outlined-text-field-outline-color: rgba(140, 200, 240, 0.35);
+  --mdc-outlined-text-field-hover-outline-color: rgba(140, 200, 240, 0.65);
+  --mdc-outlined-text-field-focus-outline-color: #40e0ff;
+
+  // Caret
+  --mdc-outlined-text-field-caret-color: #40e0ff;
+
+  // mat-select trigger text + dropdown arrow
+  --mat-select-trigger-text-color: #e8f4fd;
+  --mat-select-enabled-arrow-color: rgba(180, 220, 255, 0.75);
+  --mat-select-focused-arrow-color: #40e0ff;
+
+  // Force select trigger text/value directly (token doesn't always cascade)
+  ::ng-deep .mat-mdc-select-value,
+  ::ng-deep .mat-mdc-select-value-text,
+  ::ng-deep .mat-mdc-select-placeholder {
+    color: #7dd8f8 !important;
+  }
+
+  // Force the dropdown arrow icon color
+  ::ng-deep .mat-mdc-select-arrow svg {
+    fill: rgba(180, 220, 255, 0.75) !important;
+  }
+}
+
+// ── mat-select dropdown panel (CDK overlay — must use ::ng-deep from :host) ──
+// The panel renders outside the component shadow so we pierce with ::ng-deep.
+::ng-deep .mat-mdc-select-panel {
+  background: #042236 !important; // dark navy panel background
+  border: 1px solid rgba(64, 224, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+}
+
+// Option text
+::ng-deep .mat-mdc-option .mdc-list-item__primary-text {
+  color: #7dd8f8 !important; // bright blue text
+}
+
+// Hover state
+::ng-deep .mat-mdc-option:hover:not(.mat-mdc-option-disabled) {
+  background: rgba(64, 224, 255, 0.12) !important;
+}
+::ng-deep .mat-mdc-option:hover .mdc-list-item__primary-text {
+  color: #40e0ff !important;
+}
+
+// Selected / active state
+::ng-deep .mat-mdc-option.mdc-list-item--selected .mdc-list-item__primary-text {
+  color: #40e0ff !important;
+}
+::ng-deep .mat-mdc-option.mdc-list-item--selected {
+  background: rgba(64, 224, 255, 0.18) !important;
+}

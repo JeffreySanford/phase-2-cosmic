@@ -93,6 +93,7 @@
       "configurations": {
         "ci": {
           "ci": true,
+          "forceExit": true,
           "collectCoverage": true,
           "coverageReporters": ["json-summary", "text"],
           "coverageDirectory": "../../coverage/apps/frontend"

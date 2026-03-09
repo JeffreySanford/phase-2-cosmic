@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GovernanceIngestProcessingService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.service</a> &gt; <span class="el_source">GovernanceIngestProcessingService.java</span></div><h1>GovernanceIngestProcessingService.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.service;
+
+import com.cosmic.governance.api.dto.JobStatusResponse;
+import com.cosmic.governance.api.dto.JobSubmitRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+@Service
+public class GovernanceIngestProcessingService {
+    private final JobService jobService;
+    private final GovernanceIngestMetricsService ingestMetrics;
+    private final ObjectMapper mapper;
+    private final Validator validator;
+
+    public GovernanceIngestProcessingService(
+            JobService jobService,
+            GovernanceIngestMetricsService ingestMetrics,
+            ObjectMapper mapper,
+            Validator validator
+<span class="fc" id="L28">    ) {</span>
+<span class="fc" id="L29">        this.jobService = jobService;</span>
+<span class="fc" id="L30">        this.ingestMetrics = ingestMetrics;</span>
+<span class="fc" id="L31">        this.mapper = mapper;</span>
+<span class="fc" id="L32">        this.validator = validator;</span>
+<span class="fc" id="L33">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public ProcessingResult process(String broker, String channel, String payload) throws Exception {
+<span class="fc" id="L37">        String workflow = &quot;ingest&quot;;</span>
+<span class="fc" id="L38">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L39">        String result = &quot;failure&quot;;</span>
+        try {
+<span class="fc" id="L41">            Map&lt;String, Object&gt; obj = mapper.readValue(payload, Map.class);</span>
+<span class="fc" id="L42">            Map&lt;String, Object&gt; domain = extractDomainPayload(obj);</span>
+<span class="fc" id="L43">            workflow = stringValue(domain, &quot;workflow&quot;, &quot;ingest&quot;);</span>
+<span class="fc" id="L44">            ingestMetrics.recordReceive(broker, channel, workflow, payload);</span>
+
+<span class="fc" id="L46">            String datasetId = stringValue(domain, &quot;datasetId&quot;, &quot;unknown&quot;);</span>
+<span class="pc bpc" id="L47" title="2 of 4 branches missed.">            Map&lt;String, Object&gt; params = domain.containsKey(&quot;parameters&quot;) &amp;&amp; domain.get(&quot;parameters&quot;) instanceof Map</span>
+<span class="fc" id="L48">                    ? (Map&lt;String, Object&gt;) domain.get(&quot;parameters&quot;)</span>
+<span class="pc" id="L49">                    : Map.of();</span>
+<span class="fc" id="L50">            String requestedBy = stringValue(domain, &quot;requestedBy&quot;, broker + &quot;-ingest&quot;);</span>
+<span class="pc bpc" id="L51" title="3 of 4 branches missed.">            Map&lt;String, Object&gt; manifest = domain.containsKey(&quot;manifest&quot;) &amp;&amp; domain.get(&quot;manifest&quot;) instanceof Map</span>
+<span class="nc" id="L52">                    ? (Map&lt;String, Object&gt;) domain.get(&quot;manifest&quot;)</span>
+<span class="fc" id="L53">                    : null;</span>
+<span class="pc bpc" id="L54" title="3 of 4 branches missed.">            Map&lt;String, Object&gt; lineage = domain.containsKey(&quot;lineage&quot;) &amp;&amp; domain.get(&quot;lineage&quot;) instanceof Map</span>
+<span class="nc" id="L55">                    ? (Map&lt;String, Object&gt;) domain.get(&quot;lineage&quot;)</span>
+<span class="fc" id="L56">                    : null;</span>
+
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (isDuplicateRequestId(params)) {</span>
+<span class="fc" id="L59">                ingestMetrics.recordDuplicate(broker, channel, workflow, &quot;request_id&quot;);</span>
+<span class="fc" id="L60">                result = &quot;duplicate&quot;;</span>
+<span class="fc" id="L61">                return ProcessingResult.duplicate(workflow, datasetId);</span>
+            }
+
+<span class="fc" id="L64">            JobSubmitRequest req = new JobSubmitRequest(workflow, datasetId, params, lineage, manifest, requestedBy);</span>
+<span class="fc" id="L65">            Set&lt;ConstraintViolation&lt;JobSubmitRequest&gt;&gt; violations = validator.validate(req);</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">            if (!violations.isEmpty()) {</span>
+<span class="nc" id="L67">                ingestMetrics.recordValidationFailure(broker, channel, workflow, validationReason(violations));</span>
+<span class="nc" id="L68">                throw new IllegalArgumentException(&quot;Message validation failed: &quot; + violations);</span>
+            }
+
+<span class="fc" id="L71">            jobService.submit(req);</span>
+<span class="fc" id="L72">            ingestMetrics.recordSuccess(broker, channel, workflow);</span>
+<span class="fc" id="L73">            result = &quot;success&quot;;</span>
+<span class="fc" id="L74">            return ProcessingResult.accepted(workflow, datasetId);</span>
+<span class="fc" id="L75">        } catch (Exception ex) {</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            ingestMetrics.recordFailure(broker, channel, workflow, ex instanceof IllegalArgumentException ? &quot;validation&quot; : ex.getClass().getSimpleName());</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            result = ex instanceof IllegalArgumentException ? &quot;validation&quot; : &quot;failure&quot;;</span>
+<span class="fc" id="L78">            throw ex;</span>
+        } finally {
+<span class="fc" id="L80">            ingestMetrics.recordProcessingDuration(</span>
+                    broker,
+                    channel,
+                    workflow,
+                    result,
+<span class="fc" id="L85">                    Duration.between(startedAt, Instant.now())</span>
+            );
+        }
+    }
+
+    private Map&lt;String, Object&gt; extractDomainPayload(Map&lt;String, Object&gt; obj) {
+<span class="fc" id="L91">        Object payload = obj.get(&quot;payload&quot;);</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (payload instanceof Map&lt;?, ?&gt; payloadMap) {</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            boolean looksLikeEnvelope = obj.containsKey(&quot;eventType&quot;)</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                    || obj.containsKey(&quot;originBroker&quot;)</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                    || obj.containsKey(&quot;schemaVersion&quot;)</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                    || obj.containsKey(&quot;correlationId&quot;);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">            if (looksLikeEnvelope) {</span>
+                @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L99">                Map&lt;String, Object&gt; cast = (Map&lt;String, Object&gt;) payloadMap;</span>
+<span class="nc" id="L100">                return cast;</span>
+            }
+        }
+<span class="fc" id="L103">        return obj;</span>
+    }
+
+    private boolean isDuplicateRequestId(Map&lt;String, Object&gt; params) {
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        Object requestId = params == null ? null : params.get(&quot;requestId&quot;);</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (requestId == null) {</span>
+<span class="nc" id="L109">            return false;</span>
+        }
+<span class="fc" id="L111">        String normalized = String.valueOf(requestId);</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if (normalized.isBlank()) {</span>
+<span class="nc" id="L113">            return false;</span>
+        }
+<span class="fc" id="L115">        List&lt;JobStatusResponse&gt; jobs = jobService.listAll();</span>
+<span class="fc" id="L116">        return jobs.stream().anyMatch(job -&gt; {</span>
+<span class="fc" id="L117">            Map&lt;String, Object&gt; existing = job.parameters();</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            Object current = existing == null ? null : existing.get(&quot;requestId&quot;);</span>
+<span class="fc" id="L119">            return normalized.equals(String.valueOf(current));</span>
+        });
+    }
+
+    private String stringValue(Map&lt;String, Object&gt; src, String key, String fallback) {
+<span class="pc bpc" id="L124" title="2 of 4 branches missed.">        return src.containsKey(key) &amp;&amp; src.get(key) != null ? String.valueOf(src.get(key)) : fallback;</span>
+    }
+
+    private String validationReason(Set&lt;ConstraintViolation&lt;JobSubmitRequest&gt;&gt; violations) {
+<span class="nc bnc" id="L128" title="All 4 branches missed.">        if (violations == null || violations.isEmpty()) {</span>
+<span class="nc" id="L129">            return &quot;unknown&quot;;</span>
+        }
+<span class="nc" id="L131">        ConstraintViolation&lt;JobSubmitRequest&gt; first = violations.iterator().next();</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        String path = first.getPropertyPath() == null ? &quot;&quot; : first.getPropertyPath().toString();</span>
+<span class="nc bnc" id="L133" title="All 4 branches missed.">        if (path == null || path.isBlank()) {</span>
+<span class="nc" id="L134">            return &quot;payload&quot;;</span>
+        }
+<span class="nc" id="L136">        int dot = path.indexOf('.');</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        return dot &gt; 0 ? path.substring(0, dot) : path;</span>
+    }
+
+<span class="fc" id="L140">    public record ProcessingResult(String workflow, String datasetId, boolean accepted, boolean duplicate) {</span>
+        public static ProcessingResult accepted(String workflow, String datasetId) {
+<span class="fc" id="L142">            return new ProcessingResult(workflow, datasetId, true, false);</span>
+        }
+
+        public static ProcessingResult duplicate(String workflow, String datasetId) {
+<span class="fc" id="L146">            return new ProcessingResult(workflow, datasetId, false, true);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

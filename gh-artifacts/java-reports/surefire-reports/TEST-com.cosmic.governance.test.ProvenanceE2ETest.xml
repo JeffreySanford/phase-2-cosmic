@@ -1,0 +1,855 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.cosmic.governance.test.ProvenanceE2ETest" time="28.787" tests="2" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="17"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/test-classes:/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/classes:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-web/3.3.0/spring-boot-starter-web-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter/3.3.0/spring-boot-starter-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot/3.3.0/spring-boot-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/3.3.0/spring-boot-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-logging/3.3.0/spring-boot-starter-logging-3.3.0.jar:/home/runner/.m2/repository/ch/qos/logback/logback-classic/1.5.6/logback-classic-1.5.6.jar:/home/runner/.m2/repository/ch/qos/logback/logback-core/1.5.6/logback-core-1.5.6.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.23.1/log4j-to-slf4j-2.23.1.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-api/2.23.1/log4j-api-2.23.1.jar:/home/runner/.m2/repository/org/slf4j/jul-to-slf4j/2.0.13/jul-to-slf4j-2.0.13.jar:/home/runner/.m2/repository/jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar:/home/runner/.m2/repository/org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-json/3.3.0/spring-boot-starter-json-3.3.0.jar:/home/runner/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.17.1/jackson-datatype-jdk8-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.17.1/jackson-datatype-jsr310-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/module/jackson-module-parameter-names/2.17.1/jackson-module-parameter-names-2.17.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat/3.3.0/spring-boot-starter-tomcat-3.3.0.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/10.1.24/tomcat-embed-core-10.1.24.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/10.1.24/tomcat-embed-websocket-10.1.24.jar:/home/runner/.m2/repository/org/springframework/spring-web/6.1.8/spring-web-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-beans/6.1.8/spring-beans-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-webmvc/6.1.8/spring-webmvc-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-aop/6.1.8/spring-aop-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-expression/6.1.8/spring-expression-6.1.8.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-validation/3.3.0/spring-boot-starter-validation-3.3.0.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/10.1.24/tomcat-embed-el-10.1.24.jar:/home/runner/.m2/repository/org/hibernate/validator/hibernate-validator/8.0.1.Final/hibernate-validator-8.0.1.Final.jar:/home/runner/.m2/repository/jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2.jar:/home/runner/.m2/repository/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.jar:/home/runner/.m2/repository/com/fasterxml/classmate/1.7.0/classmate-1.7.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-actuator/3.3.0/spring-boot-starter-actuator-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-actuator-autoconfigure/3.3.0/spring-boot-actuator-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-actuator/3.3.0/spring-boot-actuator-3.3.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-observation/1.13.0/micrometer-observation-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-commons/1.13.0/micrometer-commons-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-jakarta9/1.13.0/micrometer-jakarta9-1.13.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-data-redis/3.3.0/spring-boot-starter-data-redis-3.3.0.jar:/home/runner/.m2/repository/io/lettuce/lettuce-core/6.3.2.RELEASE/lettuce-core-6.3.2.RELEASE.jar:/home/runner/.m2/repository/io/netty/netty-common/4.1.110.Final/netty-common-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-handler/4.1.110.Final/netty-handler-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-resolver/4.1.110.Final/netty-resolver-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-buffer/4.1.110.Final/netty-buffer-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-codec/4.1.110.Final/netty-codec-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-transport/4.1.110.Final/netty-transport-4.1.110.Final.jar:/home/runner/.m2/repository/io/projectreactor/reactor-core/3.6.6/reactor-core-3.6.6.jar:/home/runner/.m2/repository/org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-redis/3.3.0/spring-data-redis-3.3.0.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-keyvalue/3.3.0/spring-data-keyvalue-3.3.0.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-commons/3.3.0/spring-data-commons-3.3.0.jar:/home/runner/.m2/repository/org/springframework/spring-oxm/6.1.8/spring-oxm-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-context-support/6.1.8/spring-context-support-6.1.8.jar:/home/runner/.m2/repository/io/micrometer/micrometer-registry-prometheus/1.13.0/micrometer-registry-prometheus-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-core/1.13.0/micrometer-core-1.13.0.jar:/home/runner/.m2/repository/org/hdrhistogram/HdrHistogram/2.2.1/HdrHistogram-2.2.1.jar:/home/runner/.m2/repository/org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-core/1.2.1/prometheus-metrics-core-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-model/1.2.1/prometheus-metrics-model-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-config/1.2.1/prometheus-metrics-config-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-tracer-common/1.2.1/prometheus-metrics-tracer-common-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-exposition-formats/1.2.1/prometheus-metrics-exposition-formats-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-shaded-protobuf/1.2.1/prometheus-metrics-shaded-protobuf-1.2.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-test/3.3.0/spring-boot-starter-test-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test/3.3.0/spring-boot-test-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test-autoconfigure/3.3.0/spring-boot-test-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0.jar:/home/runner/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.jar:/home/runner/.m2/repository/net/minidev/json-smart/2.5.1/json-smart-2.5.1.jar:/home/runner/.m2/repository/net/minidev/accessors-smart/2.5.1/accessors-smart-2.5.1.jar:/home/runner/.m2/repository/org/ow2/asm/asm/9.6/asm-9.6.jar:/home/runner/.m2/repository/org/assertj/assertj-core/3.25.3/assertj-core-3.25.3.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy/1.14.16/byte-buddy-1.14.16.jar:/home/runner/.m2/repository/org/awaitility/awaitility/4.2.1/awaitility-4.2.1.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest/2.2/hamcrest-2.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter/5.10.2/junit-jupiter-5.10.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.2/junit-jupiter-api-5.10.2.jar:/home/runner/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-commons/1.10.2/junit-platform-commons-1.10.2.jar:/home/runner/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.10.2/junit-jupiter-params-5.10.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.2/junit-jupiter-engine-5.10.2.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-engine/1.10.2/junit-platform-engine-1.10.2.jar:/home/runner/.m2/repository/org/mockito/mockito-core/5.11.0/mockito-core-5.11.0.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.16/byte-buddy-agent-1.14.16.jar:/home/runner/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/home/runner/.m2/repository/org/mockito/mockito-junit-jupiter/5.11.0/mockito-junit-jupiter-5.11.0.jar:/home/runner/.m2/repository/org/springframework/spring-core/6.1.8/spring-core-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-jcl/6.1.8/spring-jcl-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-test/6.1.8/spring-test-6.1.8.jar:/home/runner/.m2/repository/org/xmlunit/xmlunit-core/2.9.1/xmlunit-core-2.9.1.jar:/home/runner/.m2/repository/org/testcontainers/junit-jupiter/1.19.8/junit-jupiter-1.19.8.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers/1.19.8/testcontainers-1.19.8.jar:/home/runner/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest-core/2.2/hamcrest-core-2.2.jar:/home/runner/.m2/repository/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar:/home/runner/.m2/repository/org/apache/commons/commons-compress/1.24.0/commons-compress-1.24.0.jar:/home/runner/.m2/repository/org/rnorth/duct-tape/duct-tape/1.0.8/duct-tape-1.0.8.jar:/home/runner/.m2/repository/org/jetbrains/annotations/17.0.0/annotations-17.0.0.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-api/3.3.6/docker-java-api-3.3.6.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport-zerodep/3.3.6/docker-java-transport-zerodep-3.3.6.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport/3.3.6/docker-java-transport-3.3.6.jar:/home/runner/.m2/repository/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar:/home/runner/.m2/repository/org/testcontainers/kafka/1.19.8/kafka-1.19.8.jar:/home/runner/.m2/repository/org/skyscreamer/jsonassert/1.5.1/jsonassert-1.5.1.jar:/home/runner/.m2/repository/org/json/json/20220320/json-20220320.jar:/home/runner/.m2/repository/com/github/erosb/everit-json-schema/1.14.4/everit-json-schema-1.14.4.jar:/home/runner/.m2/repository/commons-validator/commons-validator/1.7/commons-validator-1.7.jar:/home/runner/.m2/repository/commons-digester/commons-digester/2.1/commons-digester-2.1.jar:/home/runner/.m2/repository/commons-logging/commons-logging/1.2/commons-logging-1.2.jar:/home/runner/.m2/repository/commons-collections/commons-collections/3.2.2/commons-collections-3.2.2.jar:/home/runner/.m2/repository/com/damnhandy/handy-uri-templates/2.1.8/handy-uri-templates-2.1.8.jar:/home/runner/.m2/repository/joda-time/joda-time/2.10.2/joda-time-2.10.2.jar:/home/runner/.m2/repository/com/google/re2j/re2j/1.6/re2j-1.6.jar:/home/runner/.m2/repository/org/springframework/kafka/spring-kafka/3.2.0/spring-kafka-3.2.0.jar:/home/runner/.m2/repository/org/springframework/spring-context/6.1.8/spring-context-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-messaging/6.1.8/spring-messaging-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-tx/6.1.8/spring-tx-6.1.8.jar:/home/runner/.m2/repository/org/springframework/retry/spring-retry/2.0.6/spring-retry-2.0.6.jar:/home/runner/.m2/repository/org/apache/kafka/kafka-clients/3.7.0/kafka-clients-3.7.0.jar:/home/runner/.m2/repository/com/github/luben/zstd-jni/1.5.5-6/zstd-jni-1.5.5-6.jar:/home/runner/.m2/repository/org/lz4/lz4-java/1.8.0/lz4-java-1.8.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-amqp/3.3.0/spring-boot-starter-amqp-3.3.0.jar:/home/runner/.m2/repository/org/springframework/amqp/spring-rabbit/3.1.5/spring-rabbit-3.1.5.jar:/home/runner/.m2/repository/org/springframework/amqp/spring-amqp/3.1.5/spring-amqp-3.1.5.jar:/home/runner/.m2/repository/com/rabbitmq/amqp-client/5.21.0/amqp-client-5.21.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-webmvc-ui/2.1.0/springdoc-openapi-starter-webmvc-ui-2.1.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-webmvc-api/2.1.0/springdoc-openapi-starter-webmvc-api-2.1.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-common/2.1.0/springdoc-openapi-starter-common-2.1.0.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-core-jakarta/2.2.9/swagger-core-jakarta-2.2.9.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-annotations-jakarta/2.2.9/swagger-annotations-jakarta-2.2.9.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-models-jakarta/2.2.9/swagger-models-jakarta-2.2.9.jar:/home/runner/.m2/repository/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.17.1/jackson-dataformat-yaml-2.17.1.jar:/home/runner/.m2/repository/org/webjars/swagger-ui/4.18.2/swagger-ui-4.18.2.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-admin/3.2.4/pulsar-client-admin-3.2.4.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-api/3.2.3/pulsar-client-api-3.2.3.jar:/home/runner/.m2/repository/io/airlift/aircompressor/0.20/aircompressor-0.20.jar:/home/runner/.m2/repository/org/apache/pulsar/bouncy-castle-bc/3.2.4/bouncy-castle-bc-3.2.4-pkg.jar:/home/runner/.m2/repository/org/bouncycastle/bcpkix-jdk18on/1.78.1/bcpkix-jdk18on-1.78.1.jar:/home/runner/.m2/repository/org/bouncycastle/bcutil-jdk18on/1.78.1/bcutil-jdk18on-1.78.1.jar:/home/runner/.m2/repository/org/bouncycastle/bcprov-jdk18on/1.78.1/bcprov-jdk18on-1.78.1.jar:/home/runner/.m2/repository/org/apache/avro/avro/1.11.3/avro-1.11.3.jar:/home/runner/.m2/repository/org/apache/avro/avro-protobuf/1.11.3/avro-protobuf-1.11.3.jar:/home/runner/.m2/repository/javax/validation/validation-api/1.1.0.Final/validation-api-1.1.0.Final.jar:/home/runner/.m2/repository/net/jcip/jcip-annotations/1.0/jcip-annotations-1.0.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-admin-api/3.2.3/pulsar-client-admin-api-3.2.3.jar:/home/runner/.m2/repository/jakarta/ws/rs/jakarta.ws.rs-api/3.1.0/jakarta.ws.rs-api-3.1.0.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.17.1/jackson-annotations-2.17.1.jar:/home/runner/.m2/repository/jakarta/activation/jakarta.activation-api/2.1.3/jakarta.activation-api-2.1.3.jar:/home/runner/.m2/repository/com/sun/activation/javax.activation/1.2.0/javax.activation-1.2.0.jar:/home/runner/.m2/repository/org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-package-core/3.2.3/pulsar-package-core-3.2.3.jar:/home/runner/.m2/repository/org/apache/commons/commons-lang3/3.14.0/commons-lang3-3.14.0.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client/3.2.4/pulsar-client-3.2.4.jar:/home/runner/.m2/repository/javax/ws/rs/javax.ws.rs-api/2.1/javax.ws.rs-api-2.1.jar:/home/runner/.m2/repository/com/google/protobuf/protobuf-java/3.19.6/protobuf-java-3.19.6.jar:/home/runner/.m2/repository/io/minio/minio/8.5.12/minio-8.5.12.jar:/home/runner/.m2/repository/com/carrotsearch/thirdparty/simple-xml-safe/2.7.1/simple-xml-safe-2.7.1.jar:/home/runner/.m2/repository/com/google/guava/guava/33.0.0-jre/guava-33.0.0-jre.jar:/home/runner/.m2/repository/com/google/guava/failureaccess/1.0.2/failureaccess-1.0.2.jar:/home/runner/.m2/repository/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar:/home/runner/.m2/repository/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar:/home/runner/.m2/repository/com/google/errorprone/error_prone_annotations/2.23.0/error_prone_annotations-2.23.0.jar:/home/runner/.m2/repository/com/google/j2objc/j2objc-annotations/2.8/j2objc-annotations-2.8.jar:/home/runner/.m2/repository/com/squareup/okhttp3/okhttp/4.12.0/okhttp-4.12.0.jar:/home/runner/.m2/repository/com/squareup/okio/okio/3.6.0/okio-3.6.0.jar:/home/runner/.m2/repository/com/squareup/okio/okio-jvm/3.6.0/okio-jvm-3.6.0.jar:/home/runner/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.9.24/kotlin-stdlib-common-1.9.24.jar:/home/runner/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.9.24/kotlin-stdlib-jdk8-1.9.24.jar:/home/runner/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.24/kotlin-stdlib-1.9.24.jar:/home/runner/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.9.24/kotlin-stdlib-jdk7-1.9.24.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.17.1/jackson-core-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.17.1/jackson-databind-2.17.1.jar:/home/runner/.m2/repository/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.jar:/home/runner/.m2/repository/org/xerial/snappy/snappy-java/1.1.10.5/snappy-java-1.1.10.5.jar:"/>
+    <property name="java.vm.vendor" value="Eclipse Adoptium"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://adoptium.net/"/>
+    <property name="user.timezone" value="Etc/UTC"/>
+    <property name="org.jboss.logging.provider" value="slf4j"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="17"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/temurin-17-jdk-amd64/lib"/>
+    <property name="sun.java.command" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/surefire/surefirebooter-20260309102308097_3.jar /home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/surefire 2026-03-09T10-23-07_826-jvmRun1 surefire-20260309102308097_1tmp surefire_0-20260309102308097_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/test-classes:/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/classes:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-web/3.3.0/spring-boot-starter-web-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter/3.3.0/spring-boot-starter-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot/3.3.0/spring-boot-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/3.3.0/spring-boot-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-logging/3.3.0/spring-boot-starter-logging-3.3.0.jar:/home/runner/.m2/repository/ch/qos/logback/logback-classic/1.5.6/logback-classic-1.5.6.jar:/home/runner/.m2/repository/ch/qos/logback/logback-core/1.5.6/logback-core-1.5.6.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.23.1/log4j-to-slf4j-2.23.1.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-api/2.23.1/log4j-api-2.23.1.jar:/home/runner/.m2/repository/org/slf4j/jul-to-slf4j/2.0.13/jul-to-slf4j-2.0.13.jar:/home/runner/.m2/repository/jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar:/home/runner/.m2/repository/org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-json/3.3.0/spring-boot-starter-json-3.3.0.jar:/home/runner/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.17.1/jackson-datatype-jdk8-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.17.1/jackson-datatype-jsr310-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/module/jackson-module-parameter-names/2.17.1/jackson-module-parameter-names-2.17.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat/3.3.0/spring-boot-starter-tomcat-3.3.0.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/10.1.24/tomcat-embed-core-10.1.24.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/10.1.24/tomcat-embed-websocket-10.1.24.jar:/home/runner/.m2/repository/org/springframework/spring-web/6.1.8/spring-web-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-beans/6.1.8/spring-beans-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-webmvc/6.1.8/spring-webmvc-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-aop/6.1.8/spring-aop-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-expression/6.1.8/spring-expression-6.1.8.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-validation/3.3.0/spring-boot-starter-validation-3.3.0.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/10.1.24/tomcat-embed-el-10.1.24.jar:/home/runner/.m2/repository/org/hibernate/validator/hibernate-validator/8.0.1.Final/hibernate-validator-8.0.1.Final.jar:/home/runner/.m2/repository/jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2.jar:/home/runner/.m2/repository/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.jar:/home/runner/.m2/repository/com/fasterxml/classmate/1.7.0/classmate-1.7.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-actuator/3.3.0/spring-boot-starter-actuator-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-actuator-autoconfigure/3.3.0/spring-boot-actuator-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-actuator/3.3.0/spring-boot-actuator-3.3.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-observation/1.13.0/micrometer-observation-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-commons/1.13.0/micrometer-commons-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-jakarta9/1.13.0/micrometer-jakarta9-1.13.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-data-redis/3.3.0/spring-boot-starter-data-redis-3.3.0.jar:/home/runner/.m2/repository/io/lettuce/lettuce-core/6.3.2.RELEASE/lettuce-core-6.3.2.RELEASE.jar:/home/runner/.m2/repository/io/netty/netty-common/4.1.110.Final/netty-common-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-handler/4.1.110.Final/netty-handler-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-resolver/4.1.110.Final/netty-resolver-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-buffer/4.1.110.Final/netty-buffer-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-codec/4.1.110.Final/netty-codec-4.1.110.Final.jar:/home/runner/.m2/repository/io/netty/netty-transport/4.1.110.Final/netty-transport-4.1.110.Final.jar:/home/runner/.m2/repository/io/projectreactor/reactor-core/3.6.6/reactor-core-3.6.6.jar:/home/runner/.m2/repository/org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-redis/3.3.0/spring-data-redis-3.3.0.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-keyvalue/3.3.0/spring-data-keyvalue-3.3.0.jar:/home/runner/.m2/repository/org/springframework/data/spring-data-commons/3.3.0/spring-data-commons-3.3.0.jar:/home/runner/.m2/repository/org/springframework/spring-oxm/6.1.8/spring-oxm-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-context-support/6.1.8/spring-context-support-6.1.8.jar:/home/runner/.m2/repository/io/micrometer/micrometer-registry-prometheus/1.13.0/micrometer-registry-prometheus-1.13.0.jar:/home/runner/.m2/repository/io/micrometer/micrometer-core/1.13.0/micrometer-core-1.13.0.jar:/home/runner/.m2/repository/org/hdrhistogram/HdrHistogram/2.2.1/HdrHistogram-2.2.1.jar:/home/runner/.m2/repository/org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-core/1.2.1/prometheus-metrics-core-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-model/1.2.1/prometheus-metrics-model-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-config/1.2.1/prometheus-metrics-config-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-tracer-common/1.2.1/prometheus-metrics-tracer-common-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-exposition-formats/1.2.1/prometheus-metrics-exposition-formats-1.2.1.jar:/home/runner/.m2/repository/io/prometheus/prometheus-metrics-shaded-protobuf/1.2.1/prometheus-metrics-shaded-protobuf-1.2.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-test/3.3.0/spring-boot-starter-test-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test/3.3.0/spring-boot-test-3.3.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test-autoconfigure/3.3.0/spring-boot-test-autoconfigure-3.3.0.jar:/home/runner/.m2/repository/com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0.jar:/home/runner/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.jar:/home/runner/.m2/repository/net/minidev/json-smart/2.5.1/json-smart-2.5.1.jar:/home/runner/.m2/repository/net/minidev/accessors-smart/2.5.1/accessors-smart-2.5.1.jar:/home/runner/.m2/repository/org/ow2/asm/asm/9.6/asm-9.6.jar:/home/runner/.m2/repository/org/assertj/assertj-core/3.25.3/assertj-core-3.25.3.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy/1.14.16/byte-buddy-1.14.16.jar:/home/runner/.m2/repository/org/awaitility/awaitility/4.2.1/awaitility-4.2.1.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest/2.2/hamcrest-2.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter/5.10.2/junit-jupiter-5.10.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.2/junit-jupiter-api-5.10.2.jar:/home/runner/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-commons/1.10.2/junit-platform-commons-1.10.2.jar:/home/runner/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.10.2/junit-jupiter-params-5.10.2.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.2/junit-jupiter-engine-5.10.2.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-engine/1.10.2/junit-platform-engine-1.10.2.jar:/home/runner/.m2/repository/org/mockito/mockito-core/5.11.0/mockito-core-5.11.0.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.16/byte-buddy-agent-1.14.16.jar:/home/runner/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/home/runner/.m2/repository/org/mockito/mockito-junit-jupiter/5.11.0/mockito-junit-jupiter-5.11.0.jar:/home/runner/.m2/repository/org/springframework/spring-core/6.1.8/spring-core-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-jcl/6.1.8/spring-jcl-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-test/6.1.8/spring-test-6.1.8.jar:/home/runner/.m2/repository/org/xmlunit/xmlunit-core/2.9.1/xmlunit-core-2.9.1.jar:/home/runner/.m2/repository/org/testcontainers/junit-jupiter/1.19.8/junit-jupiter-1.19.8.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers/1.19.8/testcontainers-1.19.8.jar:/home/runner/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest-core/2.2/hamcrest-core-2.2.jar:/home/runner/.m2/repository/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar:/home/runner/.m2/repository/org/apache/commons/commons-compress/1.24.0/commons-compress-1.24.0.jar:/home/runner/.m2/repository/org/rnorth/duct-tape/duct-tape/1.0.8/duct-tape-1.0.8.jar:/home/runner/.m2/repository/org/jetbrains/annotations/17.0.0/annotations-17.0.0.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-api/3.3.6/docker-java-api-3.3.6.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport-zerodep/3.3.6/docker-java-transport-zerodep-3.3.6.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport/3.3.6/docker-java-transport-3.3.6.jar:/home/runner/.m2/repository/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar:/home/runner/.m2/repository/org/testcontainers/kafka/1.19.8/kafka-1.19.8.jar:/home/runner/.m2/repository/org/skyscreamer/jsonassert/1.5.1/jsonassert-1.5.1.jar:/home/runner/.m2/repository/org/json/json/20220320/json-20220320.jar:/home/runner/.m2/repository/com/github/erosb/everit-json-schema/1.14.4/everit-json-schema-1.14.4.jar:/home/runner/.m2/repository/commons-validator/commons-validator/1.7/commons-validator-1.7.jar:/home/runner/.m2/repository/commons-digester/commons-digester/2.1/commons-digester-2.1.jar:/home/runner/.m2/repository/commons-logging/commons-logging/1.2/commons-logging-1.2.jar:/home/runner/.m2/repository/commons-collections/commons-collections/3.2.2/commons-collections-3.2.2.jar:/home/runner/.m2/repository/com/damnhandy/handy-uri-templates/2.1.8/handy-uri-templates-2.1.8.jar:/home/runner/.m2/repository/joda-time/joda-time/2.10.2/joda-time-2.10.2.jar:/home/runner/.m2/repository/com/google/re2j/re2j/1.6/re2j-1.6.jar:/home/runner/.m2/repository/org/springframework/kafka/spring-kafka/3.2.0/spring-kafka-3.2.0.jar:/home/runner/.m2/repository/org/springframework/spring-context/6.1.8/spring-context-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-messaging/6.1.8/spring-messaging-6.1.8.jar:/home/runner/.m2/repository/org/springframework/spring-tx/6.1.8/spring-tx-6.1.8.jar:/home/runner/.m2/repository/org/springframework/retry/spring-retry/2.0.6/spring-retry-2.0.6.jar:/home/runner/.m2/repository/org/apache/kafka/kafka-clients/3.7.0/kafka-clients-3.7.0.jar:/home/runner/.m2/repository/com/github/luben/zstd-jni/1.5.5-6/zstd-jni-1.5.5-6.jar:/home/runner/.m2/repository/org/lz4/lz4-java/1.8.0/lz4-java-1.8.0.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-amqp/3.3.0/spring-boot-starter-amqp-3.3.0.jar:/home/runner/.m2/repository/org/springframework/amqp/spring-rabbit/3.1.5/spring-rabbit-3.1.5.jar:/home/runner/.m2/repository/org/springframework/amqp/spring-amqp/3.1.5/spring-amqp-3.1.5.jar:/home/runner/.m2/repository/com/rabbitmq/amqp-client/5.21.0/amqp-client-5.21.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-webmvc-ui/2.1.0/springdoc-openapi-starter-webmvc-ui-2.1.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-webmvc-api/2.1.0/springdoc-openapi-starter-webmvc-api-2.1.0.jar:/home/runner/.m2/repository/org/springdoc/springdoc-openapi-starter-common/2.1.0/springdoc-openapi-starter-common-2.1.0.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-core-jakarta/2.2.9/swagger-core-jakarta-2.2.9.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-annotations-jakarta/2.2.9/swagger-annotations-jakarta-2.2.9.jar:/home/runner/.m2/repository/io/swagger/core/v3/swagger-models-jakarta/2.2.9/swagger-models-jakarta-2.2.9.jar:/home/runner/.m2/repository/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.17.1/jackson-dataformat-yaml-2.17.1.jar:/home/runner/.m2/repository/org/webjars/swagger-ui/4.18.2/swagger-ui-4.18.2.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-admin/3.2.4/pulsar-client-admin-3.2.4.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-api/3.2.3/pulsar-client-api-3.2.3.jar:/home/runner/.m2/repository/io/airlift/aircompressor/0.20/aircompressor-0.20.jar:/home/runner/.m2/repository/org/apache/pulsar/bouncy-castle-bc/3.2.4/bouncy-castle-bc-3.2.4-pkg.jar:/home/runner/.m2/repository/org/bouncycastle/bcpkix-jdk18on/1.78.1/bcpkix-jdk18on-1.78.1.jar:/home/runner/.m2/repository/org/bouncycastle/bcutil-jdk18on/1.78.1/bcutil-jdk18on-1.78.1.jar:/home/runner/.m2/repository/org/bouncycastle/bcprov-jdk18on/1.78.1/bcprov-jdk18on-1.78.1.jar:/home/runner/.m2/repository/org/apache/avro/avro/1.11.3/avro-1.11.3.jar:/home/runner/.m2/repository/org/apache/avro/avro-protobuf/1.11.3/avro-protobuf-1.11.3.jar:/home/runner/.m2/repository/javax/validation/validation-api/1.1.0.Final/validation-api-1.1.0.Final.jar:/home/runner/.m2/repository/net/jcip/jcip-annotations/1.0/jcip-annotations-1.0.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client-admin-api/3.2.3/pulsar-client-admin-api-3.2.3.jar:/home/runner/.m2/repository/jakarta/ws/rs/jakarta.ws.rs-api/3.1.0/jakarta.ws.rs-api-3.1.0.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.17.1/jackson-annotations-2.17.1.jar:/home/runner/.m2/repository/jakarta/activation/jakarta.activation-api/2.1.3/jakarta.activation-api-2.1.3.jar:/home/runner/.m2/repository/com/sun/activation/javax.activation/1.2.0/javax.activation-1.2.0.jar:/home/runner/.m2/repository/org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-package-core/3.2.3/pulsar-package-core-3.2.3.jar:/home/runner/.m2/repository/org/apache/commons/commons-lang3/3.14.0/commons-lang3-3.14.0.jar:/home/runner/.m2/repository/org/apache/pulsar/pulsar-client/3.2.4/pulsar-client-3.2.4.jar:/home/runner/.m2/repository/javax/ws/rs/javax.ws.rs-api/2.1/javax.ws.rs-api-2.1.jar:/home/runner/.m2/repository/com/google/protobuf/protobuf-java/3.19.6/protobuf-java-3.19.6.jar:/home/runner/.m2/repository/io/minio/minio/8.5.12/minio-8.5.12.jar:/home/runner/.m2/repository/com/carrotsearch/thirdparty/simple-xml-safe/2.7.1/simple-xml-safe-2.7.1.jar:/home/runner/.m2/repository/com/google/guava/guava/33.0.0-jre/guava-33.0.0-jre.jar:/home/runner/.m2/repository/com/google/guava/failureaccess/1.0.2/failureaccess-1.0.2.jar:/home/runner/.m2/repository/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar:/home/runner/.m2/repository/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar:/home/runner/.m2/repository/com/google/errorprone/error_prone_annotations/2.23.0/error_prone_annotations-2.23.0.jar:/home/runner/.m2/repository/com/google/j2objc/j2objc-annotations/2.8/j2objc-annotations-2.8.jar:/home/runner/.m2/repository/com/squareup/okhttp3/okhttp/4.12.0/okhttp-4.12.0.jar:/home/runner/.m2/repository/com/squareup/okio/okio/3.6.0/okio-3.6.0.jar:/home/runner/.m2/repository/com/squareup/okio/okio-jvm/3.6.0/okio-jvm-3.6.0.jar:/home/runner/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.9.24/kotlin-stdlib-common-1.9.24.jar:/home/runner/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.9.24/kotlin-stdlib-jdk8-1.9.24.jar:/home/runner/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.24/kotlin-stdlib-1.9.24.jar:/home/runner/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.9.24/kotlin-stdlib-jdk7-1.9.24.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.17.1/jackson-core-2.17.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.17.1/jackson-databind-2.17.1.jar:/home/runner/.m2/repository/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.jar:/home/runner/.m2/repository/org/xerial/snappy/snappy-java/1.1.10.5/snappy-java-1.1.10.5.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/home/runner"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2026-01-20"/>
+    <property name="java.home" value="/usr/lib/jvm/temurin-17-jdk-amd64"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="FILE_LOG_CHARSET" value="UTF-8"/>
+    <property name="java.awt.headless" value="true"/>
+    <property name="surefire.real.class.path" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance/target/surefire/surefirebooter-20260309102308097_3.jar"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="17.0.18+8"/>
+    <property name="user.name" value="runner"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="6.14.0-1017-azure"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="jnidispatch.path" value="/home/runner/.cache/JNA/temp/jna453510482213078214.tmp"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="jna.platform.library.path" value="/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/usr/lib64:/lib64:/usr/lib:/lib:/lib32:/usr/local/lib:/usr/lib/x86_64-linux-gnu/libfakeroot"/>
+    <property name="java.vendor.version" value="Temurin-17.0.18+8"/>
+    <property name="localRepository" value="/home/runner/.m2/repository"/>
+    <property name="jna.loaded" value="true"/>
+    <property name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="java.version" value="17.0.18"/>
+    <property name="user.dir" value="/home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="PID" value="3220"/>
+    <property name="CONSOLE_LOG_CHARSET" value="UTF-8"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="java.vendor" value="Eclipse Adoptium"/>
+    <property name="java.vm.version" value="17.0.18+8"/>
+    <property name="java.specification.maintenance.version" value="1"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="61.0"/>
+  </properties>
+  <testcase name="datasetCreationAcceptsManifest" classname="com.cosmic.governance.test.ProvenanceE2ETest" time="1.684">
+    <system-out><![CDATA[10:23:09.836 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.cosmic.governance.test.ProvenanceE2ETest]: ProvenanceE2ETest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+10:23:10.042 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.cosmic.governance.GovernanceApplication for test class com.cosmic.governance.test.ProvenanceE2ETest
+10:23:10.348 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+10:23:10.354 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+10:23:11.412 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with local Unix socket (unix:///var/run/docker.sock)
+10:23:11.421 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+10:23:11.444 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 28.0.4
+  API Version: 1.48
+  Operating System: Ubuntu 24.04.3 LTS
+  Total Memory: 15994 MB
+10:23:11.493 [main] INFO tc.testcontainers/ryuk:0.7.0 -- Pulling docker image: testcontainers/ryuk:0.7.0. Please be patient; this may take some time but only needs to be done once.
+10:23:11.828 [docker-java-stream-548174466] INFO tc.testcontainers/ryuk:0.7.0 -- Starting to pull image
+10:23:11.859 [docker-java-stream-548174466] INFO tc.testcontainers/ryuk:0.7.0 -- Pulling image layers:  0 pending,  0 downloaded,  0 extracted, (0 bytes/0 bytes)
+10:23:11.965 [docker-java-stream-548174466] INFO tc.testcontainers/ryuk:0.7.0 -- Pulling image layers:  2 pending,  1 downloaded,  0 extracted, (308 KB/? MB)
+10:23:11.976 [docker-java-stream-548174466] INFO tc.testcontainers/ryuk:0.7.0 -- Pulling image layers:  1 pending,  2 downloaded,  0 extracted, (308 KB/? MB)
+10:23:12.074 [docker-java-stream-548174466] INFO tc.testcontainers/ryuk:0.7.0 -- Pulling image layers:  0 pending,  3 downloaded,  0 extracted, (342 KB/6 MB)
+10:23:12.179 [docker-java-stream-548174466] INFO tc.testcontainers/ryuk:0.7.0 -- Pulling image layers:  0 pending,  3 downloaded,  1 extracted, (3 MB/6 MB)
+10:23:12.528 [docker-java-stream-548174466] INFO tc.testcontainers/ryuk:0.7.0 -- Pulling image layers:  0 pending,  3 downloaded,  2 extracted, (3 MB/6 MB)
+10:23:12.578 [docker-java-stream-548174466] INFO tc.testcontainers/ryuk:0.7.0 -- Pulling image layers:  0 pending,  3 downloaded,  3 extracted, (6 MB/6 MB)
+10:23:12.584 [main] INFO tc.testcontainers/ryuk:0.7.0 -- Image testcontainers/ryuk:0.7.0 pull took PT1.090922985S
+10:23:12.620 [main] INFO tc.testcontainers/ryuk:0.7.0 -- Creating container for image: testcontainers/ryuk:0.7.0
+10:23:12.717 [main] INFO tc.testcontainers/ryuk:0.7.0 -- Container testcontainers/ryuk:0.7.0 is starting: e00eb8fa20efe0e7741a79470a03805c2bb2733f1bfe78aa97d74fbe195b5523
+10:23:13.176 [main] INFO tc.testcontainers/ryuk:0.7.0 -- Container testcontainers/ryuk:0.7.0 started in PT0.556140168S
+10:23:13.182 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+10:23:13.182 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+10:23:13.183 [main] INFO org.testcontainers.DockerClientFactory -- ✔︎ Docker server version should be at least 1.6.0
+10:23:13.189 [main] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling docker image: confluentinc/cp-kafka:7.4.1. Please be patient; this may take some time but only needs to be done once.
+10:23:13.401 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Starting to pull image
+10:23:13.402 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending,  0 downloaded,  0 extracted, (0 bytes/0 bytes)
+10:23:13.563 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers: 10 pending,  1 downloaded,  0 extracted, (975 KB/? MB)
+10:23:13.628 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  9 pending,  2 downloaded,  0 extracted, (996 KB/? MB)
+10:23:13.862 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  8 pending,  3 downloaded,  0 extracted, (85 MB/? MB)
+10:23:13.892 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  7 pending,  4 downloaded,  0 extracted, (111 MB/? MB)
+10:23:13.921 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  6 pending,  5 downloaded,  0 extracted, (111 MB/? MB)
+10:23:13.940 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  5 pending,  6 downloaded,  0 extracted, (111 MB/? MB)
+10:23:13.985 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  4 pending,  7 downloaded,  0 extracted, (133 MB/? MB)
+10:23:14.008 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  3 pending,  8 downloaded,  0 extracted, (133 MB/? MB)
+10:23:14.064 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  2 pending,  9 downloaded,  0 extracted, (134 MB/? MB)
+10:23:14.423 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  1 pending, 10 downloaded,  0 extracted, (313 MB/? MB)
+10:23:14.684 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded,  0 extracted, (344 MB/417 MB)
+10:23:14.840 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded,  1 extracted, (347 MB/417 MB)
+10:23:22.064 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded,  2 extracted, (373 MB/417 MB)
+10:23:22.145 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded,  3 extracted, (381 MB/417 MB)
+10:23:22.169 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded,  4 extracted, (381 MB/417 MB)
+10:23:22.363 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded,  5 extracted, (397 MB/417 MB)
+10:23:22.373 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded,  6 extracted, (397 MB/417 MB)
+10:23:22.382 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded,  7 extracted, (397 MB/417 MB)
+10:23:22.390 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded,  8 extracted, (397 MB/417 MB)
+10:23:22.401 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded,  9 extracted, (397 MB/417 MB)
+10:23:23.023 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded, 10 extracted, (417 MB/417 MB)
+10:23:23.034 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pulling image layers:  0 pending, 11 downloaded, 11 extracted, (417 MB/417 MB)
+10:23:23.041 [docker-java-stream--338429612] INFO tc.confluentinc/cp-kafka:7.4.1 -- Pull complete. 11 layers, pulled in 9s (downloaded 417 MB at 46 MB/s)
+10:23:23.041 [main] INFO tc.confluentinc/cp-kafka:7.4.1 -- Image confluentinc/cp-kafka:7.4.1 pull took PT9.851604949S
+10:23:23.045 [main] INFO tc.confluentinc/cp-kafka:7.4.1 -- Creating container for image: confluentinc/cp-kafka:7.4.1
+10:23:23.130 [main] INFO tc.confluentinc/cp-kafka:7.4.1 -- Container confluentinc/cp-kafka:7.4.1 is starting: 3622e8926654b56f2cb75f1e3031f793dd4a676b23a143b5910d2ec719b8f669
+10:23:27.995 [main] INFO tc.confluentinc/cp-kafka:7.4.1 -- Container confluentinc/cp-kafka:7.4.1 started in PT4.950438729S
+10:23:28.000 [main] INFO tc.redis:7-alpine -- Pulling docker image: redis:7-alpine. Please be patient; this may take some time but only needs to be done once.
+10:23:28.198 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Starting to pull image
+10:23:28.199 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  0 pending,  0 downloaded,  0 extracted, (0 bytes/0 bytes)
+10:23:28.334 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  7 pending,  1 downloaded,  0 extracted, (2 KB/? MB)
+10:23:28.354 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  6 pending,  2 downloaded,  0 extracted, (39 KB/? MB)
+10:23:28.388 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  5 pending,  3 downloaded,  0 extracted, (201 KB/? MB)
+10:23:28.406 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  4 pending,  4 downloaded,  0 extracted, (201 KB/? MB)
+10:23:28.439 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  3 pending,  5 downloaded,  0 extracted, (201 KB/? MB)
+10:23:28.441 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  2 pending,  6 downloaded,  0 extracted, (201 KB/? MB)
+10:23:28.463 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  1 pending,  7 downloaded,  0 extracted, (3 MB/? MB)
+10:23:28.480 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  1 pending,  7 downloaded,  1 extracted, (3 MB/? MB)
+10:23:28.507 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  1 pending,  7 downloaded,  2 extracted, (3 MB/? MB)
+10:23:28.649 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  1 pending,  7 downloaded,  3 extracted, (3 MB/? MB)
+10:23:28.677 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  1 pending,  7 downloaded,  4 extracted, (4 MB/? MB)
+10:23:28.863 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  1 pending,  7 downloaded,  5 extracted, (16 MB/? MB)
+10:23:28.872 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  1 pending,  7 downloaded,  6 extracted, (16 MB/? MB)
+10:23:28.883 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  1 pending,  7 downloaded,  7 extracted, (16 MB/? MB)
+10:23:28.895 [docker-java-stream-1334956133] INFO tc.redis:7-alpine -- Pulling image layers:  1 pending,  7 downloaded,  8 extracted, (16 MB/? MB)
+10:23:28.901 [main] INFO tc.redis:7-alpine -- Image redis:7-alpine pull took PT0.901252038S
+10:23:28.905 [main] INFO tc.redis:7-alpine -- Creating container for image: redis:7-alpine
+10:23:28.921 [main] INFO tc.redis:7-alpine -- Container redis:7-alpine is starting: d080d359a9b06ebc4701c794837fbb22acff8a25930e5746c9b2bf94c1fb0ca8
+10:23:29.165 [main] INFO tc.redis:7-alpine -- Container redis:7-alpine started in PT0.260239818S
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.0)
+
+2026-03-09T10:23:29.648Z  INFO 3220 --- [           main] c.c.governance.test.ProvenanceE2ETest    : Starting ProvenanceE2ETest using Java 17.0.18 with PID 3220 (started by runner in /home/runner/work/phase-2-cosmic/phase-2-cosmic/apps/java-governance)
+2026-03-09T10:23:29.650Z  INFO 3220 --- [           main] c.c.governance.test.ProvenanceE2ETest    : The following 1 profile is active: "test"
+2026-03-09T10:23:31.206Z  INFO 3220 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-03-09T10:23:31.210Z  INFO 3220 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-03-09T10:23:31.254Z  INFO 3220 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 27 ms. Found 0 Redis repository interfaces.
+2026-03-09T10:23:34.344Z  WARN 3220 --- [           main] c.c.g.a.s.InfrastructureTelemetryService : Pulsar admin snapshot unavailable from http://localhost:8085: org.apache.pulsar.client.admin.PulsarAdminException: java.util.concurrent.CompletionException: org.apache.pulsar.client.admin.internal.http.AsyncHttpConnector$RetryException: Could not complete the operation. Number of retries has been exhausted. Failed reason: Connection refused: localhost/[0:0:0:0:0:0:0:1]:8085
+2026-03-09T10:23:34.352Z  INFO 3220 --- [           main] c.c.g.a.service.TopologyMetricsRegistry  : Topology metrics refresh fell back to derived data for 23 canonical links: [frontend->backend, frontend->nginx, backend->java-governance, backend->redis, backend->prom, data-generator->pulsar, data-generator->kafka, data-generator->array-main, data-generator->array-lbl, data-generator->array-sba, pulsar->kafka, pulsar->java-governance, rabbitmq->java-governance, kafka->java-governance, java-governance->rabbitmq, java-governance->kafka, java-governance->minio, java-governance->redis, kafka->java-ingest, prom->alertmanager, array-main->minio, array-lbl->minio, array-sba->minio]
+2026-03-09T10:23:34.754Z  WARN 3220 --- [r-client-io-8-4] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-09T10:23:34.861Z  WARN 3220 --- [-scheduled-18-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 100 ms
+2026-03-09T10:23:34.864Z  WARN 3220 --- [r-client-io-8-2] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-09T10:23:35.047Z  WARN 3220 --- [-scheduled-19-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 183 ms
+2026-03-09T10:23:35.049Z  WARN 3220 --- [r-client-io-8-4] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-09T10:23:35.429Z  WARN 3220 --- [-scheduled-20-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 380 ms
+2026-03-09T10:23:35.431Z  WARN 3220 --- [r-client-io-8-2] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-09T10:23:35.700Z  INFO 3220 --- [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-03-09T10:23:35.700Z  INFO 3220 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-03-09T10:23:35.713Z  INFO 3220 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-03-09T10:23:35.727Z  INFO 3220 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 25 ms
+2026-03-09T10:23:35.881Z  INFO 3220 --- [           main] o.a.k.clients.consumer.ConsumerConfig    : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.include.jmx.reporter = true
+	auto.offset.reset = latest
+	bootstrap.servers = [localhost:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-audit-mirror-1
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = false
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = audit-mirror
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metric.reporters = []
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+
+2026-03-09T10:23:35.959Z  INFO 3220 --- [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-03-09T10:23:36.173Z  INFO 3220 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 3.7.0
+2026-03-09T10:23:36.174Z  INFO 3220 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: 2ae524ed625438c5
+2026-03-09T10:23:36.174Z  INFO 3220 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1773051816172
+2026-03-09T10:23:36.195Z  INFO 3220 --- [           main] o.a.k.c.c.internals.LegacyKafkaConsumer  : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Subscribed to topic(s): cosmic-audit
+2026-03-09T10:23:36.203Z  INFO 3220 --- [           main] o.a.k.clients.consumer.ConsumerConfig    : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.include.jmx.reporter = true
+	auto.offset.reset = latest
+	bootstrap.servers = [localhost:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-governance-group-2
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = false
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = governance-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metric.reporters = []
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+
+2026-03-09T10:23:36.204Z  INFO 3220 --- [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-03-09T10:23:36.216Z  WARN 3220 --- [-scheduled-17-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 784 ms
+2026-03-09T10:23:36.221Z  WARN 3220 --- [r-client-io-8-4] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+2026-03-09T10:23:36.222Z  INFO 3220 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 3.7.0
+2026-03-09T10:23:36.222Z  INFO 3220 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: 2ae524ed625438c5
+2026-03-09T10:23:36.222Z  INFO 3220 --- [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1773051816222
+2026-03-09T10:23:36.244Z  INFO 3220 --- [           main] o.a.k.c.c.internals.LegacyKafkaConsumer  : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Subscribed to topic(s): phase2-events
+2026-03-09T10:23:36.251Z  INFO 3220 --- [           main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-09T10:23:36.256Z  INFO 3220 --- [           main] o.s.a.r.l.SimpleMessageListenerContainer : Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused
+2026-03-09T10:23:36.267Z  INFO 3220 --- [ntContainer#0-1] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-09T10:23:36.269Z ERROR 3220 --- [ntContainer#0-1] o.s.a.r.l.SimpleMessageListenerContainer : Failed to check/redeclare auto-delete queue(s).
+
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:622) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2249) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2222) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2202) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:467) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:451) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1960) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1924) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1478) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1320) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+Caused by: java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:684) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602) ~[na:na]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61) ~[amqp-client-5.21.0.jar:5.21.0]
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249) ~[amqp-client-5.21.0.jar:5.21.0]
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198) ~[amqp-client-5.21.0.jar:5.21.0]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:668) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:637) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:584) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	... 12 common frames omitted
+
+2026-03-09T10:23:36.275Z  INFO 3220 --- [ntContainer#0-1] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-09T10:23:36.326Z  INFO 3220 --- [           main] c.c.governance.test.ProvenanceE2ETest    : Started ProvenanceE2ETest in 7.112 seconds (process running for 28.173)
+2026-03-09T10:23:36.453Z  WARN 3220 --- [   scheduling-1] c.c.g.a.s.InfrastructureTelemetryService : Pulsar admin snapshot unavailable from http://localhost:8085: org.apache.pulsar.client.admin.PulsarAdminException: java.util.concurrent.CompletionException: org.apache.pulsar.client.admin.internal.http.AsyncHttpConnector$RetryException: Could not complete the operation. Number of retries has been exhausted. Failed reason: Connection refused: localhost/[0:0:0:0:0:0:0:1]:8085
+2026-03-09T10:23:36.706Z  INFO 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-09T10:23:36.706Z  INFO 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-09T10:23:36.708Z  WARN 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-09T10:23:36.708Z  WARN 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-09T10:23:36.708Z  WARN 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-09T10:23:36.708Z  WARN 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-09T10:23:36.795Z  INFO 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-09T10:23:36.795Z  WARN 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-09T10:23:36.796Z  WARN 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-09T10:23:36.817Z  INFO 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-09T10:23:36.818Z  WARN 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-09T10:23:36.818Z  WARN 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-09T10:23:36.915Z  INFO 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-09T10:23:36.916Z  WARN 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-09T10:23:36.916Z  WARN 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-09T10:23:36.969Z  INFO 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-09T10:23:36.970Z  WARN 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-09T10:23:36.970Z  WARN 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-09T10:23:37.101Z  INFO 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-09T10:23:37.102Z  WARN 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-09T10:23:37.102Z  WARN 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-09T10:23:37.180Z  INFO 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-09T10:23:37.180Z  WARN 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-09T10:23:37.180Z  WARN 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-09T10:23:37.434Z  INFO 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Node -1 disconnected.
+2026-03-09T10:23:37.434Z  WARN 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-09T10:23:37.434Z  WARN 3220 --- [ntainer#1-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-governance-group-2, groupId=governance-group] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-09T10:23:37.535Z  INFO 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Node -1 disconnected.
+2026-03-09T10:23:37.536Z  WARN 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Node may not be available.
+2026-03-09T10:23:37.536Z  WARN 3220 --- [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-audit-mirror-1, groupId=audit-mirror] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2026-03-09T10:23:37.777Z  WARN 3220 --- [-scheduled-18-1] o.a.pulsar.client.impl.PulsarClientImpl  : [topic: persistent://public/default/phase2-events] Could not get connection while getPartitionedTopicMetadata -- Will try again in 1556 ms
+2026-03-09T10:23:37.780Z  WARN 3220 --- [r-client-io-8-2] o.a.pulsar.client.impl.ConnectionPool    : Failed to open connection to localhost/<unresolved>:6650 : org.apache.pulsar.shade.io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed: Connection refused: localhost/127.0.0.1:6650
+]]></system-out>
+  </testcase>
+  <testcase name="jobSubmissionGeneratesAuditRecord" classname="com.cosmic.governance.test.ProvenanceE2ETest" time="0.219">
+    <system-out><![CDATA[2026-03-09T10:23:38.158Z  INFO 3220 --- [           main] c.c.governance.api.service.JobService    : Audit: job submitted ee2fd28a-d116-4b54-a380-c991334f95bd workflow=demo dataset=ds1 manifest={version=1, job=demo1} lineage={parentJobId=p-0001}
+2026-03-09T10:23:38.176Z  INFO 3220 --- [           main] o.a.k.clients.producer.ProducerConfig    : ProducerConfig values: 
+	acks = -1
+	auto.include.jmx.reporter = true
+	batch.size = 16384
+	bootstrap.servers = []
+	buffer.memory = 33554432
+	client.dns.lookup = use_all_dns_ips
+	client.id = producer-1
+	compression.type = none
+	connections.max.idle.ms = 540000
+	delivery.timeout.ms = 120000
+	enable.idempotence = true
+	enable.metrics.push = true
+	interceptor.classes = []
+	key.serializer = class org.apache.kafka.common.serialization.StringSerializer
+	linger.ms = 0
+	max.block.ms = 60000
+	max.in.flight.requests.per.connection = 5
+	max.request.size = 1048576
+	metadata.max.age.ms = 300000
+	metadata.max.idle.ms = 300000
+	metric.reporters = []
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partitioner.adaptive.partitioning.enable = true
+	partitioner.availability.timeout.ms = 0
+	partitioner.class = null
+	partitioner.ignore.keys = false
+	receive.buffer.bytes = 32768
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retries = 3
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	transaction.timeout.ms = 60000
+	transactional.id = null
+	value.serializer = class org.apache.kafka.common.serialization.StringSerializer
+
+2026-03-09T10:23:38.177Z  INFO 3220 --- [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-03-09T10:23:38.191Z  INFO 3220 --- [           main] o.a.k.clients.producer.KafkaProducer     : [Producer clientId=producer-1] Instantiated an idempotent producer.
+2026-03-09T10:23:38.199Z  INFO 3220 --- [           main] o.a.k.clients.producer.KafkaProducer     : [Producer clientId=producer-1] Closing the Kafka producer with timeoutMillis = 0 ms.
+2026-03-09T10:23:38.200Z  INFO 3220 --- [           main] o.apache.kafka.common.metrics.Metrics    : Metrics scheduler closed
+2026-03-09T10:23:38.201Z  INFO 3220 --- [           main] o.apache.kafka.common.metrics.Metrics    : Closing reporter org.apache.kafka.common.metrics.JmxReporter
+2026-03-09T10:23:38.201Z  INFO 3220 --- [           main] o.apache.kafka.common.metrics.Metrics    : Closing reporter org.apache.kafka.common.telemetry.internals.ClientTelemetryReporter
+2026-03-09T10:23:38.201Z  INFO 3220 --- [           main] o.apache.kafka.common.metrics.Metrics    : Metrics reporters closed
+2026-03-09T10:23:38.201Z  INFO 3220 --- [           main] o.a.kafka.common.utils.AppInfoParser     : App info kafka.producer for producer-1 unregistered
+2026-03-09T10:23:38.202Z ERROR 3220 --- [           main] c.c.governance.api.service.AuditService  : Failed to publish Kafka audit event
+
+org.apache.kafka.common.KafkaException: Failed to construct kafka producer
+	at org.apache.kafka.clients.producer.KafkaProducer.<init>(KafkaProducer.java:473) ~[kafka-clients-3.7.0.jar:na]
+	at org.apache.kafka.clients.producer.KafkaProducer.<init>(KafkaProducer.java:294) ~[kafka-clients-3.7.0.jar:na]
+	at org.springframework.kafka.core.DefaultKafkaProducerFactory.createRawProducer(DefaultKafkaProducerFactory.java:944) ~[spring-kafka-3.2.0.jar:3.2.0]
+	at org.springframework.kafka.core.DefaultKafkaProducerFactory.createKafkaProducer(DefaultKafkaProducerFactory.java:826) ~[spring-kafka-3.2.0.jar:3.2.0]
+	at org.springframework.kafka.core.DefaultKafkaProducerFactory.doCreateProducer(DefaultKafkaProducerFactory.java:793) ~[spring-kafka-3.2.0.jar:3.2.0]
+	at org.springframework.kafka.core.DefaultKafkaProducerFactory.createProducer(DefaultKafkaProducerFactory.java:768) ~[spring-kafka-3.2.0.jar:3.2.0]
+	at org.springframework.kafka.core.DefaultKafkaProducerFactory.createProducer(DefaultKafkaProducerFactory.java:762) ~[spring-kafka-3.2.0.jar:3.2.0]
+	at org.springframework.kafka.core.KafkaTemplate.getTheProducer(KafkaTemplate.java:944) ~[spring-kafka-3.2.0.jar:3.2.0]
+	at org.springframework.kafka.core.KafkaTemplate.doSend(KafkaTemplate.java:796) ~[spring-kafka-3.2.0.jar:3.2.0]
+	at org.springframework.kafka.core.KafkaTemplate.observeSend(KafkaTemplate.java:773) ~[spring-kafka-3.2.0.jar:3.2.0]
+	at org.springframework.kafka.core.KafkaTemplate.send(KafkaTemplate.java:550) ~[spring-kafka-3.2.0.jar:3.2.0]
+	at com.cosmic.governance.api.service.AuditService.publishControlEvent(AuditService.java:103) ~[classes/:na]
+	at com.cosmic.governance.api.service.AuditService.publishJobEvent(AuditService.java:168) ~[classes/:na]
+	at com.cosmic.governance.api.service.JobService.submit(JobService.java:468) ~[classes/:na]
+	at com.cosmic.governance.api.controller.GovernanceController.submitJob(GovernanceController.java:87) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590) ~[tomcat-embed-core-10.1.24.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72) ~[spring-test-6.1.8.jar:6.1.8]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.24.jar:6.0]
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at com.cosmic.governance.config.GovernanceHttpMetricsFilter.doFilterInternal(GovernanceHttpMetricsFilter.java:45) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at com.cosmic.governance.config.AuthFilter.doFilterInternal(AuthFilter.java:44) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at com.cosmic.governance.config.RequestIdFilter.doFilterInternal(RequestIdFilter.java:46) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:109) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201) ~[spring-test-6.1.8.jar:6.1.8]
+	at com.cosmic.governance.test.ProvenanceE2ETest.jobSubmissionGeneratesAuditRecord(ProvenanceE2ETest.java:37) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:728) ~[junit-platform-commons-1.10.2.jar:1.10.2]
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:218) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:214) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:139) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
+Caused by: org.apache.kafka.common.config.ConfigException: No resolvable bootstrap urls given in bootstrap.servers
+	at org.apache.kafka.clients.ClientUtils.parseAndValidateAddresses(ClientUtils.java:103) ~[kafka-clients-3.7.0.jar:na]
+	at org.apache.kafka.clients.ClientUtils.parseAndValidateAddresses(ClientUtils.java:62) ~[kafka-clients-3.7.0.jar:na]
+	at org.apache.kafka.clients.ClientUtils.parseAndValidateAddresses(ClientUtils.java:58) ~[kafka-clients-3.7.0.jar:na]
+	at org.apache.kafka.clients.producer.KafkaProducer.<init>(KafkaProducer.java:448) ~[kafka-clients-3.7.0.jar:na]
+	... 135 common frames omitted
+
+2026-03-09T10:23:38.208Z  INFO 3220 --- [           main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-03-09T10:23:38.209Z ERROR 3220 --- [           main] c.c.governance.api.service.AuditService  : Failed to publish control event
+
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:622) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2249) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2222) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.send(RabbitTemplate.java:1122) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.convertAndSend(RabbitTemplate.java:1188) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.convertAndSend(RabbitTemplate.java:1181) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at com.cosmic.governance.api.service.AuditService.publishControlEvent(AuditService.java:129) ~[classes/:na]
+	at com.cosmic.governance.api.service.AuditService.publishJobEvent(AuditService.java:168) ~[classes/:na]
+	at com.cosmic.governance.api.service.JobService.submit(JobService.java:468) ~[classes/:na]
+	at com.cosmic.governance.api.controller.GovernanceController.submitJob(GovernanceController.java:87) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590) ~[tomcat-embed-core-10.1.24.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72) ~[spring-test-6.1.8.jar:6.1.8]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.24.jar:6.0]
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at com.cosmic.governance.config.GovernanceHttpMetricsFilter.doFilterInternal(GovernanceHttpMetricsFilter.java:45) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at com.cosmic.governance.config.AuthFilter.doFilterInternal(AuthFilter.java:44) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at com.cosmic.governance.config.RequestIdFilter.doFilterInternal(RequestIdFilter.java:46) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:109) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:151) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132) ~[spring-test-6.1.8.jar:6.1.8]
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201) ~[spring-test-6.1.8.jar:6.1.8]
+	at com.cosmic.governance.test.ProvenanceE2ETest.jobSubmissionGeneratesAuditRecord(ProvenanceE2ETest.java:37) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:728) ~[junit-platform-commons-1.10.2.jar:1.10.2]
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:218) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:214) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:139) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69) ~[junit-jupiter-engine-5.10.2.jar:5.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54) ~[junit-platform-engine-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47) ~[junit-platform-launcher-1.10.2.jar:1.10.2]
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
+Caused by: java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:684) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602) ~[na:na]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61) ~[amqp-client-5.21.0.jar:5.21.0]
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249) ~[amqp-client-5.21.0.jar:5.21.0]
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198) ~[amqp-client-5.21.0.jar:5.21.0]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:668) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:637) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:584) ~[spring-rabbit-3.1.5.jar:3.1.5]
+	... 132 common frames omitted
+
+2026-03-09T10:23:38.268Z  INFO 3220 --- [           main] c.c.governance.api.service.JobService    : Audit: manifest attached ee2fd28a-d116-4b54-a380-c991334f95bd {version=2, job=updated}
+]]></system-out>
+  </testcase>
+</testsuite>

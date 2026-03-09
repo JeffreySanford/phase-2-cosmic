@@ -53,6 +53,7 @@ import { StatusBandModule } from "./shared/status-band/status-band.module";
 import { DisclaimerBannerModule } from "./shared/disclaimer-banner/disclaimer-banner.module";
 import { ProvenancePanelModule } from "./shared/provenance-panel/provenance-panel.module";
 import { ExternalSourcesComponent } from "./shared/external-sources/external-sources.component";
+import { TridentAllocatorComponent } from "./features/diagnostics/trident-allocator/trident-allocator.component";
 
 @NgModule({
   declarations: [
@@ -68,7 +69,6 @@ import { ExternalSourcesComponent } from "./shared/external-sources/external-sou
     TopologyComponent,
     TopologyInfoDialogComponent,
     DiagnosticsComponent,
-    // telemetry components moved into feature module
     PromqlCardComponent,
     SettingsComponent,
     SettingsDialogComponent,
@@ -79,6 +79,7 @@ import { ExternalSourcesComponent } from "./shared/external-sources/external-sou
     DatasetsComponent,
     ExternalSourcesComponent,
     JobEventsComponent,
+    TridentAllocatorComponent,
   ],
   imports: [
     BrowserModule,

@@ -91,60 +91,49 @@ try {
 } catch (e) {
   // ignore — packaged static openapi may not exist in all workspaces
 }
-// Attempt to bundle (flatten external $refs) the merged document so component schemas are self-contained.
-let mergedOpenapi = openapi;
-try {
-  // bundle is more forgiving for external refs and will inline referenced files into the document
-  mergedOpenapi = await SwaggerParser.bundle(openapi);
-} catch (e) {
+// Build a clean, flat schemas map — deep-copy each schema using JSON round-trip so
+// we always work with pure data objects (no leftover circular JS refs from any parser).
+// Strip $schema/$id so AJV doesn't attempt remote meta-schema resolution.
+const allSchemas = (openapi.components && openapi.components.schemas) || {};
+const cleanSchemas = {};
+for (const [name, s] of Object.entries(allSchemas)) {
+  if (!s || typeof s !== 'object') continue;
   try {
-    mergedOpenapi = await SwaggerParser.dereference(openapi);
-  } catch (err) {
-    // If both bundling and dereference fail, keep parsed+merged document and attempt best-effort validation.
-  }
-}
-const ajv = new Ajv({ allErrors: true, strict: false });
-addFormats(ajv);
-
-if (!mergedOpenapi.components || !mergedOpenapi.components.schemas) {
-  throw new Error('OpenAPI components.schemas is missing.');
+    const copy = JSON.parse(JSON.stringify(s));
+    delete copy.$schema;
+    delete copy.$id;
+    cleanSchemas[name] = copy;
+  } catch (_) { /* skip schemas that couldn't be serialised */ }
 }
 
-// Deep-copy every component schema to break any circular JS references left by the
-// parser/bundler, strip $schema/$id meta (prevents remote meta-schema fetch attempts),
-// and rewrite intra-document OpenAPI $refs (#/components/schemas/X) to stable URNs
-// (urn:cs:X) that AJV can resolve via its own schema registry.
-const cleanDefs = {};
-for (const [name, s] of Object.entries(mergedOpenapi.components.schemas)) {
-  try {
-    const rewritten = JSON.parse(
-      JSON.stringify(s).replace(/"#\/components\/schemas\/([^"]+)"/g, '"urn:cs:$1"')
-    );
-    delete rewritten.$schema;
-    delete rewritten.$id;
-    cleanDefs[name] = rewritten;
-  } catch (_) { /* skip unserializable schemas */ }
+if (Object.keys(cleanSchemas).length === 0) {
+  throw new Error('OpenAPI components.schemas is missing or empty.');
 }
 
-// Register all component schemas in AJV keyed by their URN so that cross-schema
-// $refs (rewritten above to urn:cs:X) resolve without any JSON pointer traversal.
-for (const [name, schema] of Object.entries(cleanDefs)) {
-  try {
-    ajv.addSchema(schema, `urn:cs:${name}`);
-  } catch (_) { /* ignore duplicate-key errors on re-runs */ }
-}
-
+// Validate each fixture against its schema.
+// We compile a fresh wrapper per schema so AJV resolves internal $ref strings of the
+// form "#/components/schemas/X" by navigating the wrapper object itself — no external
+// URI resolution, no AJV schema-registry cross-contamination between fixtures.
 for (const [fixtureRelPath, schemaName] of fixtureSchemaPairs) {
-  const schema = cleanDefs[schemaName];
-  if (!schema) {
-    throw new Error(`Schema "${schemaName}" not found in OpenAPI document.`);
+  if (!cleanSchemas[schemaName]) {
+    throw new Error(`Schema "${schemaName}" not found in OpenAPI components.`);
   }
 
   const fixturePath = path.join(workspaceRoot, fixtureRelPath);
   const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
 
-  // getSchema returns the lazily-compiled validate function for the pre-registered URN.
-  const validate = ajv.getSchema(`urn:cs:${schemaName}`) ?? ajv.compile(schema);
+  // Each fixture gets its own isolated AJV instance to avoid any compiled-schema
+  // cache sharing that could carry circular-ref artefacts between schemas.
+  const ajv = new Ajv({ allErrors: true, strict: false });
+  addFormats(ajv);
+
+  // The wrapper embeds ALL component schemas so that any intra-document $ref of the
+  // form "#/components/schemas/X" navigates to wrapper.components.schemas.X directly.
+  const wrapper = {
+    $ref: `#/components/schemas/${schemaName}`,
+    components: { schemas: cleanSchemas },
+  };
+  const validate = ajv.compile(wrapper);
 
   const valid = validate(fixture);
   if (!valid) {

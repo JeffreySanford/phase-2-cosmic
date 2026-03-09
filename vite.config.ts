@@ -24,27 +24,36 @@ export default defineConfig({
       },
       // Forward local `/api/proxy/*` requests to the running Nest backend (or set NEST_PROXY env)
       // Useful for development so the Vite dev server doesn't serve the SPA index for these API calls.
+      // FRONTEND_PORT is set to 4000 by start-all.sh; proxy.conf.json also targets 4000.
       "/api/proxy": {
-        target: process.env.NEST_PROXY || "http://localhost:3000",
+        target:
+          process.env.NEST_PROXY ||
+          `http://localhost:${process.env.FRONTEND_PORT || 4000}`,
         changeOrigin: true,
         secure: false,
         // keep path as-is so backend receives `/api/proxy/prometheus` etc.
       },
       // Also match deeper paths explicitly
       "/api/proxy/**": {
-        target: process.env.NEST_PROXY || "http://localhost:3000",
+        target:
+          process.env.NEST_PROXY ||
+          `http://localhost:${process.env.FRONTEND_PORT || 4000}`,
         changeOrigin: true,
         secure: false,
       },
       // Forward plain `/api` to the Nest SSR server so client dev requests are proxied
       // This prevents the dev server from returning the SPA index for API calls
       "/api": {
-        target: process.env.NEST_PROXY || "http://localhost:3000",
+        target:
+          process.env.NEST_PROXY ||
+          `http://localhost:${process.env.FRONTEND_PORT || 4000}`,
         changeOrigin: true,
         secure: false,
       },
       "/api/**": {
-        target: process.env.NEST_PROXY || "http://localhost:3000",
+        target:
+          process.env.NEST_PROXY ||
+          `http://localhost:${process.env.FRONTEND_PORT || 4000}`,
         changeOrigin: true,
         secure: false,
       },

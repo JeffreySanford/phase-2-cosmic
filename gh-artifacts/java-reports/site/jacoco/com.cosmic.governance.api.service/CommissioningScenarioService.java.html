@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommissioningScenarioService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.service</a> &gt; <span class="el_source">CommissioningScenarioService.java</span></div><h1>CommissioningScenarioService.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.service;
+
+import com.cosmic.governance.api.dto.CommissioningValidateRequest;
+import com.cosmic.governance.api.dto.CommissioningValidateResult;
+import com.cosmic.governance.api.model.CommissioningScenario;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@Service
+<span class="fc" id="L15">public class CommissioningScenarioService {</span>
+
+<span class="fc" id="L17">    private static final List&lt;CommissioningScenario&gt; BUILT_IN = List.of(</span>
+            new CommissioningScenario(
+                    &quot;antenna_calibration&quot;,
+                    &quot;Antenna Calibration&quot;,
+                    &quot;aiv&quot;,
+                    &quot;Validates antenna calibration parameters including pointing model, noise temperature, and efficiency at target frequencies.&quot;,
+<span class="fc" id="L23">                    List.of(&quot;antennaId&quot;, &quot;targetFrequencyMHz&quot;, &quot;pointingModelVersion&quot;)),</span>
+            new CommissioningScenario(
+                    &quot;timing_sync&quot;,
+                    &quot;Timing Synchronisation&quot;,
+                    &quot;aiv&quot;,
+                    &quot;Validates that all array elements are synchronised to the timing reference within the accepted drift window.&quot;,
+<span class="fc" id="L29">                    List.of(&quot;referenceElementId&quot;, &quot;maxDriftNs&quot;, &quot;syncProtocol&quot;)),</span>
+            new CommissioningScenario(
+                    &quot;rfi_baseline&quot;,
+                    &quot;RFI Baseline Survey&quot;,
+                    &quot;aiv&quot;,
+                    &quot;Validates the RFI environment baseline against the expected spectral occupancy thresholds for science operations.&quot;,
+<span class="fc" id="L35">                    List.of(&quot;siteId&quot;, &quot;frequencyRangeMHz&quot;, &quot;maxOccupancyPercent&quot;)));</span>
+
+    public List&lt;CommissioningScenario&gt; getScenarios() {
+<span class="fc" id="L38">        return BUILT_IN;</span>
+    }
+
+    public Optional&lt;CommissioningScenario&gt; findById(String id) {
+<span class="fc" id="L42">        return BUILT_IN.stream().filter(s -&gt; s.id().equals(id)).findFirst();</span>
+    }
+
+    public CommissioningValidateResult validate(CommissioningValidateRequest req) {
+<span class="fc" id="L46">        Optional&lt;CommissioningScenario&gt; opt = findById(req.scenarioId());</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (opt.isEmpty()) {</span>
+<span class="fc" id="L48">            return new CommissioningValidateResult(</span>
+<span class="fc" id="L49">                    req.scenarioId(),</span>
+                    null,
+                    false,
+<span class="fc" id="L52">                    List.of(&quot;scenario_not_found: &quot; + req.scenarioId()),</span>
+<span class="fc" id="L53">                    Instant.now().toString());</span>
+        }
+<span class="fc" id="L55">        CommissioningScenario scenario = opt.get();</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        Map&lt;String, Object&gt; params = req.parameters() != null ? req.parameters() : Map.of();</span>
+<span class="fc" id="L57">        List&lt;String&gt; failures = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        for (String required : scenario.requiredParameters()) {</span>
+<span class="pc bpc" id="L59" title="1 of 4 branches missed.">            if (!params.containsKey(required) || params.get(required) == null) {</span>
+<span class="fc" id="L60">                failures.add(&quot;missing_required_parameter: &quot; + required);</span>
+            }
+<span class="fc" id="L62">        }</span>
+<span class="fc" id="L63">        return new CommissioningValidateResult(</span>
+<span class="fc" id="L64">                scenario.id(),</span>
+<span class="fc" id="L65">                scenario.name(),</span>
+<span class="fc" id="L66">                failures.isEmpty(),</span>
+                failures,
+<span class="fc" id="L68">                Instant.now().toString());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

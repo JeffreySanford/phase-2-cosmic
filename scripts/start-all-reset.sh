@@ -150,6 +150,10 @@ else
   substep_warning "Node.js not found (continuing anyway)"
 fi
 
+# ensure simulator will start later
+ALLOCATOR_LOG="$LOG_DIR/allocator-
+$(date +%Y%m%dT%H%M%S).log"
+
 # Substep 1b: Execute stop-local-services.js
 substep_start "Stop local services via Node.js script"
 if node ./scripts/stop-local-services.js >> "$LOG_FILE" 2>&1; then
@@ -199,6 +203,8 @@ if [ -n "$ENV_TO_LOAD" ]; then
     substep_error "Failed to load environment file (syntax error?)"
   fi
 fi
+
+# later we will launch the allocator alongside other servers
 
 # If a Docker personal access token is provided, attempt to login so builds won't hit unauthenticated pull limits.
 if [ -n "${DOCKER_PAT:-}" ]; then
@@ -784,6 +790,10 @@ printf "${DIM}Press ${BOLD}Ctrl+C${NC}${DIM} to stop the servers${NC}\n\n"
 
 log "[start-all-reset] launching dev servers (SSR + Angular)"
 export FRONTEND_PORT=${FRONTEND_PORT:-4000}
-pnpm exec concurrently --kill-others-on-fail "pnpm run serve:ssr" "pnpm nx serve frontend" 2>&1 | tee -a "$LOG_FILE"
+# start allocator simulator along with SSR and frontend dev server
+pnpm exec concurrently --kill-others-on-fail \
+  "node ./tools/trident-allocator/server.js" \
+  "pnpm run serve:ssr" \
+  "pnpm nx serve frontend" 2>&1 | tee -a "$LOG_FILE"
 
 log "[start-all-reset] dev servers stopped"

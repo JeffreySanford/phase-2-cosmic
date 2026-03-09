@@ -72,3 +72,10 @@ jobs:
         with:
           name: surefire-reports-java-governance
           path: apps/java-governance/target/surefire-reports || true
+
+      - name: Run JS integration tests and simulator harness
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+          pnpm install --frozen-lockfile
+          pnpm run ci:integration

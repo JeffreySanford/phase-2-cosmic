@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatasetService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.service</a> &gt; <span class="el_source">DatasetService.java</span></div><h1>DatasetService.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.service;
+
+import com.cosmic.governance.api.dto.DatasetRequest;
+import com.cosmic.governance.api.dto.DatasetResponse;
+import com.cosmic.governance.api.model.DatasetRecord;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import java.util.Set;
+
+import java.time.Instant;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+public class DatasetService {
+    private static final String KEY_PREFIX = &quot;dataset:&quot;;
+
+    private final RedisTemplate&lt;String, Object&gt; redisTemplate;
+    private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
+    private final GovernanceObjectStoreService governanceObjectStoreService;
+<span class="fc" id="L26">    private final java.util.concurrent.ConcurrentHashMap&lt;String,Object&gt; inMemoryStore = new java.util.concurrent.ConcurrentHashMap&lt;&gt;();</span>
+
+    public DatasetService(RedisTemplate&lt;String, Object&gt; redisTemplate) {
+<span class="nc" id="L29">        this(redisTemplate, null, null);</span>
+<span class="nc" id="L30">    }</span>
+
+    @Autowired
+    public DatasetService(
+            RedisTemplate&lt;String, Object&gt; redisTemplate,
+            GovernanceRuntimeMetricsService governanceRuntimeMetricsService,
+            GovernanceObjectStoreService governanceObjectStoreService
+<span class="fc" id="L37">    ) {</span>
+<span class="fc" id="L38">        this.redisTemplate = redisTemplate;</span>
+<span class="fc" id="L39">        this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;</span>
+<span class="fc" id="L40">        this.governanceObjectStoreService = governanceObjectStoreService;</span>
+<span class="fc" id="L41">    }</span>
+
+    public DatasetResponse create(DatasetRequest req) {
+<span class="pc bpc" id="L44" title="3 of 4 branches missed.">        String id = req.id() != null &amp;&amp; !req.id().isBlank() ? req.id() : UUID.randomUUID().toString();</span>
+<span class="fc" id="L45">        String now = Instant.now().toString();</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        Map&lt;String, Object&gt; meta = req.metadata() == null ? Map.of() : Map.copyOf(req.metadata());</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        Map&lt;String, Object&gt; manifest = req.manifest() == null ? null : Map.copyOf(req.manifest());</span>
+        // if manifest is provided, also inject it into metadata for backward compatibility
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (manifest != null) {</span>
+<span class="fc" id="L50">            var mm = new java.util.HashMap&lt;&gt;(meta);</span>
+<span class="fc" id="L51">            mm.put(&quot;manifest&quot;, manifest);</span>
+<span class="fc" id="L52">            meta = mm;</span>
+        }
+<span class="fc" id="L54">        DatasetRecord rec = new DatasetRecord(id, req.name(), req.description(), now, meta, manifest);</span>
+<span class="fc" id="L55">        Instant startedAt = Instant.now();</span>
+        try {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">            if (redisTemplate != null) {</span>
+<span class="nc" id="L58">                redisTemplate.opsForValue().set(KEY_PREFIX + id, rec);</span>
+<span class="nc" id="L59">                recordRedisWrite(&quot;redis&quot;, rec, true, Duration.between(startedAt, Instant.now()));</span>
+            } else {
+<span class="nc" id="L61">                throw new RuntimeException(&quot;no redis&quot;);</span>
+            }
+<span class="fc" id="L63">        } catch (Exception ex) {</span>
+<span class="fc" id="L64">            recordRedisWrite(&quot;redis&quot;, rec, false, Duration.between(startedAt, Instant.now()));</span>
+            // fallback to in-memory store for tests or missing redis
+<span class="fc" id="L66">            inMemoryStore.put(KEY_PREFIX + id, rec);</span>
+<span class="fc" id="L67">            recordRedisWrite(&quot;memory&quot;, rec, true, Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L68">        }</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L70">            governanceRuntimeMetricsService.recordDatasetMutation(&quot;create&quot;, rec);</span>
+<span class="fc" id="L71">            governanceRuntimeMetricsService.recordBusinessAction(&quot;dataset&quot;, &quot;publish&quot;, rec);</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">            if (manifest != null) {</span>
+<span class="fc" id="L73">                governanceRuntimeMetricsService.recordJobMetadataMutation(&quot;dataset_manifest&quot;, manifest);</span>
+<span class="fc" id="L74">                governanceRuntimeMetricsService.recordBusinessAction(&quot;manifest&quot;, &quot;publish&quot;, manifest);</span>
+            }
+        }
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if (governanceObjectStoreService != null) {</span>
+<span class="fc" id="L78">            governanceObjectStoreService.persistDatasetRecord(rec);</span>
+        }
+<span class="fc" id="L80">        return toResponse(rec);</span>
+    }
+
+    public Optional&lt;DatasetResponse&gt; get(String id) {
+<span class="fc" id="L84">        Instant startedAt = Instant.now();</span>
+<span class="fc" id="L85">        Object o = null;</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        if (redisTemplate != null) {</span>
+            try {
+<span class="nc" id="L88">                o = redisTemplate.opsForValue().get(KEY_PREFIX + id);</span>
+<span class="nc" id="L89">                recordRedisRead(&quot;redis&quot;, o, true, Duration.between(startedAt, Instant.now()));</span>
+<span class="fc" id="L90">            } catch (Exception ignored) {</span>
+<span class="fc" id="L91">                recordRedisRead(&quot;redis&quot;, Map.of(&quot;datasetId&quot;, id), false, Duration.between(startedAt, Instant.now()));</span>
+<span class="fc" id="L92">                o = inMemoryStore.get(KEY_PREFIX + id);</span>
+<span class="fc" id="L93">                recordRedisRead(&quot;memory&quot;, o, true, Duration.between(startedAt, Instant.now()));</span>
+<span class="pc" id="L94">            }</span>
+        } else {
+<span class="nc" id="L96">            o = inMemoryStore.get(KEY_PREFIX + id);</span>
+<span class="nc" id="L97">            recordRedisRead(&quot;memory&quot;, o, true, Duration.between(startedAt, Instant.now()));</span>
+        }
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        if (o instanceof DatasetRecord) {</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">            if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L101">                governanceRuntimeMetricsService.recordOperatorRead(&quot;dataset_get&quot;, o);</span>
+<span class="fc" id="L102">                governanceRuntimeMetricsService.recordBusinessAction(&quot;dataset&quot;, &quot;read&quot;, o);</span>
+            }
+<span class="fc" id="L104">            return Optional.of(toResponse((DatasetRecord) o));</span>
+        }
+<span class="nc" id="L106">        return Optional.empty();</span>
+    }
+
+    public List&lt;DatasetResponse&gt; listAll() {
+<span class="nc" id="L110">        var keys = Set.&lt;String&gt;of();</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (redisTemplate != null) {</span>
+            try {
+<span class="nc" id="L113">                keys = redisTemplate.keys(KEY_PREFIX + &quot;*&quot;);</span>
+<span class="nc" id="L114">            } catch (Exception ignored) {}</span>
+        }
+        java.util.stream.Stream&lt;Object&gt; stream;
+<span class="nc bnc" id="L117" title="All 4 branches missed.">        if (keys == null || keys.isEmpty()) {</span>
+<span class="nc" id="L118">            stream = inMemoryStore.values().stream();</span>
+        } else {
+<span class="nc" id="L120">            stream = keys.stream().map(k -&gt; {</span>
+<span class="nc" id="L121">                Instant startedAt = Instant.now();</span>
+                try {
+<span class="nc" id="L123">                    Object value = redisTemplate.opsForValue().get(k);</span>
+<span class="nc" id="L124">                    recordRedisRead(&quot;redis&quot;, value, true, Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L125">                    return value;</span>
+<span class="nc" id="L126">                } catch (Exception ex) {</span>
+<span class="nc" id="L127">                    recordRedisRead(&quot;redis&quot;, Map.of(&quot;key&quot;, k), false, Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L128">                    Object value = inMemoryStore.get(k);</span>
+<span class="nc" id="L129">                    recordRedisRead(&quot;memory&quot;, value, true, Duration.between(startedAt, Instant.now()));</span>
+<span class="nc" id="L130">                    return value;</span>
+                }
+            });
+        }
+<span class="nc" id="L134">        var datasets = stream</span>
+<span class="nc" id="L135">                .filter(DatasetRecord.class::isInstance)</span>
+<span class="nc" id="L136">                .map(DatasetRecord.class::cast)</span>
+<span class="nc" id="L137">                .map(this::toResponse)</span>
+<span class="nc" id="L138">                .collect(Collectors.toList());</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="nc" id="L140">            governanceRuntimeMetricsService.recordOperatorRead(&quot;dataset_list&quot;, datasets);</span>
+<span class="nc" id="L141">            governanceRuntimeMetricsService.recordBusinessAction(&quot;dataset&quot;, &quot;read&quot;, datasets);</span>
+        }
+<span class="nc" id="L143">        return datasets;</span>
+    }
+
+    private DatasetResponse toResponse(DatasetRecord r) {
+<span class="fc" id="L147">        return new DatasetResponse(r.getId(), r.getName(), r.getDescription(), r.getCreatedAt(), r.getMetadata(), r.getManifest());</span>
+    }
+
+    private void recordRedisRead(String store, Object payload, boolean success, Duration duration) {
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L152">            governanceRuntimeMetricsService.recordRedisRead(store, &quot;dataset&quot;, payload, success, duration);</span>
+        }
+<span class="fc" id="L154">    }</span>
+
+    private void recordRedisWrite(String store, Object payload, boolean success, Duration duration) {
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (governanceRuntimeMetricsService != null) {</span>
+<span class="fc" id="L158">            governanceRuntimeMetricsService.recordRedisWrite(store, &quot;dataset&quot;, payload, success, duration);</span>
+        }
+<span class="fc" id="L160">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -167,6 +167,10 @@ Operator checklist:
 
 ### Replay alerts from DLQ
 
+> **UI note:** the frontend includes a _Replay_ button on the alerts table under
+> **Telemetry → Alerts** which performs the same `POST /api/v1/alerts/dlq/replay-all`
+> action. Operators may prefer the UI when working interactively.
+
 ```bash
 # Check current DLQ depth
 curl -s http://localhost:8080/api/v1/alerts/slo | jq '.dlqDepth'
@@ -221,7 +225,7 @@ pulsar-admin topics reset-cursor \
 
 ## Change History
 
-| Date       | Author        | Change                                    |
-| ---------- | ------------- | ----------------------------------------- |
-| 2025-01-01 | Platform Team | Initial broker role partitioning document |
+| Date       | Author        | Change                                                               |
+| ---------- | ------------- | -------------------------------------------------------------------- |
+| 2025-01-01 | Platform Team | Initial broker role partitioning document                            |
 | 2026-03-09 | Codex         | Added Sprint 1 DLQ/replay baseline guardrails and operator checklist |

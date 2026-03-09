@@ -1,0 +1,14 @@
+{
+  "name": "trident-allocator",
+  "version": "1.0.0",
+  "description": "FSP allocator simulator for the Trident gateway. Exposes a lightweight in-process allocation engine and an optional REST harness for local integration testing.",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --experimental-vm-modules ../../node_modules/.bin/jest --testPathPattern=allocator\\.test\\.js --no-coverage"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

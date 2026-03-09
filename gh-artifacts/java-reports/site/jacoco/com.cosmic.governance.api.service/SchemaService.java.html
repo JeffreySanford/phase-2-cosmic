@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SchemaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.service</a> &gt; <span class="el_source">SchemaService.java</span></div><h1>SchemaService.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.service;
+
+import org.json.JSONObject;
+import org.json.JSONTokener;
+import org.springframework.stereotype.Service;
+
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class SchemaService {
+<span class="fc" id="L14">    private final Map&lt;String, Object&gt; schemas = new HashMap&lt;&gt;();</span>
+    private final boolean everitAvailable;
+
+<span class="fc" id="L17">    public SchemaService() {</span>
+        boolean available;
+        try {
+<span class="fc" id="L20">            Class.forName(&quot;org.everit.json.schema.Schema&quot;);</span>
+<span class="fc" id="L21">            available = true;</span>
+<span class="nc" id="L22">        } catch (ClassNotFoundException e) {</span>
+<span class="nc" id="L23">            available = false;</span>
+<span class="fc" id="L24">        }</span>
+<span class="fc" id="L25">        this.everitAvailable = available;</span>
+
+<span class="fc" id="L27">        String[] builtins = new String[]{</span>
+            &quot;ingest&quot;, &quot;export&quot;, &quot;reindex&quot;, &quot;cleanup&quot;, &quot;diagnostics&quot;,
+            &quot;vo.cone-search&quot;, &quot;vo.adql.query&quot;, &quot;vo.obscore.search&quot;, &quot;vo.votable.fetch&quot;,
+            &quot;vo.datalink.resolve&quot;, &quot;vo.product.fetch&quot;, &quot;vo.soda.cutout&quot;, &quot;vo.preview.fetch&quot;
+        };
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        for (String t : builtins) {</span>
+<span class="fc" id="L33">            String path = &quot;/schemas/&quot; + t + &quot;.json&quot;;</span>
+<span class="fc" id="L34">            try (InputStream is = getClass().getResourceAsStream(path)) {</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">                if (is == null) continue;</span>
+<span class="fc" id="L36">                JSONObject raw = new JSONObject(new JSONTokener(is));</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">                if (everitAvailable) {</span>
+                    try {
+<span class="fc" id="L39">                        Class&lt;?&gt; loaderClass = Class.forName(&quot;org.everit.json.schema.loader.SchemaLoader&quot;);</span>
+<span class="fc" id="L40">                        Method load = loaderClass.getMethod(&quot;load&quot;, JSONObject.class);</span>
+<span class="fc" id="L41">                        Object schema = load.invoke(null, raw);</span>
+<span class="fc" id="L42">                        schemas.put(t, schema);</span>
+<span class="nc" id="L43">                    } catch (Exception ex) {</span>
+                        // if reflection fails, treat as no schema available
+<span class="nc" id="L45">                        schemas.put(t, null);</span>
+<span class="pc" id="L46">                    }</span>
+                } else {
+                    // store raw JSONObject for reference but mark validation as unavailable
+<span class="nc" id="L49">                    schemas.put(t, raw);</span>
+                }
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">            } catch (Exception e) {</span>
+                // ignore missing or invalid schemas
+<span class="fc" id="L53">            }</span>
+        }
+<span class="fc" id="L55">    }</span>
+
+    public void register(String type, Object schema) {
+<span class="nc" id="L58">        schemas.put(type, schema);</span>
+<span class="nc" id="L59">    }</span>
+
+    public ValidationResult validate(String type, Object payload) {
+<span class="fc" id="L62">        Object s = schemas.get(type);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (s == null) return ValidationResult.ofNoSchema();</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        if (!everitAvailable) return ValidationResult.ofNoSchema();</span>
+        try {
+            JSONObject obj;
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">            if (payload == null) {</span>
+<span class="nc" id="L68">                obj = new JSONObject();</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">            } else if (payload instanceof java.util.Map&lt;?, ?&gt; m) {</span>
+<span class="fc" id="L70">                obj = new JSONObject(m);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            } else if (payload instanceof String str) {</span>
+<span class="nc" id="L72">                obj = new JSONObject(str);</span>
+            } else {
+<span class="nc" id="L74">                obj = new JSONObject(payload);</span>
+            }
+<span class="fc" id="L76">            Method validate = s.getClass().getMethod(&quot;validate&quot;, Object.class);</span>
+<span class="fc" id="L77">            validate.invoke(s, obj);</span>
+<span class="fc" id="L78">            return ValidationResult.ofValid();</span>
+<span class="fc" id="L79">        } catch (Exception e) {</span>
+<span class="fc" id="L80">            return ValidationResult.ofInvalid(e.getMessage());</span>
+        }
+    }
+
+<span class="fc" id="L84">    public static record ValidationResult(boolean valid, boolean schemaFound, String message) {</span>
+<span class="fc" id="L85">        public static ValidationResult ofValid() { return new ValidationResult(true, true, null); }</span>
+<span class="fc" id="L86">        public static ValidationResult ofNoSchema() { return new ValidationResult(true, false, null); }</span>
+<span class="fc" id="L87">        public static ValidationResult ofInvalid(String msg) { return new ValidationResult(false, true, msg); }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

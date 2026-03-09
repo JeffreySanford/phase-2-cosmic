@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JobScenarioService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.service</a> &gt; <span class="el_source">JobScenarioService.java</span></div><h1>JobScenarioService.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.service;
+
+import com.cosmic.governance.api.dto.JobStatusResponse;
+import com.cosmic.governance.api.dto.JobSubmitRequest;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+
+@Service
+public class JobScenarioService {
+<span class="fc" id="L15">    private static final List&lt;String&gt; SAMPLE_WORKFLOWS = List.of(</span>
+            &quot;ingest&quot;, &quot;export&quot;, &quot;reindex&quot;, &quot;cleanup&quot;, &quot;diagnostics&quot;
+    );
+
+    private final JobService jobService;
+
+<span class="fc" id="L21">    public JobScenarioService(JobService jobService) {</span>
+<span class="fc" id="L22">        this.jobService = jobService;</span>
+<span class="fc" id="L23">    }</span>
+
+    public Map&lt;String, Object&gt; seedSampleJobs(int deferredCount, int ingestCount) {
+<span class="nc" id="L26">        List&lt;String&gt; deferredIds = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L27">        List&lt;String&gt; ingestIds = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        for (int i = 0; i &lt; Math.max(0, deferredCount); i++) {</span>
+<span class="nc" id="L30">            String workflow = SAMPLE_WORKFLOWS.get(i % SAMPLE_WORKFLOWS.size());</span>
+<span class="nc" id="L31">            JobStatusResponse created = jobService.submit(new JobSubmitRequest(</span>
+                    workflow,
+                    &quot;sample-dataset-&quot; + (i + 1),
+<span class="nc" id="L34">                    buildDeferredParams(workflow, i),</span>
+                    null,
+<span class="nc" id="L36">                    Map.of(</span>
+<span class="nc" id="L37">                            &quot;seeded&quot;, true,</span>
+                            &quot;kind&quot;, &quot;deferred-sample&quot;,
+<span class="nc" id="L39">                            &quot;complexity&quot;, 1 + (i % 3)</span>
+                    ),
+                    &quot;sample-seeder&quot;
+            ));
+<span class="nc" id="L43">            deferredIds.add(created.jobId());</span>
+        }
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        for (int i = 0; i &lt; Math.max(0, ingestCount); i++) {</span>
+<span class="nc" id="L47">            JobStatusResponse created = jobService.submit(new JobSubmitRequest(</span>
+                    &quot;ingest&quot;,
+                    &quot;inject-dataset-&quot; + (i + 1),
+<span class="nc" id="L50">                    buildIngestParams(i),</span>
+<span class="nc" id="L51">                    Map.of(</span>
+<span class="nc" id="L52">                            &quot;seeded&quot;, true,</span>
+                            &quot;scenario&quot;, &quot;inject-burst&quot;,
+<span class="nc" id="L54">                            &quot;ordinal&quot;, i + 1</span>
+                    ),
+<span class="nc" id="L56">                    Map.of(</span>
+<span class="nc" id="L57">                            &quot;seeded&quot;, true,</span>
+                            &quot;kind&quot;, &quot;active-ingest&quot;,
+                            &quot;profile&quot;, &quot;randomized&quot;
+                    ),
+                    &quot;sample-seeder&quot;
+            ));
+<span class="nc" id="L63">            ingestIds.add(created.jobId());</span>
+        }
+
+<span class="nc" id="L66">        long queued = jobService.list(null, com.cosmic.governance.api.model.JobState.QUEUED, 0, Integer.MAX_VALUE).size();</span>
+<span class="nc" id="L67">        long running = jobService.list(null, com.cosmic.governance.api.model.JobState.RUNNING, 0, Integer.MAX_VALUE).size();</span>
+
+<span class="nc" id="L69">        Map&lt;String, Object&gt; out = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L70">        out.put(&quot;deferredCreated&quot;, deferredIds.size());</span>
+<span class="nc" id="L71">        out.put(&quot;ingestCreated&quot;, ingestIds.size());</span>
+<span class="nc" id="L72">        out.put(&quot;deferredIds&quot;, deferredIds);</span>
+<span class="nc" id="L73">        out.put(&quot;ingestIds&quot;, ingestIds);</span>
+<span class="nc" id="L74">        out.put(&quot;queuedJobs&quot;, queued);</span>
+<span class="nc" id="L75">        out.put(&quot;runningJobs&quot;, running);</span>
+<span class="nc" id="L76">        return out;</span>
+    }
+
+    private Map&lt;String, Object&gt; buildDeferredParams(String workflow, int index) {
+<span class="nc" id="L80">        int complexity = 1 + (index % 3);</span>
+<span class="nc" id="L81">        int payloadMb = 64 + (index * 48);</span>
+<span class="nc" id="L82">        Map&lt;String, Object&gt; params = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L83">        params.put(&quot;deferred&quot;, true);</span>
+<span class="nc" id="L84">        params.put(&quot;executor&quot;, &quot;simulator&quot;);</span>
+<span class="nc" id="L85">        params.put(&quot;complexity&quot;, complexity);</span>
+<span class="nc" id="L86">        params.put(&quot;payloadMb&quot;, payloadMb);</span>
+<span class="nc" id="L87">        params.put(&quot;workflowHint&quot;, workflow);</span>
+<span class="nc" id="L88">        params.put(&quot;estimatedRecords&quot;, 2_000 * (index + 1));</span>
+<span class="nc" id="L89">        params.put(&quot;seeded&quot;, true);</span>
+<span class="nc" id="L90">        return params;</span>
+    }
+
+    private Map&lt;String, Object&gt; buildIngestParams(int index) {
+<span class="nc" id="L94">        ThreadLocalRandom random = ThreadLocalRandom.current();</span>
+<span class="nc" id="L95">        int complexity = random.nextInt(2, 6);</span>
+<span class="nc" id="L96">        int payloadMb = random.nextInt(96, 640);</span>
+<span class="nc" id="L97">        int fanout = random.nextInt(1, 5);</span>
+<span class="nc" id="L98">        Map&lt;String, Object&gt; params = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L99">        params.put(&quot;executor&quot;, &quot;tacc&quot;);</span>
+<span class="nc" id="L100">        params.put(&quot;complexity&quot;, complexity);</span>
+<span class="nc" id="L101">        params.put(&quot;payloadMb&quot;, payloadMb);</span>
+<span class="nc" id="L102">        params.put(&quot;fanout&quot;, fanout);</span>
+<span class="nc" id="L103">        params.put(&quot;estimatedRecords&quot;, payloadMb * random.nextInt(40, 120));</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        params.put(&quot;priority&quot;, random.nextBoolean() ? &quot;high&quot; : &quot;normal&quot;);</span>
+<span class="nc" id="L105">        params.put(&quot;seeded&quot;, true);</span>
+<span class="nc" id="L106">        return params;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

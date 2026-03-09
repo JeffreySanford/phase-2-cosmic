@@ -9,3 +9,5 @@ pnpm-store
 apps/java-governance/target
 logs/
 **/logs/
+gh-artifacts/
+coverage-report/

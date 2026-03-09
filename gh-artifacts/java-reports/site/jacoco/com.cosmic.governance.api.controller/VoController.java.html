@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VoController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-governance</a> &gt; <a href="index.source.html" class="el_package">com.cosmic.governance.api.controller</a> &gt; <span class="el_source">VoController.java</span></div><h1>VoController.java</h1><pre class="source lang-java linenums">package com.cosmic.governance.api.controller;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.util.concurrent.ConcurrentHashMap;
+import java.time.Instant;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+@RestController
+@RequestMapping(&quot;/api/v1/vo&quot;)
+<span class="fc" id="L35">public class VoController {</span>
+
+    @Value(&quot;${governance.vo.tap-url:}&quot;)
+    private String tapUrl;
+
+    @Value(&quot;${governance.vo.data-link-url:}&quot;)
+    private String dataLinkUrl;
+
+<span class="fc" id="L43">    private volatile long cacheTtlSeconds = 300; // 5 minutes, adjustable at runtime</span>
+<span class="fc" id="L44">    private final ConcurrentHashMap&lt;String, CacheEntry&gt; votableCache = new ConcurrentHashMap&lt;&gt;();</span>
+
+    private static class CacheEntry {
+        final Map&lt;String, Object&gt; value;
+        final Instant created;
+<span class="nc" id="L49">        CacheEntry(Map&lt;String, Object&gt; value) { this.value = value; this.created = Instant.now(); }</span>
+<span class="nc" id="L50">        boolean isExpired(long ttlSeconds) { return Instant.now().isAfter(created.plusSeconds(ttlSeconds)); }</span>
+    }
+
+    @GetMapping(&quot;/services&quot;)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; services() {
+<span class="nc" id="L55">        Map&lt;String, String&gt; resp = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L56" title="All 4 branches missed.">        if (tapUrl != null &amp;&amp; !tapUrl.isBlank()) resp.put(&quot;tapUrl&quot;, tapUrl);</span>
+<span class="nc bnc" id="L57" title="All 4 branches missed.">        if (dataLinkUrl != null &amp;&amp; !dataLinkUrl.isBlank()) resp.put(&quot;dataLinkUrl&quot;, dataLinkUrl);</span>
+<span class="nc" id="L58">        return ResponseEntity.ok(resp);</span>
+    }
+
+    @GetMapping(&quot;/cached-samples&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; cachedSamples() {
+<span class="nc" id="L63">        Map&lt;String, Object&gt; samples = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L64">        samples.put(&quot;vo.cone-search&quot;, sampleOf(</span>
+                &quot;provider&quot;, &quot;SIMBAD&quot;,
+                &quot;serviceUrl&quot;, &quot;https://simbad.cds.unistra.fr/simbad/sim-tap/sync&quot;,
+                &quot;target&quot;, &quot;M42&quot;,
+<span class="nc" id="L68">                &quot;ra&quot;, 83.8221,</span>
+<span class="nc" id="L69">                &quot;dec&quot;, -5.3911,</span>
+<span class="nc" id="L70">                &quot;radius&quot;, 0.5,</span>
+                &quot;format&quot;, &quot;votable&quot;,
+<span class="nc" id="L72">                &quot;liveMode&quot;, true,</span>
+                &quot;_description&quot;, &quot;Cone search around Orion Nebula (M42), radius 0.5\u00b0&quot;
+        ));
+<span class="nc" id="L75">        samples.put(&quot;vo.adql.query&quot;, sampleOf(</span>
+                &quot;provider&quot;, &quot;HEASARC&quot;,
+                &quot;tapUrl&quot;, &quot;https://heasarc.gsfc.nasa.gov/xamin/tap/sync&quot;,
+                &quot;adql&quot;, &quot;SELECT TOP 10 target_name, ra, dec, exposure FROM chanmaster ORDER BY exposure DESC&quot;,
+<span class="nc" id="L79">                &quot;limit&quot;, 10,</span>
+<span class="nc" id="L80">                &quot;liveMode&quot;, true,</span>
+                &quot;_description&quot;, &quot;Top 10 longest Chandra observations (HEASARC TAP)&quot;
+        ));
+<span class="nc" id="L83">        samples.put(&quot;vo.obscore.search&quot;, sampleOf(</span>
+                &quot;provider&quot;, &quot;ESO&quot;,
+                &quot;tapUrl&quot;, &quot;https://archive.eso.org/tap_obs/sync&quot;,
+                &quot;dataproductType&quot;, &quot;image&quot;,
+<span class="nc" id="L87">                &quot;spatialBoundsRa&quot;, 187.277915,</span>
+<span class="nc" id="L88">                &quot;spatialBoundsDec&quot;, 2.052389,</span>
+<span class="nc" id="L89">                &quot;spatialBoundsRadius&quot;, 0.5,</span>
+<span class="nc" id="L90">                &quot;limit&quot;, 20,</span>
+<span class="nc" id="L91">                &quot;liveMode&quot;, true,</span>
+                &quot;_description&quot;, &quot;ESO ObsCore image search around quasar 3C 273 (r=0.5\u00b0)&quot;
+        ));
+<span class="nc" id="L94">        samples.put(&quot;vo.votable.fetch&quot;, sampleOf(</span>
+                &quot;provider&quot;, &quot;HEASARC&quot;,
+                &quot;votableUrl&quot;, &quot;https://heasarc.gsfc.nasa.gov/xamin/query?table=chanmaster&amp;position=3c273&amp;format=votable&quot;,
+                &quot;format&quot;, &quot;votable&quot;,
+<span class="nc" id="L98">                &quot;liveMode&quot;, true,</span>
+                &quot;_description&quot;, &quot;Chandra observations of quasar 3C 273 as VOTable&quot;
+        ));
+<span class="nc" id="L101">        samples.put(&quot;vo.datalink.resolve&quot;, sampleOf(</span>
+                &quot;provider&quot;, &quot;CADC&quot;,
+                &quot;datalinkUrl&quot;, &quot;https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/datalink&quot;,
+                &quot;datasetIdentifier&quot;, &quot;ivo://cadc.nrc.ca/CFHT?2459817&quot;,
+<span class="nc" id="L105">                &quot;liveMode&quot;, true,</span>
+                &quot;_description&quot;, &quot;DataLink products for CFHT MegaCam observation 2459817&quot;
+        ));
+<span class="nc" id="L108">        samples.put(&quot;vo.product.fetch&quot;, sampleOf(</span>
+                &quot;provider&quot;, &quot;HEASARC&quot;,
+                &quot;productUrl&quot;, &quot;https://heasarc.gsfc.nasa.gov/FTP/chandra/data/byobsid/2/21843/primary/acisf21843N002_evt2.fits.gz&quot;,
+                &quot;expectedMimeType&quot;, &quot;application/fits&quot;,
+<span class="nc" id="L112">                &quot;liveMode&quot;, true,</span>
+                &quot;_description&quot;, &quot;Chandra ACIS event file \u2014 Cas A supernova remnant (obs 21843)&quot;
+        ));
+<span class="nc" id="L115">        samples.put(&quot;vo.soda.cutout&quot;, sampleOf(</span>
+                &quot;provider&quot;, &quot;CADC&quot;,
+                &quot;sodaUrl&quot;, &quot;https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/soda&quot;,
+                &quot;datasetIdentifier&quot;, &quot;ivo://cadc.nrc.ca/CFHT?2459817&quot;,
+<span class="nc" id="L119">                &quot;spatialBoundsRa&quot;, 187.277915,</span>
+<span class="nc" id="L120">                &quot;spatialBoundsDec&quot;, 2.052389,</span>
+<span class="nc" id="L121">                &quot;spatialBoundsRadius&quot;, 0.1,</span>
+                &quot;outputFormat&quot;, &quot;fits&quot;,
+<span class="nc" id="L123">                &quot;liveMode&quot;, true,</span>
+                &quot;_description&quot;, &quot;CADC SODA cutout centered on 3C 273 (r=0.1\u00b0, CFHT obs 2459817)&quot;
+        ));
+<span class="nc" id="L126">        samples.put(&quot;vo.preview.fetch&quot;, sampleOf(</span>
+                &quot;provider&quot;, &quot;ESASky&quot;,
+                &quot;previewUrl&quot;, &quot;https://sky.esa.int/esasky-tap/tap/sync?REQUEST=doQuery&amp;LANG=ADQL&amp;FORMAT=votable&amp;QUERY=SELECT+TOP+5+*+FROM+mv_xsa_obs+WHERE+target_name+LIKE+%2527%2525Crab%2525%2527&quot;,
+<span class="nc" id="L129">                &quot;liveMode&quot;, true,</span>
+                &quot;_description&quot;, &quot;ESASky XMM-Newton observations matching 'Crab' target (top 5)&quot;
+        ));
+<span class="nc" id="L132">        return ResponseEntity.ok(samples);</span>
+    }
+
+    private static Map&lt;String, Object&gt; sampleOf(Object... kvPairs) {
+<span class="nc" id="L136">        Map&lt;String, Object&gt; map = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        for (int i = 0; i + 1 &lt; kvPairs.length; i += 2) {</span>
+<span class="nc" id="L138">            map.put(String.valueOf(kvPairs[i]), kvPairs[i + 1]);</span>
+        }
+<span class="nc" id="L140">        return map;</span>
+    }
+
+    @GetMapping(&quot;/query&quot;)
+    public ResponseEntity&lt;List&lt;List&lt;String&gt;&gt;&gt; query(@RequestParam(required = false) String table, @RequestParam(required = false) String position) {
+<span class="nc" id="L145">        String queryBase = &quot;https://heasarc.gsfc.nasa.gov/xamin/query&quot;;</span>
+        try {
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            String params = &quot;table=&quot; + URLEncoder.encode(table == null ? &quot;&quot; : table, StandardCharsets.UTF_8)</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                    + &quot;&amp;position=&quot; + URLEncoder.encode(position == null ? &quot;&quot; : position, StandardCharsets.UTF_8)</span>
+                    + &quot;&amp;format=stream&quot;;
+<span class="nc" id="L150">            String url = queryBase + &quot;?&quot; + params;</span>
+
+<span class="nc" id="L152">            HttpClient client = HttpClient.newHttpClient();</span>
+<span class="nc" id="L153">            HttpRequest req = HttpRequest.newBuilder()</span>
+<span class="nc" id="L154">                    .uri(URI.create(url))</span>
+<span class="nc" id="L155">                    .GET()</span>
+<span class="nc" id="L156">                    .build();</span>
+
+<span class="nc" id="L158">            HttpResponse&lt;String&gt; resp = client.send(req, HttpResponse.BodyHandlers.ofString());</span>
+<span class="nc" id="L159">            String body = resp.body();</span>
+
+<span class="nc" id="L161">            List&lt;List&lt;String&gt;&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            for (String line : body.split(&quot;\n&quot;)) {</span>
+<span class="nc" id="L163">                line = line.trim();</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                if (line.isEmpty()) continue;</span>
+                // stream format is pipe-delimited
+<span class="nc" id="L166">                String[] parts = line.split(&quot;\\|&quot;, -1);</span>
+<span class="nc" id="L167">                List&lt;String&gt; row = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                for (String p : parts) row.add(p);</span>
+<span class="nc" id="L169">                rows.add(row);</span>
+            }
+
+<span class="nc" id="L172">            return ResponseEntity.ok(rows);</span>
+<span class="nc" id="L173">        } catch (Exception e) {</span>
+<span class="nc" id="L174">            return ResponseEntity.status(500).body(List.of(List.of(&quot;error&quot;, e.getMessage())));</span>
+        }
+    }
+
+    @GetMapping(&quot;/votable&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; votable(@RequestParam(required = false) String table, @RequestParam(required = false) String position) {
+<span class="nc" id="L180">        String queryBase = &quot;https://heasarc.gsfc.nasa.gov/xamin/query&quot;;</span>
+        try {
+<span class="nc bnc" id="L182" title="All 4 branches missed.">            String cacheKey = &quot;votable:&quot; + (table == null ? &quot;&quot; : table) + &quot;:&quot; + (position == null ? &quot;&quot; : position);</span>
+<span class="nc" id="L183">            CacheEntry cached = votableCache.get(cacheKey);</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">            if (cached != null) {</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">                if (!cached.isExpired(cacheTtlSeconds)) {</span>
+<span class="nc" id="L186">                    return ResponseEntity.ok(cached.value);</span>
+                } else {
+<span class="nc" id="L188">                    votableCache.remove(cacheKey);</span>
+                }
+            }
+
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            String params = &quot;table=&quot; + URLEncoder.encode(table == null ? &quot;&quot; : table, StandardCharsets.UTF_8)</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                    + &quot;&amp;position=&quot; + URLEncoder.encode(position == null ? &quot;&quot; : position, StandardCharsets.UTF_8)</span>
+                    + &quot;&amp;format=votable&quot;;
+<span class="nc" id="L195">            String url = queryBase + &quot;?&quot; + params;</span>
+
+<span class="nc" id="L197">            HttpClient client = HttpClient.newHttpClient();</span>
+<span class="nc" id="L198">            HttpRequest req = HttpRequest.newBuilder()</span>
+<span class="nc" id="L199">                    .uri(URI.create(url))</span>
+<span class="nc" id="L200">                    .GET()</span>
+<span class="nc" id="L201">                    .build();</span>
+
+<span class="nc" id="L203">            HttpResponse&lt;String&gt; resp = client.send(req, HttpResponse.BodyHandlers.ofString());</span>
+<span class="nc" id="L204">            String body = resp.body();</span>
+
+<span class="nc" id="L206">            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();</span>
+<span class="nc" id="L207">            dbf.setNamespaceAware(true);</span>
+<span class="nc" id="L208">            DocumentBuilder db = dbf.newDocumentBuilder();</span>
+<span class="nc" id="L209">            Document doc = db.parse(new java.io.ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));</span>
+
+            // Extract FIELD names
+<span class="nc" id="L212">            List&lt;String&gt; fields = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L213">            NodeList fieldNodes = doc.getElementsByTagName(&quot;FIELD&quot;);</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">            for (int i = 0; i &lt; fieldNodes.getLength(); i++) {</span>
+<span class="nc" id="L215">                Element f = (Element) fieldNodes.item(i);</span>
+<span class="nc" id="L216">                String name = f.getAttribute(&quot;name&quot;);</span>
+<span class="nc bnc" id="L217" title="All 4 branches missed.">                if (name == null || name.isBlank()) name = f.getAttribute(&quot;ID&quot;);</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                fields.add(name == null ? &quot;&quot; : name);</span>
+            }
+
+            // Extract rows from TABLEDATA/TR/TD
+<span class="nc" id="L222">            List&lt;List&lt;String&gt;&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L223">            NodeList trNodes = doc.getElementsByTagName(&quot;TR&quot;);</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">            for (int i = 0; i &lt; trNodes.getLength(); i++) {</span>
+<span class="nc" id="L225">                Element tr = (Element) trNodes.item(i);</span>
+<span class="nc" id="L226">                NodeList tdNodes = tr.getElementsByTagName(&quot;TD&quot;);</span>
+<span class="nc" id="L227">                List&lt;String&gt; row = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">                for (int j = 0; j &lt; tdNodes.getLength(); j++) {</span>
+<span class="nc" id="L229">                    Node td = tdNodes.item(j);</span>
+<span class="nc" id="L230">                    row.add(td.getTextContent());</span>
+                }
+<span class="nc bnc" id="L232" title="All 2 branches missed.">                if (!row.isEmpty()) rows.add(row);</span>
+            }
+
+            // Extract LINK hrefs and accessURL elements
+<span class="nc" id="L236">            List&lt;String&gt; links = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L237">            NodeList linkNodes = doc.getElementsByTagName(&quot;LINK&quot;);</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">            for (int i = 0; i &lt; linkNodes.getLength(); i++) {</span>
+<span class="nc" id="L239">                Element l = (Element) linkNodes.item(i);</span>
+<span class="nc" id="L240">                String href = l.getAttribute(&quot;href&quot;);</span>
+<span class="nc bnc" id="L241" title="All 4 branches missed.">                if (href == null || href.isBlank()) href = l.getAttribute(&quot;xlink:href&quot;);</span>
+<span class="nc bnc" id="L242" title="All 4 branches missed.">                if (href != null &amp;&amp; !href.isBlank()) links.add(href);</span>
+            }
+<span class="nc" id="L244">            NodeList accessNodes = doc.getElementsByTagName(&quot;accessURL&quot;);</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">            for (int i = 0; i &lt; accessNodes.getLength(); i++) {</span>
+<span class="nc" id="L246">                Node n = accessNodes.item(i);</span>
+<span class="nc" id="L247">                String text = n.getTextContent();</span>
+<span class="nc bnc" id="L248" title="All 4 branches missed.">                if (text != null &amp;&amp; !text.isBlank()) links.add(text.trim());</span>
+            }
+
+<span class="nc" id="L251">            Map&lt;String, Object&gt; out = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L252">            out.put(&quot;fields&quot;, fields);</span>
+<span class="nc" id="L253">            out.put(&quot;rows&quot;, rows);</span>
+<span class="nc" id="L254">            out.put(&quot;links&quot;, links);</span>
+
+            // store in cache
+<span class="nc" id="L257">            votableCache.put(cacheKey, new CacheEntry(out));</span>
+
+<span class="nc" id="L259">            return ResponseEntity.ok(out);</span>
+<span class="nc" id="L260">        } catch (Exception e) {</span>
+<span class="nc" id="L261">            Map&lt;String, Object&gt; err = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L262">            err.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L263">            return ResponseEntity.status(500).body(err);</span>
+        }
+    }
+
+    @PostMapping(&quot;/cache/clear&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; clearCache() {
+<span class="nc" id="L269">        votableCache.clear();</span>
+<span class="nc" id="L270">        return ResponseEntity.ok(Map.of(&quot;cleared&quot;, true));</span>
+    }
+
+    @PostMapping(&quot;/cache/invalidate&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; invalidateCache(@RequestParam(required = false) String table, @RequestParam(required = false) String position) {
+<span class="nc bnc" id="L275" title="All 4 branches missed.">        String cacheKey = &quot;votable:&quot; + (table == null ? &quot;&quot; : table) + &quot;:&quot; + (position == null ? &quot;&quot; : position);</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">        boolean removed = votableCache.remove(cacheKey) != null;</span>
+<span class="nc" id="L277">        return ResponseEntity.ok(Map.of(&quot;removed&quot;, removed, &quot;key&quot;, cacheKey));</span>
+    }
+
+    @PostMapping(&quot;/cache/ttl&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; setCacheTtl(@RequestParam long seconds) {
+<span class="nc bnc" id="L282" title="All 2 branches missed.">        if (seconds &lt;= 0) return ResponseEntity.badRequest().body(Map.of(&quot;error&quot;, &quot;ttl must be &gt; 0&quot;));</span>
+<span class="nc" id="L283">        cacheTtlSeconds = seconds;</span>
+<span class="nc" id="L284">        return ResponseEntity.ok(Map.of(&quot;ttl_seconds&quot;, cacheTtlSeconds));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

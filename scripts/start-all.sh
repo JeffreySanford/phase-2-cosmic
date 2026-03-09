@@ -143,6 +143,10 @@ else
 	fi
 fi
 
-pnpm exec concurrently --kill-others-on-fail "pnpm run serve:ssr" "pnpm nx serve frontend" 2>&1 | tee -a "$LOG_FILE"
+# also launch the allocator simulator so it’s always available
+pnpm exec concurrently --kill-others-on-fail \
+  "node ./tools/trident-allocator/server.js" \
+  "pnpm run serve:ssr" \
+  "pnpm nx serve frontend" 2>&1 | tee -a "$LOG_FILE"
 
 log "[start-all] finished"
