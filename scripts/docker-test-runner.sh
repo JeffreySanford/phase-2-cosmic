@@ -21,4 +21,11 @@ else
   pnpm nx run-many --target=test --all --parallel=false
 fi
 
+echo "Running Java tests (governance + ingest) with container integration..."
+mvn -f apps/java-governance/pom.xml clean verify -Pwith-containers -B
+mvn -f tools/java-ingest/pom.xml clean verify -Pwith-containers -B
+
+echo "Running Go unit tests (data-generator)..."
+sh ./scripts/test-go.sh
+
 echo "Test-runner finished."

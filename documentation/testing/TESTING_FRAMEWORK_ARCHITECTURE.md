@@ -78,47 +78,17 @@ flowchart LR
 
 ## 4. Service-by-service testing ownership
 
-```mermaid
-flowchart TD
-  subgraph Frontend["apps/frontend"]
-    F1[Unit Tests]
-    F2[Component Rendering Tests]
-    F3[Route State/Error Tests]
-    F4[DTO Mapping Contract Tests]
-  end
+| Service | Type | Unit Tests | Container Integration | Status |
+|---|---|---|---|---|
+| `apps/frontend` | Angular SPA | ✅ 39 suites / 224 tests | n/a | **Green** |
+| `apps/frontend-e2e` | Cypress e2e | ✅ 11 topology specs | n/a | **Green** |
+| `apps/java-governance` | Spring Boot | ✅ 17 test classes | ✅ Testcontainers (Kafka, Redis, RabbitMQ, Pulsar) via `-Pwith-containers` | **Green** |
+| `tools/java-ingest` | Spring Boot | ✅ `BasicTest`, `IngestMetricsServiceTest` | ✅ `KafkaIngestListenerContainerIntegrationTest` via `-Pwith-containers` | **Green** |
+| `tools/data-generator` | Go binary | ✅ `main_test.go` (parseSegmentWeights, allocateSegments) | n/a (no external deps) | **Green** |
+| `tools/maven-test-image` | Docker image | via CI build only | n/a | Build-only |
+| Third-party compose services | Stock images | n/a | healthchecks in `dev-compose.yml` | Config-validated |
 
-  subgraph E2E["apps/frontend-e2e"]
-    E1[Jobs Journey]
-    E2[Datasets Journey]
-    E3[Diagnostics Journey]
-    E4[Artifact Capture]
-  end
-
-  subgraph Gov["apps/java-governance"]
-    G1[Controller Tests]
-    G2[Service/State Machine Tests]
-    G3[Redis Integration Tests]
-    G4[Failure and Timeout Tests]
-  end
-
-  subgraph Ingest["tools/java-ingest"]
-    I1[Unit Tests]
-    I2[Validation/Error Tests]
-    I3[Kafka Integration Tests]
-  end
-
-  subgraph Gen["tools/data-generator"]
-    D1[Go Unit Tests]
-    D2[Config/Mode Tests]
-    D3[Producer Integration Tests]
-  end
-
-  subgraph Compose["docker/dev-compose Stack"]
-    C1[Healthcheck Smoke]
-    C2[Restart Recovery Tests]
-    C3[Cross-Service Probe Tests]
-  end
-```
+Configuration-only containers (nginx, Grafana, Loki, Alertmanager, Prometheus) have their YAML/config files automatically picked up by `pnpm run lint:yaml` via `git ls-files`.
 
 ## 5. Execution cadence and runtime strategy
 

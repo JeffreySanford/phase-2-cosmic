@@ -24,11 +24,21 @@ pnpm run quality:ci
 
 Current gate sequence:
 
-1. lint
+1. lint (ESLint, Dockerfile, YAML)
 2. format check
-3. unit tests
-4. OpenAPI + fixture validation
-5. e2e smoke tests
+3. frontend unit tests (`pnpm nx run-many --target=test`)
+4. Java unit tests — governance + ingest (`pnpm run test:java`)
+5. Go unit tests — data-generator (`pnpm run test:go`)
+6. OpenAPI + fixture validation
+7. docs validation
+8. e2e smoke tests
+
+Container-backed integration tests (Testcontainers) are included in:
+
+```bash
+pnpm run test:java:it          # both Java modules with live containers
+pnpm run docker:test-runner    # full in-Docker suite including e2e smoke
+```
 
 ## 3. Local commands
 
@@ -50,10 +60,31 @@ Format check:
 pnpm run format:check:changed
 ```
 
-Unit tests:
+Frontend unit tests:
 
 ```bash
 pnpm run unit-test
+```
+
+Java unit tests (no containers):
+
+```bash
+pnpm run test:java           # governance + ingest, unit only
+pnpm run test:java:ingest    # ingest only
+pnpm run test:java:governance  # governance only
+```
+
+Java container integration tests:
+
+```bash
+pnpm run test:java:it        # both modules with Testcontainers Kafka/Redis/RabbitMQ
+pnpm run test:java:ingest:it # ingest Testcontainers Kafka only
+```
+
+Go unit tests:
+
+```bash
+pnpm run test:go             # data-generator Go tests (requires 'go' on PATH)
 ```
 
 OpenAPI validation:
@@ -66,6 +97,12 @@ E2E smoke:
 
 ```bash
 pnpm run e2e-smoke
+```
+
+Full quality gate:
+
+```bash
+pnpm run quality:ci
 ```
 
 ## 4. Coverage policy
@@ -100,9 +137,15 @@ Minimum:
 - pnpm
 - Docker + Compose
 
-For Java governance tests:
+For Java governance and ingest tests:
 
 - Maven must be installed and available on PATH
+- Container integration tests (`-Pwith-containers`) require Docker daemon running
+
+For Go data-generator tests:
+
+- Go 1.21+ must be installed and on PATH (`go test ./...` from `tools/data-generator`)
+- If not installed, `pnpm run test:go` prints a warning and exits cleanly
 
 For browser-driven e2e:
 
