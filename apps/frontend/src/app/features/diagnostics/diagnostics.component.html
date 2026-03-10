@@ -83,18 +83,6 @@
         <div class="brokers-header">
           <h2>Broker & Service Status</h2>
           <div class="brokers-controls">
-            <span class="last-updated" *ngIf="lastUpdated"
-              >Updated: {{ lastUpdated | date : "mediumTime" }}</span
-            >
-            <span class="polling-interval" *ngIf="autoRefresh"
-              >(every {{ currentPollingMs / 1000 }}s)</span
-            >
-            <mat-slide-toggle
-              [checked]="autoRefresh"
-              (change)="toggleAutoRefresh()"
-              color="primary"
-              >Auto-refresh</mat-slide-toggle
-            >
             <button
               mat-stroked-button
               (click)="fetchDockerServices()"
@@ -220,6 +208,15 @@
               No commissioning scenarios registered.
             </p>
           </div>
+        </section>
+      </div>
+    </mat-tab>
+    <mat-tab label="Live Events">
+      <div class="tab-content">
+        <section class="live-events-section">
+          <h2>Broker Event Stream</h2>
+          <p class="muted">Real-time WebSocket events from the broker. Last 10 events shown.</p>
+          <app-job-events></app-job-events>
         </section>
       </div>
     </mat-tab>

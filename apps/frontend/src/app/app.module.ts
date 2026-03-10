@@ -1,4 +1,9 @@
-import { NgModule, CUSTOM_ELEMENTS_SCHEMA, inject, provideAppInitializer } from "@angular/core";
+import {
+  NgModule,
+  CUSTOM_ELEMENTS_SCHEMA,
+  inject,
+  provideAppInitializer,
+} from "@angular/core";
 import { BrowserModule } from "@angular/platform-browser";
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 import { MatSnackBarModule } from "@angular/material/snack-bar";
@@ -35,24 +40,18 @@ import { MainstageComponent } from "./base/mainstage/mainstage.component";
 import { EnvironmentComponent } from "./base/environment/environment.component";
 import { LandingComponent } from "./features/landing/landing.component";
 import { DashboardComponent } from "./features/dashboard/dashboard.component";
-import { TopologyComponent } from "./features/topology/topology.component";
-import { TopologyInfoDialogComponent } from "./features/topology/topology-info-dialog.component";
 import { DiagnosticsComponent } from "./features/diagnostics/diagnostics.component";
 import { TelemetryModule } from "./features/telemetry/telemetry.module";
 import { PromqlCardComponent } from "./shared/promql-card/promql-card.component";
 import { SettingsComponent } from "./features/settings/settings.component";
 import { SettingsDialogComponent } from "./features/settings/settings-dialog.component";
 import { ViewerComponent } from "./features/viewer/viewer.component";
-import { JobsComponent } from "./features/jobs/jobs.component";
-import { JobsSubmitDialogComponent } from "./features/jobs/jobs-submit-dialog.component";
-import { JobsLineageEditorComponent } from "./features/jobs/jobs-lineage-editor.component";
-import { DatasetsComponent } from "./features/datasets/datasets.component";
 import { JobEventsComponent } from "./features/job-events/job-events.component";
 import { PageStateModule } from "./shared/page-state/page-state.module";
 import { StatusBandModule } from "./shared/status-band/status-band.module";
 import { DisclaimerBannerModule } from "./shared/disclaimer-banner/disclaimer-banner.module";
 import { ProvenancePanelModule } from "./shared/provenance-panel/provenance-panel.module";
-import { ExternalSourcesComponent } from "./shared/external-sources/external-sources.component";
+import { ExternalSourcesModule } from "./shared/external-sources/external-sources.module";
 import { TridentAllocatorComponent } from "./features/diagnostics/trident-allocator/trident-allocator.component";
 
 @NgModule({
@@ -66,18 +65,11 @@ import { TridentAllocatorComponent } from "./features/diagnostics/trident-alloca
     EnvironmentComponent,
     LandingComponent,
     DashboardComponent,
-    TopologyComponent,
-    TopologyInfoDialogComponent,
     DiagnosticsComponent,
     PromqlCardComponent,
     SettingsComponent,
     SettingsDialogComponent,
     ViewerComponent,
-    JobsComponent,
-    JobsSubmitDialogComponent,
-    JobsLineageEditorComponent,
-    DatasetsComponent,
-    ExternalSourcesComponent,
     JobEventsComponent,
     TridentAllocatorComponent,
   ],
@@ -108,6 +100,7 @@ import { TridentAllocatorComponent } from "./features/diagnostics/trident-alloca
     StatusBandModule,
     DisclaimerBannerModule,
     ProvenancePanelModule,
+    ExternalSourcesModule,
     TelemetryModule,
   ],
   providers: [
@@ -116,7 +109,7 @@ import { TridentAllocatorComponent } from "./features/diagnostics/trident-alloca
       useValue: { ariaModal: true },
     },
     provideAppInitializer(() => {
-        const initializerFn = ((dataSource: DataSourceService) => () => {
+      const initializerFn = ((dataSource: DataSourceService) => () => {
         try {
           const params = new URLSearchParams(window.location.search);
           if (params.get("mode") === "mock") {
@@ -127,8 +120,8 @@ import { TridentAllocatorComponent } from "./features/diagnostics/trident-alloca
         }
         return Promise.resolve();
       })(inject(DataSourceService));
-        return initializerFn();
-      }),
+      return initializerFn();
+    }),
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent],

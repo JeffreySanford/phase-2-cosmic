@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function */
 import {
   AfterViewInit,
   Component,
@@ -19,131 +18,30 @@ import {
   TopologyInfoDialogComponent,
   TopologyInfoDialogData,
 } from "./topology-info-dialog.component";
+import {
+  D3DragEvent,
+  D3Drag,
+  D3Module,
+  D3Selection,
+  D3Simulation,
+  LinkStats,
+  NodeActivityPoint,
+  NodeSummary,
+  ProvenanceFilter,
+  TopoLink,
+  TopoNode,
+  TopologyMetricPoint,
+  TopologyMetricsResponse,
+} from "./topology.types";
+
 // d3 is ESM; load dynamically at runtime to avoid Jest/node transform issues
 let _d3: D3Module | null = null;
 
-type TopoNode = {
-  id: string;
-  label?: string;
-  group?: string;
-  x?: number;
-  y?: number;
-  fx?: number | null;
-  fy?: number | null;
-};
-type TopoLink = {
-  source: string | TopoNode;
-  target: string | TopoNode;
-  value?: number;
-};
-
-type D3DragEvent = { x: number; y: number; subject?: unknown; active?: number };
-
-type D3Selection = {
-  append: (tag: string) => D3Selection;
-  attr: (name: string, value?: unknown) => D3Selection;
-  select: (sel?: string) => D3Selection;
-  selectAll: (sel: string) => D3Selection;
-  data: (d: unknown[]) => D3Selection;
-  enter: () => D3Selection;
-  call: (fn: ((sel: D3Selection) => void) | unknown) => D3Selection;
-  on?: (
-    event: string,
-    handler: (event?: unknown, datum?: unknown) => void
-  ) => void;
-  text: (t?: unknown) => D3Selection;
-  remove?: () => void;
-};
-
-type D3Drag = {
-  on: (
-    ev: string,
-    handler: (event: D3DragEvent, d: TopoNode) => void
-  ) => D3Drag;
-};
-
-type D3Simulation = {
-  stop: () => void;
-  alphaTarget: (n: number) => D3Simulation;
-  restart?: () => void;
-  on: (ev: string, cb: () => void) => D3Simulation;
-  force: (name: string, f: unknown) => D3Simulation;
-};
-
-type D3Module = {
-  select: (el: Element | HTMLElement) => D3Selection;
-  drag: () => D3Drag;
-  forceSimulation: (nodes: TopoNode[]) => D3Simulation;
-  forceLink: (links: TopoLink[]) => {
-    id: (fn: (d: TopoNode) => string) => { distance: (n: number) => unknown };
-  };
-  forceManyBody: () => { strength: (n: number) => unknown };
-  forceCenter: (x: number, y: number) => unknown;
-  arc?: (...args: unknown[]) => unknown;
-  bin?: (...args: unknown[]) => unknown;
-  scaleTime?: (...args: unknown[]) => unknown;
-  scaleLinear?: (...args: unknown[]) => unknown;
-  extent?: (...args: unknown[]) => unknown;
-};
-
-type LinkStats = {
-  throughput?: string;
-  throughputPct?: string;
-  latencyMs?: number;
-  errorRate?: string;
-  confidencePct?: number;
-  throughputMBpsCurrent?: number;
-  throughputMBpsMax?: number;
-  throughputPctNumeric?: number;
-  source?: "prometheus" | "admin" | "derived" | "mock" | "unavailable";
-  measurementPath?: string;
-};
-
-type NodeSummary = {
-  id: string;
-  label: string;
-  group?: string;
-  ingressMBps: number;
-  egressMBps: number;
-  totalMBps: number;
-  businessRatePerSec: number;
-  businessBytesPerSec: number;
-  executorLabels: string[];
-  liveLinks: number;
-  derivedLinks: number;
-  mockLinks: number;
-  unavailableLinks: number;
-  primarySource: "prometheus" | "admin" | "derived" | "mock" | "unavailable";
-};
-
-type TopologyMetricPoint = {
-  currentMBps: number;
-  maxMBps?: number;
-  source?: "prometheus" | "admin" | "derived" | "mock" | "unavailable";
-  latencyMs?: number;
-  errorRatePct?: number;
-  confidencePct?: number;
-  measurementPath?: string;
-};
-
-type ProvenanceFilter = "prometheus" | "admin" | "derived";
-
-type NodeActivityPoint = {
-  businessRatePerSec?: number;
-  businessBytesPerSec?: number;
-  executorLabels?: string[];
-};
-
-type TopologyMetricsResponse = Record<string, TopologyMetricPoint> & {
-  timing_drift_ns?: number;
-  rfi_event_rate?: number;
-  nodeActivity?: Record<string, NodeActivityPoint>;
-};
 @Component({
-    selector: "app-topology",
-    templateUrl: "./topology.component.html",
-    styleUrls: ["./topology.component.scss"],
-    standalone: false
+  selector: "app-topology",
+  templateUrl: "./topology.component.html",
+  styleUrls: ["./topology.component.scss"],
+  standalone: false,
 })
 export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild("graph", { static: true }) graphEl!: ElementRef<HTMLDivElement>;
@@ -1379,9 +1277,13 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       };
 
       const simStub: D3Simulation = {
-        stop: () => {},
+        stop: () => {
+          return simStub;
+        },
         alphaTarget: (_n: number) => simStub,
-        restart: () => {},
+        restart: () => {
+          return simStub;
+        },
         on: (_ev: string, _cb: () => void) => simStub,
         force: (_name: string, _f: unknown) => simStub,
       };
@@ -1783,8 +1685,8 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
               return;
             }
             if (pctChange >= this.sensitivityPct) {
-              this.animatePulse(key, prevVal, m.currentMBps || 0);
-              this.flashLine(key);
+              this.animatePulse(key || "0");
+              this.flashLine(key || "0");
             }
           }
         }
@@ -1797,7 +1699,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  private animatePulse(key: string, prev: number, next: number) {
+  private animatePulse(key: string) {
     try {
       const svgEl = this.graphEl.nativeElement.querySelector(
         "svg"

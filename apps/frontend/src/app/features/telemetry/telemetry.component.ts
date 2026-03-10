@@ -78,10 +78,11 @@ type TransientAlert = {
   selector: "app-telemetry",
   templateUrl: "./telemetry.component.html",
   styleUrls: ["./telemetry.component.scss"],
-  standalone: false,
+
   host: {
     "data-component-id": "telemetry",
   },
+  standalone: false,
 })
 export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild("chart") chartEl?: ElementRef<HTMLDivElement>;

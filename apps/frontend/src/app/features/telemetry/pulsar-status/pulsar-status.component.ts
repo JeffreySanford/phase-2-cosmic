@@ -1,9 +1,10 @@
 import { Component, Input } from "@angular/core";
 
-interface PulsarStatus {
+export interface PulsarStatus {
   brokers: number;
   topics: number;
   partitions: number;
+  status?: string;
 }
 
 @Component({

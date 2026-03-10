@@ -62,13 +62,14 @@ export class JobsService {
   // Polling hot observable for the job list.  Subscribers share a single
   // HTTP request stream and the data is replayed.  The cache is invalidated
   // by `invalidateList()` or by simply waiting for the polling interval.
-  private _pollIntervalMs = 5000;
+  private _listPollIntervalMs = 30_000;
+  private _watchPollIntervalMs = 10_000;
   private _listCache$?: Observable<JobStatus[]>;
 
   listHot(forceReload = false): Observable<Result<JobStatus[]>> {
     if (forceReload || !this._listCache$) {
       // build a new polling stream
-      this._listCache$ = interval(this._pollIntervalMs).pipe(
+      this._listCache$ = interval(this._listPollIntervalMs).pipe(
         startWith(0),
         switchMap(() => this.list()),
         catchError((err) => {
@@ -98,7 +99,7 @@ export class JobsService {
 
   watchJob(id: string): Observable<JobStatus> {
     if (!this._jobCache.has(id)) {
-      const obs = interval(this._pollIntervalMs).pipe(
+      const obs = interval(this._watchPollIntervalMs).pipe(
         startWith(0),
         switchMap(() => this.get(id)),
         shareReplay({ bufferSize: 1, refCount: true })

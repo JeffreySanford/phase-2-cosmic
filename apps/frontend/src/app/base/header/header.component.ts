@@ -4,10 +4,10 @@ import { Router } from "@angular/router";
 import { SettingsDialogComponent } from "../../features/settings/settings-dialog.component";
 
 @Component({
-    selector: "app-header",
-    templateUrl: "./header.component.html",
-    styleUrls: ["./header.component.scss"],
-    standalone: false
+  selector: "app-header",
+  templateUrl: "./header.component.html",
+  styleUrls: ["./header.component.scss"],
+  standalone: false,
 })
 export class HeaderComponent {
   @Output() toggleSidebar = new EventEmitter<void>();

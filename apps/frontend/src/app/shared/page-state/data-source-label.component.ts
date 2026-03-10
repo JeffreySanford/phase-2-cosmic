@@ -11,7 +11,7 @@ import { DataSource } from "./page-state.model";
  */
 @Component({
   selector: "app-data-source-label",
-  standalone: false,
+
   templateUrl: "./data-source-label.component.html",
   styles: [
     `
@@ -52,6 +52,7 @@ import { DataSource } from "./page-state.model";
       }
     `,
   ],
+  standalone: false,
 })
 export class DataSourceLabelComponent {
   @Input() source!: DataSource;

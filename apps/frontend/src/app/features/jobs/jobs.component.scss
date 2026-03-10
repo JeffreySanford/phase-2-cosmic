@@ -20,12 +20,34 @@
   margin-bottom: calc(var(--app-footer-height, 48px) + 0.75rem);
 }
 
+.toolbar-legend-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
 .toolbar {
   display: flex;
+  flex: 1;
+  min-width: 0;
   gap: 8px;
   align-items: center;
-  margin-bottom: 8px;
   flex-wrap: wrap;
+}
+
+.active-legend {
+  flex-shrink: 0;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, max-content);
+    gap: 3px 18px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 6px;
+  }
 }
 
 // ─── Dispatch Scanner inline (sits in the toolbar row) ──────────────────────
@@ -427,6 +449,44 @@
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   margin-top: 8px;
   padding-top: 10px;
+}
+
+// ─── Job detail tabs: label colours + pagination arrows ──────────────────────
+::ng-deep .job-tabs .mdc-tab__text-label {
+  color: rgba(200, 230, 255, 0.6) !important;
+  transition: color 200ms ease;
+}
+
+::ng-deep .job-tabs .mdc-tab--active .mdc-tab__text-label {
+  color: #40e0ff !important;
+  text-shadow: 0 0 10px rgba(64, 224, 255, 0.5);
+}
+
+::ng-deep .job-tabs .mdc-tab--active .mdc-tab-indicator__content--underline {
+  border-color: #40e0ff !important;
+}
+
+::ng-deep .job-tabs .mdc-tab:not(.mdc-tab--active):hover .mdc-tab__text-label {
+  color: rgba(200, 230, 255, 0.9) !important;
+}
+
+// Pagination prev/next chevrons
+::ng-deep .job-tabs .mat-mdc-tab-header-pagination {
+  color: rgba(200, 230, 255, 0.6);
+
+  .mat-mdc-tab-header-pagination-chevron {
+    border-color: rgba(200, 230, 255, 0.6) !important;
+  }
+
+  &:not(.mat-mdc-tab-header-pagination-disabled):hover {
+    .mat-mdc-tab-header-pagination-chevron {
+      border-color: #40e0ff !important;
+    }
+  }
+
+  &.mat-mdc-tab-header-pagination-disabled {
+    opacity: 0.2;
+  }
 }
 
 .detail-body {

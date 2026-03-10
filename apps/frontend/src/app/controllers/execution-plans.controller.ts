@@ -1,9 +1,9 @@
 import { Controller, Post, Body, Param, Headers, Get } from "@nestjs/common";
 
 interface ExecutionPlanRequest {
-  schedulingBlock: any;
-  spectralConfig?: any;
-  existingAllocations?: any[];
+  schedulingBlock: unknown;
+  spectralConfig?: unknown;
+  existingAllocations?: unknown[];
 }
 
 interface StoredPlan {
@@ -27,7 +27,6 @@ export class ExecutionPlansController {
       throw new Error("unauthorized");
     }
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const path = require("path");
       const allocatorPath = path.join(
         process.cwd(),
@@ -52,7 +51,7 @@ export class ExecutionPlansController {
         history: ["validated"],
       });
       return { planId };
-    } catch (e) {
+    } catch (_e) {
       return { error: "validation_failure" };
     }
   }
@@ -62,7 +61,10 @@ export class ExecutionPlansController {
     @Param("id") id: string,
     @Headers("idempotency-key") key: string,
     @Headers("authorization") auth?: string
-  ): Promise<any> {
+  ): Promise<
+    | { code: "DUPLICATE"; planId: string }
+    | { status: "accepted"; planId: string }
+  > {
     if (!auth || !auth.startsWith("Bearer ")) {
       throw new Error("unauthorized");
     }
@@ -70,7 +72,7 @@ export class ExecutionPlansController {
       throw new Error("Missing Idempotency-Key");
     }
     if (this.idempotency.has(key)) {
-      const existing = this.idempotency.get(key)!;
+      const existing = this.idempotency.get(key) as string;
       return { code: "DUPLICATE", planId: existing };
     }
     const plan = this.plans.get(id);
@@ -87,7 +89,7 @@ export class ExecutionPlansController {
   getPlan(
     @Param("id") id: string,
     @Headers("authorization") auth?: string
-  ): any {
+  ): { id: string; status: "validated" | "applied"; history: string[] } {
     if (!auth || !auth.startsWith("Bearer ")) {
       throw new Error("unauthorized");
     }

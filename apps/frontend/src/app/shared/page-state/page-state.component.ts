@@ -11,7 +11,7 @@ import { PageStateConfig } from "./page-state.model";
  */
 @Component({
   selector: "app-page-state",
-  standalone: false,
+
   templateUrl: "./page-state.component.html",
   styles: [
     `
@@ -74,6 +74,7 @@ import { PageStateConfig } from "./page-state.model";
       }
     `,
   ],
+  standalone: false,
 })
 export class PageStateComponent {
   @Input() config!: PageStateConfig;

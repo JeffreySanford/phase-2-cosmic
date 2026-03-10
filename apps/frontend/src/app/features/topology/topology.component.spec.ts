@@ -20,7 +20,7 @@ import { LoadProfileService } from "../../services/load-profile.service";
 import { MockDataService } from "../../services/mock-data.service";
 import { of } from "rxjs";
 
-@Component({ selector: "app-disclaimer-banner", template: "", standalone: false })
+@Component({ selector: "app-disclaimer-banner", template: "" })
 class DisclaimerBannerStubComponent {
   @Input() ready = true;
 }
@@ -39,8 +39,9 @@ describe("TopologyComponent", () => {
         PageStateModule,
         MatTabsModule,
         NoopAnimationsModule,
+        DisclaimerBannerStubComponent,
       ],
-      declarations: [TopologyComponent, DisclaimerBannerStubComponent],
+      declarations: [TopologyComponent],
       providers: [
         { provide: DataSourceService, useValue: { mode: "live" } },
         {

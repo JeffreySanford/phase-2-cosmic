@@ -26,6 +26,8 @@ module.exports = [
     rules: {
       // disabling to avoid lint crash on inline Angular templates
       "@typescript-eslint/ban-ts-comment": "off",
+      // project uses NgModule architecture; standalone: false is required
+      "@angular-eslint/prefer-standalone": "off",
     },
   },
   {

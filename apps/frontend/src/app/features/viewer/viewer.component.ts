@@ -15,6 +15,10 @@ import {
 } from "@angular/core";
 import { DOCUMENT } from "@angular/common";
 import { SidebarService } from "../../base/sidebar/sidebar.service";
+import {
+  isAladinPrefetched as _isAladinPrefetched,
+  getAladinInitPromise,
+} from "../../services/aladin-prefetch.service";
 import { from, of, defer, interval, throwError } from "rxjs";
 import {
   mergeMap,
@@ -104,11 +108,6 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
           this.resizeObserver = new ResizeObserver(() => {
             try {
               const rect = el.getBoundingClientRect();
-              console.debug(
-                "[Viewer] container resized",
-                rect.width,
-                rect.height
-              );
               if (this.instance && typeof this.instance.resize === "function") {
                 this.instance.resize(rect.width, rect.height);
               }
@@ -119,74 +118,19 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
           this.resizeObserver.observe(el);
         }
 
-        // enforce zero margin on the viewer-root at runtime (in case CSS override
-        // is removed). log a warning if someone tries to set it.
-        try {
-          const root = this.containerRef.nativeElement.closest(
-            ".viewer-root"
-          ) as HTMLElement | null;
-          if (root) {
-            const mt = window.getComputedStyle(root).marginTop;
-            if (mt && mt !== "0px") {
-              console.warn("[Viewer] resetting unexpected margin-top", mt);
-            }
-            root.style.marginTop = "0px";
-          }
-        } catch {
-          // ignore
-        }
-
-        // diagnostic: print offset information for this element and its ancestors
-        try {
-          let node: HTMLElement | null = this.containerRef.nativeElement;
-          while (node) {
-            const rect = node.getBoundingClientRect();
-            console.debug(
-              "[Viewer] ancestor",
-              node.tagName,
-              "offsetTop",
-              node.offsetTop,
-              "rect.top",
-              rect.top,
-              "height",
-              rect.height
-            );
-            node = node.parentElement;
-          }
-          const mainstage = document.querySelector(
-            "app-mainstage"
-          ) as HTMLElement | null;
-          if (mainstage) {
-            console.debug(
-              "[Viewer] mainstage rect",
-              mainstage.getBoundingClientRect()
-            );
-          }
-        } catch {
-          /* ignore */
-        }
-
         // track sidebar collapse events so our viewer redraws when the stage width changes
         this.sidebarService.collapsed$.subscribe(() => {
-          // give the layout a moment to settle then resize
           setTimeout(() => {
             try {
               const rect = el.getBoundingClientRect();
-              console.debug(
-                "[Viewer] sidebar toggled, resizing to",
-                rect.width,
-                rect.height
-              );
               if (this.instance && typeof this.instance.resize === "function") {
                 this.instance.resize(rect.width, rect.height);
               }
-              // also dispatch a global resize event in case the internal
-              // Aladin observer or other code listens for it
               if (typeof window !== "undefined") {
                 window.dispatchEvent(new Event("resize"));
               }
-            } catch (e) {
-              console.error("[Viewer] error resizing after sidebar toggle", e);
+            } catch {
+              // ignore
             }
           }, 100);
         });
@@ -212,14 +156,18 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
 
       const ric = (
         globalThis as unknown as {
-          requestIdleCallback?: (cb: () => void) => number;
+          requestIdleCallback?: (
+            cb: () => void,
+            opts?: { timeout: number }
+          ) => number;
         }
       ).requestIdleCallback;
       if (typeof ric === "function") {
         try {
-          ric(() => run());
+          // timeout:500 ensures we don't wait more than 500ms even in dev mode
+          // where Zone.js / HMR keeps the browser perpetually busy.
+          ric(() => run(), { timeout: 500 });
         } catch {
-          // fallback to timeout if requestIdleCallback throws for some reason
           setTimeout(run, 0);
         }
       } else {
@@ -261,17 +209,6 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
   }
 
   private initViewer() {
-    // debug: report container dimensions when init begins
-    try {
-      const rect = this.containerRef?.nativeElement?.getBoundingClientRect();
-      console.debug(
-        "[Viewer] initViewer container bounds",
-        rect?.width,
-        rect?.height
-      );
-    } catch {
-      /* ignore */
-    }
     // Create minimal options for initial (fast) init — postpone expensive UI controls
     const optsMinimal = {
       survey: this.survey,
@@ -427,7 +364,15 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
     const maxRetries = 5;
 
     return import$.pipe(
-      mergeMap((mod) => initAndWait$(mod)),
+      mergeMap((mod) => {
+        // If prefetch is in-flight or complete, await the same promise
+        // so we never run a second parallel init() / WASM compile.
+        const prefetch = getAladinInitPromise();
+        if (prefetch) {
+          return from(prefetch.then(() => mod).catch(() => mod));
+        }
+        return initAndWait$(mod);
+      }),
       mergeMap((mod) =>
         create$(mod).pipe(
           retryWhen((errors) =>
@@ -636,7 +581,11 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
     ) => void;
     const proto = protoRaw as { addEventListener: AE };
 
-    const eventTypes = ["touchstart", "touchmove", "wheel"];
+    // touchstart/touchmove → passive for scroll performance.
+    // wheel → explicitly non-passive so Aladin can preventDefault() and capture zoom
+    // without Chrome silently upgrading the listener to passive.
+    const passiveTypes = ["touchstart", "touchmove"];
+    const nonPassiveTypes = ["wheel"];
     const original: AE = proto.addEventListener;
 
     try {
@@ -648,13 +597,19 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
       ) {
         try {
           if (
-            eventTypes.indexOf(type) !== -1 &&
+            passiveTypes.indexOf(type) !== -1 &&
             (options === undefined || options === null)
           ) {
             return original.call(this, type, listener, { passive: true });
           }
+          if (
+            nonPassiveTypes.indexOf(type) !== -1 &&
+            (options === undefined || options === null)
+          ) {
+            return original.call(this, type, listener, { passive: false });
+          }
         } catch {
-          // fall back to original call if browser doesn't accept passive option
+          // fall back to original call
         }
         return original.call(this, type, listener, options);
       };

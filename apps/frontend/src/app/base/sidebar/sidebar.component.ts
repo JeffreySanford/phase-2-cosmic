@@ -7,10 +7,10 @@ interface SidebarRoute {
 }
 
 @Component({
-    selector: "app-sidebar",
-    templateUrl: "./sidebar.component.html",
-    styleUrls: ["./sidebar.component.scss"],
-    standalone: false
+  selector: "app-sidebar",
+  templateUrl: "./sidebar.component.html",
+  styleUrls: ["./sidebar.component.scss"],
+  standalone: false,
 })
 export class SidebarComponent {
   @Input() collapsed = false;
@@ -18,12 +18,12 @@ export class SidebarComponent {
 
   routes: SidebarRoute[] = [
     { path: "/landing", label: "Home", icon: "🏠" },
-    { path: "/view", label: "Viewer", icon: "👀" },
     { path: "/dashboard", label: "Dashboard", icon: "📈" },
-    { path: "/telemetry", label: "Telemetry", icon: "📡" },
-    { path: "/jobs", label: "Jobs", icon: "🗂️" },
+    { path: "/view", label: "Viewer", icon: "👀" },
     { path: "/visualizations", label: "Visualizations", icon: "📊" },
+    { path: "/jobs", label: "Jobs", icon: "🗂️" },
     { path: "/topology", label: "Topology", icon: "🗺️" },
+    { path: "/telemetry", label: "Telemetry", icon: "📡" },
     { path: "/diagnostics", label: "Diagnostics", icon: "🛠️" },
   ];
 

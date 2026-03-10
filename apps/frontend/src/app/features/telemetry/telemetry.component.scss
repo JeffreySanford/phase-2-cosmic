@@ -470,26 +470,21 @@ p {
   color: var(--tele-muted) !important;
 }
 
-/* Tabs: make labels high-contrast and give active tab a subtle highlighted background */
-::ng-deep .mat-tab-label {
-  color: var(--tele-text) !important;
-  opacity: 0.95;
-}
+/* ── Tab label colours: inactive = muted, active = vibrant ─────────────── */
+/* Inactive labels (MDC API) */
 ::ng-deep .mat-mdc-tab .mdc-tab__text-label {
   color: var(--tele-text) !important;
 }
-::ng-deep .mat-tab-label.mat-tab-label-active {
+/* Active label (MDC API) — vibrant accent */
+::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
   color: var(--tele-accent-2) !important;
   font-weight: 700;
-  background: rgba(125, 211, 252, 0.12);
-  border-radius: 6px;
-  padding: 6px 10px;
-  box-shadow: 0 8px 20px rgba(8, 47, 73, 0.35);
 }
-::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label,
-::ng-deep .mat-mdc-tab .mdc-tab__text-label {
-  color: var(--tele-accent-2) !important;
+/* ng-template labels (e.g. Alert SLO badge span) inherit parent colour */
+::ng-deep .mat-mdc-tab .mdc-tab__text-label span {
+  color: inherit !important;
 }
+/* MDC CSS-variable overrides for completeness */
 ::ng-deep .mat-mdc-tab-header {
   --mdc-secondary-navigation-tab-label-text-color: var(--tele-text);
   --mdc-secondary-navigation-tab-active-label-text-color: var(--tele-accent-2);

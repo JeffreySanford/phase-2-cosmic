@@ -4,7 +4,7 @@ import { of } from "rxjs";
 import { HttpClientTestingModule } from "@angular/common/http/testing";
 import { DashboardComponent } from "./dashboard.component";
 
-@Component({ selector: "app-promql-card", template: "", standalone: false })
+@Component({ selector: "app-promql-card", template: "" })
 class PromqlCardStubComponent {}
 
 describe("DashboardComponent", () => {
@@ -13,8 +13,8 @@ describe("DashboardComponent", () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      declarations: [DashboardComponent, PromqlCardStubComponent],
+      imports: [HttpClientTestingModule, PromqlCardStubComponent],
+      declarations: [DashboardComponent],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         {

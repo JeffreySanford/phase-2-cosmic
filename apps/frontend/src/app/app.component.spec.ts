@@ -8,22 +8,22 @@ import {
   MatDialogConfig,
 } from "@angular/material/dialog";
 
-@Component({ selector: "app-header", template: "", standalone: false })
+@Component({ selector: "app-header", template: "" })
 class HeaderStubComponent {}
-@Component({ selector: "app-status-band", template: "", standalone: false })
+@Component({ selector: "app-status-band", template: "" })
 class StatusBandStubComponent {}
-@Component({ selector: "app-sidebar", template: "", standalone: false })
+@Component({ selector: "app-sidebar", template: "" })
 class SidebarStubComponent {}
-@Component({ selector: "app-mainstage", template: "", standalone: false })
+@Component({ selector: "app-mainstage", template: "" })
 class MainstageStubComponent {}
-@Component({ selector: "app-footer", template: "", standalone: false })
+@Component({ selector: "app-footer", template: "" })
 class FooterStubComponent {}
 
 describe("AppComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
-        AppComponent,
+      declarations: [AppComponent],
+      imports: [
         HeaderStubComponent,
         StatusBandStubComponent,
         SidebarStubComponent,

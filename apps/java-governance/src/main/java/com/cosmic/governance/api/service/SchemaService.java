@@ -50,7 +50,12 @@ public class SchemaService {
                         if (raw.has("$schema")) {
                             raw.remove("$schema");
                         }
-                        Schema schema = SchemaLoader.load(raw);
+                        Schema schema = SchemaLoader.builder()
+                                .schemaJson(raw)
+                                .draftV7Support()
+                                .build()
+                                .load()
+                                .build();
                         schemas.put(t, schema);
                     } catch (Exception ex) {
                         // if reflection fails, treat as no schema available
@@ -76,7 +81,12 @@ public class SchemaService {
                         if (raw.has("$schema")) {
                             raw.remove("$schema");
                         }
-                        Schema schema = SchemaLoader.load(raw);
+                        Schema schema = SchemaLoader.builder()
+                                .schemaJson(raw)
+                                .draftV7Support()
+                                .build()
+                                .load()
+                                .build();
                         schemas.put(t, schema);
                     } catch (Exception ex) {
                         schemas.put(t, null);

@@ -14,10 +14,10 @@ type ExternalSource = {
 };
 
 @Component({
-    selector: "app-external-sources",
-    templateUrl: "./external-sources.component.html",
-    styleUrls: ["./external-sources.component.scss"],
-    standalone: false
+  selector: "app-external-sources",
+  templateUrl: "./external-sources.component.html",
+  styleUrls: ["./external-sources.component.scss"],
+  standalone: false,
 })
 export class ExternalSourcesComponent {
   @Input() sources: unknown[] | undefined;

@@ -5,10 +5,10 @@ import { SettingsService } from "./settings.service";
 import { DEFAULT_USER_SETTINGS, UserSettings } from "./settings.model";
 
 @Component({
-    selector: "app-settings-dialog",
-    templateUrl: "./settings-dialog.component.html",
-    styleUrls: ["./settings-dialog.component.scss"],
-    standalone: false
+  selector: "app-settings-dialog",
+  templateUrl: "./settings-dialog.component.html",
+  styleUrls: ["./settings-dialog.component.scss"],
+  standalone: false,
 })
 export class SettingsDialogComponent {
   readonly form;

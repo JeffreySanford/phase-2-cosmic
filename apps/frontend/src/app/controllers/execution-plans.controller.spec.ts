@@ -2,7 +2,7 @@
 import { ExecutionPlansController } from "./execution-plans.controller";
 
 describe("ExecutionPlansController", () => {
-  let controller: any;
+  let controller: ExecutionPlansController;
 
   beforeEach(() => {
     controller = new ExecutionPlansController();
@@ -19,9 +19,7 @@ describe("ExecutionPlansController", () => {
       spectralConfig: null,
       existingAllocations: [],
     };
-    await expect(controller.validatePlan(req as any)).rejects.toThrow(
-      "unauthorized"
-    );
+    await expect(controller.validatePlan(req)).rejects.toThrow("unauthorized");
     await expect(controller.applyPlan("nope", "k", undefined)).rejects.toThrow(
       "unauthorized"
     );
@@ -39,9 +37,9 @@ describe("ExecutionPlansController", () => {
       spectralConfig: null,
       existingAllocations: [],
     };
-    const result = await controller.validatePlan(req as any, "Bearer token");
+    const result = await controller.validatePlan(req, "Bearer token");
     expect(result).toHaveProperty("planId");
-    const planId = (result as any).planId;
+    const planId = (result as { planId: string }).planId;
 
     const status = controller.getPlan(planId, "Bearer token");
     expect(status).toEqual({
@@ -62,10 +60,9 @@ describe("ExecutionPlansController", () => {
       spectralConfig: null,
       existingAllocations: [],
     };
-    const { planId } = (await controller.validatePlan(
-      req as any,
-      "Bearer token"
-    )) as any;
+    const { planId } = (await controller.validatePlan(req, "Bearer token")) as {
+      planId: string;
+    };
 
     const applyResp = await controller.applyPlan(
       planId,

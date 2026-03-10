@@ -4,24 +4,24 @@ import { DiagnosticsComponent } from "./diagnostics.component";
 import { BehaviorSubject } from "rxjs";
 import { PulsarStatus } from "../../shared/types";
 
-@Component({ selector: "app-promql-card", template: "", standalone: false })
+@Component({ selector: "app-promql-card", template: "" })
 class PromqlCardStubComponent {
   @Input() query?: string;
   @Input() title?: string;
   @Input() tone?: string;
 }
 
-@Component({ selector: "app-pulsar-status", template: "", standalone: false })
+@Component({ selector: "app-pulsar-status", template: "" })
 class PulsarStatusStubComponent {
   @Input() status?: Partial<PulsarStatus>;
 }
 
-@Component({ selector: "app-rabbitmq-status", template: "", standalone: false })
+@Component({ selector: "app-rabbitmq-status", template: "" })
 class RabbitMQStatusStubComponent {
   @Input() status?: unknown;
 }
 
-@Component({ selector: "app-disclaimer-banner", template: "", standalone: false })
+@Component({ selector: "app-disclaimer-banner", template: "" })
 class DisclaimerBannerStubComponent {
   @Input() dismissible?: boolean;
   @Input() type?: string;
@@ -29,13 +29,16 @@ class DisclaimerBannerStubComponent {
   @Input() ready?: boolean;
 }
 
-@Component({ selector: "app-trident-allocator", template: "", standalone: false })
+@Component({ selector: "app-trident-allocator", template: "" })
 class TridentAllocatorStubComponent {
   @Input() dismissible?: boolean;
   @Input() type?: string;
   @Input() message?: string;
   @Input() ready?: boolean;
 }
+
+@Component({ selector: "app-job-events", template: "" })
+class JobEventsStubComponent {}
 import {
   HttpClientTestingModule,
   HttpTestingController,
@@ -46,7 +49,6 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatCardModule } from "@angular/material/card";
 import { MatIconModule } from "@angular/material/icon";
 import { MatTabsModule } from "@angular/material/tabs";
-import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { LoadProfileService } from "../../services/load-profile.service";
 
@@ -68,17 +70,15 @@ describe("DiagnosticsComponent", () => {
         MatCardModule,
         MatIconModule,
         MatTabsModule,
-        MatSlideToggleModule,
         NoopAnimationsModule,
-      ],
-      declarations: [
-        DiagnosticsComponent,
         PromqlCardStubComponent,
         PulsarStatusStubComponent,
         RabbitMQStatusStubComponent,
         DisclaimerBannerStubComponent,
         TridentAllocatorStubComponent,
+        JobEventsStubComponent,
       ],
+      declarations: [DiagnosticsComponent],
       providers: [
         // Prevent real MockDataService construction which would call LoadProfileService
         {
@@ -198,10 +198,10 @@ describe("DiagnosticsComponent", () => {
         icon: "stream",
       },
     ]);
-    expect(comp.dockerServices.length).toBe(2);
-    expect(comp.dockerServices[0].name).toBe("Pulsar");
-    expect(comp.dockerServices[0].latencyMs).toBe(15);
-    expect(comp.dockerServices[1].error).toBe("connection_refused");
+    // Pulsar is filtered out by the component; only Kafka remains
+    expect(comp.dockerServices.length).toBe(1);
+    expect(comp.dockerServices[0].name).toBe("Kafka");
+    expect(comp.dockerServices[0].error).toBe("connection_refused");
 
     // stub misc status/metrics calls to satisfy httpMock.verify
     httpMock

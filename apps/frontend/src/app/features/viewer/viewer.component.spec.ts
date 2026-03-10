@@ -138,7 +138,10 @@ describe("ViewerComponent", () => {
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector(".loading")).toBeTruthy();
 
-    return firstValueFrom(timer(50)).then(() => {
+    // Use a generous timer to allow the two runWhenIdle/setTimeout(0) hops in
+    // the init pipeline to complete before asserting — the 50 ms budget is
+    // too tight when Jest runs with coverage instrumentation (CI).
+    return firstValueFrom(timer(200)).then(() => {
       fixture.detectChanges();
       expect(readySpy).toHaveBeenCalled();
       expect(root.querySelector(".loading")).toBeFalsy();

@@ -1,12 +1,19 @@
 <h2 mat-dialog-title>Submit Job</h2>
 <mat-dialog-content>
-  <!-- Workflow selector -->
-  <mat-form-field appearance="fill" style="width:100%">
-    <mat-label>Workflow</mat-label>
-    <mat-select [(ngModel)]="workflow" (ngModelChange)="onTypeChange($event)">
-      <mat-option *ngFor="let t of availableTypes" [value]="t">{{ t }}</mat-option>
-    </mat-select>
-  </mat-form-field>
+  <!-- Workflow picker: grouped chip grid -->
+  <div class="workflow-picker">
+    <div class="workflow-picker__label">Workflow</div>
+    <div *ngFor="let grp of workflowGroups" class="workflow-group">
+      <div class="workflow-group__title">{{ grp.label }}</div>
+      <div class="workflow-group__chips">
+        <button *ngFor="let t of grp.types"
+                type="button"
+                class="wf-chip"
+                [class.wf-chip--active]="workflow === t.value"
+                (click)="workflow = t.value; onTypeChange(t.value)">{{ t.label }}</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Dataset / requester (always visible) -->
   <mat-form-field appearance="fill" style="width:100%">

@@ -40,10 +40,10 @@ interface ProbeResult<T> {
 }
 
 @Component({
-    selector: "app-landing",
-    templateUrl: "./landing.component.html",
-    styleUrls: ["./landing.component.scss"],
-    standalone: false
+  selector: "app-landing",
+  templateUrl: "./landing.component.html",
+  styleUrls: ["./landing.component.scss"],
+  standalone: false,
 })
 export class LandingComponent implements OnInit, OnDestroy {
   collapsed = false;

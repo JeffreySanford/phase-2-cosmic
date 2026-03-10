@@ -1,14 +1,17 @@
-<mat-card class="broker-card rabbitmq-status-card" [ngClass]="'status-' + (status.status || 'unknown')">
-  <mat-card-title>RabbitMQ</mat-card-title>
-  <mat-card-content>
-    <div class="status-values">
-      <span>Status: {{ status.status }}</span>
-      <span>Connection: {{ status.connection }}</span>
-      <span>Queues: {{ getQueuesCount() }}</span>
-      <span>Exchanges: {{ getExchangesCount() }}</span>
+<mat-card class="broker-tile" [ngClass]="'tile-' + (status.status || 'unknown')">
+  <div class="tile-head">
+    <div class="tile-title">
+      <mat-icon>hub</mat-icon>
+      RabbitMQ
     </div>
-    <div *ngIf="status.error" class="error-message">
-      Error: {{ status.error }}
-    </div>
-  </mat-card-content>
+    <div class="tile-status">{{ status.status }}</div>
+  </div>
+  <div class="tile-body">
+    <div class="stat-row"><span class="stat-label">Connection</span><span class="stat-val">{{ status.connection }}</span></div>
+    <div class="stat-row"><span class="stat-label">Queues</span><span class="stat-val">{{ getQueuesCount() }}</span></div>
+    <div class="stat-row"><span class="stat-label">Exchanges</span><span class="stat-val">{{ getExchangesCount() }}</span></div>
+  </div>
+  <div class="tile-meta" *ngIf="status.error">
+    <span class="tile-error">{{ status.error }}</span>
+  </div>
 </mat-card>

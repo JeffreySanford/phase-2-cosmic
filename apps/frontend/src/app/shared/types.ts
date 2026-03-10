@@ -4,6 +4,7 @@ export interface PulsarStatus {
   brokers: number;
   topics: number;
   partitions: number;
+  status?: string;
 }
 
 export interface RabbitMQStatus {

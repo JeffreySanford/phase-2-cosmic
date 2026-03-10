@@ -105,4 +105,51 @@ describe("JobsSubmitDialogComponent", () => {
     expect(component.error).toBeTruthy();
     expect(dialogRefSpy.close).not.toHaveBeenCalled();
   });
+
+  describe("workflowGroups", () => {
+    it("contains exactly three groups", () => {
+      expect(component.workflowGroups.length).toBe(3);
+    });
+
+    it("first group is Data Management with 5 types", () => {
+      const g = component.workflowGroups[0];
+      expect(g.label).toBe("Data Management");
+      expect(g.types.length).toBe(5);
+    });
+
+    it("maps ingest value to Import label", () => {
+      const g = component.workflowGroups[0];
+      const ingest = g.types.find((t) => t.value === "ingest");
+      expect(ingest?.label).toBe("Import");
+    });
+
+    it("second group is VO: Catalog with 4 types", () => {
+      const g = component.workflowGroups[1];
+      expect(g.label).toBe("VO: Catalog");
+      expect(g.types.length).toBe(4);
+    });
+
+    it("third group is VO: Data Access with 4 types", () => {
+      const g = component.workflowGroups[2];
+      expect(g.label).toBe("VO: Data Access");
+      expect(g.types.length).toBe(4);
+    });
+
+    it("availableTypes includes all values from all groups", () => {
+      const allValues = component.workflowGroups.flatMap((g) =>
+        g.types.map((t) => t.value)
+      );
+      expect(component.availableTypes).toEqual(allValues);
+      expect(component.availableTypes.length).toBe(13);
+    });
+
+    it("all VO group values start with 'vo.'", () => {
+      const voGroups = component.workflowGroups.slice(1);
+      for (const g of voGroups) {
+        for (const t of g.types) {
+          expect(t.value.startsWith("vo.")).toBe(true);
+        }
+      }
+    });
+  });
 });

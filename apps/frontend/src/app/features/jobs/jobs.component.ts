@@ -36,10 +36,10 @@ interface JobProduct {
 }
 
 @Component({
-    selector: "app-jobs",
-    templateUrl: "./jobs.component.html",
-    styleUrls: ["./jobs.component.scss"],
-    standalone: false
+  selector: "app-jobs",
+  templateUrl: "./jobs.component.html",
+  styleUrls: ["./jobs.component.scss"],
+  standalone: false,
 })
 export class JobsComponent implements OnInit, OnDestroy {
   jobs: JobStatus[] = [];
@@ -60,7 +60,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     "TIMED_OUT",
   ]);
   // scanner admin info
-  scannerIntervalSeconds: number | null = null;
   scannedCount = 0;
   dispatchedCount = 0;
 
@@ -110,8 +109,39 @@ export class JobsComponent implements OnInit, OnDestroy {
     { label: "Other", color: "#78909C" },
   ];
 
+  readonly WORKFLOW_DISPLAY_LABELS: Record<string, string> = {
+    ingest: "Import",
+    export: "Export",
+    reindex: "Reindex",
+    cleanup: "Cleanup",
+    diagnostics: "Diagnostics",
+    "vo.cone-search": "Cone Search",
+    "vo.adql.query": "ADQL Query",
+    "vo.obscore.search": "ObsCore",
+    "vo.votable.fetch": "VOTable",
+    "vo.datalink.resolve": "DataLink",
+    "vo.product.fetch": "Product Fetch",
+    "vo.soda.cutout": "SODA Cutout",
+    "vo.preview.fetch": "Preview",
+  };
+
   getJobColor(job: JobStatus): string {
     return this.WORKFLOW_COLORS[job.workflow] ?? "#78909C";
+  }
+
+  get activeLegendEntries(): Array<{ label: string; color: string }> {
+    const seen = new Set<string>();
+    const entries: Array<{ label: string; color: string }> = [];
+    for (const j of this.jobs) {
+      if (!seen.has(j.workflow)) {
+        seen.add(j.workflow);
+        entries.push({
+          label: this.WORKFLOW_DISPLAY_LABELS[j.workflow] ?? j.workflow,
+          color: this.WORKFLOW_COLORS[j.workflow] ?? "#78909C",
+        });
+      }
+    }
+    return entries;
   }
 
   get filteredJobs(): JobStatus[] {
@@ -179,7 +209,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       .subscribe(
         (result) => {
           if (result.ok) {
-            this.jobs = result.value || [];
+            this.mergeJobs(result.value || []);
           } else {
             this.error = this.errMsg(result.error);
           }
@@ -194,10 +224,30 @@ export class JobsComponent implements OnInit, OnDestroy {
       );
 
     this.loadDispatchConfig();
-    // Poll dispatch counts every 5 seconds so Scanned/Dispatched stay live.
-    interval(5000)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.loadDispatchConfig());
+  }
+
+  /** Merge incoming jobs into the existing array in-place so Angular only
+   *  re-renders tiles whose data actually changed, instead of blowing away
+   *  the whole list on every poll tick. */
+  private mergeJobs(incoming: JobStatus[]): void {
+    const inMap = new Map(incoming.map((j) => [j.jobId, j]));
+    // Update existing entries in-place — no array replacement, no tile redraw
+    for (let i = 0; i < this.jobs.length; i++) {
+      const updated = inMap.get(this.jobs[i].jobId);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(this.jobs[i])) {
+        this.jobs[i] = updated;
+      }
+    }
+    // Only replace the array reference when there are genuinely new jobs
+    const existingIds = new Set(this.jobs.map((j) => j.jobId));
+    const newJobs = incoming.filter((j) => !existingIds.has(j.jobId));
+    if (newJobs.length) {
+      this.jobs = [...newJobs, ...this.jobs];
+    }
+  }
+
+  get runningCount(): number {
+    return this.jobs.filter((j) => j.status === "RUNNING").length;
   }
 
   reload() {
@@ -455,6 +505,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   isDeferred(job: JobStatus): boolean {
+    if (this.TERMINAL_STATUSES.has(job.status)) return false;
     const params = job.parameters;
     const deferred = params?.["deferred"];
     return deferred === true || String(deferred).toLowerCase() === "true";
@@ -543,19 +594,9 @@ export class JobsComponent implements OnInit, OnDestroy {
   loadDispatchConfig() {
     this.jobsSvc.getDispatchConfig().subscribe(
       (c) => {
-        this.scannerIntervalSeconds = c.intervalSeconds;
         this.scannedCount = c.scannedCount;
         this.dispatchedCount = c.dispatchedCount;
       },
-      (e) => (this.error = this.errMsg(e))
-    );
-  }
-
-  setScannerInterval() {
-    if (!this.scannerIntervalSeconds || this.scannerIntervalSeconds <= 0)
-      return;
-    this.jobsSvc.setDispatchInterval(this.scannerIntervalSeconds).subscribe(
-      () => this.loadDispatchConfig(),
       (e) => (this.error = this.errMsg(e))
     );
   }

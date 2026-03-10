@@ -266,3 +266,23 @@ app-mainstage > * {
   box-shadow: 0 0 0 1px rgba(103, 232, 249, 0.4),
     0 18px 36px rgba(8, 47, 73, 0.56) !important;
 }
+
+/* Dark-theme mat-select panel (overlay renders outside component scope) */
+.mat-mdc-select-panel {
+  background: #0b1830 !important;
+  border: 1px solid rgba(200, 230, 255, 0.15);
+
+  .mat-mdc-option {
+    color: #e6f7ff;
+
+    &:hover,
+    &:focus {
+      background: rgba(64, 224, 255, 0.1) !important;
+    }
+
+    &.mdc-list-item--selected {
+      background: rgba(64, 224, 255, 0.18) !important;
+      color: #40e0ff;
+    }
+  }
+}

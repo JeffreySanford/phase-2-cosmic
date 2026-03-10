@@ -128,11 +128,13 @@
   font-size: 0.9rem;
 }
 .specs {
-  background: #f7f7f7;
+  background: rgba(255, 255, 255, 0.05);
+  color: token(colors, text);
   padding: 1rem;
   border-radius: 4px;
   max-height: 50vh;
   overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .download {
@@ -151,6 +153,12 @@
 
 .files-section {
   margin-top: 1rem;
+  color: token(colors, text);
+
+  h2 {
+    margin: 0 0 0.25rem;
+    color: token(colors, text);
+  }
 }
 
 .files-header {
@@ -162,6 +170,21 @@
 
 .count-select {
   width: 120px;
+
+  // Force dark-theme colours on the Material form field
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    background: rgba(255, 255, 255, 0.06) !important;
+  }
+  ::ng-deep .mdc-floating-label,
+  ::ng-deep .mat-mdc-select-value,
+  ::ng-deep .mat-mdc-select-arrow {
+    color: token(colors, text) !important;
+  }
+  ::ng-deep .mdc-notched-outline__leading,
+  ::ng-deep .mdc-notched-outline__notch,
+  ::ng-deep .mdc-notched-outline__trailing {
+    border-color: rgba(200, 230, 255, 0.3) !important;
+  }
 }
 
 .recent-files {
@@ -169,6 +192,12 @@
   max-height: 240px;
   overflow: auto;
   padding-left: 1.25rem;
+
+  li {
+    color: token(colors, text);
+    font-size: 0.88rem;
+    padding: 1px 0;
+  }
 }
 
 .tiles-grid {
@@ -287,4 +316,12 @@
   font-size: 0.8rem;
   color: rgba(token(colors, text), 0.5);
   font-style: italic;
+}
+
+.live-events-section {
+  max-width: 800px;
+
+  h2 {
+    margin-top: 0;
+  }
 }

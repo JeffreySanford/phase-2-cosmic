@@ -18,10 +18,10 @@ import { MatSlideToggleChange } from "@angular/material/slide-toggle";
 import { filter, Subscription } from "rxjs";
 
 @Component({
-    selector: "app-footer",
-    templateUrl: "./footer.component.html",
-    styleUrls: ["./footer.component.scss"],
-    standalone: false
+  selector: "app-footer",
+  templateUrl: "./footer.component.html",
+  styleUrls: ["./footer.component.scss"],
+  standalone: false,
 })
 export class FooterComponent implements AfterViewInit, OnDestroy {
   readonly profileOptions: Array<{

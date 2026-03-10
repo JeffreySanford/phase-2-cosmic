@@ -384,3 +384,333 @@ describe.skip("AppController brokerEventsSse (S1-1)", () => {
     jest.useRealTimers();
   });
 });
+
+// ── Jobs API endpoints (via tryHandleEmbeddedGovernance) ──────────────────────
+
+function makeCtrl() {
+  return new AppController(
+    {} as ConstructorParameters<typeof AppController>[0],
+    {} as ConstructorParameters<typeof AppController>[1]
+  );
+}
+
+function makeGovReq(path: string, method = "GET", body?: unknown) {
+  return {
+    path,
+    originalUrl: path,
+    method,
+    headers: {},
+    body: body ?? {},
+    params: {},
+  } as unknown as Request;
+}
+
+describe("AppController jobs endpoints (embedded governance)", () => {
+  beforeEach(() => {
+    process.env["USE_EMBEDDED_E2E_BACKEND"] = "true";
+  });
+
+  afterEach(() => {
+    delete process.env["USE_EMBEDDED_E2E_BACKEND"];
+  });
+
+  it("GET /api/v1/jobs returns array of jobs", async () => {
+    const ctrl = makeCtrl();
+    const req = makeGovReq("/api/v1/jobs");
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalled();
+    const body = res.json.mock.calls[0][0] as unknown[];
+    expect(Array.isArray(body)).toBe(true);
+  });
+
+  it("POST /api/v1/jobs creates a job and returns 201", async () => {
+    const ctrl = makeCtrl();
+    const req = makeGovReq("/api/v1/jobs", "POST", {
+      workflow: "ingest",
+      datasetId: "ds-001",
+    });
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalled();
+    const body = res.json.mock.calls[0][0] as {
+      jobId: string;
+      status: string;
+      queuedAt: string;
+    };
+    expect(body).toHaveProperty("jobId");
+    expect(body).toHaveProperty("status");
+    expect(body).toHaveProperty("queuedAt");
+  });
+
+  it("POST /api/v1/jobs with requestedBy returns 202", async () => {
+    const ctrl = makeCtrl();
+    const req = makeGovReq("/api/v1/jobs", "POST", {
+      workflow: "export",
+      requestedBy: "test-user",
+    });
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(202);
+  });
+
+  it("GET /api/v1/jobs/types returns workflow type list", async () => {
+    const ctrl = makeCtrl();
+    const req = makeGovReq("/api/v1/jobs/types");
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    const types = res.json.mock.calls[0][0] as string[];
+    expect(Array.isArray(types)).toBe(true);
+    expect(types.length).toBeGreaterThan(0);
+    expect(types).toContain("import");
+  });
+
+  it("POST /api/v1/jobs/validate returns valid:true", async () => {
+    const ctrl = makeCtrl();
+    const req = makeGovReq("/api/v1/jobs/validate", "POST", {
+      type: "ingest",
+      payload: {},
+    });
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    const body = res.json.mock.calls[0][0] as { valid: boolean };
+    expect(body.valid).toBe(true);
+  });
+
+  it("GET /api/v1/jobs/:id returns the job", async () => {
+    // First create a job to get its id
+    const ctrl = makeCtrl();
+    const createReq = makeGovReq("/api/v1/jobs", "POST", {
+      workflow: "cleanup",
+    });
+    const createRes = createMockResponse();
+    await ctrl.proxyGovernance(createReq, createRes);
+    const { jobId } = createRes.json.mock.calls[0][0] as { jobId: string };
+
+    const getReq = makeGovReq(`/api/v1/jobs/${jobId}`);
+    const getRes = createMockResponse();
+    await ctrl.proxyGovernance(getReq, getRes);
+    expect(getRes.status).toHaveBeenCalledWith(200);
+    const job = getRes.json.mock.calls[0][0] as { jobId: string };
+    expect(job.jobId).toBe(jobId);
+  });
+
+  it("GET /api/v1/jobs/:id returns 404 for unknown id", async () => {
+    const ctrl = makeCtrl();
+    const req = makeGovReq("/api/v1/jobs/nonexistent-job-id-xyz");
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(404);
+    const body = res.json.mock.calls[0][0] as { error: string };
+    expect(body.error).toBe("not_found");
+  });
+
+  it("DELETE /api/v1/jobs/:id removes job and returns 204", async () => {
+    const ctrl = makeCtrl();
+    // Create job
+    const createReq = makeGovReq("/api/v1/jobs", "POST", {
+      workflow: "diagnostics",
+    });
+    const createRes = createMockResponse();
+    await ctrl.proxyGovernance(createReq, createRes);
+    const { jobId } = createRes.json.mock.calls[0][0] as { jobId: string };
+
+    const delReq = makeGovReq(`/api/v1/jobs/${jobId}`, "DELETE");
+    const delRes = createMockResponse();
+    await ctrl.proxyGovernance(delReq, delRes);
+    expect(delRes.status).toHaveBeenCalledWith(204);
+
+    // Confirm it is gone
+    const checkReq = makeGovReq(`/api/v1/jobs/${jobId}`);
+    const checkRes = createMockResponse();
+    await ctrl.proxyGovernance(checkReq, checkRes);
+    expect(checkRes.status).toHaveBeenCalledWith(404);
+  });
+
+  it("POST /api/v1/jobs/:id/transition updates job status", async () => {
+    const ctrl = makeCtrl();
+    const createReq = makeGovReq("/api/v1/jobs", "POST", {
+      workflow: "ingest",
+    });
+    const createRes = createMockResponse();
+    await ctrl.proxyGovernance(createReq, createRes);
+    const { jobId } = createRes.json.mock.calls[0][0] as { jobId: string };
+
+    const transReq = makeGovReq(`/api/v1/jobs/${jobId}/transition`, "POST", {
+      state: "RUNNING",
+    });
+    const transRes = createMockResponse();
+    await ctrl.proxyGovernance(transReq, transRes);
+    expect(transRes.status).toHaveBeenCalledWith(200);
+    const updated = transRes.json.mock.calls[0][0] as { status: string };
+    expect(updated.status).toBe("RUNNING");
+  });
+
+  it("GET /api/v1/jobs/:id/lineage returns lineage object", async () => {
+    const ctrl = makeCtrl();
+    const createReq = makeGovReq("/api/v1/jobs", "POST", {
+      workflow: "ingest",
+    });
+    const createRes = createMockResponse();
+    await ctrl.proxyGovernance(createReq, createRes);
+    const { jobId } = createRes.json.mock.calls[0][0] as { jobId: string };
+
+    const req = makeGovReq(`/api/v1/jobs/${jobId}/lineage`);
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(typeof res.json.mock.calls[0][0]).toBe("object");
+  });
+
+  it("PUT /api/v1/jobs/:id/lineage updates lineage and returns it", async () => {
+    const ctrl = makeCtrl();
+    const createReq = makeGovReq("/api/v1/jobs", "POST", {
+      workflow: "ingest",
+    });
+    const createRes = createMockResponse();
+    await ctrl.proxyGovernance(createReq, createRes);
+    const { jobId } = createRes.json.mock.calls[0][0] as { jobId: string };
+
+    const lineagePayload = { parentJobId: "parent-123", origin: "test-suite" };
+    const putReq = makeGovReq(
+      `/api/v1/jobs/${jobId}/lineage`,
+      "PUT",
+      lineagePayload
+    );
+    const putRes = createMockResponse();
+    await ctrl.proxyGovernance(putReq, putRes);
+    expect(putRes.status).toHaveBeenCalledWith(200);
+    const saved = putRes.json.mock.calls[0][0] as Record<string, unknown>;
+    expect(saved["parentJobId"]).toBe("parent-123");
+    expect(saved["origin"]).toBe("test-suite");
+  });
+
+  it("GET /api/v1/jobs/:id/logs returns log array", async () => {
+    const ctrl = makeCtrl();
+    const createReq = makeGovReq("/api/v1/jobs", "POST", {
+      workflow: "ingest",
+    });
+    const createRes = createMockResponse();
+    await ctrl.proxyGovernance(createReq, createRes);
+    const { jobId } = createRes.json.mock.calls[0][0] as { jobId: string };
+
+    const req = makeGovReq(`/api/v1/jobs/${jobId}/logs`);
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    const logs = res.json.mock.calls[0][0] as unknown[];
+    expect(Array.isArray(logs)).toBe(true);
+  });
+
+  it("GET /api/v1/jobs/:id/artifacts returns artifact array", async () => {
+    const ctrl = makeCtrl();
+    const createReq = makeGovReq("/api/v1/jobs", "POST", {
+      workflow: "ingest",
+    });
+    const createRes = createMockResponse();
+    await ctrl.proxyGovernance(createReq, createRes);
+    const { jobId } = createRes.json.mock.calls[0][0] as { jobId: string };
+
+    const req = makeGovReq(`/api/v1/jobs/${jobId}/artifacts`);
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    const artifacts = res.json.mock.calls[0][0] as unknown[];
+    expect(Array.isArray(artifacts)).toBe(true);
+  });
+});
+
+// ── Dispatch admin endpoints (via tryHandleEmbeddedGovernance) ────────────────
+
+describe("AppController dispatch admin endpoints (embedded governance)", () => {
+  beforeEach(() => {
+    process.env["USE_EMBEDDED_E2E_BACKEND"] = "true";
+  });
+
+  afterEach(() => {
+    delete process.env["USE_EMBEDDED_E2E_BACKEND"];
+  });
+
+  it("GET /api/v1/admin/dispatch returns config with expected shape", async () => {
+    const ctrl = makeCtrl();
+    const req = makeGovReq("/api/v1/admin/dispatch");
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    const body = res.json.mock.calls[0][0] as {
+      intervalSeconds: number;
+      scannedCount: number;
+      dispatchedCount: number;
+    };
+    expect(typeof body.intervalSeconds).toBe("number");
+    expect(typeof body.scannedCount).toBe("number");
+    expect(typeof body.dispatchedCount).toBe("number");
+  });
+
+  it("POST /api/v1/admin/dispatch updates the interval", async () => {
+    const ctrl = makeCtrl();
+    const req = makeGovReq("/api/v1/admin/dispatch", "POST", {
+      intervalSeconds: 30,
+    });
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    const body = res.json.mock.calls[0][0] as { intervalSeconds: number };
+    expect(body.intervalSeconds).toBe(30);
+  });
+
+  it("POST /api/v1/admin/dispatch ignores zero or negative interval", async () => {
+    const ctrl = makeCtrl();
+    // First set to a known value
+    const setup = makeGovReq("/api/v1/admin/dispatch", "POST", {
+      intervalSeconds: 10,
+    });
+    const setupRes = createMockResponse();
+    await ctrl.proxyGovernance(setup, setupRes);
+    const { intervalSeconds: initial } = setupRes.json.mock.calls[0][0] as {
+      intervalSeconds: number;
+    };
+
+    // Now try invalid value
+    const badReq = makeGovReq("/api/v1/admin/dispatch", "POST", {
+      intervalSeconds: 0,
+    });
+    const badRes = createMockResponse();
+    await ctrl.proxyGovernance(badReq, badRes);
+    expect(badRes.status).toHaveBeenCalledWith(200);
+    const body = badRes.json.mock.calls[0][0] as { intervalSeconds: number };
+    // Interval should remain unchanged since 0 is not > 0
+    expect(body.intervalSeconds).toBe(initial);
+  });
+
+  it("POST /api/v1/admin/release-deferred returns released count", async () => {
+    const ctrl = makeCtrl();
+    const req = makeGovReq("/api/v1/admin/release-deferred", "POST");
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    const body = res.json.mock.calls[0][0] as { released: number };
+    expect(typeof body.released).toBe("number");
+    expect(body.released).toBeGreaterThanOrEqual(0);
+  });
+
+  it("GET /api/v1/public-sources returns source list", async () => {
+    const ctrl = makeCtrl();
+    const req = makeGovReq("/api/v1/public-sources");
+    const res = createMockResponse();
+    await ctrl.proxyGovernance(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    const body = res.json.mock.calls[0][0] as Array<{
+      name: string;
+      url: string;
+    }>;
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+    expect(body[0]).toHaveProperty("name");
+    expect(body[0]).toHaveProperty("url");
+  });
+});

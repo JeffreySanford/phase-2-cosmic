@@ -23,7 +23,9 @@ describe("FeatureFlagService", () => {
     expect(service.isEnabled("trident.execution-plans")).toBe(true);
     expect(service.isEnabled("trident.fsp-allocator")).toBe(false); // others unchanged
 
-    const stored = JSON.parse(localStorage.getItem("cosmic.featureFlags")!);
+    const stored = JSON.parse(
+      localStorage.getItem("cosmic.featureFlags") ?? "{}"
+    );
     expect(stored["trident.execution-plans"]).toBe(true);
   });
 
@@ -31,7 +33,7 @@ describe("FeatureFlagService", () => {
     service.override({ "jobs.lineage": true });
 
     // Simulate reinitialisation from fresh TestBed
-    const reloaded = new (FeatureFlagService as any)();
+    const reloaded = new FeatureFlagService();
     expect(reloaded.isEnabled("jobs.lineage")).toBe(true);
   });
 

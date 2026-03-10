@@ -50,21 +50,43 @@ export class JobsSubmitDialogComponent implements OnInit {
 
   voForm!: FormGroup;
 
-  availableTypes: string[] = [
-    "ingest",
-    "export",
-    "reindex",
-    "cleanup",
-    "diagnostics",
-    "vo.cone-search",
-    "vo.adql.query",
-    "vo.obscore.search",
-    "vo.votable.fetch",
-    "vo.datalink.resolve",
-    "vo.product.fetch",
-    "vo.soda.cutout",
-    "vo.preview.fetch",
+  workflowGroups: Array<{
+    label: string;
+    types: Array<{ value: string; label: string }>;
+  }> = [
+    {
+      label: "Data Management",
+      types: [
+        { value: "ingest", label: "Import" },
+        { value: "export", label: "Export" },
+        { value: "reindex", label: "Reindex" },
+        { value: "cleanup", label: "Cleanup" },
+        { value: "diagnostics", label: "Diagnostics" },
+      ],
+    },
+    {
+      label: "VO: Catalog",
+      types: [
+        { value: "vo.cone-search", label: "Cone Search" },
+        { value: "vo.adql.query", label: "ADQL Query" },
+        { value: "vo.obscore.search", label: "ObsCore" },
+        { value: "vo.votable.fetch", label: "VOTable" },
+      ],
+    },
+    {
+      label: "VO: Data Access",
+      types: [
+        { value: "vo.datalink.resolve", label: "DataLink" },
+        { value: "vo.product.fetch", label: "Product Fetch" },
+        { value: "vo.soda.cutout", label: "SODA Cutout" },
+        { value: "vo.preview.fetch", label: "Preview" },
+      ],
+    },
   ];
+
+  availableTypes: string[] = this.workflowGroups.flatMap((g) =>
+    g.types.map((t) => t.value)
+  );
 
   private requiredFields: Record<string, string[]> = {
     import: ["source"],

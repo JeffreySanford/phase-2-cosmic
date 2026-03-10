@@ -31,7 +31,12 @@ const PASSIVE_EVENTS = new Set([
         options = { ...(options as AddEventListenerOptions), passive: true };
       }
     }
-    return orig.call(this, type, listener, options as any);
+    return orig.call(
+      this,
+      type,
+      listener,
+      options as boolean | AddEventListenerOptions
+    );
   };
 })();
 

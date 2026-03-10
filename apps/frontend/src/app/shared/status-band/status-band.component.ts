@@ -14,7 +14,7 @@ import { Subscription } from "rxjs";
  */
 @Component({
   selector: "app-status-band",
-  standalone: false,
+
   templateUrl: "./status-band.component.html",
   styles: [
     `
@@ -88,6 +88,7 @@ import { Subscription } from "rxjs";
       }
     `,
   ],
+  standalone: false,
 })
 export class StatusBandComponent implements OnInit, OnDestroy {
   status: SystemStatus = {

@@ -180,6 +180,32 @@ describe("JobsComponent", () => {
     expect(component.isDeferred(job)).toBe(true);
   });
 
+  it("isDeferred returns false once the job reaches a terminal status", () => {
+    const mkJob = (status: string): JobStatus =>
+      ({
+        jobId: "d",
+        workflow: "foo",
+        status,
+        parameters: { deferred: true },
+      } as JobStatus);
+    expect(component.isDeferred(mkJob("COMPLETED"))).toBe(false);
+    expect(component.isDeferred(mkJob("FAILED"))).toBe(false);
+    expect(component.isDeferred(mkJob("CANCELED"))).toBe(false);
+    expect(component.isDeferred(mkJob("TIMED_OUT"))).toBe(false);
+  });
+
+  it("isDeferred stays true while job is still active", () => {
+    const mkJob = (status: string): JobStatus =>
+      ({
+        jobId: "d",
+        workflow: "foo",
+        status,
+        parameters: { deferred: true },
+      } as JobStatus);
+    expect(component.isDeferred(mkJob("QUEUED"))).toBe(true);
+    expect(component.isDeferred(mkJob("RUNNING"))).toBe(true);
+  });
+
   it("filteredJobs returns all jobs when showCompleted is true", () => {
     component.jobs = [
       { jobId: "a", workflow: "x", status: "COMPLETED" } as JobStatus,
@@ -268,5 +294,109 @@ describe("JobsComponent", () => {
 
     expect(component.selectedJob).toBeNull();
     expect(component.expandedJobId).toBeNull();
+  });
+
+  describe("activeLegendEntries", () => {
+    it("returns an empty array when there are no jobs", () => {
+      component.jobs = [];
+      expect(component.activeLegendEntries).toEqual([]);
+    });
+
+    it("returns one entry per unique workflow in jobs", () => {
+      component.jobs = [
+        { jobId: "1", workflow: "ingest", status: "QUEUED" } as JobStatus,
+        { jobId: "2", workflow: "ingest", status: "COMPLETED" } as JobStatus,
+        { jobId: "3", workflow: "export", status: "RUNNING" } as JobStatus,
+      ];
+      const entries = component.activeLegendEntries;
+      expect(entries.length).toBe(2);
+      expect(entries[0].label).toBe("Import");
+      expect(entries[1].label).toBe("Export");
+    });
+
+    it("maps known VO workflow keys to display labels", () => {
+      component.jobs = [
+        {
+          jobId: "1",
+          workflow: "vo.cone-search",
+          status: "QUEUED",
+        } as JobStatus,
+        {
+          jobId: "2",
+          workflow: "vo.adql.query",
+          status: "QUEUED",
+        } as JobStatus,
+        {
+          jobId: "3",
+          workflow: "vo.soda.cutout",
+          status: "QUEUED",
+        } as JobStatus,
+      ];
+      const labels = component.activeLegendEntries.map((e) => e.label);
+      expect(labels).toEqual(["Cone Search", "ADQL Query", "SODA Cutout"]);
+    });
+
+    it("falls back to the raw workflow string for unknown types", () => {
+      component.jobs = [
+        { jobId: "1", workflow: "unknown-type", status: "QUEUED" } as JobStatus,
+      ];
+      expect(component.activeLegendEntries[0].label).toBe("unknown-type");
+    });
+
+    it("preserves order of first appearance across jobs", () => {
+      component.jobs = [
+        { jobId: "1", workflow: "cleanup", status: "QUEUED" } as JobStatus,
+        { jobId: "2", workflow: "diagnostics", status: "QUEUED" } as JobStatus,
+        { jobId: "3", workflow: "cleanup", status: "QUEUED" } as JobStatus,
+      ];
+      const labels = component.activeLegendEntries.map((e) => e.label);
+      expect(labels).toEqual(["Cleanup", "Diagnostics"]);
+    });
+  });
+
+  describe("runningCount", () => {
+    it("returns 0 when no jobs are RUNNING", () => {
+      component.jobs = [
+        { jobId: "1", workflow: "x", status: "QUEUED" } as JobStatus,
+        { jobId: "2", workflow: "x", status: "COMPLETED" } as JobStatus,
+      ];
+      expect(component.runningCount).toBe(0);
+    });
+
+    it("counts only RUNNING jobs", () => {
+      component.jobs = [
+        { jobId: "1", workflow: "x", status: "RUNNING" } as JobStatus,
+        { jobId: "2", workflow: "x", status: "RUNNING" } as JobStatus,
+        { jobId: "3", workflow: "x", status: "QUEUED" } as JobStatus,
+        { jobId: "4", workflow: "x", status: "COMPLETED" } as JobStatus,
+      ];
+      expect(component.runningCount).toBe(2);
+    });
+  });
+
+  describe("releaseDeferred", () => {
+    it("calls releaseDeferred on the service and shows a snackbar", () => {
+      const snackSpy = jest.spyOn(component["snackBar"], "open");
+      component.releaseDeferred();
+      expect(snackSpy).toHaveBeenCalledWith(
+        "Released 2 deferred jobs",
+        undefined,
+        { duration: 10000 }
+      );
+    });
+
+    it("shows an error snackbar when the service call fails", () => {
+      const { throwError } = require("rxjs");
+      jest
+        .spyOn(component["jobsSvc"], "releaseDeferred")
+        .mockReturnValue(throwError(() => new Error("network error")));
+      const snackSpy = jest.spyOn(component["snackBar"], "open");
+      component.releaseDeferred();
+      expect(snackSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to release deferred jobs"),
+        undefined,
+        { duration: 10000 }
+      );
+    });
   });
 });

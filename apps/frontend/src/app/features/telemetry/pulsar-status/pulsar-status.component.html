@@ -1,10 +1,14 @@
-<mat-card class="broker-card pulsar-status-card">
-  <mat-card-title>Pulsar</mat-card-title>
-  <mat-card-content>
-    <div class="status-values">
-      <span>Brokers: {{ status.brokers }}</span>
-      <span>Topics: {{ status.topics }}</span>
-      <span>Partitions: {{ status.partitions }}</span>
+<mat-card class="broker-tile" [ngClass]="'tile-' + (status.status || (status.brokers > 0 ? 'healthy' : 'unknown'))">
+  <div class="tile-head">
+    <div class="tile-title">
+      <mat-icon>bolt</mat-icon>
+      Pulsar
     </div>
-  </mat-card-content>
+    <div class="tile-status">{{ status.status || (status.brokers > 0 ? 'healthy' : 'unknown') }}</div>
+  </div>
+  <div class="tile-body">
+    <div class="stat-row"><span class="stat-label">Brokers</span><span class="stat-val">{{ status.brokers }}</span></div>
+    <div class="stat-row"><span class="stat-label">Topics</span><span class="stat-val">{{ status.topics }}</span></div>
+    <div class="stat-row"><span class="stat-label">Partitions</span><span class="stat-val">{{ status.partitions }}</span></div>
+  </div>
 </mat-card>

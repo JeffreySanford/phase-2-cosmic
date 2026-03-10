@@ -9,6 +9,8 @@ module.exports = [
     files: ["**/*.ts"],
     rules: {
       "@nx/enforce-module-boundaries": "off",
+      // Project uses NgModule architecture; standalone: false is intentional
+      "@angular-eslint/prefer-standalone": "off",
       "@angular-eslint/directive-selector": [
         "error",
         {

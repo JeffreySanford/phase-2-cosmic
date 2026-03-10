@@ -3,35 +3,30 @@
   <mat-card-title>Governance Jobs</mat-card-title>
   <app-disclaimer-banner type="demo" [dismissible]="true" [ready]="initialLoadSettled"></app-disclaimer-banner>
   <mat-card-content>
-    <div class="toolbar">
-      <button mat-raised-button class="btn-new-job" (click)="openSubmit()">New Job</button>
-      <button mat-raised-button class="btn-add-jobs" (click)="addFiveJobs()">Add five jobs</button>
-      <button mat-raised-button class="btn-refresh" (click)="reload()">Refresh</button>
-      <button mat-raised-button class="btn-deferred" (click)="releaseDeferred()">Release deferred samples</button>
-      <button mat-raised-button class="btn-filter" (click)="toggleFilter()">Filter</button>
-      <button mat-raised-button class="btn-clear" (click)="clearCompleted()">Clear completed</button>
-      <mat-checkbox [(ngModel)]="showCompleted" color="primary">Show completed</mat-checkbox>
-      <span class="scanner-inline">
-        <mat-icon class="scanner-inline__icon">radar</mat-icon>
-        <span class="scanner-inline__label">Scanner</span>
-        <span class="scanner-inline__value">{{ scannerIntervalSeconds ?? 5 }}s</span>
-        <input
-          type="range"
-          min="1"
-          max="60"
-          step="1"
-          class="scanner-inline__range"
-          [(ngModel)]="scannerIntervalSeconds"
-          (change)="setScannerInterval()"
-          aria-label="Scan interval in seconds"
-        />
-        <span class="scanner-inline__stat">Scanned&nbsp;<strong>{{ scannedCount }}</strong></span>
-        <span class="scanner-inline__sep">·</span>
-        <span class="scanner-inline__stat">Dispatched&nbsp;<strong>{{ dispatchedCount }}</strong></span>
-      </span>
-      <span class="spacer"></span>
-      <div *ngIf="loading" class="loading-inline">
-        <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+    <div class="toolbar-legend-row">
+      <div class="toolbar">
+        <button mat-raised-button class="btn-new-job" (click)="openSubmit()">New Job</button>
+        <button mat-raised-button class="btn-add-jobs" (click)="addFiveJobs()">Add five jobs</button>
+        <button mat-raised-button class="btn-refresh" (click)="reload()">Refresh</button>
+        <button mat-raised-button class="btn-deferred" (click)="releaseDeferred()">Release deferred samples</button>
+        <button mat-raised-button class="btn-filter" (click)="toggleFilter()">Filter</button>
+        <button mat-raised-button class="btn-clear" (click)="clearCompleted()">Clear completed</button>
+        <mat-checkbox [(ngModel)]="showCompleted" color="primary">Show completed</mat-checkbox>
+        <span class="scanner-inline" *ngIf="runningCount > 0">
+          <span class="scanner-inline__stat">Dispatched&nbsp;<strong>{{ runningCount }}</strong></span>
+        </span>
+        <span class="spacer"></span>
+        <div *ngIf="loading" class="loading-inline">
+          <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+        </div>
+      </div>
+      <div class="active-legend" *ngIf="activeLegendEntries.length">
+        <div class="active-legend__grid">
+          <div class="legend-item" *ngFor="let e of activeLegendEntries">
+            <span class="legend-dot" [ngStyle]="{'background': e.color}"></span>
+            <span class="legend-label">{{ e.label }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -55,16 +50,6 @@
       </div>
     </div>
 
-    <!-- Workflow type color legend -->
-    <div class="legend">
-      <span class="legend-title">Workflow Types</span>
-      <div class="legend-items">
-        <div class="legend-item" *ngFor="let entry of LEGEND_ENTRIES">
-          <span class="legend-dot" [ngStyle]="{'background': entry.color}"></span>
-          <span class="legend-label">{{ entry.label }}</span>
-        </div>
-      </div>
-    </div>
 
     <div class="job-cards" *ngIf="filteredJobs && filteredJobs.length">
       <div
@@ -141,7 +126,7 @@
           </div>
 
           <div class="job-detail" *ngIf="selectedJob">
-            <mat-tab-group>
+            <mat-tab-group class="job-tabs">
 
               <!-- Tab 1: Summary -->
               <mat-tab label="Summary">

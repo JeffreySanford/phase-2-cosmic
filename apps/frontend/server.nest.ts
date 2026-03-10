@@ -8,8 +8,6 @@ import {
   Controller,
   Get,
   Post,
-  Body,
-  Param,
   Headers,
   Req,
   Res,
@@ -69,7 +67,7 @@ const artifactContentStore = new Map<string, unknown>();
 let embeddedJobCounter = 0;
 let mockScanCount = 0;
 let mockDispatchCount = 0;
-let mockDispatchIntervalSeconds = 5;
+let mockDispatchIntervalSeconds = 0.5;
 // Simulate the scanner ticking: every N seconds count all QUEUED→RUNNING transitions.
 setInterval(() => {
   mockScanCount += 1;
@@ -322,7 +320,7 @@ function registerVoArtifact(job: EmbeddedJobRecord): void {
     _seed("vo.cone-search", "COMPLETED", "ds-2026-alpha-002", 90),
     _seed("ingest", "RUNNING", "ds-2026-alpha-003", 45),
     _seed("export", "QUEUED", "ds-2026-alpha-004", 10),
-    _seed("diagnostics", "FAILED", "ds-2026-alpha-005", 60),
+    _seed("diagnostics", "COMPLETED", "ds-2026-alpha-005", 60),
   ]) {
     embeddedJobStore.set(j.jobId, j);
   }
@@ -339,7 +337,7 @@ function advanceJobStatus(job: EmbeddedJobRecord): EmbeddedJobRecord {
     job.updatedAt = now;
     job.logs.push(`${now} status=RUNNING`);
   } else if (job.status === "RUNNING" && ageMs > 12_000) {
-    job.status = Math.random() < 0.15 ? "FAILED" : "COMPLETED";
+    job.status = "COMPLETED";
     job.updatedAt = now;
     job.logs.push(`${now} status=${job.status}`);
     if (job.status === "COMPLETED") {
@@ -3340,12 +3338,26 @@ export class AppController {
       });
       return;
     }
+    if (path === "/api/v1/admin/release-deferred" && method === "POST") {
+      let released = 0;
+      for (const job of embeddedJobStore.values()) {
+        if (job.parameters?.["deferred"] === true) {
+          job.parameters["deferred"] = false;
+          job.status = "COMPLETED";
+          job.updatedAt = new Date().toISOString();
+          job.logs.push(`${job.updatedAt} status=COMPLETED`);
+          released += 1;
+        }
+      }
+      res.json({ released });
+      return;
+    }
     const targetUrls = this.governanceBaseCandidates().map(
       (b) => `${b}${req.originalUrl}`
     );
     try {
       const started = Date.now();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       // @ts-ignore – Headers type may come from global fetch/node environment
       const headers: any = new Headers();
       Object.entries(req.headers || {}).forEach(([k, v]) => {
@@ -3468,12 +3480,6 @@ export class AppController {
 // -------------------------------------------------------------
 // Execution plans controller - Sprint 3 implementation
 // -------------------------------------------------------------
-
-interface ExecutionPlanRequest {
-  schedulingBlock: any;
-  spectralConfig?: any;
-  existingAllocations?: any[];
-}
 
 @Module({
   providers: [SsrService, RuntimeLoadProfileService],

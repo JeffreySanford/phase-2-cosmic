@@ -16,10 +16,10 @@ import {
 } from "../../shared/types";
 
 @Component({
-    selector: "app-diagnostics",
-    templateUrl: "./diagnostics.component.html",
-    styleUrls: ["./diagnostics.component.scss"],
-    standalone: false
+  selector: "app-diagnostics",
+  templateUrl: "./diagnostics.component.html",
+  styleUrls: ["./diagnostics.component.scss"],
+  standalone: false,
 })
 export class DiagnosticsComponent implements OnInit, OnDestroy {
   index: DiagnosticsIndex | null = null;
@@ -30,9 +30,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   visibleFileCount = 5;
   readonly fileCountOptions: number[] = [5, 10, 25, 50, 100, -1];
   sortedFiles: string[] = [];
-  autoRefresh = true;
   lastUpdated: Date | null = null;
-  currentPollingMs = 5000;
   pulsarStatus: PulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
   rabbitMQStatus: RabbitMQStatus = { status: "unknown", connection: "unknown" };
   // mission closure metrics
@@ -45,7 +43,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   commissioningLoading = false;
   commissioningError: string | null = null;
   private pollSubscription?: Subscription;
-  private pollingMsSubscription?: Subscription;
+  private brokerPollSubscription?: Subscription;
 
   constructor(
     private http: HttpClient,
@@ -63,39 +61,32 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     this.fetchTimingMetrics();
     this.fetchCommissioningScenarios();
     this.startPolling();
+    this.startBrokerPolling();
   }
 
   ngOnDestroy(): void {
     this.stopPolling();
-    this.pollingMsSubscription?.unsubscribe();
+    this.brokerPollSubscription?.unsubscribe();
   }
 
   startPolling(): void {
     if (this.pollSubscription) return;
-    // Subscribe to pollingMs$ and restart interval when it changes
     this.pollSubscription = this.loadProfile.pollingMs$
-      .pipe(
-        switchMap((ms) => {
-          this.currentPollingMs = ms;
-          return interval(ms);
-        })
-      )
-      .subscribe(() => {
-        if (this.autoRefresh) {
-          this.fetchDockerServices(true); // silent refresh
-          this.fetchPulsarStatus();
-          this.fetchRabbitMQStatus();
-        }
-      });
+      .pipe(switchMap((ms) => interval(ms)))
+      .subscribe(() => this.fetchDockerServices(true));
+  }
+
+  startBrokerPolling(): void {
+    if (this.brokerPollSubscription) return;
+    this.brokerPollSubscription = interval(500).subscribe(() => {
+      this.fetchPulsarStatus();
+      this.fetchRabbitMQStatus();
+    });
   }
 
   stopPolling(): void {
     this.pollSubscription?.unsubscribe();
     this.pollSubscription = undefined;
-  }
-
-  toggleAutoRefresh(): void {
-    this.autoRefresh = !this.autoRefresh;
   }
 
   private fetchTimingMetrics() {
@@ -242,7 +233,9 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     }
     if (this.dataSource.mode === "mock") {
       this.mock.mockDockerServices().subscribe((res) => {
-        this.dockerServices = res as DockerServiceStatus[];
+        this.dockerServices = (res as DockerServiceStatus[]).filter(
+          (s) => s.name !== "Pulsar" && s.name !== "RabbitMQ"
+        );
         this.lastUpdated = new Date();
         if (!silent) this.loading = false;
       });
@@ -254,7 +247,9 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       )
       .subscribe(
         (res) => {
-          this.dockerServices = res;
+          this.dockerServices = res.filter(
+            (s) => s.name !== "Pulsar" && s.name !== "RabbitMQ"
+          );
           this.lastUpdated = new Date();
           if (!silent) this.loading = false;
         },
@@ -278,11 +273,17 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
             brokers: status.brokers || 0,
             topics: status.topics || 0,
             partitions: status.partitions || 0,
+            status: status.status,
           };
         },
         error: (err) => {
           // Keep previous status or set to 0 on error
-          this.pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
+          this.pulsarStatus = {
+            brokers: 0,
+            topics: 0,
+            partitions: 0,
+            status: "offline",
+          };
 
           console.log("Failed to fetch Pulsar status:", err);
         },
