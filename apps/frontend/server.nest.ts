@@ -8,7 +8,6 @@ import {
   Controller,
   Get,
   Post,
-  Headers,
   Req,
   Res,
   Injectable,
@@ -3358,8 +3357,7 @@ export class AppController {
     try {
       const started = Date.now();
 
-      // @ts-ignore – Headers type may come from global fetch/node environment
-      const headers: any = new Headers();
+      const headers = new globalThis.Headers();
       Object.entries(req.headers || {}).forEach(([k, v]) => {
         if (!v) return;
         const key = k.toLowerCase();

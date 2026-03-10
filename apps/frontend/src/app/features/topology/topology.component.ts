@@ -101,6 +101,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   );
   private fitViewport = { scale: 1, x: 0, y: 0 };
   private shouldAutoFitViewport = false;
+  private simulationCooldownHandle: number | null = null;
   public showProvenanceFilterHelper = false;
   private provenanceFilterHelperTimeout: number | null = null;
   // live polling interval id
@@ -1205,11 +1206,59 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.simulation?.stop();
+    this.stopSimulation();
     window.removeEventListener("resize", this.onResize);
     this.profileSub?.unsubscribe();
     this.stopLivePoll();
     this.clearProvenanceHelperTimeout();
+  }
+
+  private stopSimulation(): void {
+    this.simulation?.stop();
+    this.simulation = null;
+    if (this.simulationCooldownHandle != null) {
+      clearTimeout(this.simulationCooldownHandle);
+      this.simulationCooldownHandle = null;
+    }
+  }
+
+  private preserveNodePositions(nodes: TopoNode[]): void {
+    const known = new Map(
+      this.fullTopologyNodes.map((node) => [node.id, node] as const)
+    );
+    const fallbackRadius = Math.max(180, nodes.length * 22);
+    nodes.forEach((node, index) => {
+      const previous = known.get(node.id);
+      if (previous) {
+        if (typeof previous.x === "number") node.x = previous.x;
+        if (typeof previous.y === "number") node.y = previous.y;
+        if (typeof previous.vx === "number") node.vx = previous.vx;
+        if (typeof previous.vy === "number") node.vy = previous.vy;
+        if (typeof previous.fx === "number") node.fx = previous.fx;
+        if (typeof previous.fy === "number") node.fy = previous.fy;
+      }
+      if (typeof node.x !== "number" || typeof node.y !== "number") {
+        const angle = (index / Math.max(nodes.length, 1)) * Math.PI * 2;
+        node.x = Math.cos(angle) * fallbackRadius;
+        node.y = Math.sin(angle) * fallbackRadius;
+      }
+    });
+  }
+
+  private freezeNodePositions(nodes: TopoNode[]): void {
+    nodes.forEach((node) => {
+      node.fx = node.x ?? 0;
+      node.fy = node.y ?? 0;
+      node.vx = 0;
+      node.vy = 0;
+    });
+  }
+
+  private releaseNodePositions(nodes: TopoNode[]): void {
+    nodes.forEach((node) => {
+      node.fx = null;
+      node.fy = null;
+    });
   }
 
   private showTransientProvenanceHelper(): void {
@@ -1280,10 +1329,13 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         stop: () => {
           return simStub;
         },
+        alpha: (_n: number) => simStub,
+        alphaDecay: (_n: number) => simStub,
         alphaTarget: (_n: number) => simStub,
         restart: () => {
           return simStub;
         },
+        velocityDecay: (_n: number) => simStub,
         on: (_ev: string, _cb: () => void) => simStub,
         force: (_name: string, _f: unknown) => simStub,
       };
@@ -1295,6 +1347,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         forceLink: (_links: TopoLink[]) => ({
           id: () => ({ distance: () => ({}) }),
         }),
+        forceCollide: (_radius: number) => ({ strength: () => ({}) }),
         forceManyBody: () => ({ strength: () => ({}) }),
         forceCenter: (_x: number, _y: number) => ({}),
       };
@@ -1304,11 +1357,13 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private render(nodes: TopoNode[], links: TopoLink[], skipFetch = false) {
     if (!this.svg) return;
+    this.stopSimulation();
     this.svg.selectAll("*").remove?.();
     const el = this.graphEl.nativeElement;
     const w = el.clientWidth || 800;
     const h = Math.max(360, el.clientHeight || 480);
     this.svg.attr("viewBox", `0 0 ${w} ${h}`).attr("height", h);
+    this.preserveNodePositions(nodes);
 
     this.viewportGroup = this.svg.append("g").attr("class", "viewport");
     const linkGroup = this.viewportGroup.append("g").attr("class", "links");
@@ -1540,10 +1595,14 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         d3
           .forceLink(links)
           .id((d: TopoNode) => d.id)
-          .distance(80)
+          .distance(100)
       )
-      .force("charge", d3.forceManyBody().strength(-200))
+      .force("charge", d3.forceManyBody().strength(-280))
       .force("center", d3.forceCenter(w / 2, h / 2))
+      .force("collide", d3.forceCollide(44).strength(0.7))
+      .alpha(0.22)
+      .alphaDecay(0.16)
+      .velocityDecay(0.4)
       .on("tick", () => {
         link.attr("x1", (ln: TopoLink) => {
           const s = ln.source as TopoNode;
@@ -1617,6 +1676,12 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
           this.applyViewportTransform();
         }
       });
+    this.simulationCooldownHandle = window.setTimeout(() => {
+      this.freezeNodePositions(nodes);
+      this.applyViewportTransform();
+      this.simulation?.stop();
+      this.simulationCooldownHandle = null;
+    }, 900);
     node.on?.("click", (_event: unknown, datum: unknown) =>
       this.openNodeInfo(datum as TopoNode)
     );
@@ -1863,6 +1928,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private dragstarted(event: D3DragEvent, d: TopoNode) {
     if (!this.simulation) return;
+    this.releaseNodePositions(this.lastNodes);
     if (!event.active) this.simulation.alphaTarget(0.3).restart?.();
     d.fx = event.x;
     d.fy = event.y;
@@ -1876,8 +1942,13 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   private dragended(event: D3DragEvent, d: TopoNode) {
     if (!this.simulation) return;
     if (!event.active) this.simulation.alphaTarget(0);
-    d.fx = null;
-    d.fy = null;
+    d.fx = event.x;
+    d.fy = event.y;
+    this.simulationCooldownHandle = window.setTimeout(() => {
+      this.freezeNodePositions(this.lastNodes);
+      this.simulation?.stop();
+      this.simulationCooldownHandle = null;
+    }, 250);
   }
 
   private onResize = () => {
