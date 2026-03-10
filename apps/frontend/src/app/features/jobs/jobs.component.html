@@ -71,6 +71,9 @@
             <div class="status-block">
               <span class="status status--{{ j.status | lowercase }}">{{ j.status }}</span>
               <span class="deferred" *ngIf="isDeferred(j)">Deferred</span>
+              <span class="run-time" *ngIf="elapsed$ | async as tick">
+                {{ j.status === 'RUNNING' ? runTime(j.jobId) : '' }}
+              </span>
             </div>
             <button
               mat-stroked-button
@@ -95,6 +98,10 @@
             <div class="summary-item">
               <span class="label">Updated</span>
               <span>{{ j.updatedAt | date:'short' }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Duration</span>
+              <span>{{ (elapsed$ | async) ? (j.status === 'RUNNING' ? runTime(j.jobId) : jobDuration(j)) : '' }}</span>
             </div>
             <div class="summary-item">
               <span class="label">Steps</span>

@@ -49,9 +49,14 @@ public class SimulatorExecutor implements JobExecutor {
     public void execute(JobRecord record, RedisTemplate<String, Object> redisTemplate) {
         String jobKey = "job:" + record.getJobId();
         int complexity = complexity(record);
-        int startDelaySeconds = Math.max(1, complexity);
-        int completionDelaySeconds = Math.max(startDelaySeconds + 2, 2 + (complexity * 2));
-        // schedule running
+        // target sub‑second behavior: each job should finish within ~300ms
+        // longer complexity gives later finish but still <=300ms
+        int minMs = Math.max(100, complexity * 100);  // at least complexity*100ms
+        // allow significantly longer runs for UI debugging
+        int maxMs = 2000;
+        int completionDelayMs = minMs + java.util.concurrent.ThreadLocalRandom.current().nextInt(maxMs - minMs + 1);
+        int startDelayMs = 0;
+        // schedule running transition
         EXEC.schedule(() -> {
             Object o = readRedisValue(redisTemplate, jobKey);
             JobRecord r = null;
@@ -69,7 +74,7 @@ public class SimulatorExecutor implements JobExecutor {
                 // push a running log
                 pushRedisLog(redisTemplate, jobKey + ":logs", "Simulator: job running (complexity=" + complexity + ")");
             }
-        }, startDelaySeconds, TimeUnit.SECONDS);
+        }, startDelayMs, TimeUnit.MILLISECONDS);
 
         EXEC.schedule(() -> {
             Object o = readRedisValue(redisTemplate, jobKey);
@@ -253,7 +258,7 @@ public class SimulatorExecutor implements JobExecutor {
                     }
                 } catch (Exception ignored) {}
             }
-        }, completionDelaySeconds, TimeUnit.SECONDS);
+        }, completionDelayMs, TimeUnit.MILLISECONDS);
     }
 
     private int complexity(JobRecord record) {

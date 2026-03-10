@@ -1436,6 +1436,25 @@ export class AppController {
     return process.env["USE_EMBEDDED_E2E_BACKEND"] === "true";
   }
 
+  /**
+   * When the embedded E2E backend is active we usually stub most governance
+   * endpoints, including job lifecycle logic.  For load‑generation or
+   * interactive debugging we may want the front‑end to continue talking to
+   * the real backend for job requests while still using the mock server for
+   * other feature toggles (public sources, dispatch metrics, etc.).
+   *
+   * Set `EMBEDDED_E2E_JOBS=false` in the environment to disable job handling
+   * in the embedded server; the request will then fall through to the normal
+   * proxy logic and be forwarded to whatever governance service is configured.
+   */
+  private interceptEmbeddedJobs(): boolean {
+    // default true when using embedded backend
+    return (
+      this.useEmbeddedE2eBackend() &&
+      process.env["EMBEDDED_E2E_JOBS"] !== "false"
+    );
+  }
+
   private embeddedPrometheusPayload(query: string) {
     const value =
       query.includes("sum(up)") || query.includes('up{job="data-generator"}')
@@ -1530,6 +1549,12 @@ export class AppController {
         }
       }
       return sendJson(200, { released });
+    }
+
+    if (!this.interceptEmbeddedJobs()) {
+      // if job interception is disabled, let the request fall through to the
+      // governance proxy; we can still handle other mock endpoints above.
+      return false;
     }
 
     if (method === "GET" && path === "/api/v1/jobs/types") {

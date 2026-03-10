@@ -62,8 +62,14 @@ export class JobsService {
   // Polling hot observable for the job list.  Subscribers share a single
   // HTTP request stream and the data is replayed.  The cache is invalidated
   // by `invalidateList()` or by simply waiting for the polling interval.
-  private _listPollIntervalMs = 30_000;
-  private _watchPollIntervalMs = 10_000;
+  // polling interval for the full job list; shortened so that completed jobs
+  // appear within a few seconds instead of waiting 30s
+  private _listPollIntervalMs = 5_000;
+  // interval for watching a single job; simulator jobs complete in a
+  // few hundred milliseconds, so poll faster during UI development so we
+  // can observe the RUNNING state and show the timer.  500ms strikes a
+  // reasonable balance between responsiveness and not hammering the API.
+  private _watchPollIntervalMs = 200;  // 5 Hz polling for short-lived simulator jobs
   private _listCache$?: Observable<JobStatus[]>;
 
   listHot(forceReload = false): Observable<Result<JobStatus[]>> {

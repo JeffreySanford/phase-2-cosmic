@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from "@angular/core";
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from "@angular/core";
 import { HttpErrorResponse, HttpClient } from "@angular/common/http";
 import {
   JobsService,
@@ -7,8 +7,8 @@ import {
 } from "../../services/jobs.service";
 import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { forkJoin, interval, of, Subject, Subscription } from "rxjs";
-import { catchError, startWith, switchMap, takeUntil } from "rxjs/operators";
+import { forkJoin, from, interval, of, Subject, Subscription } from "rxjs";
+import { catchError, mergeMap, startWith, switchMap, takeUntil, tap, toArray } from "rxjs/operators";
 import { JobsSubmitDialogComponent } from "./jobs-submit-dialog.component";
 
 type ErrorDetail = { ruleId?: string };
@@ -182,6 +182,15 @@ export class JobsComponent implements OnInit, OnDestroy {
   private pollSub: Subscription | null = null;
   private logsSub: Subscription | null = null;
 
+  // ticking observable used in template to refresh running-time display
+  readonly elapsed$ = interval(1000);
+
+  // Current timestamp refreshed each second.  We keep a single value so that
+  // all `runTime()` calculations during one detection cycle return the same
+  // result; otherwise Angular complains (ExpressionChangedAfterItHasBeenChecked)
+  currentTime = Date.now();
+
+
   selectedJob: JobStatus | null = null;
   expandedJobId: string | null = null;
   logs: string[] = [];
@@ -198,8 +207,15 @@ export class JobsComponent implements OnInit, OnDestroy {
     private jobsSvc: JobsService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private http: HttpClient
-  ) {}
+    private http: HttpClient,
+    private cd: ChangeDetectorRef
+  ) {
+    // keep clock ticking; async pipe triggers change detection automatically
+    this.elapsed$.subscribe(() => {
+      this.currentTime = Date.now();
+      this.cd.markForCheck();
+    });
+  }
 
   ngOnInit(): void {
     // subscribe to the shared hot list observable; it will poll automatically
@@ -248,6 +264,49 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   get runningCount(): number {
     return this.jobs.filter((j) => j.status === "RUNNING").length;
+  }
+
+  jobDuration(j: JobStatus): string {
+    if (!j.createdAt || !j.updatedAt) return "";
+    try {
+      const start = new Date(j.createdAt).getTime();
+      const end = new Date(j.updatedAt).getTime();
+      if (isNaN(start) || isNaN(end)) return "";
+      const ms = end - start;
+      return `${ms} ms`;
+    } catch {
+      return "";
+    }
+  }
+
+  /**
+   * Compute the elapsed time since a job was created.  Used when the
+   * run state is freshly entered and we may not yet have a later
+   * `updatedAt` timestamp.
+   */
+  runTime(jobId: string): string {
+    const job = this.jobs.find((j) => j.jobId === jobId);
+    if (!job) {
+      return "";
+    }
+    // prefer createdAt; fall back to updatedAt (might be set when entering
+    // RUNNING) or to now if neither exists.  This guarantees we always have a
+    // start point and avoids a blank string when the backend is slow to
+    // populate timestamps (the console logs earlier were empty for this reason).
+    let start: number;
+    try {
+      if (job.createdAt) {
+        start = new Date(job.createdAt).getTime();
+      } else if (job.updatedAt) {
+        start = new Date(job.updatedAt).getTime();
+      } else {
+        start = Date.now();
+      }
+    } catch {
+      start = Date.now();
+    }
+    const ms = this.currentTime - start; // cached clock from elapsed$
+    return `${ms} ms`;
   }
 
   reload() {
@@ -376,71 +435,74 @@ export class JobsComponent implements OnInit, OnDestroy {
   addFiveJobs() {
     this.loading = true;
     this.error = null;
+    const startTs = Date.now();
     this.snackBar.open("Submitting 5 sample jobs...", undefined, {
       duration: 10000,
     });
 
-    // Submit the 5 unique VO sample jobs without pruning existing jobs first,
-    // so the current list remains visible while the new ones are queued.
-    const submissions: Promise<unknown>[] = this.SAMPLE_JOB_REQUESTS.map(
-      (req) =>
-        this.jobsSvc
-          .submitJob(req)
-          .toPromise()
-          .then((created) => {
-            if (created && created.jobId) {
-              const jobId = created.jobId;
-              // Auto-start each queued job immediately
-              this.jobsSvc.transition(jobId, "RUNNING").subscribe(
-                (updated) => {
-                  if (updated) {
-                    this.jobs = [
-                      updated,
-                      ...this.jobs.filter((j) => j.jobId !== jobId),
-                    ];
-                  } else {
-                    this.jobsSvc
-                      .get(jobId)
-                      .subscribe(
-                        (full) =>
-                          (this.jobs = [
-                            full,
-                            ...this.jobs.filter((j) => j.jobId !== jobId),
-                          ])
-                      );
-                  }
-                },
-                () => {
-                  // transition failed — still show the queued job
-                  this.jobsSvc
-                    .get(jobId)
-                    .subscribe(
-                      (full) =>
-                        (this.jobs = [
-                          full,
-                          ...this.jobs.filter((j) => j.jobId !== jobId),
-                        ])
-                    );
-                }
-              );
-            }
-          })
-          .catch((e) => (this.error = this.errMsg(e)))
-    );
+    // submit each sample job as an observable stream; this keeps us in the
+    // reactive world and allows us to track individual updates rather than
+    // waiting on a Promise.all.
+    from(this.SAMPLE_JOB_REQUESTS)
+      .pipe(
+        mergeMap((req) =>
+          this.jobsSvc.submitJob(req).pipe(
+            tap((created) => {
+              if (created && created.jobId) {
+                const jobId = created.jobId;
+                this.jobsSvc.transition(jobId, "RUNNING").subscribe(() => {
+                  console.log(`Job ${jobId} is now RUNNING (${this.runTime(jobId)})`);
+                });
+                // ensure the clock advances so console output shows a meaningful
+                // elapsed value immediately after the transition
+                this.currentTime = Date.now();
 
-    Promise.allSettled(submissions).then(
-      (results: PromiseSettledResult<unknown>[]) => {
-        this.loading = false;
-        this.jobsSvc.invalidateList();
-        const ok = results.filter((r) => r.status === "fulfilled").length;
-        const failed = results.length - ok;
-        this.snackBar.open(
-          `Submitted ${ok} jobs${failed ? `, ${failed} failed` : ""}`,
-          undefined,
-          { duration: 10000 }
-        );
-      }
-    );
+                const jobSub = this.jobsSvc.watchJob(jobId).subscribe((updated) => {
+                  if (updated) {
+                    // debug: print runTime whenever we see a RUNNING state
+                    if (updated.status === 'RUNNING') {
+                      console.log(`tick ${jobId} status=RUNNING elapsed=${this.runTime(jobId)}`);
+                    }
+                    const idx = this.jobs.findIndex((j) => j.jobId === jobId);
+                    if (idx >= 0) {
+                      this.jobs[idx] = updated;
+                    } else {
+                      this.jobs.unshift(updated);
+                    }
+                    if (this.TERMINAL_STATUSES.has(updated.status)) {
+                      jobSub.unsubscribe();
+                    }
+                  }
+                });
+              }
+            }),
+            catchError((e) => {
+              this.error = this.errMsg(e);
+              return of(null);
+            })
+          ),
+          /* concurrency */ this.SAMPLE_JOB_REQUESTS.length
+        ),
+        toArray()
+      )
+      .subscribe({
+        next: (results) => {
+          this.loading = false;
+          this.jobsSvc.invalidateList();
+          const ok = results.filter((r) => r && (r as any).jobId).length;
+          const failed = results.length - ok;
+          const elapsed = Date.now() - startTs;
+          this.snackBar.open(
+            `Submitted ${ok} jobs${failed ? `, ${failed} failed` : ""} in ${elapsed} ms`,
+            undefined,
+            { duration: 10000 }
+          );
+        },
+        error: () => {
+          this.loading = false;
+          this.jobsSvc.invalidateList();
+        },
+      });
   }
 
   releaseDeferred() {
