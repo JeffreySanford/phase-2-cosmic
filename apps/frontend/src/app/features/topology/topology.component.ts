@@ -65,6 +65,24 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   public unavailableLinkCount = 0;
   public averageConfidencePct = 0;
   public nodeSummaries: NodeSummary[] = [];
+
+  // fullscreen state
+  public isFullscreen = false;
+
+  public toggleFullscreen(): void {
+    this.isFullscreen = !this.isFullscreen;
+    const shell = this.graphEl?.nativeElement?.closest('.topology-graph-shell');
+    if (shell) {
+      shell.classList.toggle('is-fullscreen', this.isFullscreen);
+    }
+
+    if (this.isFullscreen) {
+      // request browser fullscreen for the shell container (not whole app)
+      shell?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }
   // mission‑closure metrics
   public timingDriftNs?: number;
   public rfiEventRate?: number;
@@ -227,6 +245,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public saveSettings() {
+    // ...existing code...
     // persist perLinkEntries into perLinkCapacity map
     for (const e of this.perLinkEntries) {
       if (e.configuredMBps && e.configuredMBps > 0)

@@ -113,6 +113,15 @@
             >
               Fit
             </button>
+            <button
+              type="button"
+              class="graph-tools__button graph-tools__button--fullscreen"
+              aria-label="Expand visualization to fullscreen"
+              title="Fullscreen"
+              (click)="toggleFullscreen()"
+            >
+              <span style="font-size:1.2em;">&#x26F6;</span>
+            </button>
           </div>
           <div class="node-ring-legend" *ngIf="hasTopologyData" aria-label="Topology provenance filters">
             <button
