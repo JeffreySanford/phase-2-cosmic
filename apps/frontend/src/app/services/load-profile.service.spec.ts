@@ -3,17 +3,32 @@ import {
   HttpClientTestingModule,
   HttpTestingController,
 } from "@angular/common/http/testing";
+import { BehaviorSubject } from "rxjs";
 import { LoadProfileService } from "./load-profile.service";
+import { DataSourceService, DataMode } from "./data-source.service";
 
 describe("LoadProfileService", () => {
   let service: LoadProfileService;
   let httpMock: HttpTestingController;
   let warnSpy: jest.SpyInstance;
+  let mode$: BehaviorSubject<DataMode>;
 
   beforeEach(() => {
     warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    mode$ = new BehaviorSubject<DataMode>("live");
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
+      providers: [
+        {
+          provide: DataSourceService,
+          useValue: {
+            mode$: mode$.asObservable(),
+            get mode() {
+              return mode$.value;
+            },
+          },
+        },
+      ],
     });
     service = TestBed.inject(LoadProfileService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -66,5 +81,34 @@ describe("LoadProfileService", () => {
     service.mode$.subscribe((v) => (mode = v));
     expect(service.current).toBe(25);
     expect(mode).toBe("runtime-controlled");
+  });
+
+  it("should stay local and skip runtime requests in mock mode", () => {
+    httpMock.expectOne("/api/load-profile").flush({});
+    mode$.next("mock");
+
+    service.setProfile(50);
+
+    httpMock.expectNone("/api/load-profile");
+
+    let mode: "baseline" | "runtime-controlled" | undefined;
+    service.mode$.subscribe((v) => (mode = v));
+    expect(service.current).toBe(50);
+    expect(mode).toBe("runtime-controlled");
+  });
+
+  it("should refresh runtime status after switching back to live mode", () => {
+    httpMock.expectOne("/api/load-profile").flush({ profilePct: 10, mode: "baseline" });
+    mode$.next("mock");
+    service.setProfile(25);
+    httpMock.expectNone("/api/load-profile");
+
+    mode$.next("live");
+
+    const req = httpMock.expectOne("/api/load-profile");
+    expect(req.request.method).toBe("GET");
+    req.flush({ profilePct: 50, mode: "runtime-controlled" });
+
+    expect(service.current).toBe(50);
   });
 });

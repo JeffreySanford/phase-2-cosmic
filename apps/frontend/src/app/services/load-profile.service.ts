@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { BehaviorSubject } from "rxjs";
 import { map } from "rxjs/operators";
+import { DataSourceService } from "./data-source.service";
 
 export type LoadProfilePct = 10 | 25 | 50 | 100;
 
@@ -23,8 +24,15 @@ export class LoadProfileService {
     map((pct) => this.pollingMsFor(pct))
   );
 
-  constructor(private http: HttpClient) {
-    this.refreshRuntimeStatus();
+  constructor(
+    private http: HttpClient,
+    private dataSource: DataSourceService
+  ) {
+    this.dataSource.mode$.subscribe((mode) => {
+      if (mode === "live") {
+        this.refreshRuntimeStatus();
+      }
+    });
   }
 
   get current(): LoadProfilePct {
@@ -32,6 +40,13 @@ export class LoadProfileService {
   }
 
   setProfile(pct: LoadProfilePct): void {
+    if (this.dataSource.mode === "mock") {
+      this.profileSubject.next(pct);
+      this.modeSubject.next(pct === 10 ? "baseline" : "runtime-controlled");
+      this.persist(pct);
+      return;
+    }
+
     this.http
       .post<{
         profilePct: LoadProfilePct;
