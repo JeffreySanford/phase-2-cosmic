@@ -17,22 +17,22 @@
       </div>
     </div>
 
-    <div *ngIf="showSettings" style="padding:12px; border:1px solid #e5e7eb; margin-top:8px; background:#fff;">
-      <label style="display:block; font-weight:600; margin-bottom:6px;">Default per-channel capacity (MB/s)</label>
-      <input type="number" [(ngModel)]="defaultPerChannelMBps" style="width:160px;" />
-      <div style="margin-top:8px;">
-        <label style="display:block; font-weight:600; margin-bottom:6px;">Live poll interval (seconds)</label>
-        <input type="number" [(ngModel)]="pollIntervalSec" style="width:120px;" min="1" />
+    <div *ngIf="showSettings" class="settings-panel">
+      <label class="field-label">Default per-channel capacity (MB/s)</label>
+      <input type="number" [(ngModel)]="defaultPerChannelMBps" class="input-fixed-160" />
+      <div class="mt-8">
+        <label class="field-label">Live poll interval (seconds)</label>
+        <input type="number" [(ngModel)]="pollIntervalSec" class="input-fixed-120" min="1" />
       </div>
-      <div style="margin-top:8px;">
-        <label style="display:block; font-weight:600; margin-bottom:6px;">Sensitivity (% change)</label>
-        <input type="number" [(ngModel)]="sensitivityPct" style="width:120px;" min="0" max="100" />
+      <div class="mt-8">
+        <label class="field-label">Sensitivity (% change)</label>
+        <input type="number" [(ngModel)]="sensitivityPct" class="input-fixed-120" min="0" max="100" />
       </div>
-      <label style="display:block; font-weight:600; margin:8px 0 6px;">Per-link overrides (JSON map: "source->target": MB/s)</label>
-      <textarea [(ngModel)]="settingsJson" rows="6" style="width:100%; font-family: monospace;"></textarea>
-      <div style="margin-top:8px; text-align:right;">
+      <label class="field-label field-label--spaced">Per-link overrides (JSON map: \"source->target\": MB/s)</label>
+      <textarea [(ngModel)]="settingsJson" rows="6" class="input-full monospace-text"></textarea>
+      <div class="mt-8 text-right">
         <button (click)="saveSettings()">Save</button>
-        <button (click)="showSettings=false" style="margin-left:8px;">Cancel</button>
+        <button (click)="showSettings=false" class="ml-8">Cancel</button>
       </div>
     </div>
   </div>
@@ -120,7 +120,7 @@
               title="Fullscreen"
               (click)="toggleFullscreen()"
             >
-              <span style="font-size:1.2em;">&#x26F6;</span>
+              <span class="icon-large">&#x26F6;</span>
             </button>
           </div>
           <div class="node-ring-legend" *ngIf="hasTopologyData" aria-label="Topology provenance filters">
@@ -238,22 +238,22 @@
               <span
                 class="fidelity-meter__segment"
                 data-source="prometheus"
-                [style.width.%]="measuredCoveragePct()"
+                [appDynamicStyle]="{width: measuredCoveragePct() + '%'}"
               ></span>
               <span
                 class="fidelity-meter__segment"
                 data-source="derived"
-                [style.width.%]="derivedCoveragePct()"
+                [appDynamicStyle]="{width: derivedCoveragePct() + '%'}"
               ></span>
               <span
                 class="fidelity-meter__segment"
                 data-source="mock"
-                [style.width.%]="mockCoveragePct()"
+                [appDynamicStyle]="{width: mockCoveragePct() + '%'}"
               ></span>
               <span
                 class="fidelity-meter__segment"
                 data-source="unavailable"
-                [style.width.%]="unavailableCoveragePct()"
+                [appDynamicStyle]="{width: unavailableCoveragePct() + '%'}"
               ></span>
             </div>
             <div class="fidelity-card__stats">

@@ -193,6 +193,16 @@ export interface InfraTelemetryServiceMetrics {
   executors?: Record<string, InfraTelemetryServiceMetrics>;
 }
 
+export interface AlertSloMetrics {
+  alertIngestedTotal: number;
+  alertLatencyMsP50: number;
+  alertLatencyMsP95: number;
+  alertLatencyMsP99: number;
+  dlqDepth: number;
+  replaysTotal: number;
+  measuredAt: string;
+}
+
 export interface InfrastructureTelemetrySnapshot {
   measuredAt: string;
   source: string;

@@ -32,8 +32,20 @@
   display: flex;
   gap: token(spacing, sm);
   align-items: center;
+  margin-bottom: token(spacing, sm);
+}
+.create-row .flex-grow {
+  flex: 1;
 }
 .create-row mat-form-field {
   background: rgba(255, 255, 255, 0.02);
   border-radius: token(radii, sm);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.section-spacing {
+  margin-top: token(spacing, sm);
 }

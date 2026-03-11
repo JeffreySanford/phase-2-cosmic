@@ -10,6 +10,7 @@ import {
   HttpTestingController,
 } from "@angular/common/http/testing";
 import { TelemetryComponent } from "./telemetry.component";
+import { InfraTabsComponent } from "./infra-tabs.component";
 import { PulsarStatusComponent } from "./pulsar-status/pulsar-status.component";
 import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.component";
 import { MatCardModule } from "@angular/material/card";
@@ -85,6 +86,7 @@ describe("TelemetryComponent", () => {
         MatTableModule,
         MatProgressSpinnerModule,
         NoopAnimationsModule,
+        InfraTabsComponent,
       ],
       declarations: [
         TelemetryComponent,
@@ -137,6 +139,27 @@ describe("TelemetryComponent", () => {
 
   it("should create", () => {
     expect(component).toBeTruthy();
+  });
+
+  it("should render infra tabs component when infrastructureTelemetry is provided", () => {
+    // provide minimal valid snapshot
+    component.infrastructureTelemetry = {
+      measuredAt: new Date().toISOString(),
+      source: 'prometheus',
+      services: {
+        redis: { source: 'prometheus' },
+        rabbitmq: { source: 'prometheus' },
+        minio: { source: 'prometheus' },
+        frontendSsr: { source: 'prometheus' },
+        kafka: { source: 'prometheus' },
+        javaIngest: { source: 'prometheus' },
+        pulsar: { source: 'prometheus', brokers: 0, topics: 0, partitions: 0 },
+      },
+    } as any;
+    fixture.detectChanges();
+
+    const infraDebug = fixture.debugElement.query(By.css('app-infra-tabs'));
+    expect(infraDebug).toBeTruthy();
   });
 
   it("should fetch Pulsar status on polling", fakeAsync(() => {

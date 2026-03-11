@@ -29,6 +29,7 @@ import { MatTabsModule } from "@angular/material/tabs";
 import { HttpClientModule } from "@angular/common/http";
 
 import { AppComponent } from "./app.component";
+import { SharedModule } from "./shared/shared.module";
 
 import { DataSourceService } from "./services/data-source.service";
 import { appRoutes } from "./app.routes";
@@ -102,6 +103,7 @@ import { TridentAllocatorComponent } from "./features/diagnostics/trident-alloca
     ProvenancePanelModule,
     ExternalSourcesModule,
     TelemetryModule,
+    SharedModule,
   ],
   providers: [
     {

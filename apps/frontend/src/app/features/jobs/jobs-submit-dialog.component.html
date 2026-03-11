@@ -16,12 +16,12 @@
   </div>
 
   <!-- Dataset / requester (always visible) -->
-  <mat-form-field appearance="fill" style="width:100%">
+  <mat-form-field appearance="fill" class="full-width">
     <mat-label>Dataset Id</mat-label>
     <input matInput [(ngModel)]="datasetId" placeholder="optional dataset id" />
   </mat-form-field>
 
-  <mat-form-field appearance="fill" style="width:100%">
+  <mat-form-field appearance="fill" class="full-width">
     <mat-label>Requested By</mat-label>
     <input matInput [(ngModel)]="requestedBy" placeholder="your name or id" />
   </mat-form-field>
@@ -41,7 +41,7 @@
     <form [formGroup]="voForm" class="vo-form">
 
       <!-- Provider -->
-      <mat-form-field appearance="fill" style="width:100%">
+      <mat-form-field appearance="fill" class="full-width">
         <mat-label>VO Provider</mat-label>
         <mat-select formControlName="provider" (ngModelChange)="onProviderChange($event)">
           <mat-option *ngFor="let p of voProviders" [value]="p.name">{{ p.name }}</mat-option>
@@ -50,51 +50,51 @@
       </mat-form-field>
 
       <!-- TAP URL (adql, obscore) -->
-      <mat-form-field *ngIf="showTapUrl" appearance="outline" style="width:100%">
+      <mat-form-field *ngIf="showTapUrl" appearance="outline" class="full-width">
         <mat-label>TAP Service URL</mat-label>
         <input matInput formControlName="tapUrl" placeholder="https://example.edu/tap" />
       </mat-form-field>
 
       <!-- DataLink URL (datalink) -->
-      <mat-form-field *ngIf="showDatalinkUrl" appearance="outline" style="width:100%">
+      <mat-form-field *ngIf="showDatalinkUrl" appearance="outline" class="full-width">
         <mat-label>DataLink Service URL</mat-label>
         <input matInput formControlName="datalinkUrl" placeholder="https://example.edu/datalink" />
       </mat-form-field>
 
       <!-- Cone-search service URL -->
-      <mat-form-field *ngIf="showServiceUrl" appearance="outline" style="width:100%">
+      <mat-form-field *ngIf="showServiceUrl" appearance="outline" class="full-width">
         <mat-label>Cone Search Service URL</mat-label>
         <input matInput formControlName="serviceUrl" placeholder="https://example.edu/conesearch" />
       </mat-form-field>
 
       <!-- VOTable fetch URL -->
-      <mat-form-field *ngIf="showVotableUrl" appearance="outline" style="width:100%">
+      <mat-form-field *ngIf="showVotableUrl" appearance="outline" class="full-width">
         <mat-label>VOTable URL</mat-label>
         <input matInput formControlName="votableUrl" placeholder="https://example.edu/data.vot" />
       </mat-form-field>
 
       <!-- Product fetch URL -->
-      <mat-form-field *ngIf="showProductUrl" appearance="outline" style="width:100%">
+      <mat-form-field *ngIf="showProductUrl" appearance="outline" class="full-width">
         <mat-label>Product URL</mat-label>
         <input matInput formControlName="productUrl" placeholder="https://example.edu/products/file.fits" />
         <mat-hint>Supported: FITS, CASA MS, JPEG, PNG</mat-hint>
       </mat-form-field>
 
       <!-- SODA URL -->
-      <mat-form-field *ngIf="showSodaUrl" appearance="outline" style="width:100%">
+      <mat-form-field *ngIf="showSodaUrl" appearance="outline" class="full-width">
         <mat-label>SODA Service URL</mat-label>
         <input matInput formControlName="sodaUrl" placeholder="https://example.edu/soda" />
       </mat-form-field>
 
       <!-- Preview URL -->
-      <mat-form-field *ngIf="showPreviewUrl" appearance="outline" style="width:100%">
+      <mat-form-field *ngIf="showPreviewUrl" appearance="outline" class="full-width">
         <mat-label>Preview URL</mat-label>
         <input matInput formControlName="previewUrl" placeholder="https://example.edu/preview/image.jpg" />
       </mat-form-field>
 
       <!-- Cone-search fields: target / ra / dec / radius -->
       <ng-container *ngIf="showConeFields">
-        <mat-form-field appearance="outline" style="width:100%">
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>Target Name (optional)</mat-label>
           <input matInput formControlName="target" placeholder="e.g. M87" />
           <mat-hint>Resolved via SIMBAD if coordinates are omitted</mat-hint>
@@ -117,23 +117,23 @@
 
       <!-- ADQL fields -->
       <ng-container *ngIf="showAdqlFields">
-        <mat-form-field appearance="outline" style="width:100%">
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>ADQL Query</mat-label>
           <textarea matInput rows="4" formControlName="adql"
             placeholder="SELECT TOP 100 * FROM ivoa.obscore WHERE ..."></textarea>
         </mat-form-field>
-        <mat-form-field appearance="outline" style="width:180px">
+        <mat-form-field appearance="outline" class="fixed-width-180">
           <mat-label>Row limit</mat-label>
           <input matInput type="number" formControlName="limit" />
         </mat-form-field>
-        <mat-checkbox formControlName="asyncQuery" style="margin-left:16px">
+        <mat-checkbox formControlName="asyncQuery" class="ml-16">
           Async (UWS) query
         </mat-checkbox>
       </ng-container>
 
       <!-- ObsCore filter fields -->
       <ng-container *ngIf="showObscoreFields">
-        <mat-form-field appearance="outline" style="width:100%">
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>Dataproduct Type (optional)</mat-label>
           <input matInput formControlName="dataproductType" placeholder="image, cube, spectrum …" />
         </mat-form-field>
@@ -161,7 +161,7 @@
             <input matInput type="number" formControlName="spectralMax" />
           </mat-form-field>
         </div>
-        <mat-form-field appearance="outline" style="width:180px">
+        <mat-form-field appearance="outline" class="fixed-width-180">
           <mat-label>Row limit</mat-label>
           <input matInput type="number" formControlName="limit" />
         </mat-form-field>
@@ -169,7 +169,7 @@
 
       <!-- DataLink dataset identifier -->
       <ng-container *ngIf="showDatalinkFields">
-        <mat-form-field appearance="outline" style="width:100%">
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>Dataset Identifier (ID)</mat-label>
           <input matInput formControlName="datasetIdentifier"
             placeholder="ivo://example.edu/datasets/obs001" />
@@ -178,7 +178,7 @@
 
       <!-- SODA cutout fields -->
       <ng-container *ngIf="showSodaFields">
-        <mat-form-field appearance="outline" style="width:100%">
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>Dataset Identifier</mat-label>
           <input matInput formControlName="datasetIdentifier" />
         </mat-form-field>
@@ -196,7 +196,7 @@
             <input matInput type="number" step="0.001" formControlName="spatialBoundsRadius" />
           </mat-form-field>
         </div>
-        <mat-form-field appearance="outline" style="width:180px">
+        <mat-form-field appearance="outline" class="fixed-width-180">
           <mat-label>Output format</mat-label>
           <input matInput formControlName="outputFormat" placeholder="fits" />
         </mat-form-field>
@@ -204,12 +204,12 @@
 
       <!-- Product/preview common fields -->
       <ng-container *ngIf="showProductFields">
-        <mat-form-field appearance="outline" style="width:100%">
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>Expected MIME type (optional)</mat-label>
           <input matInput formControlName="expectedMimeType"
             placeholder="application/fits" />
         </mat-form-field>
-        <mat-checkbox formControlName="liveMode" style="display:block; margin:8px 0">
+        <mat-checkbox formControlName="liveMode" class="live-checkbox">
           Live / streaming mode
         </mat-checkbox>
       </ng-container>
@@ -219,19 +219,19 @@
 
   <!-- Generic JSON textarea (non-VO workflows) -->
   <ng-container *ngIf="!isVoWorkflow">
-    <mat-form-field appearance="outline" style="width:100%">
+    <mat-form-field appearance="outline" class="full-width">
       <mat-label>Parameters (JSON)</mat-label>
       <textarea matInput rows="8" [(ngModel)]="payloadText"></textarea>
     </mat-form-field>
 
-    <div *ngIf="publicSources.length" style="margin:12px 0; font-size:0.9rem;">
+    <div *ngIf="publicSources.length" class="public-sources">
       <strong>Approved public sources:</strong>
-      <ul style="margin:4px 0 0 16px; padding:0; list-style:disc;">
+      <ul class="public-sources-list">
         <li *ngFor="let s of publicSources"><a [href]="s.url" target="_blank">{{ s.name }}</a></li>
       </ul>
     </div>
 
-    <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+    <div class="flex-row gap-md mt-md">
       <button mat-stroked-button (click)="generateSample()">Generate sample</button>
       <div *ngIf="workflow !== 'custom'" class="muted">Sample for selected type</div>
     </div>

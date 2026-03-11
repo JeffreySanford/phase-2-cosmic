@@ -29,7 +29,7 @@
             <mat-card class="infographic-card pulse-glow">
               <p class="mini-label">Operational Health</p>
               <div class="ring-wrap">
-                <div class="ring" [style.background]="ringStyle(healthScore)">
+                <div class="ring" [appDynamicStyle]="{background: ringStyle(healthScore)}">
                   <div class="ring-core">{{ healthScore }}%</div>
                 </div>
               </div>
@@ -39,7 +39,7 @@
             <mat-card class="infographic-card">
               <p class="mini-label">System Load</p>
               <div class="ring-wrap">
-                <div class="ring warm" [style.background]="ringStyle(cpuLoadPct)">
+                <div class="ring warm" [appDynamicStyle]="{background: ringStyle(cpuLoadPct)}">
                   <div class="ring-core">{{ cpuLoadPct | number:'1.0-0' }}%</div>
                 </div>
               </div>
@@ -52,7 +52,7 @@
                 <div class="barscape-row" *ngFor="let band of signalBands" [attr.data-tone]="band.tone">
                   <span>{{ band.label }}</span>
                   <div class="barscape-track">
-                    <div class="barscape-fill" [style.width.%]="band.value"></div>
+                    <div class="barscape-fill" [appDynamicStyle]="{width: band.value + '%'}"></div>
                   </div>
                   <strong>{{ band.value }}%</strong>
                 </div>
@@ -92,7 +92,7 @@
                 <p class="tile-value">{{ tile.value }}</p>
                 <p class="tile-note">{{ tile.query }}</p>
                 <div class="intensity-track">
-                  <span [style.width.%]="tile.intensity * 100"></span>
+                  <span [appDynamicStyle]="{width: tile.intensity * 100 + '%'}"></span>
                 </div>
                 <p class="tile-source">source: {{ tile.source }}</p>
               </a>

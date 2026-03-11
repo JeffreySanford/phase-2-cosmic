@@ -27,6 +27,13 @@
   margin-bottom: 8px;
 }
 
+.filter-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .toolbar {
   display: flex;
   flex: 1;
@@ -728,6 +735,9 @@ $product-colors: (
   text-transform: uppercase;
   color: token(colors, muted);
   margin: 12px 0 6px;
+}
+.section-title--spaced {
+  margin-top: token(spacing, md);
 }
 
 .votable-wrapper {

@@ -64,6 +64,7 @@ body {
 html,
 body {
   height: 100%;
+  overflow: hidden !important; /* force disable outer scrollbar regardless of other styles */
 }
 
 app-root {
@@ -106,6 +107,48 @@ app-mainstage > * {
   flex: 1 1 0;
   min-height: 0;
   margin-top: 0 !important;
+}
+
+/* -------------------------------------------------------------------------
+   Custom scrollbar styling used throughout the app.  WebKit-based browsers
+   support ::-webkit-scrollbar.* pseudo-elements; Firefox uses scrollbar-width
+   and scrollbar-color.  The goal is a thin track with bright blue arrows at
+   each end and a matching blue thumb.  This replaces the default dual
+   scrollbars seen on the telemetry overview (outer + inner) and gives the
+   entire application a consistent look.
+   ------------------------------------------------------------------------- */
+
+/* WebKit / Blink */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface-start, #0b1220);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #38bdf8; /* bright blue */
+  border-radius: 4px;
+  border: 2px solid var(--color-surface-start, #0b1220);
+}
+
+::-webkit-scrollbar-button {
+  background-color: #38bdf8;
+  display: block;
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--color-surface-start, #0b1220);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #38bdf8 var(--color-surface-start, #0b1220);
 }
 
 /* Footer load-profile menu styling (menu panel renders in CDK overlay container) */

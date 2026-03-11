@@ -22,7 +22,7 @@
               </linearGradient>
             </defs>
           </svg>
-          <div class="hover-bubble" *ngIf="hoverLabelSmall" [style.left.px]="hoverPosSmall?.left" [style.top.px]="hoverPosSmall?.top">{{hoverLabelSmall}}</div>
+          <div class="hover-bubble" *ngIf="hoverLabelSmall" [appDynamicStyle]="{left: (hoverPosSmall?.left || 0) + 'px', top: (hoverPosSmall?.top || 0) + 'px'}">{{hoverLabelSmall}}</div>
         </div>
     </article>
 
@@ -30,7 +30,7 @@
       <div class="label">Error Rate</div>
       <div class="value">{{errorRate}} %</div>
       <div class="sparkbars">
-        <div *ngFor="let v of histogramData" class="bar" [style.height.px]="(v*1.6)" [style.background]="'linear-gradient(180deg,#ffb3b3,#ff4d4d)'"></div>
+        <div *ngFor="let v of histogramData" class="bar" [appDynamicStyle]="{height: (v*1.6) + 'px', background: 'linear-gradient(180deg,#ffb3b3,#ff4d4d)'}"></div>
       </div>
     </article>
 
@@ -38,7 +38,7 @@
       <div class="label">Queue Depth</div>
       <div class="value">{{queueDepth}}</div>
       <div class="gauge">
-        <div class="gauge-fill" [style.width.%]="Math.min(100, queueDepth*2)" ></div>
+        <div class="gauge-fill" [appDynamicStyle]="{width: Math.min(100, queueDepth*2) + '%'}"></div>
       </div>
     </article>
   </section>
@@ -50,14 +50,14 @@
         <svg class="big-chart" viewBox="0 0 600 160" preserveAspectRatio="none">
           <polyline [attr.points]="sparklinePointsBig" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
         </svg>
-        <div class="hover-bubble" *ngIf="hoverLabelBig" [style.left.px]="hoverPosBig?.left" [style.top.px]="hoverPosBig?.top">{{hoverLabelBig}}</div>
+        <div class="hover-bubble" *ngIf="hoverLabelBig" [appDynamicStyle]="{left: (hoverPosBig?.left || 0) + 'px', top: (hoverPosBig?.top || 0) + 'px'}">{{hoverLabelBig}}</div>
       </div>
     </div>
 
     <div class="panel panel-small">
       <h3>Distribution — Payload sizes</h3>
       <div class="histogram">
-        <div *ngFor="let v of histogramData" class="hbar" [style.height.px]="(v*4)" ></div>
+        <div *ngFor="let v of histogramData" class="hbar" [appDynamicStyle]="{height: (v*4) + 'px'}" ></div>
       </div>
     </div>
 

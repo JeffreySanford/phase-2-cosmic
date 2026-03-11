@@ -19,6 +19,7 @@ import {
   InfraTelemetryServiceMetrics,
   RabbitMQStatus,
   PulsarStatus,
+  AlertSloMetrics,
 } from "../../shared/types";
 
 // Prometheus range value is [timestamp, value-as-string]
@@ -52,16 +53,7 @@ type VoTableResponse = {
   links?: unknown[];
 };
 
-type AlertSloMetrics = {
-  alertIngestedTotal: number;
-  alertLatencyMsP50: number;
-  alertLatencyMsP95: number;
-  alertLatencyMsP99: number;
-  dlqDepth: number;
-  replaysTotal: number;
-  measuredAt: string;
-};
-
+export 
 type TransientAlert = {
   id: string;
   eventType: string;
@@ -227,6 +219,8 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadD3().subscribe(() => {
       this.initGauge();
       this.ensureVizInitialized();
+      // fetch data immediately once the visualization container exists
+      this.fetchRangeAndRender();
     });
   }
 
@@ -417,7 +411,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     const el = this.chartEl?.nativeElement;
     if (!el) return;
     const w = el.clientWidth || 600;
-    const h = 160;
+    const h = el.clientHeight || 160;
     const margin = { left: 88, right: 6, top: 6, bottom: 18 };
     const timeExtent = d3.extent(points, (d: Point) => new Date(d.t)) as
       | [Date, Date]
@@ -634,7 +628,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     const el = this.histEl?.nativeElement;
     if (!el) return;
     const w = el.clientWidth || 300;
-    const h = 140;
+    const h = el.clientHeight || 140;
     const d3 = this.d3 as D3Module;
     this.histSvg = d3
       .select(el)
@@ -649,7 +643,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     const el = this.histEl?.nativeElement;
     if (!el) return;
     const w = el.clientWidth || 300;
-    const h = 140;
+    const h = el.clientHeight || 140;
     const margin = { left: 32, right: 8, top: 6, bottom: 22 };
     this.histSvg.attr("width", w).attr("height", h);
 
@@ -816,12 +810,35 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     setTimeout(() => {
       this.ensureVizInitialized();
       this.fetchRangeAndRender();
+      // another tick after the view has fully rendered/animated to pick up
+      // any dimension changes that ocurred during tab switch
+      setTimeout(() => this.fetchRangeAndRender(), 0);
     }, 0);
   }
 
   private ensureVizInitialized() {
-    if (this.selectedVizTab === 0 && !this.svg) this.initChart();
-    if (this.selectedVizTab === 1 && !this.histSvg) this.initHist();
+    // initialise SVG containers on demand. even if the parent height is
+    // zero at the moment, later render calls (`fetchRangeAndRender`) will
+    // resize them when the element grows.
+    if (this.selectedVizTab === 0 && !this.svg) {
+      this.initChart();
+      if (this.points?.length) {
+        const ma = this.points.map((p, i, arr) => {
+          const start = Math.max(0, i - 4);
+          const slice = arr.slice(start, i + 1);
+          return { t: p.t, v: slice.reduce((s, x) => s + x.v, 0) / slice.length };
+        });
+        this.renderLine(this.points, ma);
+        this.renderHistogram(this.points.map((p) => p.v));
+        this.renderGauge(this.currentRate, this.gaugeCap);
+      }
+    }
+    if (this.selectedVizTab === 1 && !this.histSvg) {
+      this.initHist();
+      if (this.points?.length) {
+        this.renderHistogram(this.points.map((p) => p.v));
+      }
+    }
   }
 
   private updateRecentSamples(points: Array<{ t: number; v: number }>) {

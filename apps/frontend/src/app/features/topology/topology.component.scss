@@ -28,6 +28,55 @@
   gap: 12px;
 }
 
+/* settings panel utilities */
+.settings-panel {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  margin-top: 8px;
+  background: #fff;
+}
+
+.field-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.field-label--spaced {
+  margin: 8px 0 6px;
+}
+
+.input-fixed-160 {
+  width: 160px;
+}
+.input-fixed-120 {
+  width: 120px;
+}
+
+.input-full {
+  width: 100%;
+}
+
+.monospace-text {
+  font-family: monospace;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.ml-8 {
+  margin-left: 8px;
+}
+
+.icon-large {
+  font-size: 1.2em;
+}
+
 .title-group {
   display: flex;
   align-items: center;

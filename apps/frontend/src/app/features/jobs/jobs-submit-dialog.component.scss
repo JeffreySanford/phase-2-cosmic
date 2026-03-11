@@ -7,6 +7,33 @@ mat-form-field {
   margin-bottom: 12px;
 }
 
+/* utility helpers */
+.full-width {
+  width: 100%;
+}
+.fixed-width-180 {
+  width: 180px;
+}
+.ml-16 {
+  margin-left: 16px;
+}
+.live-checkbox {
+  display: block;
+  margin: 8px 0;
+}
+.flex-row {
+  display: flex;
+  gap: token(spacing, sm);
+  align-items: center;
+}
+.mt-md {
+  margin-top: token(spacing, md);
+}
+
+.gap-md {
+  gap: token(spacing, md);
+}
+
 /* ─── Workflow chip-grid picker ───────────────────────────────────────── */
 .workflow-picker {
   margin-bottom: 12px;

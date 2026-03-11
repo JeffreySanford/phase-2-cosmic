@@ -129,7 +129,9 @@ See the canonical developer run and environment docs: [GETTING_STARTED.md](/docu
 #### Angular
 
 - Module-mode policy: all `@Component` and `@Directive` declarations MUST explicitly set `standalone: false`. Enforced by `pnpm run standalone:check`.
-- No inline templates or styles. Components must reference external `.html` and `.scss` files. Never use `template:` or `styles:` literals in decorators.
+- No inline templates or styles. Components must reference external `.html` and `.scss` files. Never use `template:` or `styles:` literals in decorators.  
+- **Do not use any inline CSS in templates** (no `style="..."`, `[ngStyle]`, or `[style.x]` attributes). All styling belongs in the component’s SCSS so that Angular Material 3 theming (MD3) and global style rules work correctly.  
+  - For cases where the style value must be computed at runtime (widths, positions, colors, etc.), use a helper directive such as `appDynamicStyle`, host bindings, or set CSS custom properties from the component class so the templates remain free of inline styles.
 - Favor RxJS observables (hot/live streams) over ad-hoc Promises for UI and service flows. Keep subscription lifecycles explicit — always unsubscribe via `takeUntilDestroyed`, `AsyncPipe`, or an explicit `ngOnDestroy`.
 - Use the observer pattern via services for cross-component communication. Do not pass data through deeply nested `@Input`/`@Output` chains.
 - Components must be thin: no business logic, no HTTP calls, no direct store access. Delegate to services.

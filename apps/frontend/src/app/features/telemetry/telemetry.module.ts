@@ -13,10 +13,13 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatTableModule } from "@angular/material/table";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatBadgeModule } from "@angular/material/badge";
+import { SharedModule } from "../../shared/shared.module";
 
 import { TelemetryComponent } from "./telemetry.component";
+import { InfraTabsComponent } from "./infra-tabs.component";
 import { PulsarStatusComponent } from "./pulsar-status/pulsar-status.component";
 import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.component";
+
 
 @NgModule({
   declarations: [
@@ -40,6 +43,8 @@ import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.compo
     MatTableModule,
     MatProgressSpinnerModule,
     MatBadgeModule,
+    SharedModule,
+    InfraTabsComponent,
   ],
   exports: [TelemetryComponent, PulsarStatusComponent, RabbitMQStatusComponent],
 })
