@@ -34,7 +34,7 @@ mat-card {
 mat-card-content {
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow-y: hidden;
   height: 100%; /* allow card to dictate height */
   padding-bottom: 12px;
 }
