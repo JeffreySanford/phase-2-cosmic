@@ -345,9 +345,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
           },
           {
             title: "Total Bytes",
-            value: new Intl.NumberFormat().format(
-              Math.round(Math.max(0, snapshot.totalBytes.value))
-            ),
+            // format using human units (KB/MB/GB/etc) so huge numbers are readable
+            value: this.formatBytes(Math.max(0, snapshot.totalBytes.value)),
             query: "generator_bytes_produced_total",
             metricId: "generator_bytes_produced_total",
             source: snapshot.totalBytes.ok ? "live" : "fallback",
@@ -572,6 +571,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private formatBytesPerSecond(v: number): string {
     if (!isFinite(v) || v <= 0) return "0 B/s";
     const units = ["B/s", "KB/s", "MB/s", "GB/s"];
+    let value = v;
+    let idx = 0;
+    while (value >= 1024 && idx < units.length - 1) {
+      value /= 1024;
+      idx++;
+    }
+    return `${value.toFixed(2)} ${units[idx]}`;
+  }
+
+  /**
+   * Format a raw byte count with an appropriate SI unit (KB, MB, etc.).
+   * Used for total‑bytes telemetry so numbers like 8e18 become "8.42 EB".
+   */
+  private formatBytes(v: number): string {
+    if (!isFinite(v) || v <= 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"];
     let value = v;
     let idx = 0;
     while (value >= 1024 && idx < units.length - 1) {
