@@ -122,6 +122,8 @@ describe("TopologyComponent", () => {
     expect(component).toBeTruthy();
     expect(component.timingDriftNs).toBe(0);
     expect(component.rfiEventRate).toBe(0);
+    // ensure timers cleared
+    tick();
   }));
 
   it("renders header text and captures mission metrics", fakeAsync(() => {
@@ -220,6 +222,9 @@ describe("TopologyComponent", () => {
     expect(component.provenanceFilterAriaLabel("prometheus")).toBe(
       "Hide Live links in the force network"
     );
+    // clear timers before finishing
+    component["stopLivePoll"]();
+    tick();
   }));
 
   it("shows helper copy for five seconds after a filter change", fakeAsync(() => {
