@@ -56,7 +56,7 @@
         class="job-card"
         [class.job-card--expanded]="isExpanded(j)"
         [ngStyle]="{'border-left-color': getJobColor(j)}"
-        *ngFor="let j of filteredJobs"
+        *ngFor="let j of filteredJobs; trackBy: trackByJob"
       >
         <!-- Collapsed header — always visible, click to expand/collapse -->
         <div class="meta" (click)="view(j)" role="button" [attr.aria-expanded]="isExpanded(j)">
@@ -121,6 +121,14 @@
               (click)="transition(j, 'RUNNING'); $event.stopPropagation()"
             >
               Run
+            </button>
+            <button
+              mat-stroked-button
+              color="accent"
+              *ngIf="isDeferred(j)"
+              (click)="releaseDeferred(); $event.stopPropagation()"
+            >
+              Release
             </button>
             <button
               mat-stroked-button

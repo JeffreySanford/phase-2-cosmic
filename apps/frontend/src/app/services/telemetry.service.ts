@@ -122,4 +122,21 @@ export class TelemetryService {
       }>("/api/v1/pulsar/status")
     );
   }
+
+  /**
+   * Fetch the topology metrics payload from the Nest SSR proxy. This mirrors
+   * `/api/metrics/topology` which itself proxies the governance backend.
+   * The landing page uses this to compute a live governance coverage percentage.
+   */
+  getTopologyMetrics(): Observable<{ links?: Array<{ source?: string }> }> {
+    if (this.dataSource.mode === "mock") {
+      return this.mock.topologyMetrics();
+    }
+    const key = "telemetry:topology";
+    return this.cache.getOrCreate(key, 2000, () =>
+      this.http.get<{ links?: Array<{ source?: string }> }>(
+        "/api/metrics/topology"
+      )
+    );
+  }
 }

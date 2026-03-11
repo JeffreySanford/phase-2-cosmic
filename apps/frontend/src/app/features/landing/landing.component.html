@@ -47,7 +47,8 @@
             <h2>Capability Signal Board</h2>
             <p>
               The platform fuses two planes: high-speed operational streaming and authoritative governance
-              orchestration. These bars summarize readiness across observability, trust, and execution.
+              orchestration. These bars summarise current orchestration load along with observability
+              and trust metrics; higher load means more jobs are actively being processed.
             </p>
             <div class="bars">
               <div class="bar-row" *ngFor="let bar of signalBars; trackBy: trackByLabel">
@@ -56,6 +57,7 @@
                   <div class="bar-fill" [attr.data-tone]="bar.tone" [style.width.%]="bar.value"></div>
                 </div>
                 <strong>{{ bar.value }}%</strong>
+                <span class="bar-note" *ngIf="bar.note">{{ bar.note }}</span>
               </div>
             </div>
           </div>

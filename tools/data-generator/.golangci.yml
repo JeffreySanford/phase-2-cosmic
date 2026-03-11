@@ -1,3 +1,4 @@
+---
 # golangci-lint configuration for tools/data-generator
 # Run locally: golangci-lint run ./...
 # Install:     https://golangci-lint.run/usage/install/
@@ -27,7 +28,7 @@ linters:
     - gosec # OWASP-aligned security checks
     # Simplification
     - gosimple
-linters-settings:
+formatters:
   goimports:
     # Separate internal module imports from stdlib/third-party
     local-prefixes: github.com/cosmic-horizon

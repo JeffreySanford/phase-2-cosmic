@@ -124,6 +124,17 @@ export class MockDataService {
   }
 
   // Mock system status object for SystemStatusService
+  topologyMetrics(): Observable<{ links: Array<{ source: string }> }> {
+    // simple stub with a mix of prometheus/derived links for landing page tests
+    return of({
+      links: [
+        { source: "prometheus" },
+        { source: "derived" },
+        { source: "prometheus" },
+      ],
+    });
+  }
+
   mockSystemStatus(): Observable<{
     health: "healthy" | "degraded" | "offline";
     lastCheck: Date;

@@ -98,7 +98,9 @@ describe("LoadProfileService", () => {
   });
 
   it("should refresh runtime status after switching back to live mode", () => {
-    httpMock.expectOne("/api/load-profile").flush({ profilePct: 10, mode: "baseline" });
+    httpMock
+      .expectOne("/api/load-profile")
+      .flush({ profilePct: 10, mode: "baseline" });
     mode$.next("mock");
     service.setProfile(25);
     httpMock.expectNone("/api/load-profile");

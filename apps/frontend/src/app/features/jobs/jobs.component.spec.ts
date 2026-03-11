@@ -8,6 +8,7 @@ import { MatDialogModule } from "@angular/material/dialog";
 import { MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { HttpClientTestingModule } from "@angular/common/http/testing";
+import { SnackService } from "../../services/snack.service";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 
@@ -94,7 +95,10 @@ describe("JobsComponent", () => {
         FormsModule,
         ReactiveFormsModule,
       ],
-      providers: [{ provide: JobsService, useClass: StubJobsService }],
+      providers: [
+        { provide: JobsService, useClass: StubJobsService },
+        SnackService,
+      ],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
   });
@@ -141,7 +145,7 @@ describe("JobsComponent", () => {
     const updateLineageSpy = jest
       .spyOn(component["jobsSvc"], "updateLineage")
       .mockReturnValue(of(undefined));
-    const snackBarSpy = jest.spyOn(component["snackBar"], "open");
+    const snackSpy = jest.spyOn(component["snack"], "showSuccess");
     component.view(job);
     fixture.detectChanges();
     component.selectedJob = job;
@@ -149,11 +153,7 @@ describe("JobsComponent", () => {
     expect(updateLineageSpy).toHaveBeenCalledWith("321", {
       parentJobId: "orig",
     });
-    expect(snackBarSpy).toHaveBeenCalledWith(
-      "Lineage saved successfully",
-      undefined,
-      { duration: 10000 }
-    );
+    expect(snackSpy).toHaveBeenCalledWith("Lineage saved successfully", 10000);
   });
 
   it("formats quality gate error objects into a user message", () => {
@@ -194,7 +194,7 @@ describe("JobsComponent", () => {
     expect(component.isDeferred(mkJob("TIMED_OUT"))).toBe(false);
   });
 
-  it("isDeferred stays true while job is still active", () => {
+  it("only queued jobs are treated as deferred", () => {
     const mkJob = (status: string): JobStatus =>
       ({
         jobId: "d",
@@ -203,7 +203,44 @@ describe("JobsComponent", () => {
         parameters: { deferred: true },
       } as JobStatus);
     expect(component.isDeferred(mkJob("QUEUED"))).toBe(true);
-    expect(component.isDeferred(mkJob("RUNNING"))).toBe(true);
+    expect(component.isDeferred(mkJob("RUNNING"))).toBe(false);
+  });
+
+  it("formats durations and runTime correctly", () => {
+    const now = Date.now();
+    const job: JobStatus = {
+      jobId: "foo",
+      workflow: "x",
+      status: "RUNNING",
+      createdAt: new Date(now - 120_000).toISOString(),
+      updatedAt: new Date(now - 30_000).toISOString(),
+    } as JobStatus;
+    component.jobs = [job];
+    expect(component.jobDuration(job)).toMatch(/^[0-9]+:[0-5][0-9]$/);
+    component.currentTime = now;
+    expect(component.runTime("foo")).toMatch(/^[0-9]+:[0-5][0-9]$/);
+  });
+
+  it("does not emit console logs when submitting sample jobs", (done) => {
+    const logSpy = jest.spyOn(console, "log");
+    const sample: any = {
+      jobId: "j1",
+      status: "QUEUED",
+      queuedAt: new Date().toISOString(),
+    };
+    jest.spyOn(component["jobsSvc"], "submitJob").mockReturnValue(of(sample));
+    jest
+      .spyOn(component["jobsSvc"], "transition")
+      .mockReturnValue(
+        of({ jobId: "j1", workflow: "x", status: "RUNNING" } as JobStatus)
+      );
+    jest
+      .spyOn(component["jobsSvc"], "watchJob")
+      .mockReturnValue(of({ jobId: "j1", status: "RUNNING" } as JobStatus));
+
+    component.addFiveJobs();
+    expect(logSpy).not.toHaveBeenCalled();
+    done();
   });
 
   it("filteredJobs returns all jobs when showCompleted is true", () => {
@@ -248,7 +285,7 @@ describe("JobsComponent", () => {
     const deleteSpy = jest
       .spyOn(component["jobsSvc"], "deleteJob")
       .mockReturnValue(of(undefined));
-    const snackSpy = jest.spyOn(component["snackBar"], "open");
+    const snackSpy = jest.spyOn(component["snack"], "showSuccess");
 
     component.clearCompleted();
 
@@ -257,24 +294,16 @@ describe("JobsComponent", () => {
     expect(deleteSpy).toHaveBeenCalledWith("done2");
     expect(component.jobs.length).toBe(1);
     expect(component.jobs[0].jobId).toBe("running");
-    expect(snackSpy).toHaveBeenCalledWith(
-      "Cleared 2 completed job(s)",
-      undefined,
-      { duration: 5000 }
-    );
+    expect(snackSpy).toHaveBeenCalledWith("Cleared 2 completed job(s)", 5000);
   });
 
   it("clearCompleted notifies when there are no completed jobs", () => {
     component.jobs = [
       { jobId: "running", workflow: "x", status: "RUNNING" } as JobStatus,
     ];
-    const snackSpy = jest.spyOn(component["snackBar"], "open");
+    const snackSpy = jest.spyOn(component["snack"], "showInfo");
     component.clearCompleted();
-    expect(snackSpy).toHaveBeenCalledWith(
-      "No completed jobs to clear",
-      undefined,
-      { duration: 3000 }
-    );
+    expect(snackSpy).toHaveBeenCalledWith("No completed jobs to clear", 3000);
   });
 
   it("clearCompleted also collapses if the selected job is among the cleared ones", () => {
@@ -374,15 +403,23 @@ describe("JobsComponent", () => {
     });
   });
 
+  describe("isDeferred", () => {
+    it("returns false for a running job even if deferred flag is true", () => {
+      const job = {
+        jobId: "1",
+        workflow: "x",
+        status: "RUNNING",
+        parameters: { deferred: true },
+      } as JobStatus;
+      expect(component.isDeferred(job)).toBe(false);
+    });
+  });
+
   describe("releaseDeferred", () => {
     it("calls releaseDeferred on the service and shows a snackbar", () => {
-      const snackSpy = jest.spyOn(component["snackBar"], "open");
+      const snackSpy = jest.spyOn(component["snack"], "showSuccess");
       component.releaseDeferred();
-      expect(snackSpy).toHaveBeenCalledWith(
-        "Released 2 deferred jobs",
-        undefined,
-        { duration: 10000 }
-      );
+      expect(snackSpy).toHaveBeenCalledWith("Released 2 deferred jobs", 10000);
     });
 
     it("shows an error snackbar when the service call fails", () => {
@@ -390,13 +427,39 @@ describe("JobsComponent", () => {
       jest
         .spyOn(component["jobsSvc"], "releaseDeferred")
         .mockReturnValue(throwError(() => new Error("network error")));
-      const snackSpy = jest.spyOn(component["snackBar"], "open");
+      const snackSpy = jest.spyOn(component["snack"], "showError");
       component.releaseDeferred();
       expect(snackSpy).toHaveBeenCalledWith(
         expect.stringContaining("Failed to release deferred jobs"),
-        undefined,
-        { duration: 10000 }
+        10000
       );
+    });
+
+    it("exposes a release button in the UI when a job is deferred and queued", () => {
+      component.jobs = [
+        {
+          jobId: "1",
+          workflow: "x",
+          status: "QUEUED",
+          parameters: { deferred: true },
+        } as JobStatus,
+      ];
+      fixture.detectChanges();
+
+      // expand the job
+      const header: HTMLElement = fixture.nativeElement.querySelector(".meta");
+      header.click();
+      fixture.detectChanges();
+
+      const btn: HTMLElement | null = fixture.nativeElement.querySelector(
+        '.job-actions button[color="accent"]'
+      );
+      expect(btn).toBeTruthy();
+      expect(btn?.textContent?.trim()).toBe("Release");
+
+      const spy = jest.spyOn(component, "releaseDeferred");
+      btn!.click();
+      expect(spy).toHaveBeenCalled();
     });
   });
 });

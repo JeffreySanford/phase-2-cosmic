@@ -15,6 +15,18 @@ import {
   RabbitMQStatus,
 } from "../../shared/types";
 
+/** Live event interface for diagnostics */
+export interface JobEvent {
+  type: string;
+  payload: {
+    ts?: number;
+    jobId?: string;
+    message?: string;
+    fileName?: string;
+    [key: string]: unknown;
+  };
+}
+
 @Component({
   selector: "app-diagnostics",
   templateUrl: "./diagnostics.component.html",
@@ -22,7 +34,63 @@ import {
   standalone: false,
 })
 export class DiagnosticsComponent implements OnInit, OnDestroy {
+  private eventStream?: EventSource;
+  /** Formats a live event for pretty display */
+  formatEvent(event: JobEvent): string {
+    if (!event || typeof event !== "object") return "";
+    switch (event.type) {
+      case "heartbeat":
+        return `Heartbeat at ${
+          event.payload?.ts
+            ? new Date(event.payload.ts).toLocaleString()
+            : "unknown time"
+        }`;
+      case "job_started":
+        return `Job started: ${event.payload?.jobId || "unknown"}`;
+      case "job_completed":
+        return `Job completed: ${event.payload?.jobId || "unknown"}`;
+      case "error":
+        return `Error: ${event.payload?.message || "unknown error"}`;
+      case "file_received":
+        return `File received: ${event.payload?.fileName || "unknown file"}`;
+      default:
+        return `${event.type}: ${
+          event.payload ? JSON.stringify(event.payload) : ""
+        }`;
+    }
+  }
+  /** Returns a badge class for a file based on its type */
+  getFileBadgeClass(file: string): string {
+    const type = this.getFileType(file);
+    switch (type) {
+      case "FITS":
+        return "badge-file-fits";
+      case "CSV":
+        return "badge-file-csv";
+      case "JSON":
+        return "badge-file-json";
+      case "Archive":
+        return "badge-file-archive";
+      case "Preview":
+        return "badge-file-preview";
+      default:
+        return "badge-file-other";
+    }
+  }
+
+  /** Returns a display type for a file */
+  getFileType(file: string): string {
+    const n = file.toLowerCase();
+    if (/\.fit(s|sz?)?$|\.fz$/.test(n)) return "FITS";
+    if (/\.csv$/.test(n)) return "CSV";
+    if (/\.json$/.test(n)) return "JSON";
+    if (/\.(tar\.gz|tar|zip|gz)$|\.ms\.tar/.test(n)) return "Archive";
+    if (/\.(png|jpg|jpeg|svg|webp)$/.test(n)) return "Preview";
+    return "Other";
+  }
   index: DiagnosticsIndex | null = null;
+  /** Live events received from the broker */
+  jobEvents: JobEvent[] = [];
   loading = false;
   error: string | null = null;
   systemSpecs: string | null = null;
@@ -62,11 +130,42 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     this.fetchCommissioningScenarios();
     this.startPolling();
     this.startBrokerPolling();
+    this.connectEventStream();
   }
 
   ngOnDestroy(): void {
     this.stopPolling();
     this.brokerPollSubscription?.unsubscribe();
+    if (this.eventStream) {
+      this.eventStream.close();
+      this.eventStream = undefined;
+    }
+  }
+
+  /** Connects to the backend event stream and updates jobEvents */
+  connectEventStream(): void {
+    if (this.eventStream) return;
+    // only run in environments where EventSource exists (browser)
+    if (typeof EventSource === "undefined") {
+      // during unit tests or non-browser contexts we skip streaming
+      return;
+    }
+    // the mock server exposes an SSE endpoint under /api/v1/broker-events
+    // keep diagnostics/events for potential future dedicated endpoint
+    const url = "/api/v1/broker-events"; // fallback: "/api/diagnostics/events";
+    this.eventStream = new EventSource(url);
+    this.eventStream.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        // Add new event to the front, keep max 10
+        this.jobEvents = [data, ...this.jobEvents].slice(0, 10);
+      } catch (_e) {
+        // ignore malformed events
+      }
+    };
+    this.eventStream.onerror = () => {
+      // Optionally handle errors or reconnect
+    };
   }
 
   startPolling(): void {

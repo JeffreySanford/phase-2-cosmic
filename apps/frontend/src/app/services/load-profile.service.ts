@@ -24,10 +24,7 @@ export class LoadProfileService {
     map((pct) => this.pollingMsFor(pct))
   );
 
-  constructor(
-    private http: HttpClient,
-    private dataSource: DataSourceService
-  ) {
+  constructor(private http: HttpClient, private dataSource: DataSourceService) {
     this.dataSource.mode$.subscribe((mode) => {
       if (mode === "live") {
         this.refreshRuntimeStatus();

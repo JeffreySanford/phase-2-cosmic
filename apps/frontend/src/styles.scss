@@ -31,10 +31,17 @@ body {
 .mat-mdc-snack-bar-container.app-snack {
   margin-bottom: calc(var(--app-footer-height, 0px) + 8px);
 }
+/* additional vertical spacing when multiple snackbars stack */
+.mat-mdc-snack-bar-container.app-snack
+  + .mat-mdc-snack-bar-container.app-snack {
+  margin-bottom: 4px;
+}
 
 /* Color-coded snack variants */
 .app-snack.mat-snack-bar-container {
   border-radius: 6px;
+  width: 75%;
+  max-width: 100%;
 }
 .snack-success.mat-snack-bar-container {
   background: #2e7d32;
@@ -47,6 +54,10 @@ body {
 .snack-info.mat-snack-bar-container {
   background: #1565c0;
   color: #fff;
+}
+.snack-warning.mat-snack-bar-container {
+  background: #f9a825; /* amber 700 */
+  color: #000;
 }
 
 /* Ensure app and main layout allow full-height flex children (viewer needs this) */

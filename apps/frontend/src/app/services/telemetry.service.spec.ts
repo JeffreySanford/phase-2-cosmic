@@ -62,4 +62,17 @@ describe("TelemetryService", () => {
       statusText: "Service Unavailable",
     });
   });
+
+  it("should fetch topology metrics via proxy", (done) => {
+    const fakeMetrics = { links: [{ source: "prometheus" }] };
+    service.getTopologyMetrics().subscribe((m) => {
+      expect((m as any).links.length).toBe(1);
+      expect((m as any).links[0].source).toBe("prometheus");
+      done();
+    });
+
+    const req = httpMock.expectOne("/api/metrics/topology");
+    expect(req.request.method).toBe("GET");
+    req.flush(fakeMetrics);
+  });
 });

@@ -71,9 +71,9 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public toggleFullscreen(): void {
     this.isFullscreen = !this.isFullscreen;
-    const shell = this.graphEl?.nativeElement?.closest('.topology-graph-shell');
+    const shell = this.graphEl?.nativeElement?.closest(".topology-graph-shell");
     if (shell) {
-      shell.classList.toggle('is-fullscreen', this.isFullscreen);
+      shell.classList.toggle("is-fullscreen", this.isFullscreen);
     }
 
     if (this.isFullscreen) {

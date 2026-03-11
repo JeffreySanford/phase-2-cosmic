@@ -69,7 +69,7 @@ export class JobsService {
   // few hundred milliseconds, so poll faster during UI development so we
   // can observe the RUNNING state and show the timer.  500ms strikes a
   // reasonable balance between responsiveness and not hammering the API.
-  private _watchPollIntervalMs = 200;  // 5 Hz polling for short-lived simulator jobs
+  private _watchPollIntervalMs = 200; // 5 Hz polling for short-lived simulator jobs
   private _listCache$?: Observable<JobStatus[]>;
 
   listHot(forceReload = false): Observable<Result<JobStatus[]>> {

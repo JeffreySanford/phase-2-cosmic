@@ -1,14 +1,29 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from "@angular/core";
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ChangeDetectorRef,
+  ChangeDetectionStrategy,
+} from "@angular/core";
 import { HttpErrorResponse, HttpClient } from "@angular/common/http";
 import {
   JobsService,
   JobStatus,
   JobSubmitRequest,
+  JobSubmitResponse,
 } from "../../services/jobs.service";
 import { MatDialog } from "@angular/material/dialog";
-import { MatSnackBar } from "@angular/material/snack-bar";
+import { SnackService } from "../../services/snack.service";
 import { forkJoin, from, interval, of, Subject, Subscription } from "rxjs";
-import { catchError, mergeMap, startWith, switchMap, takeUntil, tap, toArray } from "rxjs/operators";
+import {
+  catchError,
+  mergeMap,
+  startWith,
+  switchMap,
+  takeUntil,
+  tap,
+  toArray,
+} from "rxjs/operators";
 import { JobsSubmitDialogComponent } from "./jobs-submit-dialog.component";
 
 type ErrorDetail = { ruleId?: string };
@@ -40,6 +55,9 @@ interface JobProduct {
   templateUrl: "./jobs.component.html",
   styleUrls: ["./jobs.component.scss"],
   standalone: false,
+  // use a proper enum value for OnPush change detection.  the old numeric
+  // literal was a temporary workaround that triggered a compile error.
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JobsComponent implements OnInit, OnDestroy {
   jobs: JobStatus[] = [];
@@ -149,14 +167,16 @@ export class JobsComponent implements OnInit, OnDestroy {
     return this.jobs.filter((j) => !this.TERMINAL_STATUSES.has(j.status));
   }
 
+  trackByJob(index: number, j: JobStatus): string {
+    return j.jobId;
+  }
+
   clearCompleted(): void {
     const toRemove = this.jobs.filter((j) =>
       this.TERMINAL_STATUSES.has(j.status)
     );
     if (!toRemove.length) {
-      this.snackBar.open("No completed jobs to clear", undefined, {
-        duration: 3000,
-      });
+      this.snack.showInfo("No completed jobs to clear", 3000);
       return;
     }
     const deletes$ = forkJoin(
@@ -170,10 +190,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       if (this.selectedJob && removed.has(this.selectedJob.jobId)) {
         this.collapseJob();
       }
-      this.snackBar.open(
+      this.snack.showSuccess(
         `Cleared ${toRemove.length} completed job(s)`,
-        undefined,
-        { duration: 5000 }
+        5000
       );
     });
   }
@@ -190,7 +209,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   // result; otherwise Angular complains (ExpressionChangedAfterItHasBeenChecked)
   currentTime = Date.now();
 
-
   selectedJob: JobStatus | null = null;
   expandedJobId: string | null = null;
   logs: string[] = [];
@@ -206,7 +224,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   constructor(
     private jobsSvc: JobsService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar,
+    private snack: SnackService,
     private http: HttpClient,
     private cd: ChangeDetectorRef
   ) {
@@ -273,10 +291,36 @@ export class JobsComponent implements OnInit, OnDestroy {
       const end = new Date(j.updatedAt).getTime();
       if (isNaN(start) || isNaN(end)) return "";
       const ms = end - start;
-      return `${ms} ms`;
+      return this.formatDuration(ms);
     } catch {
       return "";
     }
+  }
+
+  /**
+   * Utility to format a duration in milliseconds into a human-friendly
+   * string (ms for sub-second, s or mm:ss or hh:mm:ss for longer spans).
+   */
+  private formatDuration(ms: number): string {
+    if (ms < 1000) {
+      return `${ms} ms`;
+    }
+    const totalSeconds = Math.floor(ms / 1000);
+    const remainderMs = ms % 1000;
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
+        .toString()
+        .padStart(2, "0")}`;
+    }
+    if (minutes > 0) {
+      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    }
+    // show tenths of a second for durations under 1 minute
+    const tenths = Math.floor(remainderMs / 100);
+    return `${seconds}.${tenths} s`;
   }
 
   /**
@@ -306,7 +350,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       start = Date.now();
     }
     const ms = this.currentTime - start; // cached clock from elapsed$
-    return `${ms} ms`;
+    return this.formatDuration(ms);
   }
 
   reload() {
@@ -436,51 +480,50 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
     const startTs = Date.now();
-    this.snackBar.open("Submitting 5 sample jobs...", undefined, {
-      duration: 10000,
-    });
+    // the initial "Submitting" toast was clearing other messages; drop it
+    // so that later success/failure messages can stack naturally.
 
     // submit each sample job as an observable stream; this keeps us in the
     // reactive world and allows us to track individual updates rather than
     // waiting on a Promise.all.
     from(this.SAMPLE_JOB_REQUESTS)
       .pipe(
-        mergeMap((req) =>
-          this.jobsSvc.submitJob(req).pipe(
-            tap((created) => {
-              if (created && created.jobId) {
-                const jobId = created.jobId;
-                this.jobsSvc.transition(jobId, "RUNNING").subscribe(() => {
-                  console.log(`Job ${jobId} is now RUNNING (${this.runTime(jobId)})`);
-                });
-                // ensure the clock advances so console output shows a meaningful
-                // elapsed value immediately after the transition
-                this.currentTime = Date.now();
-
-                const jobSub = this.jobsSvc.watchJob(jobId).subscribe((updated) => {
-                  if (updated) {
-                    // debug: print runTime whenever we see a RUNNING state
-                    if (updated.status === 'RUNNING') {
-                      console.log(`tick ${jobId} status=RUNNING elapsed=${this.runTime(jobId)}`);
-                    }
-                    const idx = this.jobs.findIndex((j) => j.jobId === jobId);
-                    if (idx >= 0) {
-                      this.jobs[idx] = updated;
-                    } else {
-                      this.jobs.unshift(updated);
-                    }
-                    if (this.TERMINAL_STATUSES.has(updated.status)) {
-                      jobSub.unsubscribe();
-                    }
-                  }
-                });
-              }
-            }),
-            catchError((e) => {
-              this.error = this.errMsg(e);
-              return of(null);
-            })
-          ),
+        mergeMap(
+          (req) =>
+            this.jobsSvc.submitJob(req).pipe(
+              tap((created) => {
+                if (created && created.jobId) {
+                  const jobId = created.jobId;
+                  this.jobsSvc.transition(jobId, "RUNNING").subscribe(() => {
+                    // no console logging; UI shows runtime via template
+                  });
+                  // ensure the clock advances so runtime display updates
+                  this.currentTime = Date.now();
+                  const jobSub = this.jobsSvc
+                    .watchJob(jobId)
+                    .subscribe((updated) => {
+                      if (updated) {
+                        // runtime displayed in UI; avoid console noise
+                        const idx = this.jobs.findIndex(
+                          (j) => j.jobId === jobId
+                        );
+                        if (idx >= 0) {
+                          this.jobs[idx] = updated;
+                        } else {
+                          this.jobs.unshift(updated);
+                        }
+                        if (this.TERMINAL_STATUSES.has(updated.status)) {
+                          jobSub.unsubscribe();
+                        }
+                      }
+                    });
+                }
+              }),
+              catchError((e) => {
+                this.error = this.errMsg(e);
+                return of(null);
+              })
+            ),
           /* concurrency */ this.SAMPLE_JOB_REQUESTS.length
         ),
         toArray()
@@ -489,13 +532,21 @@ export class JobsComponent implements OnInit, OnDestroy {
         next: (results) => {
           this.loading = false;
           this.jobsSvc.invalidateList();
-          const ok = results.filter((r) => r && (r as any).jobId).length;
+          // results elements may be null or JobSubmitResponse
+          const ok = results.filter(
+            (r): r is JobSubmitResponse =>
+              !!r &&
+              typeof (r as JobSubmitResponse).jobId === "string" &&
+              typeof (r as JobSubmitResponse).status === "string" &&
+              typeof (r as JobSubmitResponse).queuedAt === "string"
+          ).length;
           const failed = results.length - ok;
           const elapsed = Date.now() - startTs;
-          this.snackBar.open(
-            `Submitted ${ok} jobs${failed ? `, ${failed} failed` : ""} in ${elapsed} ms`,
-            undefined,
-            { duration: 10000 }
+          this.snack.showSuccess(
+            `Submitted ${ok} jobs${
+              failed ? `, ${failed} failed` : ""
+            } in ${this.formatDuration(elapsed)}`,
+            10000
           );
         },
         error: () => {
@@ -510,19 +561,14 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.jobsSvc.releaseDeferred().subscribe(
       (res) => {
         this.loading = false;
-        this.snackBar.open(
-          `Released ${res.released} deferred jobs`,
-          undefined,
-          { duration: 10000 }
-        );
+        this.snack.showSuccess(`Released ${res.released} deferred jobs`, 10000);
         this.jobsSvc.invalidateList();
       },
       (err) => {
         this.loading = false;
-        this.snackBar.open(
+        this.snack.showError(
           `Failed to release deferred jobs: ${this.errMsg(err)}`,
-          undefined,
-          { duration: 10000 }
+          10000
         );
       }
     );
@@ -567,7 +613,9 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   isDeferred(job: JobStatus): boolean {
-    if (this.TERMINAL_STATUSES.has(job.status)) return false;
+    // only queued jobs may be deferred; once they start running the flag
+    // is irrelevant and should not be shown in the UI.
+    if (job.status !== "QUEUED") return false;
     const params = job.parameters;
     const deferred = params?.["deferred"];
     return deferred === true || String(deferred).toLowerCase() === "true";
@@ -590,17 +638,14 @@ export class JobsComponent implements OnInit, OnDestroy {
       .updateLineage(selectedJob.jobId, selectedJob.lineage || {})
       .subscribe(
         () => {
-          this.snackBar.open("Lineage saved successfully", undefined, {
-            duration: 10000,
-          });
+          this.snack.showSuccess("Lineage saved successfully", 10000);
           // Invalidate cache to ensure fresh data on next poll
           this.jobsSvc.invalidateJob(selectedJob.jobId);
         },
         (error) => {
-          this.snackBar.open(
+          this.snack.showError(
             "Failed to save lineage: " + error.message,
-            undefined,
-            { duration: 10000 }
+            10000
           );
         }
       );
@@ -642,14 +687,10 @@ export class JobsComponent implements OnInit, OnDestroy {
         // remove from UI list and clear selected
         this.jobs = this.jobs.filter((j) => j.jobId !== id);
         this.collapseJob();
-        this.snackBar.open("Job removed", undefined, { duration: 10000 });
+        this.snack.showSuccess("Job removed", 10000);
       },
       (e) =>
-        this.snackBar.open(
-          `Failed to remove job: ${this.errMsg(e)}`,
-          undefined,
-          { duration: 10000 }
-        )
+        this.snack.showError(`Failed to remove job: ${this.errMsg(e)}`, 10000)
     );
   }
 

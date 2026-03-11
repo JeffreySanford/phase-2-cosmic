@@ -52,11 +52,12 @@ describe("SnackService", () => {
     ).toBe("43px");
   });
 
-  it("opens success, info, and error snackbars with expected config", () => {
+  it("opens success, info, warning and error snackbars with expected config", () => {
     const service = new SnackService(snackBar as unknown as MatSnackBar);
 
     service.showSuccess("saved");
     service.showInfo("info", 1234);
+    service.showWarning("watch out", 5000);
     service.showError("broken");
 
     expect(snackBar.open).toHaveBeenNthCalledWith(1, "saved", undefined, {
@@ -71,11 +72,23 @@ describe("SnackService", () => {
       verticalPosition: "bottom",
       panelClass: ["snack-info", "app-snack"],
     });
-    expect(snackBar.open).toHaveBeenNthCalledWith(3, "broken", undefined, {
+    expect(snackBar.open).toHaveBeenNthCalledWith(3, "watch out", undefined, {
+      duration: 5000,
+      horizontalPosition: "center",
+      verticalPosition: "bottom",
+      panelClass: ["snack-warning", "app-snack"],
+    });
+    expect(snackBar.open).toHaveBeenNthCalledWith(4, "broken", undefined, {
       duration: 10000,
       horizontalPosition: "center",
       verticalPosition: "bottom",
       panelClass: ["snack-error", "app-snack"],
     });
+  });
+
+  it("does not patch MatSnackBar._attach when running under Jest", () => {
+    const sb: any = { open: jest.fn(), _attach: jest.fn() };
+    new SnackService(sb as unknown as MatSnackBar);
+    expect(sb._attach.__stackingPatched).toBeUndefined();
   });
 });

@@ -27,6 +27,8 @@ interface SignalBar {
   label: string;
   value: number;
   tone: "cyan" | "amber" | "mint" | "violet";
+  // optional note string allowing bar-level explanations
+  note?: string;
 }
 
 interface DiagnosticsIndex {
@@ -102,7 +104,9 @@ export class LandingComponent implements OnInit, OnDestroy {
   signalBars: SignalBar[] = [
     { label: "Operational Visibility", value: 24, tone: "cyan" },
     { label: "Governance Coverage", value: 18, tone: "mint" },
-    { label: "Orchestration Readiness", value: 12, tone: "amber" },
+    // semantically this bar measures current job/dispatch load, not a
+    // readiness score; higher values mean more active orchestration work
+    { label: "Orchestration Load", value: 12, tone: "amber" },
     { label: "System Observability", value: 20, tone: "violet" },
   ];
 
@@ -181,12 +185,19 @@ export class LandingComponent implements OnInit, OnDestroy {
       0
     );
 
+    // include topology metrics so we can compute a live governance coverage percentage
+    const topology$ = this.probe<{ links?: Array<{ source?: string }> }>(
+      this.telemetryService.getTopologyMetrics(),
+      { links: [] }
+    );
+
     this.sub.add(
       forkJoin({
         jobs: jobs$,
         datasets: datasets$,
         diagnostics: diagnostics$,
         up: up$,
+        topology: topology$,
       }).subscribe((snapshot) => {
         const activeJobs = snapshot.jobs.value.filter((job) =>
           this.isActiveStatus(String(job.status))
@@ -267,6 +278,41 @@ export class LandingComponent implements OnInit, OnDestroy {
           },
         ];
 
+        // compute live topology percentage based on returned link sources
+        let coveragePercent = 0;
+        let coverageTone: "cyan" | "amber" | "mint" | "violet" = "mint";
+        let coverageNote: string | undefined;
+
+        if (!snapshot.topology.ok) {
+          // topology probe failed; show warning state
+          coverageNote = "Topology metrics unavailable";
+          coverageTone = "amber";
+        } else {
+          // topology payload can be either an array or a map/object
+          const topoLinksRaw = snapshot.topology.value.links || [];
+          let topoLinks: Array<{ source?: string }>;
+          if (Array.isArray(topoLinksRaw)) {
+            topoLinks = topoLinksRaw as Array<{ source?: string }>;
+          } else {
+            topoLinks = Object.values(
+              topoLinksRaw as Record<string, { source?: string }>
+            );
+          }
+
+          if (topoLinks.length === 0) {
+            // service responded but returned no links
+            coverageNote = "No topology links yet";
+            coverageTone = "amber";
+          } else {
+            const liveCount = topoLinks.filter(
+              (l) => l.source === "prometheus" || l.source === "admin"
+            ).length;
+            coveragePercent = this.toPercent(
+              (liveCount / topoLinks.length) * 100
+            );
+          }
+        }
+
         this.signalBars = [
           {
             label: "Operational Visibility",
@@ -275,14 +321,16 @@ export class LandingComponent implements OnInit, OnDestroy {
           },
           {
             label: "Governance Coverage",
-            value: this.toPercent(snapshot.datasets.value.length * 9 + 20),
-            tone: "mint",
+            value: coveragePercent,
+            tone: coverageTone,
+            note: coverageNote,
           },
           {
-            label: "Orchestration Readiness",
-            value: this.toPercent(
-              activeJobs * 12 + (snapshot.jobs.ok ? 36 : 12)
-            ),
+            // see comments above about semantic inversion; the value is a
+            // simple proxy for how many active jobs are in flight rather than
+            // an actual readiness percentage.
+            label: "Orchestration Load",
+            value: this.toPercent(activeJobs * 12),
             tone: "amber",
           },
           {

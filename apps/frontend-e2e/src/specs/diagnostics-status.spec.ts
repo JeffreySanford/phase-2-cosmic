@@ -46,6 +46,22 @@ describe("Diagnostics page", () => {
       },
     }).as("rabbitMQStatus");
 
+    // intercept the SSE broker events stream; send a simple heartbeat and connected
+    cy.intercept(
+      {
+        method: "GET",
+        url: "/api/v1/broker-events",
+      },
+      (req) => {
+        req.reply((res) => {
+          res.setHeader("Content-Type", "text/event-stream");
+          // send a minimal SSE payload: `data: {...}\n\n`
+          res.send('data: {"type":"connected","payload":{}}\n\n');
+          // keep connection open by not ending
+        });
+      }
+    ).as("brokerEvents");
+
     // Visit the diagnostics page
     cy.visit("/diagnostics");
 

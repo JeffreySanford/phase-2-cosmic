@@ -131,35 +131,69 @@
       </div>
     </mat-tab>
 
-    <mat-tab label="Files">
+    <mat-tab label="Live Events">
       <div class="tab-content">
-        <section *ngIf="index" class="files-section">
-          <div class="files-header">
-            <h2>Recent received files</h2>
-            <mat-form-field appearance="outline" class="count-select">
-              <mat-label>Show</mat-label>
-              <mat-select
-                [value]="visibleFileCount"
-                (selectionChange)="setVisibleFileCount($event.value)"
-              >
-                <mat-option *ngFor="let n of fileCountOptions" [value]="n">
-                  {{ n < 0 ? "All" : n }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+        <section class="live-events-section">
+          <h2>Live Events</h2>
+          <div class="tiles-grid">
+            <mat-card class="tile tile-live-events">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>event</mat-icon>
+                  Live Event Stream
+                </div>
+              </div>
+              <div class="tile-body">
+                <div class="live-events-list scrollable">
+                  <ng-container *ngFor="let event of jobEvents">
+                    <div class="event-json">
+                      <span>{{ formatEvent(event) }}</span>
+                    </div>
+                  </ng-container>
+                </div>
+                <p class="muted">Real-time WebSocket events from the broker. Showing {{ jobEvents.length }} events.</p>
+              </div>
+            </mat-card>
+            <mat-card class="tile tile-files" *ngIf="index">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>description</mat-icon>
+                  Recent received files
+                </div>
+              </div>
+              <div class="tile-body">
+                <div class="files-header">
+                  <span>Show:</span>
+                  <select class="count-select" [(ngModel)]="visibleFileCount" (change)="setVisibleFileCount(visibleFileCount)">
+                    <option *ngFor="let count of fileCountOptions" [value]="count">
+                      {{ count < 0 ? 'All' : count }}
+                    </option>
+                  </select>
+                </div>
+                <ul class="recent-files scrollable">
+                  <li *ngFor="let f of visibleFiles">
+                    <span class="badge badge-file" [ngClass]="getFileBadgeClass(f)">{{ getFileType(f) }}</span>
+                    <span class="file-name">{{ f }}</span>
+                  </li>
+                </ul>
+                <p class="muted">
+                  Showing {{ visibleFiles.length }} of {{ sortedFiles.length }} files.
+                </p>
+                <p class="muted">Storage location: {{ index.path }}</p>
+              </div>
+            </mat-card>
+            <mat-card class="tile tile-specs" *ngIf="systemSpecs">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>settings</mat-icon>
+                  system-specs.txt
+                </div>
+              </div>
+              <div class="tile-body">
+                <pre class="specs">{{ systemSpecs }}</pre>
+              </div>
+            </mat-card>
           </div>
-          <ul class="recent-files">
-            <li *ngFor="let f of visibleFiles">{{ f }}</li>
-          </ul>
-          <p class="muted">
-            Showing {{ visibleFiles.length }} of {{ sortedFiles.length }} files.
-          </p>
-          <p class="muted">Storage location: {{ index.path }}</p>
-        </section>
-
-        <section *ngIf="systemSpecs">
-          <h2>system-specs.txt</h2>
-          <pre class="specs">{{ systemSpecs }}</pre>
         </section>
       </div>
     </mat-tab>
@@ -211,14 +245,6 @@
         </section>
       </div>
     </mat-tab>
-    <mat-tab label="Live Events">
-      <div class="tab-content">
-        <section class="live-events-section">
-          <h2>Broker Event Stream</h2>
-          <p class="muted">Real-time WebSocket events from the broker. Last 10 events shown.</p>
-          <app-job-events></app-job-events>
-        </section>
-      </div>
-    </mat-tab>
+    <!-- Live Events tab merged above -->
   </mat-tab-group>
 </div>
