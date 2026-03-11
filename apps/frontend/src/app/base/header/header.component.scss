@@ -62,22 +62,6 @@
   align-items: center;
 }
 
-/* subtle animated accent next to brand */
-.brand .dot {
-  width: 10px;
-  height: 10px;
-  margin-left: 8px;
-  border-radius: 50%;
-  background: linear-gradient(
-    90deg,
-    token(colors, accent-1),
-    token(colors, accent-2)
-  );
-  $brand-mix: color.mix(token(colors, accent-1), token(colors, accent-2), 50%);
-  box-shadow: 0 6px 18px rgba($brand-mix, 0.12);
-  animation: brand-pulse 2.6s ease-in-out infinite;
-}
-
 @keyframes brand-pulse {
   0% {
     transform: scale(1);
@@ -97,6 +81,7 @@
   border: 1px solid rgba(103, 232, 249, 0.28) !important;
   color: token(colors, text) !important;
   font-size: 1.05rem;
+  right: 0.5em;
   cursor: pointer;
   min-width: 44px;
   transition: transform token(transitions, fast) ease,
