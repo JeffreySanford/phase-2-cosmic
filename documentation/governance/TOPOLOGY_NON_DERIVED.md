@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # Topology Non-Derived Plan
 
 ## Purpose
@@ -543,7 +544,9 @@ With this filter behavior in place:
 - [x] Use the filter to inspect which currently visible links are truly `prometheus`-backed.
       Answer: Completed against the current local registry payload. The currently measured links are `data-generator->pulsar`, `pulsar->kafka`, `rabbitmq->java-governance`, `java-governance->rabbitmq`, `java-governance->minio`, and `java-governance->redis`.
 - [x] Use the `Derived` filter to identify which remaining edges still need instrumentation or attribution work.
-      Answer: Completed. The current payload shows `18` derived links and `0` admin links, so the Derived filter would still surface most of the graph. The remaining derived set includes both the three hard-derived edges and many theoretically promotable service paths such as `frontend->backend`, `backend->java-governance`, `backend->prom`, `java-governance->kafka`, `kafka->java-ingest`, and the `array-*->minio` paths.
+      Answer: Completed. The current payload shows `18` derived links and `0` admin links, so the Derived filter would still surface most of the graph. The remaining derived set includes both the three hard-derived edges and many theoretically promotable service paths such as `frontend->backend`, `backend->java-governance`,
+      `backend->prom`,
+      `java-governance->kafka`, `kafka->java-ingest`, and the `array-*->minio` paths.
 - [x] Compare filtered operator observations against `/api/v1/metrics/topology` output.
       Answer: Completed. The local `/api/v1/metrics/topology` and `/api/metrics/topology` payloads currently match, with `24` total links, `6` `prometheus` links, `18` `derived` links, and no `admin` links in the current runtime snapshot.
 - [x] Reassess whether the last three hard-derived links justify additional backend attribution work.
