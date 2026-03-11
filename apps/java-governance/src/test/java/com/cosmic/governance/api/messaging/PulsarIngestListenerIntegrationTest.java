@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 class PulsarIngestListenerIntegrationTest extends AbstractRedisTest {
 
-    @Value("${pulsar.service.url:pulsar://localhost:6650}")
+    @Value("${pulsar.service.url:pulsar://pulsar:6650}")
     private String pulsarServiceUrl;
 
     @Value("${governance.pulsar.ingest.topic:phase2-events}")
@@ -32,6 +32,8 @@ class PulsarIngestListenerIntegrationTest extends AbstractRedisTest {
     @Test
     void validPulsarMessageCreatesJob() throws Exception {
         Assumptions.assumeTrue(isPulsarReachable(pulsarServiceUrl), "Pulsar broker not available for integration test");
+        // Kafka broker URL for Docker network
+        String kafkaBrokerUrl = "kafka:9092";
 
         String requestId = UUID.randomUUID().toString();
         String datasetId = "pulsar-ds-" + UUID.randomUUID().toString().substring(0, 8);

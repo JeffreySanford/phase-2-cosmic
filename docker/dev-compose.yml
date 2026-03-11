@@ -71,20 +71,55 @@ services:
       timeout: 5s
       retries: 5
 
+  bookkeeper:
+    image: apachepulsar/pulsar-all:3.2.4
+    command: ["bin/bookkeeper", "bookie"]
+    environment:
+      - BK_useHostNameAsBookieID=true
+    ports:
+      - "3181:3181"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:3181"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
   pulsar:
     image: apachepulsar/pulsar:3.2.4
     command:
       - /bin/bash
       - -c
       - |
-        P='exposeBundlesMetricsInPrometheus'
-        grep -q "^$${P}=" conf/standalone.conf \
-          && sed -i "s/^$${P}=.*/$${P}=true/" conf/standalone.conf \
-          || echo "$${P}=true" >> conf/standalone.conf
-        bin/pulsar standalone
+        bin/pulsar initialize-cluster-metadata \
+          --cluster pulsar-cluster \
+          --zookeeper zookeeper:2181 \
+          --configuration-store zookeeper:2181 \
+          --web-service-url http://pulsar:8080 \
+          --broker-service-url pulsar://pulsar:6650 || true
+        bin/pulsar broker
+    environment:
+      - PULSAR_MEM=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=512m
+      - PULSAR_PREFIX_brokerServicePort=6650
+      - PULSAR_PREFIX_webServicePort=8080
+      - PULSAR_PREFIX_managedLedgerDefaultEnsembleSize=1
+      - PULSAR_PREFIX_managedLedgerDefaultWriteQuorum=1
+      - PULSAR_PREFIX_managedLedgerDefaultAckQuorum=1
+      - PULSAR_PREFIX_bookkeeperMetadataServiceUri=zk+hierarchical://zookeeper:2181/ledgers
+      - PULSAR_PREFIX_clusterName=pulsar-cluster
+      - PULSAR_CLUSTER_NAME=pulsar-cluster
+    depends_on:
+      - zookeeper
+      - bookkeeper
     ports:
       - "6650:6650"
       - "8085:8080"
+    volumes:
+      - ./broker.conf:/pulsar/conf/broker.conf:ro
     restart: unless-stopped
     healthcheck:
       test:
@@ -101,7 +136,7 @@ services:
     command: server /data
     environment:
       MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: minio123
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_PROMETHEUS_AUTH_TYPE: public
     ports:
       - "9000:9000"
@@ -237,10 +272,11 @@ services:
       - SPRING_RABBITMQ_PORT=5672
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PULSAR_ADMIN_URL=http://pulsar:8080
+      - PULSAR_BROKER_URL=pulsar://pulsar:6650
       - GOVERNANCE_MINIO_ENABLED=true
       - GOVERNANCE_MINIO_ENDPOINT=http://minio:9000
       - GOVERNANCE_MINIO_ACCESS_KEY=minio
-      - GOVERNANCE_MINIO_SECRET_KEY=minio123
+      - GOVERNANCE_MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - GOVERNANCE_MINIO_BUCKET=governance
       - PROMETHEUS_ENDPOINT=prometheus:9090
       - PROMETHEUS_BASEURL=http://prometheus:9090
@@ -338,6 +374,33 @@ services:
       - "-lc"
     command: "./scripts/docker-test-runner.sh"
     restart: "no"
+
+  java-governance-test:
+    image: maven:3.9.4-eclipse-temurin-21
+    working_dir: /workspace
+    volumes:
+      - ../apps/java-governance:/workspace
+      - ../pom-parent.xml:/workspace/pom-parent.xml:ro
+      - ~/.m2:/root/.m2
+    command: mvn -B verify -Pwith-containers
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,kafka
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PULSAR_SERVICE_URL=pulsar://pulsar:6650
+      - PULSAR_ADMIN_URL=http://pulsar:8080
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - USE_HOST_KAFKA=true
+    depends_on:
+      - kafka
+      - pulsar
+      - redis
+      - minio
 
 networks:
   default:
