@@ -154,16 +154,12 @@ describe("DiagnosticsComponent", () => {
     }
     // ensure diagnostics index and docker services also get flushed
     try {
-      httpMock
-        .expectOne("/api/diagnostics")
-        .flush({ path: "/tmp", files: [] });
+      httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
     } catch {
       // ignore absence
     }
     try {
-      httpMock
-        .expectOne("/api/diagnostics/docker-services")
-        .flush([]);
+      httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
     } catch {
       // ignore absence
     }
