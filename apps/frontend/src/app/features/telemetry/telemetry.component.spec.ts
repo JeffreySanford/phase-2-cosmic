@@ -29,7 +29,8 @@ import { TelemetryService } from "../../services/telemetry.service";
 import { LoadProfileService } from "../../services/load-profile.service";
 import { VoService } from "../../services/vo.service";
 import { ActivatedRoute } from "@angular/router";
-import { BehaviorSubject, Observable, of } from "rxjs";
+import { asyncScheduler, BehaviorSubject, Observable, of, scheduled } from "rxjs";
+import { SharedModule } from "../../shared/shared.module";
 
 type TelemetryComponentTestHooks = {
   loadD3: () => Observable<unknown>;
@@ -86,6 +87,7 @@ describe("TelemetryComponent", () => {
         MatTableModule,
         MatProgressSpinnerModule,
         NoopAnimationsModule,
+        SharedModule,
         InfraTabsComponent,
       ],
       declarations: [
@@ -125,7 +127,9 @@ describe("TelemetryComponent", () => {
     httpMock = TestBed.inject(HttpTestingController);
 
     const hooks = component as unknown as TelemetryComponentTestHooks;
-    jest.spyOn(hooks, "loadD3").mockReturnValue(of({}));
+    jest
+      .spyOn(hooks, "loadD3")
+      .mockReturnValue(scheduled([{}], asyncScheduler));
     jest.spyOn(hooks, "initGauge").mockImplementation(() => undefined);
     jest
       .spyOn(hooks, "ensureVizInitialized")
@@ -145,20 +149,24 @@ describe("TelemetryComponent", () => {
     // provide minimal valid snapshot
     component.infrastructureTelemetry = {
       measuredAt: new Date().toISOString(),
-      source: 'prometheus',
+      source: "prometheus",
       services: {
-        redis: { source: 'prometheus' },
-        rabbitmq: { source: 'prometheus' },
-        minio: { source: 'prometheus' },
-        frontendSsr: { source: 'prometheus' },
-        kafka: { source: 'prometheus' },
-        javaIngest: { source: 'prometheus' },
-        pulsar: { source: 'prometheus', brokers: 0, topics: 0, partitions: 0 },
+        redis: { source: "prometheus" },
+        rabbitmq: { source: "prometheus" },
+        minio: { source: "prometheus" },
+        nginx: { source: "prometheus" },
+        frontendSsr: { source: "prometheus" },
+        kafka: { source: "prometheus" },
+        javaIngest: { source: "prometheus" },
+        grafana: { source: "prometheus" },
+        loki: { source: "prometheus" },
+        alertmanager: { source: "prometheus" },
+        pulsar: { source: "prometheus", brokers: 0, topics: 0, partitions: 0 },
       },
     } as any;
     fixture.detectChanges();
 
-    const infraDebug = fixture.debugElement.query(By.css('app-infra-tabs'));
+    const infraDebug = fixture.debugElement.query(By.css("app-infra-tabs"));
     expect(infraDebug).toBeTruthy();
   });
 

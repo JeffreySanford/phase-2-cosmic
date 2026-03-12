@@ -9,6 +9,7 @@ import { DatasetsService } from "../../services/datasets.service";
 import { JobsService } from "../../services/jobs.service";
 import { TelemetryService } from "../../services/telemetry.service";
 import { LandingComponent } from "./landing.component";
+import { SharedModule } from "../../shared/shared.module";
 
 class StubSidebar {
   collapsed$ = new BehaviorSubject(false);
@@ -73,7 +74,12 @@ describe("LandingComponent", () => {
     sidebar = new StubSidebar();
 
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule, MatTabsModule, NoopAnimationsModule],
+      imports: [
+        RouterTestingModule,
+        MatTabsModule,
+        NoopAnimationsModule,
+        SharedModule,
+      ],
       declarations: [LandingComponent],
       providers: [
         { provide: SidebarService, useValue: sidebar },

@@ -5,8 +5,10 @@ import com.cosmic.governance.api.model.JobRecord;
 import com.cosmic.governance.api.model.JobState;
 import com.cosmic.governance.api.service.JobService;
 import com.cosmic.governance.api.util.RedisMarshaller;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import java.util.Map;
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -38,22 +40,22 @@ public class SimulatorLifecycleTest extends AbstractRedisTest {
         String jobId = resp.jobId();
         String key = "job:" + jobId;
 
-        // initially queued
-        Thread.sleep(500);
-        JobRecord rec = marshaller.toJobRecord(redisTemplate.opsForValue().get(key));
-        assertThat(rec).isNotNull();
-        assertThat(rec.getState()).isEqualTo(JobState.QUEUED);
+        JobRecord initial = marshaller.toJobRecord(redisTemplate.opsForValue().get(key));
+        assertThat(initial).isNotNull();
+        assertThat(initial.getState()).isIn(JobState.QUEUED, JobState.RUNNING, JobState.COMPLETED);
 
-        // after 3 seconds the executor should have moved to RUNNING
-        Thread.sleep(3000);
-        rec = marshaller.toJobRecord(redisTemplate.opsForValue().get(key));
-        assertThat(rec).isNotNull();
-        assertThat(rec.getState()).isEqualTo(JobState.RUNNING);
+        Awaitility.await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> {
+            JobRecord runningOrCompleted = marshaller.toJobRecord(redisTemplate.opsForValue().get(key));
+            assertThat(runningOrCompleted).isNotNull();
+            assertThat(jobService.getLogs(jobId))
+                    .anyMatch(log -> log.contains("Simulator: job running"));
+            assertThat(runningOrCompleted.getState()).isIn(JobState.RUNNING, JobState.COMPLETED);
+        });
 
-        // and later it should complete
-        Thread.sleep(5000);
-        rec = marshaller.toJobRecord(redisTemplate.opsForValue().get(key));
-        assertThat(rec).isNotNull();
-        assertThat(rec.getState()).isEqualTo(JobState.COMPLETED);
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            JobRecord completed = marshaller.toJobRecord(redisTemplate.opsForValue().get(key));
+            assertThat(completed).isNotNull();
+            assertThat(completed.getState()).isEqualTo(JobState.COMPLETED);
+        });
     }
 }

@@ -54,7 +54,7 @@ class GovernanceControllerTest extends AbstractRedisTest {
                   "workflow": "casa-imaging",
                   "datasetId": "VLASS_J1347+1217",
                   "lineage": {"parentJobId":"orig-1"},
-                  "parameters": {"weighting": "briggs"},
+                  "parameters": {"weighting": "briggs", "deferred": true},
                   "requestedBy": "integration-test"
                 }
                 """;
@@ -215,7 +215,7 @@ class GovernanceControllerTest extends AbstractRedisTest {
                 {
                   "workflow": "foo",
                   "datasetId": "ds",
-                  "parameters": {},
+                  "parameters": {"deferred": true},
                   "requestedBy": "u"
                 }
                 """;
@@ -283,7 +283,7 @@ class GovernanceControllerTest extends AbstractRedisTest {
     @Test
     void transitionInvalidStateReturnsBadRequest() throws Exception {
         String body = """
-                {"workflow":"x","datasetId":"y","parameters":{},"requestedBy":"u"}
+                {"workflow":"x","datasetId":"y","parameters":{"deferred":true},"requestedBy":"u"}
                 """;
         String r = mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isAccepted())

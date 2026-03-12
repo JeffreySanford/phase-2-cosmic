@@ -55,7 +55,13 @@ public class KafkaIngestListenerIntegrationTest {
     @DynamicPropertySource
     static void registerKafkaProps(DynamicPropertyRegistry registry) {
         if ("true".equalsIgnoreCase(System.getenv("USE_HOST_KAFKA")) || kafka == null) {
-            String hostBootstrap = System.getenv().getOrDefault("HOST_KAFKA_BOOTSTRAP", "localhost:9092");
+            String hostBootstrap = System.getenv().getOrDefault(
+                    "SPRING_KAFKA_BOOTSTRAP_SERVERS",
+                    System.getenv().getOrDefault(
+                            "KAFKA_BOOTSTRAP_SERVERS",
+                            System.getenv().getOrDefault("HOST_KAFKA_BOOTSTRAP", "localhost:9092")
+                    )
+            );
             registry.add("spring.kafka.bootstrap-servers", () -> hostBootstrap);
         } else {
             registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
@@ -72,7 +78,15 @@ public class KafkaIngestListenerIntegrationTest {
     private KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry;
 
     private static String resolveBootstrapServers() {
-        return (kafka != null) ? kafka.getBootstrapServers() : System.getenv().getOrDefault("HOST_KAFKA_BOOTSTRAP", "localhost:9092");
+        return (kafka != null)
+                ? kafka.getBootstrapServers()
+                : System.getenv().getOrDefault(
+                        "SPRING_KAFKA_BOOTSTRAP_SERVERS",
+                        System.getenv().getOrDefault(
+                                "KAFKA_BOOTSTRAP_SERVERS",
+                                System.getenv().getOrDefault("HOST_KAFKA_BOOTSTRAP", "localhost:9092")
+                        )
+                );
     }
 
     private static boolean isKafkaReachable(String bootstrapServers) {

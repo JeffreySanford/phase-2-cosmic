@@ -38,7 +38,13 @@ public abstract class TestcontainersConfig {
         if (KAFKA != null && KAFKA.isRunning()) {
             return KAFKA.getBootstrapServers();
         }
-        return System.getenv().getOrDefault("HOST_KAFKA_BOOTSTRAP", "localhost:9092");
+        return System.getenv().getOrDefault(
+                "SPRING_KAFKA_BOOTSTRAP_SERVERS",
+                System.getenv().getOrDefault(
+                        "KAFKA_BOOTSTRAP_SERVERS",
+                        System.getenv().getOrDefault("HOST_KAFKA_BOOTSTRAP", "localhost:9092")
+                )
+        );
     }
 
     protected static String getRedisHost() {

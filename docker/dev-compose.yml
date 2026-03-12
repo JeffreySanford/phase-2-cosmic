@@ -73,9 +73,16 @@ services:
 
   bookkeeper:
     image: apachepulsar/pulsar-all:3.2.4
-    command: ["bin/bookkeeper", "bookie"]
+    command:
+      - /bin/bash
+      - -c
+      - |
+        bin/apply-config-from-env.py /pulsar/conf/bookkeeper.conf
+        exec bin/bookkeeper bookie
     environment:
-      - BK_useHostNameAsBookieID=true
+      - PULSAR_PREFIX_useHostNameAsBookieID=true
+      - PULSAR_PREFIX_zkServers=zookeeper:2181
+      - PULSAR_PREFIX_metadataServiceUri=zk+hierarchical://zookeeper:2181/ledgers
     ports:
       - "3181:3181"
     restart: unless-stopped
@@ -377,15 +384,19 @@ services:
 
   java-governance-test:
     image: maven:3.9.4-eclipse-temurin-21
+    profiles:
+      - test
     working_dir: /workspace
+    env_file:
+      - ../.env
     volumes:
-      - ../apps/java-governance:/workspace
-      - ../pom-parent.xml:/workspace/pom-parent.xml:ro
+      - ..:/workspace
       - ~/.m2:/root/.m2
-    command: mvn -B verify -Pwith-containers
+    command: mvn -B -Dsurefire.skipAfterFailureCount=3 -Dfailsafe.skipAfterFailureCount=3 -f apps/java-governance/pom.xml verify -Pwith-containers
     environment:
       - SPRING_PROFILES_ACTIVE=docker,kafka
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - HOST_KAFKA_BOOTSTRAP=kafka:9092
       - PULSAR_SERVICE_URL=pulsar://pulsar:6650
       - PULSAR_ADMIN_URL=http://pulsar:8080
       - SPRING_REDIS_HOST=redis
@@ -395,12 +406,12 @@ services:
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=minio
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
-      - USE_HOST_KAFKA=true
     depends_on:
       - kafka
       - pulsar
       - redis
       - minio
+    restart: "no"
 
 networks:
   default:

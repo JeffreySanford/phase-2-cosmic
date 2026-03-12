@@ -15,6 +15,7 @@ import { MatTabsModule } from "@angular/material/tabs";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { TopologyComponent } from "./topology.component";
 import { PageStateModule } from "../../shared/page-state/page-state.module";
+import { SharedModule } from "../../shared/shared.module";
 import { DataSourceService } from "../../services/data-source.service";
 import { LoadProfileService } from "../../services/load-profile.service";
 import { MockDataService } from "../../services/mock-data.service";
@@ -37,6 +38,7 @@ describe("TopologyComponent", () => {
         HttpClientTestingModule,
         FormsModule,
         PageStateModule,
+        SharedModule,
         MatTabsModule,
         NoopAnimationsModule,
         DisclaimerBannerStubComponent,
@@ -109,6 +111,7 @@ describe("TopologyComponent", () => {
     tick();
     component["stopLivePoll"]();
     fixture.detectChanges();
+    tick(1000);
   }
 
   it("should create", fakeAsync(() => {
@@ -119,6 +122,7 @@ describe("TopologyComponent", () => {
     // stop live polling to avoid leftover timers
     component["stopLivePoll"]();
     fixture.detectChanges();
+    tick(1000);
     expect(component).toBeTruthy();
     expect(component.timingDriftNs).toBe(0);
     expect(component.rfiEventRate).toBe(0);
