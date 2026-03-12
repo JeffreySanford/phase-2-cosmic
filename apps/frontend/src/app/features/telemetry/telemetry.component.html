@@ -33,12 +33,12 @@
           </mat-form-field>
         </div>
 
-        <p>Current: <strong>{{ formatCurrentValue(currentValue) }}</strong></p>
+        <p>Current: <strong>{{ formatCurrentValue((currentValue$ | async) ?? 0) }}</strong></p>
         <div class="stats">
           <mat-card class="stat-card">
             <mat-card-title>Current Value</mat-card-title>
             <mat-card-content>
-              <div class="big">{{ formatCurrentValue(currentValue) }}</div>
+              <div class="big">{{ formatCurrentValue((currentValue$ | async) ?? 0) }}</div>
             </mat-card-content>
           </mat-card>
           <mat-card class="stat-card">
@@ -60,7 +60,12 @@
         </div>
         <div class="controls-row">
           <button mat-stroked-button color="primary" (click)="exportCsv()">Export CSV</button>
-          <span class="last-updated">Last: {{ lastUpdated ? (lastUpdated | date:'medium') : 'n/a' }}</span>
+          <span class="last-updated">
+            Last: <ng-container *ngIf="lastUpdated$ | async as lu; else naTpl">
+              {{ lu | date:'medium' }}
+            </ng-container>
+            <ng-template #naTpl>n/a</ng-template>
+          </span>
         </div>
 
         <!-- pulsar / rabbit status: collapsible overview tiles -->

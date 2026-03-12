@@ -122,9 +122,18 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   metric$ = new BehaviorSubject<string>(this.metricOptions[0].id);
 
-  currentValue = 0;
+  // Current metric values exposed via subjects to avoid expression-changed errors
+  currentValue$ = new BehaviorSubject<number>(0);
+  get currentValue(): number {
+    return this.currentValue$.value;
+  }
+
   currentRate = 0; // in units per second (matches metric units, e.g., bytes/sec)
-  currentRateHuman = "0 B/s";
+
+  currentRateHuman$ = new BehaviorSubject<string>("0 B/s");
+  get currentRateHuman(): string {
+    return this.currentRateHuman$.value;
+  }
   points: Array<{ t: number; v: number }> = [];
 
   // prototype status data for Pulsar component -- wrapped in subjects to avoid
@@ -159,7 +168,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.infrastructureTelemetry$.next(v);
   }
 
-  private readonly lastUpdated$ = new BehaviorSubject<number | null>(null);
+  public readonly lastUpdated$ = new BehaviorSubject<number | null>(null);
   get lastUpdated(): number | null {
     return this.lastUpdated$.value;
   }
@@ -310,7 +319,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         .queryInstant(selectedMetric.instantQuery)
         .subscribe((val: unknown) =>
           this.deferUiUpdate(() => {
-            this.currentValue = Number(val as unknown as number);
+            this.currentValue$.next(Number(val as unknown as number));
           })
         );
     } else {
@@ -344,7 +353,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         this.currentRate = this.points.length
           ? this.points[this.points.length - 1].v
           : 0;
-        this.currentRateHuman = this.humanRate(this.currentRate);
+        this.currentRateHuman$.next(this.humanRate(this.currentRate));
         this.lastUpdated$.next(Date.now());
         this.computeStats(this.points.map((p) => p.v));
         const ma = this.points.map((p, i, arr) => {
@@ -383,9 +392,9 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
           t: v[0] * 1000,
           v: Number(v[1]),
         }));
-        this.currentValue = this.points.length
-          ? this.points[this.points.length - 1].v
-          : 0;
+        this.currentValue$.next(
+          this.points.length ? this.points[this.points.length - 1].v : 0
+        );
         this.lastUpdated$.next(Date.now());
         this.computeStats(this.points.map((p) => p.v));
         const ma = this.points.map((p, i, arr) => {
@@ -401,7 +410,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         this.renderHistogram(this.points.map((p) => p.v));
         if (this.getSelectedMetric().kind === "gauge") {
           this.currentRate = this.currentValue;
-          this.currentRateHuman = this.humanRate(this.currentRate);
+          this.currentRateHuman$.next(this.humanRate(this.currentRate));
           const nextCap = Math.max(
             1,
             Number(this.stats.p95) * 1.15,
@@ -777,7 +786,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   private computeRate(points: Array<{ t: number; v: number }>) {
     if (!points || points.length < 2) {
       this.currentRate = 0;
-      this.currentRateHuman = this.humanRate(0);
+      this.currentRateHuman$.next(this.humanRate(0));
       return;
     }
     // compute per-interval rates (v delta / seconds)
@@ -801,7 +810,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       const sum = slice.reduce((s, x) => s + x, 0);
       this.currentRate = sum / slice.length;
     }
-    this.currentRateHuman = this.humanRate(this.currentRate);
+    this.currentRateHuman$.next(this.humanRate(this.currentRate));
   }
 
   private humanRate(v: number) {
