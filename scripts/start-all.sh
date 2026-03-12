@@ -124,37 +124,94 @@ fi
 
 log "[start-all] Compose started. Launching local dev servers (SSR + frontend dev server)."
 export FRONTEND_PORT=${FRONTEND_PORT:-4000}
+export ALLOCATOR_PORT=${ALLOCATOR_PORT:-7777}
 
-CONCURRENTLY_JS="$REPO_ROOT/node_modules/concurrently/dist/bin/concurrently.js"
-export NODE_PATH="$REPO_ROOT/node_modules${NODE_PATH:+;$NODE_PATH}"
 if command -v cygpath >/dev/null 2>&1; then
 	WIN_REPO_ROOT="$(cygpath -w "$REPO_ROOT")"
 else
 	WIN_REPO_ROOT="$REPO_ROOT"
 fi
 
-# Kill any stale process already bound to the SSR port (e.g. a leftover tsx
-# --watch instance from a previous run) so the new server can bind cleanly.
-if command -v powershell.exe &>/dev/null; then
-	_ssr_pid=$(powershell.exe -NoProfile -Command "
-		(Get-NetTCPConnection -LocalPort $FRONTEND_PORT -State Listen -ErrorAction SilentlyContinue).OwningProcess |
-		Where-Object { \$_ -match '^\d+$' } | Select-Object -First 1" 2>/dev/null | tr -d '[:space:]')
-	if [ -n "$_ssr_pid" ]; then
-		log "[start-all] Killing stale PID $_ssr_pid on port $FRONTEND_PORT"
-		powershell.exe -NoProfile -Command "Stop-Process -Id $_ssr_pid -Force" 2>/dev/null || true
-	fi
-else
-	_ssr_pid=$(lsof -ti tcp:"$FRONTEND_PORT" 2>/dev/null || fuser "$FRONTEND_PORT/tcp" 2>/dev/null)
-	if [ -n "$_ssr_pid" ]; then
-		log "[start-all] Killing stale PID $_ssr_pid on port $FRONTEND_PORT"
-		kill -9 "$_ssr_pid" 2>/dev/null || true
-	fi
+log "[start-all] verifying local dev CLIs"
+if [ ! -f "$REPO_ROOT/node_modules/tsx/dist/cli.mjs" ] || [ ! -f "$REPO_ROOT/node_modules/nx/bin/nx.js" ]; then
+	log "[start-all] Missing local dev dependencies or CLI resolution failed. Run 'pnpm install' in $REPO_ROOT and retry."
+	exit 1
 fi
 
-# also launch the allocator simulator so it’s always available
-node "$CONCURRENTLY_JS" --kill-others-on-fail \
-  "powershell.exe -NoProfile -Command \"Set-Location '$WIN_REPO_ROOT'; node ./tools/trident-allocator/server.js\"" \
-  "powershell.exe -NoProfile -Command \"Set-Location '$WIN_REPO_ROOT'; node .\\node_modules\\tsx\\dist\\cli.mjs --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts\"" \
-  "cmd.exe /d /s /c \"cd /d $WIN_REPO_ROOT && set NX_DAEMON=false&& pnpm nx serve frontend\"" 2>&1 | tee -a "$LOG_FILE"
+# NODE_PATH manipulation caused modules to fail resolving (see issue with concurrently requiring rxjs).
+# Node's default resolution already locates packages under the repo root, so
+# we don't need to set NODE_PATH here. Removing avoids "Cannot find module 'rxjs'"
+# errors when the dev servers start.
+# export NODE_PATH="$REPO_ROOT/node_modules${NODE_PATH:+;$NODE_PATH}"
 
-log "[start-all] finished"
+kill_stale_port_listener() {
+	local port="$1"
+	local label="$2"
+	local pid=""
+	if command -v powershell.exe &>/dev/null; then
+		pid=$(powershell.exe -NoProfile -Command "
+			(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue).OwningProcess |
+			Where-Object { \$_ -match '^\d+$' } | Select-Object -First 1" 2>/dev/null | tr -d '[:space:]')
+		if [ -n "$pid" ]; then
+			log "[start-all] Killing stale PID $pid on $label port $port"
+			powershell.exe -NoProfile -Command "Stop-Process -Id $pid -Force" 2>/dev/null || true
+		fi
+	else
+		pid=$(lsof -ti tcp:"$port" 2>/dev/null || fuser "$port/tcp" 2>/dev/null)
+		if [ -n "$pid" ]; then
+			log "[start-all] Killing stale PID $pid on $label port $port"
+			kill -9 "$pid" 2>/dev/null || true
+		fi
+	fi
+}
+
+kill_stale_port_listener "$FRONTEND_PORT" "SSR"
+kill_stale_port_listener "$ALLOCATOR_PORT" "allocator"
+
+log "[start-all] launching dev servers"
+sanitize_windows_env() {
+	env -u PWD -u MSYSTEM -u SHELL -u TERM -u TMPDIR "$@"
+}
+
+PIDS=()
+LABELS=()
+
+start_bg() {
+	local label="$1"
+	shift
+	"$@" &
+	local pid=$!
+	PIDS+=("$pid")
+	LABELS+=("$label")
+}
+
+stop_bg_jobs() {
+	local pid
+	for pid in "${PIDS[@]:-}"; do
+		if kill -0 "$pid" 2>/dev/null; then
+			kill "$pid" 2>/dev/null || true
+		fi
+	done
+}
+
+trap 'stop_bg_jobs' EXIT INT TERM
+
+start_bg "allocator" node "$REPO_ROOT/tools/trident-allocator/server.js"
+start_bg "ssr" sanitize_windows_env powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; node '.\\node_modules\\tsx\\dist\\cli.mjs' --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts"
+start_bg "frontend" sanitize_windows_env powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; Set-Item Env:NX_DAEMON false; pnpm nx serve frontend"
+
+while true; do
+	for i in "${!PIDS[@]}"; do
+		pid="${PIDS[$i]}"
+		if ! kill -0 "$pid" 2>/dev/null; then
+			wait "$pid"
+			exit_code=$?
+			log "[start-all] ${LABELS[$i]} exited with code ${exit_code}"
+			stop_bg_jobs
+			exit "$exit_code"
+		fi
+	done
+	sleep 1
+done
+
+log "[start-all] dev servers stopped"

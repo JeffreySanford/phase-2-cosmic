@@ -1,6 +1,6 @@
 export default {
   displayName: "frontend",
-  preset: "../../jest.preset.js",
+  preset: "<rootDir>/../../jest.preset.js",
   setupFilesAfterEnv: ["<rootDir>/src/test-setup.ts"],
   transform: {
     "^.+\\.(ts|mjs|js|html)$": [
