@@ -1,20 +1,20 @@
+import { createCjsPreset } from "jest-preset-angular/presets";
+
+const nxPreset = require("../../jest.preset.js");
+
 export default {
+  ...nxPreset,
+  ...createCjsPreset({
+    diagnostics: false,
+    tsconfig: "<rootDir>/libs/ui-theme/tsconfig.spec.json",
+  }),
+  rootDir: "../..",
   displayName: "ui-theme",
-  preset: "../../jest.preset.js",
-  setupFilesAfterEnv: ["<rootDir>/src/test-setup.ts"],
-  transform: {
-    "^.+\\.(ts|mjs|js|html)$": [
-      "jest-preset-angular",
-      {
-        tsconfig: "<rootDir>/tsconfig.spec.json",
-        stringifyContentPathRegex: "\\.(html|svg)$",
-      },
-    ],
+  modulePaths: ["<rootDir>/node_modules"],
+  moduleNameMapper: {
+    "^source-map$": "<rootDir>/node_modules/source-map/source-map.js",
   },
-  transformIgnorePatterns: ["node_modules/(?!.*\\.mjs$)"],
-  snapshotSerializers: [
-    "jest-preset-angular/build/serializers/no-ng-attributes",
-    "jest-preset-angular/build/serializers/ng-snapshot",
-    "jest-preset-angular/build/serializers/html-comment",
-  ],
+  roots: ["<rootDir>/libs/ui-theme/src"],
+  setupFilesAfterEnv: ["<rootDir>/libs/ui-theme/src/test-setup.ts"],
+  testMatch: ["<rootDir>/libs/ui-theme/src/**/*.spec.ts"],
 };

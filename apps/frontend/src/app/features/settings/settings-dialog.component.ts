@@ -1,4 +1,4 @@
-import { Component } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { FormBuilder, Validators } from "@angular/forms";
 import { MatDialogRef } from "@angular/material/dialog";
 import { SettingsService } from "./settings.service";
@@ -11,13 +11,14 @@ import { DEFAULT_USER_SETTINGS, UserSettings } from "./settings.model";
   standalone: false,
 })
 export class SettingsDialogComponent {
+  private readonly fb = inject(FormBuilder);
+  private readonly settings = inject(SettingsService);
+  private readonly dialogRef =
+    inject<MatDialogRef<SettingsDialogComponent>>(MatDialogRef);
+
   readonly form;
 
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly settings: SettingsService,
-    private readonly dialogRef: MatDialogRef<SettingsDialogComponent>
-  ) {
+  constructor() {
     this.form = this.fb.group({
       displayName: [
         this.settings.current.profile.displayName,

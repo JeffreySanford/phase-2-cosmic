@@ -1,7 +1,8 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, OnDestroy, OnInit, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
+import { BehaviorSubject } from "rxjs";
 
 interface TimePoint {
   t: number;
@@ -15,9 +16,22 @@ interface TimePoint {
   standalone: false,
 })
 export class VisualizationComponent implements OnInit, OnDestroy {
-  throughput = 0;
-  errorRate = 0;
-  queueDepth = 0;
+  private http = inject(HttpClient);
+  private dataSource = inject(DataSourceService);
+  private mock = inject(MockDataService);
+
+  readonly throughput$ = new BehaviorSubject<number>(0);
+  get throughput(): number {
+    return this.throughput$.value;
+  }
+  readonly errorRate$ = new BehaviorSubject<number>(0);
+  get errorRate(): number {
+    return this.errorRate$.value;
+  }
+  readonly queueDepth$ = new BehaviorSubject<number>(0);
+  get queueDepth(): number {
+    return this.queueDepth$.value;
+  }
 
   sparklineData: TimePoint[] = [];
   queueSeriesData: TimePoint[] = [];
@@ -25,6 +39,12 @@ export class VisualizationComponent implements OnInit, OnDestroy {
   scatterData: Array<{ x: number; y: number }> = [];
 
   private liveTimer?: number;
+
+  private deferUiUpdate(task: () => void): void {
+    setTimeout(task, 0);
+  }
+
+  // need BehaviorSubject import
   readonly Math = Math;
 
   // Hover state for small and big sparklines
@@ -33,12 +53,6 @@ export class VisualizationComponent implements OnInit, OnDestroy {
 
   hoverLabelBig?: string;
   hoverPosBig?: { left: number; top: number } | null = null;
-
-  constructor(
-    private http: HttpClient,
-    private dataSource: DataSourceService,
-    private mock: MockDataService
-  ) {}
 
   ngOnInit(): void {
     // fetch once and then poll — fall back to local synthetic data on error
@@ -73,8 +87,12 @@ export class VisualizationComponent implements OnInit, OnDestroy {
   recomputeAggregates() {
     const last = this.sparklineData[this.sparklineData.length - 1];
     const lastQueue = this.queueSeriesData[this.queueSeriesData.length - 1];
-    this.throughput = last ? Math.round(last.v * 10) / 10 : 0;
-    this.queueDepth = lastQueue ? Math.max(0, Math.round(lastQueue.v)) : 0;
+    this.deferUiUpdate(() => {
+      this.throughput$.next(last ? Math.round(last.v * 10) / 10 : 0);
+      this.queueDepth$.next(
+        lastQueue ? Math.max(0, Math.round(lastQueue.v)) : 0
+      );
+    });
   }
 
   get sparklinePointsSmall(): string {
@@ -146,9 +164,11 @@ export class VisualizationComponent implements OnInit, OnDestroy {
           if (!this.sparklineData.length) this.resetData();
           return;
         }
-        this.throughput = +body.throughput;
-        this.errorRate = +body.errorRate;
-        this.queueDepth = +body.queueDepth;
+        this.deferUiUpdate(() => {
+          this.throughput$.next(+body.throughput);
+          this.errorRate$.next(+body.errorRate);
+          this.queueDepth$.next(+body.queueDepth);
+        });
         this.sparklineData = body.sparkline.map((p) => ({ t: +p.t, v: +p.v }));
         this.queueSeriesData = (body.queueSeries || []).map((p) => ({
           t: +p.t,
@@ -195,9 +215,12 @@ export class VisualizationComponent implements OnInit, OnDestroy {
           }
 
           // map expected fields
-          if (body.throughput !== undefined) this.throughput = +body.throughput;
-          if (body.errorRate !== undefined) this.errorRate = +body.errorRate;
-          if (body.queueDepth !== undefined) this.queueDepth = +body.queueDepth;
+          if (body.throughput !== undefined)
+            this.throughput$.next(+body.throughput);
+          if (body.errorRate !== undefined)
+            this.errorRate$.next(+body.errorRate);
+          if (body.queueDepth !== undefined)
+            this.queueDepth$.next(+body.queueDepth);
 
           if (Array.isArray(body.sparkline)) {
             this.sparklineData = body.sparkline.map((p) => ({

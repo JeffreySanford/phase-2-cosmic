@@ -1,9 +1,15 @@
+import { DOCUMENT, isPlatformBrowser } from "@angular/common";
 import {
   AfterViewInit,
   Component,
   ElementRef,
   NgZone,
   OnDestroy,
+  PLATFORM_ID,
+  Renderer2,
+  RendererStyleFlags2,
+  ViewChild,
+  inject,
 } from "@angular/core";
 import { NavigationEnd, Router } from "@angular/router";
 import {
@@ -24,6 +30,17 @@ import { filter, Subscription } from "rxjs";
   standalone: false,
 })
 export class FooterComponent implements AfterViewInit, OnDestroy {
+  private loadProfile = inject(LoadProfileService);
+  private readonly zone = inject(NgZone);
+  private readonly dataSource = inject(DataSourceService);
+  private readonly router = inject(Router);
+  private readonly renderer = inject(Renderer2);
+  private readonly document = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
+
+  @ViewChild("footerEl", { static: true })
+  private footerRef?: ElementRef<HTMLElement>;
+
   readonly profileOptions: Array<{
     value: LoadProfilePct;
     label: string;
@@ -36,17 +53,11 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
   ];
 
   private resizeObserver?: ResizeObserver;
-  private readonly onWindowResize = () => this.updateFooterHeightVar();
+  private removeWindowResizeListener?: () => void;
   private routerSub?: Subscription;
   private currentUrl = "";
 
-  constructor(
-    private loadProfile: LoadProfileService,
-    private readonly el: ElementRef<HTMLElement>,
-    private readonly zone: NgZone,
-    private readonly dataSource: DataSourceService,
-    private readonly router: Router
-  ) {
+  constructor() {
     this.currentUrl = this.router.url || "";
     this.routerSub = this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -69,18 +80,23 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.updateFooterHeightVar();
-    if (typeof window === "undefined") {
+    if (!isPlatformBrowser(this.platformId)) {
       return;
     }
 
-    window.addEventListener("resize", this.onWindowResize);
-    const footer = this.findFooterElement();
-    if (!footer || typeof ResizeObserver === "undefined") {
+    this.removeWindowResizeListener = this.renderer.listen(
+      "window",
+      "resize",
+      () => this.updateFooterHeightVar()
+    );
+    const footer = this.footerRef?.nativeElement;
+    const ResizeObserverCtor = this.document.defaultView?.ResizeObserver;
+    if (!footer || !ResizeObserverCtor) {
       return;
     }
 
     this.zone.runOutsideAngular(() => {
-      this.resizeObserver = new ResizeObserver(() =>
+      this.resizeObserver = new ResizeObserverCtor(() =>
         this.updateFooterHeightVar()
       );
       this.resizeObserver.observe(footer);
@@ -88,9 +104,7 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (typeof window !== "undefined") {
-      window.removeEventListener("resize", this.onWindowResize);
-    }
+    this.removeWindowResizeListener?.();
     this.resizeObserver?.disconnect();
     this.routerSub?.unsubscribe();
   }
@@ -117,21 +131,20 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
     return this.currentUrl.startsWith("/topology");
   }
 
-  private findFooterElement(): HTMLElement | null {
-    return this.el.nativeElement.querySelector("footer.app-footer");
-  }
-
   private updateFooterHeightVar(): void {
-    if (typeof document === "undefined") {
+    const root = this.document?.documentElement;
+    if (!root) {
       return;
     }
-    const footer = this.findFooterElement();
+    const footer = this.footerRef?.nativeElement;
     const height = footer
       ? Math.ceil(footer.getBoundingClientRect().height)
       : 0;
-    document.documentElement.style.setProperty(
+    this.renderer.setStyle(
+      root,
       "--app-footer-height",
-      `${height}px`
+      `${height}px`,
+      RendererStyleFlags2.DashCase
     );
   }
 }

@@ -90,6 +90,9 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify Nx dependency graph
+        run: bash scripts/check-dep-graph.sh
+
       - name: Build frontend
         run: pnpm nx run frontend:build
 

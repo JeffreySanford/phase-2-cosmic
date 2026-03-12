@@ -1,4 +1,4 @@
-import { Component, Input } from "@angular/core";
+import { Component, Input, inject } from "@angular/core";
 import {
   DataMode,
   DataSourceService,
@@ -24,6 +24,8 @@ export type DisclaimerType = "modeling" | "demo" | "development" | "simulation";
   standalone: false,
 })
 export class DisclaimerBannerComponent {
+  private readonly dataSource = inject(DataSourceService);
+
   @Input() type: DisclaimerType = "modeling";
   @Input() message?: string;
   @Input() dismissible = true;
@@ -31,8 +33,6 @@ export class DisclaimerBannerComponent {
   @Input() requireMockMode?: boolean;
 
   dismissed = false;
-
-  constructor(private readonly dataSource: DataSourceService) {}
 
   get defaultMessage(): string {
     switch (this.type) {

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from "@angular/core";
+import { Component, EventEmitter, Output, inject } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { Router } from "@angular/router";
 import { SettingsDialogComponent } from "../../features/settings/settings-dialog.component";
@@ -10,12 +10,10 @@ import { SettingsDialogComponent } from "../../features/settings/settings-dialog
   standalone: false,
 })
 export class HeaderComponent {
-  @Output() toggleSidebar = new EventEmitter<void>();
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
 
-  constructor(
-    private readonly dialog: MatDialog,
-    private readonly router: Router
-  ) {}
+  @Output() toggleSidebar = new EventEmitter<void>();
 
   onToggleSidebar(): void {
     this.toggleSidebar.emit();

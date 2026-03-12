@@ -1,10 +1,15 @@
-<footer class="app-footer">
+<footer #footerEl class="app-footer">
   <div class="content">
     <span class="brand">Phase-2 Cosmic</span>
     <span class="sep">|</span>
     <span class="label">Data</span>
     <span class="toggle-label">Live</span>
-    <mat-slide-toggle class="data-toggle" [checked]="(mode$ | async) === 'mock'" (change)="onToggle($event)" color="accent">
+    <mat-slide-toggle
+      class="data-toggle"
+      [checked]="(mode$ | async) === 'mock'"
+      (change)="onToggle($event)"
+      color="accent"
+    >
     </mat-slide-toggle>
     <span class="toggle-label">Mock</span>
 
@@ -17,7 +22,11 @@
       <span class="sep">|</span>
       <span class="label">Load profile</span>
       <ng-container *ngIf="profile$ | async as profile">
-        <button mat-stroked-button [matMenuTriggerFor]="profileMenu" class="profile-trigger">
+        <button
+          mat-stroked-button
+          [matMenuTriggerFor]="profileMenu"
+          class="profile-trigger"
+        >
           {{ profile }}%
         </button>
       </ng-container>
@@ -45,7 +54,9 @@
       [class.selected]="profile === option.value"
     >
       <span class="profile-option-content">
-        <span class="profile-option-check" *ngIf="profile === option.value">✓</span>
+        <span class="profile-option-check" *ngIf="profile === option.value"
+          >✓</span
+        >
         <span class="profile-option-row">
           <span class="profile-option-main">{{ option.label }}</span>
           <span class="profile-option-note">{{ option.note }}</span>

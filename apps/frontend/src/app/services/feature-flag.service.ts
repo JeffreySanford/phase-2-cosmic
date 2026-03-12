@@ -1,5 +1,6 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { BehaviorSubject } from "rxjs";
+import { BrowserPlatformService } from "./browser-platform.service";
 
 /**
  * All known feature flags.  New flags for upcoming sprints should be declared here
@@ -28,6 +29,7 @@ const DEFAULTS: FeatureFlags = {
 
 @Injectable({ providedIn: "root" })
 export class FeatureFlagService {
+  private readonly browser = inject(BrowserPlatformService);
   private readonly flagsSubject = new BehaviorSubject<FeatureFlags>(
     this.readInitial()
   );
@@ -60,17 +62,12 @@ export class FeatureFlagService {
   reset(): void {
     const defaults: FeatureFlags = { ...DEFAULTS };
     this.flagsSubject.next(defaults);
-    if (typeof localStorage !== "undefined") {
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    this.browser.removeStorageItem(STORAGE_KEY);
   }
 
   private readInitial(): FeatureFlags {
-    if (typeof localStorage === "undefined") {
-      return { ...DEFAULTS };
-    }
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = this.browser.getStorageItem(STORAGE_KEY);
       if (!raw) return { ...DEFAULTS };
       const parsed = JSON.parse(raw) as Partial<FeatureFlags>;
       return { ...DEFAULTS, ...parsed };
@@ -80,8 +77,6 @@ export class FeatureFlagService {
   }
 
   private persist(flags: FeatureFlags): void {
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(flags));
-    }
+    this.browser.setStorageItem(STORAGE_KEY, JSON.stringify(flags));
   }
 }

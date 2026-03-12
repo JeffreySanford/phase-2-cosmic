@@ -1,8 +1,9 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { BehaviorSubject } from "rxjs";
 import { map } from "rxjs/operators";
 import { DataSourceService } from "./data-source.service";
+import { BrowserPlatformService } from "./browser-platform.service";
 
 export type LoadProfilePct = 10 | 25 | 50 | 100;
 
@@ -10,6 +11,10 @@ const STORAGE_KEY = "cosmic.loadProfilePct";
 
 @Injectable({ providedIn: "root" })
 export class LoadProfileService {
+  private http = inject(HttpClient);
+  private dataSource = inject(DataSourceService);
+  private browser = inject(BrowserPlatformService);
+
   private profileSubject = new BehaviorSubject<LoadProfilePct>(
     this.readInitial()
   );
@@ -24,7 +29,7 @@ export class LoadProfileService {
     map((pct) => this.pollingMsFor(pct))
   );
 
-  constructor(private http: HttpClient, private dataSource: DataSourceService) {
+  constructor() {
     this.dataSource.mode$.subscribe((mode) => {
       if (mode === "live") {
         this.refreshRuntimeStatus();
@@ -113,10 +118,6 @@ export class LoadProfileService {
   }
 
   private persist(pct: LoadProfilePct): void {
-    try {
-      localStorage.setItem(STORAGE_KEY, String(pct));
-    } catch {
-      // ignore persistence failures
-    }
+    this.browser.setStorageItem(STORAGE_KEY, String(pct));
   }
 }

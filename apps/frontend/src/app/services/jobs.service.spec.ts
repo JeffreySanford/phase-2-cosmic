@@ -328,42 +328,48 @@ describe("JobsService", () => {
 
   it("listHot() reuses the cache on second call (no force reload)", fakeAsync(() => {
     let callCount = 0;
-    service.listHot().subscribe(() => callCount++);
-    service.listHot().subscribe(() => callCount++);
+    const firstSub = service.listHot().subscribe(() => callCount++);
+    const secondSub = service.listHot().subscribe(() => callCount++);
 
     // Both subscriptions share the same observable; only one HTTP request
     httpMock.expectOne("/api/v1/jobs").flush([MOCK_JOB]);
     tick(0);
     expect(callCount).toBe(2);
+    firstSub.unsubscribe();
+    secondSub.unsubscribe();
     discardPeriodicTasks();
   }));
 
   it("listHot(forceReload=true) creates a new polling stream", fakeAsync(() => {
     // First call — prime the cache
-    service.listHot().subscribe();
+    const firstSub = service.listHot().subscribe();
     httpMock.expectOne("/api/v1/jobs").flush([MOCK_JOB]);
     tick(0);
 
     // Second call with forceReload — a fresh stream means a new request
-    service.listHot(true).subscribe();
+    const secondSub = service.listHot(true).subscribe();
     httpMock.expectOne("/api/v1/jobs").flush([MOCK_JOB]);
     tick(0);
 
+    firstSub.unsubscribe();
+    secondSub.unsubscribe();
     discardPeriodicTasks();
     httpMock.verify();
   }));
 
   it("invalidateList() clears the cache so next listHot() makes a new request", fakeAsync(() => {
-    service.listHot().subscribe();
+    const firstSub = service.listHot().subscribe();
     httpMock.expectOne("/api/v1/jobs").flush([MOCK_JOB]);
     tick(0);
 
     service.invalidateList();
+    firstSub.unsubscribe();
 
-    service.listHot().subscribe();
+    const secondSub = service.listHot().subscribe();
     httpMock.expectOne("/api/v1/jobs").flush([MOCK_JOB]);
     tick(0);
 
+    secondSub.unsubscribe();
     discardPeriodicTasks();
     httpMock.verify();
   }));
@@ -380,25 +386,29 @@ describe("JobsService", () => {
 
   it("watchJob() reuses the cache for the same id", fakeAsync(() => {
     let count = 0;
-    service.watchJob("job-001").subscribe(() => count++);
-    service.watchJob("job-001").subscribe(() => count++);
+    const firstSub = service.watchJob("job-001").subscribe(() => count++);
+    const secondSub = service.watchJob("job-001").subscribe(() => count++);
     httpMock.expectOne("/api/v1/jobs/job-001").flush(MOCK_JOB);
     tick(0);
     expect(count).toBe(2);
+    firstSub.unsubscribe();
+    secondSub.unsubscribe();
     discardPeriodicTasks();
   }));
 
   it("invalidateJob() removes the job from cache so next watchJob() re-fetches", fakeAsync(() => {
-    service.watchJob("job-001").subscribe();
+    const firstSub = service.watchJob("job-001").subscribe();
     httpMock.expectOne("/api/v1/jobs/job-001").flush(MOCK_JOB);
     tick(0);
 
     service.invalidateJob("job-001");
+    firstSub.unsubscribe();
 
-    service.watchJob("job-001").subscribe();
+    const secondSub = service.watchJob("job-001").subscribe();
     httpMock.expectOne("/api/v1/jobs/job-001").flush(MOCK_JOB);
     tick(0);
 
+    secondSub.unsubscribe();
     discardPeriodicTasks();
     httpMock.verify();
   }));

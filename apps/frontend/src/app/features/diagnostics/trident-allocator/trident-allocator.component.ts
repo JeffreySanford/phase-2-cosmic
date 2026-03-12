@@ -1,10 +1,12 @@
-import { Component, OnInit, AfterViewInit } from "@angular/core";
+import { Component, AfterViewInit, inject } from "@angular/core";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { BehaviorSubject } from "rxjs";
 
 import {
   TridentAllocatorService,
   AllocateError,
 } from "../../../services/trident-allocator.service";
+import { BrowserPlatformService } from "../../../services/browser-platform.service";
 import { FspAllocationPlan } from "../../../shared/trident.types";
 
 @Component({
@@ -13,23 +15,28 @@ import { FspAllocationPlan } from "../../../shared/trident.types";
   styleUrls: ["./trident-allocator.component.scss"],
   standalone: false,
 })
-export class TridentAllocatorComponent implements OnInit, AfterViewInit {
+export class TridentAllocatorComponent implements AfterViewInit {
+  private fb = inject(FormBuilder);
+  private allocator = inject(TridentAllocatorService);
+  private browser = inject(BrowserPlatformService);
+
   form: FormGroup;
 
-  loading = false;
-  plan: FspAllocationPlan | null = null;
-  error: AllocateError | null = null;
+  loading$ = new BehaviorSubject<boolean>(false);
+  plan$ = new BehaviorSubject<FspAllocationPlan | null>(null);
+  error$ = new BehaviorSubject<AllocateError | null>(null);
 
-  simulatorAvailable = false;
-  simulatorMessage = "";
+  simulatorAvailable$ = new BehaviorSubject<boolean>(false);
+  simulatorMessage$ = new BehaviorSubject<string>("");
 
   showHeaderInfo = false;
   showResultInfo = false;
 
-  constructor(
-    private fb: FormBuilder,
-    private allocator: TridentAllocatorService
-  ) {
+  private deferUiUpdate(task: () => void): void {
+    setTimeout(task, 0);
+  }
+
+  constructor() {
     this.form = this.fb.group({
       id: ["sb-001", Validators.required],
       startTime: ["2026-04-01T08:00:00Z", Validators.required],
@@ -41,40 +48,29 @@ export class TridentAllocatorComponent implements OnInit, AfterViewInit {
     });
   }
 
-  ngOnInit(): void {
-    // probe simulator health so we can show a warning message when it's not running
-    this.allocator.health().subscribe({
-      next: () => {
-        this.simulatorAvailable = true;
-      },
-      error: () => {
-        this.simulatorAvailable = false;
-        this.simulatorMessage =
-          "Allocator simulator unreachable – start the service at http://localhost:7777";
-      },
-    });
-  }
-
   ngAfterViewInit(): void {
-    // make wheel event listeners passive to quiet console violation warnings
-    const inputs = document.querySelectorAll(".allocator-container input");
-    inputs.forEach((el) => {
-      el.addEventListener(
-        "wheel",
-        (_event: Event) => {
-          /* passive — no action needed */
+    this.deferUiUpdate(() => {
+      this.allocator.health().subscribe({
+        next: () => {
+          this.simulatorAvailable$.next(true);
+          this.simulatorMessage$.next("");
         },
-        { passive: true }
-      );
+        error: () => {
+          this.simulatorAvailable$.next(false);
+          this.simulatorMessage$.next(
+            "Allocator simulator unreachable – start the service at http://localhost:7777"
+          );
+        },
+      });
     });
   }
 
   submit(): void {
     if (this.form.invalid) return;
 
-    this.loading = true;
-    this.plan = null;
-    this.error = null;
+    this.loading$.next(true);
+    this.plan$.next(null);
+    this.error$.next(null);
 
     const v = this.form.value;
     this.allocator
@@ -96,20 +92,20 @@ export class TridentAllocatorComponent implements OnInit, AfterViewInit {
       })
       .subscribe({
         next: (p) => {
-          this.plan = p;
-          this.loading = false;
+          this.plan$.next(p);
+          this.loading$.next(false);
         },
         error: (err: AllocateError) => {
-          this.error = err;
-          this.loading = false;
+          this.error$.next(err);
+          this.loading$.next(false);
         },
       });
   }
 
   reset(): void {
-    this.simulatorMessage = "";
-    this.plan = null;
-    this.error = null;
+    this.simulatorMessage$.next("");
+    this.plan$.next(null);
+    this.error$.next(null);
     this.form.reset({
       id: "sb-001",
       startTime: "2026-04-01T08:00:00Z",
@@ -123,15 +119,10 @@ export class TridentAllocatorComponent implements OnInit, AfterViewInit {
 
   downloadReport(): void {
     // nothing special
-    const data = this.plan ?? this.error;
+    const data = this.plan$.value ?? this.error$.value;
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: "application/json",
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `trident-allocator-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    this.browser.downloadBlob(blob, `trident-allocator-${Date.now()}.json`);
   }
 }

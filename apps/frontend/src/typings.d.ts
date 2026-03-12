@@ -18,3 +18,14 @@ declare module "d3" {
   const d3: any;
   export = d3;
 }
+
+declare global {
+  // Some DOM APIs aren't present in the Angular compiler's baseline
+  // Window interface, but we use them dynamically at runtime.  Add
+  // optional properties so the type-checker lets us access them.
+  interface Window {
+    CustomEvent?: typeof CustomEvent;
+    ResizeObserver?: typeof ResizeObserver;
+    Event?: typeof Event;
+  }
+}

@@ -1,20 +1,22 @@
+import { createCjsPreset } from "jest-preset-angular/presets";
+
+const nxPreset = require("../../jest.preset.js");
+
 export default {
+  ...nxPreset,
+  ...createCjsPreset({
+    diagnostics: false,
+    tsconfig: "<rootDir>/apps/frontend/tsconfig.spec.json",
+  }),
+  // explicitly declare runner to work around direct jest invocation
+  testRunner: "jest-circus/runner",
+  rootDir: "../..",
   displayName: "frontend",
-  preset: "<rootDir>/../../jest.preset.js",
-  setupFilesAfterEnv: ["<rootDir>/src/test-setup.ts"],
-  transform: {
-    "^.+\\.(ts|mjs|js|html)$": [
-      "jest-preset-angular",
-      {
-        tsconfig: "<rootDir>/tsconfig.spec.json",
-        stringifyContentPathRegex: "\\.(html|svg)$",
-      },
-    ],
+  modulePaths: ["<rootDir>/node_modules"],
+  moduleNameMapper: {
+    "^source-map$": "<rootDir>/node_modules/source-map/source-map.js",
   },
-  transformIgnorePatterns: ["node_modules/(?!.*\\.mjs$)"],
-  snapshotSerializers: [
-    "jest-preset-angular/build/serializers/no-ng-attributes",
-    "jest-preset-angular/build/serializers/ng-snapshot",
-    "jest-preset-angular/build/serializers/html-comment",
-  ],
+  roots: ["<rootDir>/apps/frontend/src"],
+  setupFilesAfterEnv: ["<rootDir>/apps/frontend/src/test-setup.ts"],
+  testMatch: ["<rootDir>/apps/frontend/src/**/*.spec.ts"],
 };

@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { EnvironmentService, AppEnv } from "./environment.service";
 
 @Component({
@@ -15,9 +15,9 @@ import { EnvironmentService, AppEnv } from "./environment.service";
   standalone: false,
 })
 export class EnvironmentComponent implements OnInit {
-  env: AppEnv | null = null;
+  private envService = inject(EnvironmentService);
 
-  constructor(private envService: EnvironmentService) {}
+  env: AppEnv | null = null;
 
   ngOnInit(): void {
     this.envService.load().subscribe((v) => (this.env = v));

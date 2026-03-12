@@ -17,7 +17,9 @@
 
     <aside class="hero__status">
       <p class="status-label">Control Snapshot</p>
-      <p class="status-value">{{ loadingSnapshot ? 'Refreshing live signals...' : 'Systems synchronized' }}</p>
+      <p class="status-value">
+        {{ (loadingSnapshot$ | async) ? 'Refreshing live signals...' : 'Systems synchronized' }}
+      </p>
       <p class="status-time" *ngIf="lastUpdated">Last update: {{ lastUpdated | date: 'mediumTime' }}</p>
       <button type="button" class="refresh" (click)="refreshSnapshot()">Refresh checks</button>
     </aside>

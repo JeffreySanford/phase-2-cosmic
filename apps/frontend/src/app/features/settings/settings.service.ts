@@ -1,11 +1,14 @@
 import { Injectable } from "@angular/core";
+import { inject } from "@angular/core";
 import { BehaviorSubject } from "rxjs";
 import { DEFAULT_USER_SETTINGS, UserSettings } from "./settings.model";
+import { BrowserPlatformService } from "../../services/browser-platform.service";
 
 const SETTINGS_KEY = "cosmic.userSettings";
 
 @Injectable({ providedIn: "root" })
 export class SettingsService {
+  private readonly browser = inject(BrowserPlatformService);
   private readonly settingsSubject = new BehaviorSubject<UserSettings>(
     this.readInitial()
   );
@@ -29,11 +32,8 @@ export class SettingsService {
   }
 
   private readInitial(): UserSettings {
-    if (typeof localStorage === "undefined") {
-      return JSON.parse(JSON.stringify(DEFAULT_USER_SETTINGS));
-    }
     try {
-      const raw = localStorage.getItem(SETTINGS_KEY);
+      const raw = this.browser.getStorageItem(SETTINGS_KEY);
       if (!raw) {
         return JSON.parse(JSON.stringify(DEFAULT_USER_SETTINGS));
       }
@@ -62,11 +62,8 @@ export class SettingsService {
   }
 
   private persist(settings: UserSettings): void {
-    if (typeof localStorage === "undefined") {
-      return;
-    }
     try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      this.browser.setStorageItem(SETTINGS_KEY, JSON.stringify(settings));
     } catch {
       // ignore persistence failures
     }

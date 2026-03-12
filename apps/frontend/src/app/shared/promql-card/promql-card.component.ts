@@ -1,10 +1,10 @@
-import { Component, Input, OnDestroy, OnInit } from "@angular/core";
+import { Component, Input, OnDestroy, OnInit, inject } from "@angular/core";
 import { TelemetryService } from "../../services/telemetry.service";
 import {
   LoadProfileService,
   LoadProfilePct,
 } from "../../services/load-profile.service";
-import { Subscription, timer } from "rxjs";
+import { Subscription, timer, BehaviorSubject } from "rxjs";
 import { switchMap } from "rxjs/operators";
 
 type PrometheusRangeResponseLocal = {
@@ -19,32 +19,35 @@ type MetricFormat = "percent" | "binary" | "number";
   standalone: false,
 })
 export class PromqlCardComponent implements OnInit, OnDestroy {
+  // helper stays for compatibility but we'll emit through subjects
+  private deferUiUpdate(task: () => void): void {
+    setTimeout(task, 0);
+  }
+  private telemetry = inject(TelemetryService);
+  private loadProfile = inject(LoadProfileService);
+
   @Input() query = "";
   @Input() title = "";
   @Input() tone: "cyan" | "violet" | "amber" | "mint" | "rose" | "blue" =
     "cyan";
 
-  currentValue = 0;
-  points: number[] = [];
-  path = "";
-  loading = false;
-  profilePct: LoadProfilePct = 50;
-  lastUpdated: Date | null = null;
+  // reactive state subjects
+  currentValue$ = new BehaviorSubject<number>(0);
+  points$ = new BehaviorSubject<number[]>([]);
+  path$ = new BehaviorSubject<string>("");
+  loading$ = new BehaviorSubject<boolean>(false);
+  profilePct$ = new BehaviorSubject<LoadProfilePct>(50);
+  lastUpdated$ = new BehaviorSubject<Date | null>(null);
   private refreshSub?: Subscription;
   private profileSub?: Subscription;
-
-  constructor(
-    private telemetry: TelemetryService,
-    private loadProfile: LoadProfileService
-  ) {}
 
   ngOnInit(): void {
     if (!this.query) return;
     this.refreshSub = this.loadProfile.pollingMs$
       .pipe(switchMap((ms) => timer(0, ms)))
       .subscribe(() => this.refresh());
-    this.profileSub = this.loadProfile.profile$.subscribe(
-      (pct) => (this.profilePct = pct)
+    this.profileSub = this.loadProfile.profile$.subscribe((pct) =>
+      this.profilePct$.next(pct)
     );
   }
 
@@ -54,7 +57,8 @@ export class PromqlCardComponent implements OnInit, OnDestroy {
   }
 
   refresh() {
-    this.loading = true;
+    // mark loading immediately (async to avoid CD conflict)
+    this.deferUiUpdate(() => this.loading$.next(true));
     const end = Math.floor(Date.now() / 1000);
     const start = end - 300;
     const step = 15;
@@ -63,35 +67,45 @@ export class PromqlCardComponent implements OnInit, OnDestroy {
         try {
           const r = res as PrometheusRangeResponseLocal;
           const vals = r?.data?.result?.[0]?.values ?? [];
-          this.points = vals.map((p) => Number(p[1]) || 0);
-          this.currentValue = this.points.length
-            ? this.points[this.points.length - 1]
-            : 0;
-          this.path = this.sparkPath(
-            this.smoothedPoints(this.points),
-            120,
-            30,
-            this.metricFormat()
-          );
-          this.lastUpdated = new Date();
+          this.deferUiUpdate(() => {
+            const pts = vals.map((p) => Number(p[1]) || 0);
+            this.points$.next(pts);
+            this.currentValue$.next(
+              pts.length ? Number(pts[pts.length - 1]) : 0
+            );
+            this.path$.next(
+              this.sparkPath(
+                this.smoothedPoints(pts),
+                120,
+                30,
+                this.metricFormat()
+              )
+            );
+            this.lastUpdated$.next(new Date());
+            this.loading$.next(false);
+          });
         } catch {
-          this.points = [];
-          this.path = "";
-          this.currentValue = 0;
+          this.deferUiUpdate(() => {
+            this.points$.next([]);
+            this.path$.next("");
+            this.currentValue$.next(0);
+            this.loading$.next(false);
+          });
         }
-        this.loading = false;
       },
-      () => (this.loading = false)
+      () => this.deferUiUpdate(() => this.loading$.next(false))
     );
   }
 
-  displayValue(): string {
+  displayValue(val: unknown = this.currentValue$.value): string {
+    // ensure we operate on a number
+    const num = typeof val === "number" ? val : Number(val) || 0;
     const format = this.metricFormat();
-    if (format === "percent") return `${this.currentValue.toFixed(1)}%`;
-    if (format === "binary") return this.currentValue >= 1 ? "Up" : "Down";
+    if (format === "percent") return `${num.toFixed(1)}%`;
+    if (format === "binary") return num >= 1 ? "Up" : "Down";
     return new Intl.NumberFormat(undefined, {
       maximumFractionDigits: 2,
-    }).format(this.currentValue);
+    }).format(num);
   }
 
   private metricFormat(): MetricFormat {

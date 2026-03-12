@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import {
   MatSnackBar,
   MatSnackBarConfig,
@@ -29,20 +29,9 @@ interface SnackBarInternal {
 
 @Injectable({ providedIn: "root" })
 export class SnackService {
-  constructor(private snackBar: MatSnackBar) {
-    // Initialize CSS variable for footer offset and keep it updated.
-    this.updateFooterOffset();
-    if (typeof window !== "undefined") {
-      window.addEventListener("resize", () => this.updateFooterOffset());
-      // Also observe DOM changes in case footer height changes dynamically.
-      try {
-        const obs = new MutationObserver(() => this.updateFooterOffset());
-        obs.observe(document.body, { childList: true, subtree: true });
-      } catch {
-        // ignore in restricted environments
-      }
-    }
+  private snackBar = inject(MatSnackBar);
 
+  constructor() {
     // hack: patch MatSnackBar instance so that opening a new snackbar
     // does not automatically dismiss the currently-displayed one.  This
     // allows multiple toasts to stack until their duration expires.  The
@@ -78,18 +67,6 @@ export class SnackService {
           (sb._attach as AttachFnWithFlag).__stackingPatched = true;
         }
       }
-    }
-  }
-
-  private updateFooterOffset(): void {
-    try {
-      const footer = document.querySelector("footer");
-      const h = footer
-        ? `${Math.ceil(footer.getBoundingClientRect().height)}px`
-        : "0px";
-      document.documentElement.style.setProperty("--app-footer-height", h);
-    } catch (e) {
-      console.error(e); // ignore
     }
   }
 

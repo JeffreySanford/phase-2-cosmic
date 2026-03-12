@@ -5,12 +5,13 @@ import {
   OnInit,
   ViewChild,
   ElementRef,
-  Inject,
+  inject,
 } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { TelemetryService } from "../../services/telemetry.service";
 import { VoService, VoServices } from "../../services/vo.service";
+import { BrowserPlatformService } from "../../services/browser-platform.service";
 import { BehaviorSubject, Subscription, timer, NEVER, from, of } from "rxjs";
 import { switchMap, map, catchError } from "rxjs/operators";
 import { LoadProfileService } from "../../services/load-profile.service";
@@ -76,6 +77,13 @@ export type TransientAlert = {
   standalone: false,
 })
 export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
+  private telemetry = inject<TelemetryService>(TelemetryService);
+  private loadProfile = inject<LoadProfileService>(LoadProfileService);
+  private route = inject(ActivatedRoute);
+  private http = inject(HttpClient);
+  voService = inject(VoService);
+  private browser = inject(BrowserPlatformService);
+
   @ViewChild("chart") chartEl?: ElementRef<HTMLDivElement>;
   @ViewChild("hist") histEl?: ElementRef<HTMLDivElement>;
   @ViewChild("gauge", { static: true }) gaugeEl!: ElementRef<HTMLDivElement>;
@@ -119,22 +127,62 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   currentRateHuman = "0 B/s";
   points: Array<{ t: number; v: number }> = [];
 
-  // prototype status data for Pulsar component
-  pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
-  rabbitMQStatus: RabbitMQStatus = {
+  // prototype status data for Pulsar component -- wrapped in subjects to avoid
+  // change-detection races when the values flip while the template is being
+  // checked. Getters expose the current value for existing tests and code.
+  readonly pulsarStatus$ = new BehaviorSubject<PulsarStatus>({
+    brokers: 0,
+    topics: 0,
+    partitions: 0,
+  });
+  get pulsarStatus(): PulsarStatus {
+    return this.pulsarStatus$.value;
+  }
+
+  readonly rabbitMQStatus$ = new BehaviorSubject<RabbitMQStatus>({
     status: "unknown",
     connection: "unknown",
     queues: {},
     exchanges: {},
-  };
-  infrastructureTelemetry: InfrastructureTelemetrySnapshot | null = null;
-  lastUpdated: number | null = null;
+  });
+  get rabbitMQStatus(): RabbitMQStatus {
+    return this.rabbitMQStatus$.value;
+  }
+
+  // infrastructure snapshot guarded by subject; tests still assign via setter
+  private readonly infrastructureTelemetry$ =
+    new BehaviorSubject<InfrastructureTelemetrySnapshot | null>(null);
+  get infrastructureTelemetry(): InfrastructureTelemetrySnapshot | null {
+    return this.infrastructureTelemetry$.value;
+  }
+  set infrastructureTelemetry(v: InfrastructureTelemetrySnapshot | null) {
+    this.infrastructureTelemetry$.next(v);
+  }
+
+  private readonly lastUpdated$ = new BehaviorSubject<number | null>(null);
+  get lastUpdated(): number | null {
+    return this.lastUpdated$.value;
+  }
 
   // Alert SLO state
-  alertSlo: AlertSloMetrics | null = null;
-  alertDlq: TransientAlert[] = [];
-  alertSloLoading = false;
-  alertSloError: string | null = null;
+  readonly alertSlo$ = new BehaviorSubject<AlertSloMetrics | null>(null);
+  get alertSlo(): AlertSloMetrics | null {
+    return this.alertSlo$.value;
+  }
+
+  readonly alertDlq$ = new BehaviorSubject<TransientAlert[]>([]);
+  get alertDlq(): TransientAlert[] {
+    return this.alertDlq$.value;
+  }
+
+  readonly alertSloLoading$ = new BehaviorSubject<boolean>(false);
+  get alertSloLoading(): boolean {
+    return this.alertSloLoading$.value;
+  }
+  readonly alertSloError$ = new BehaviorSubject<string | null>(null);
+  get alertSloError(): string | null {
+    return this.alertSloError$.value;
+  }
   stats: { min: number; max: number; avg: number; p95: number } = {
     min: 0,
     max: 0,
@@ -164,14 +212,11 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   private gaugeSvg: D3SVG | null = null;
   private gaugeGroup: D3G | null = null;
   private d3: D3Module | null = null;
+  private pollerStarted = false;
 
-  constructor(
-    @Inject(TelemetryService) private telemetry: TelemetryService,
-    @Inject(LoadProfileService) private loadProfile: LoadProfileService,
-    private route: ActivatedRoute,
-    private http: HttpClient,
-    public voService: VoService
-  ) {}
+  private deferUiUpdate(task: () => void): void {
+    setTimeout(task, 0);
+  }
 
   ngOnInit(): void {
     this.routeSub = this.route.queryParamMap.subscribe((params) => {
@@ -188,28 +233,21 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       if (pct === 50) this.pollIntervalMs$.next(5000);
       if (pct === 100) this.pollIntervalMs$.next(1000);
     });
-    // When poll interval changes, recreate the polling subscription
-    this.pollSub = this.pollIntervalMs$
-      .pipe(switchMap((ms) => (ms > 0 ? timer(0, ms) : NEVER)))
-      .subscribe(() => {
-        this.fetchRangeAndRender();
-        this.fetchPulsarStatus();
-        this.fetchRabbitMQStatus();
-        this.fetchInfrastructureTelemetry();
-        this.fetchAlertSlo();
-      });
-
     // VO samples are provided by VoService voSamples$ (hot observable)
 
     // fetch VO service metadata (tap/dataLink urls) when available
     this.voService.getServices().subscribe(
       (s) => {
-        this.voServices = s;
-        // wire local observable to service's hot observable so template can async-pipe it
-        this.voSamples$ = this.voService.voSamples$;
+        this.deferUiUpdate(() => {
+          this.voServices = s;
+          // wire local observable to service's hot observable so template can async-pipe it
+          this.voSamples$ = this.voService.voSamples$;
+        });
       },
       () => {
-        this.voServices = null;
+        this.deferUiUpdate(() => {
+          this.voServices = null;
+        });
       }
     );
   }
@@ -218,20 +256,16 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadD3().subscribe(() => {
       this.initGauge();
       this.ensureVizInitialized();
-      // fetch data immediately once the visualization container exists
-      this.fetchRangeAndRender();
+      // Start data loading after the first render cycle to avoid NG0100 on initial paint.
+      this.deferUiUpdate(() => {
+        this.fetchAllTelemetry();
+        this.startPolling();
+      });
     });
   }
 
   private cssVar(name: string, fallback = ""): string {
-    try {
-      const v = getComputedStyle(document.documentElement).getPropertyValue(
-        name
-      );
-      return (v || fallback).trim();
-    } catch {
-      return fallback;
-    }
+    return this.browser.readCssVar(name, fallback);
   }
 
   ngOnDestroy(): void {
@@ -240,6 +274,24 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.routeSub?.unsubscribe();
     this.stop$.next(true);
     this.stop$.complete();
+  }
+
+  private fetchAllTelemetry(): void {
+    this.fetchRangeAndRender();
+    this.fetchPulsarStatus();
+    this.fetchRabbitMQStatus();
+    this.fetchInfrastructureTelemetry();
+    this.fetchAlertSlo();
+  }
+
+  private startPolling(): void {
+    if (this.pollerStarted) {
+      this.pollSub?.unsubscribe();
+    }
+    this.pollerStarted = true;
+    this.pollSub = this.pollIntervalMs$
+      .pipe(switchMap((ms) => (ms > 0 ? timer(ms, ms) : NEVER)))
+      .subscribe(() => this.fetchAllTelemetry());
   }
 
   private fetchRangeAndRender(): void {
@@ -256,9 +308,10 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         );
       this.telemetry
         .queryInstant(selectedMetric.instantQuery)
-        .subscribe(
-          (val: unknown) =>
-            (this.currentValue = Number(val as unknown as number))
+        .subscribe((val: unknown) =>
+          this.deferUiUpdate(() => {
+            this.currentValue = Number(val as unknown as number);
+          })
         );
     } else {
       this.telemetry
@@ -270,46 +323,50 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Fetch Pulsar status
     this.telemetry.getPulsarStatus().subscribe((status) => {
-      this.pulsarStatus = {
-        brokers: status.brokers,
-        topics: status.topics,
-        partitions: status.partitions,
-      };
+      this.deferUiUpdate(() => {
+        this.pulsarStatus$.next({
+          brokers: status.brokers,
+          topics: status.topics,
+          partitions: status.partitions,
+        });
+      });
     });
   }
 
   private handleRateResponse(res: PrometheusRangeResponse): void {
     try {
       const vals = res?.data?.result?.[0]?.values || [];
-      this.points = (vals as PrometheusRangeValue[]).map((v) => ({
-        t: v[0] * 1000,
-        v: Number(v[1]),
-      }));
-      // for rate series the point values are already per-second rates
-      this.currentRate = this.points.length
-        ? this.points[this.points.length - 1].v
-        : 0;
-      this.currentRateHuman = this.humanRate(this.currentRate);
-      this.lastUpdated = Date.now();
-      this.computeStats(this.points.map((p) => p.v));
-      // compute moving average for smoothing display (use the rate values)
-      const ma = this.points.map((p, i, arr) => {
-        const start = Math.max(0, i - 4);
-        const slice = arr.slice(start, i + 1);
-        return { t: p.t, v: slice.reduce((s, x) => s + x.v, 0) / slice.length };
+      this.deferUiUpdate(() => {
+        this.points = (vals as PrometheusRangeValue[]).map((v) => ({
+          t: v[0] * 1000,
+          v: Number(v[1]),
+        }));
+        this.currentRate = this.points.length
+          ? this.points[this.points.length - 1].v
+          : 0;
+        this.currentRateHuman = this.humanRate(this.currentRate);
+        this.lastUpdated$.next(Date.now());
+        this.computeStats(this.points.map((p) => p.v));
+        const ma = this.points.map((p, i, arr) => {
+          const start = Math.max(0, i - 4);
+          const slice = arr.slice(start, i + 1);
+          return {
+            t: p.t,
+            v: slice.reduce((s, x) => s + x.v, 0) / slice.length,
+          };
+        });
+        const nextCap = Math.max(
+          1,
+          Number(this.stats.p95) * 1.15,
+          Number(this.stats.max) * 1.05,
+          this.currentRate * 1.05
+        );
+        this.gaugeCap = Math.max(nextCap, this.gaugeCap * 0.9);
+        this.updateRecentSamples(this.points);
+        this.renderLine(this.points, ma);
+        this.renderHistogram(this.points.map((p) => p.v));
+        this.renderGauge(this.currentRate, this.gaugeCap);
       });
-      // keep gauge responsive while avoiding extreme jitter
-      const nextCap = Math.max(
-        1,
-        Number(this.stats.p95) * 1.15,
-        Number(this.stats.max) * 1.05,
-        this.currentRate * 1.05
-      );
-      this.gaugeCap = Math.max(nextCap, this.gaugeCap * 0.9);
-      this.updateRecentSamples(this.points);
-      this.renderLine(this.points, ma);
-      this.renderHistogram(this.points.map((p) => p.v));
-      this.renderGauge(this.currentRate, this.gaugeCap);
     } catch {
       // ignore
     }
@@ -321,38 +378,42 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   private handleRangeResponse(res: PrometheusRangeResponse) {
     try {
       const vals = res?.data?.result?.[0]?.values || [];
-      this.points = (vals as PrometheusRangeValue[]).map((v) => ({
-        t: v[0] * 1000,
-        v: Number(v[1]),
-      }));
-      this.currentValue = this.points.length
-        ? this.points[this.points.length - 1].v
-        : 0;
-      this.lastUpdated = Date.now();
-      this.computeStats(this.points.map((p) => p.v));
-      // compute simple moving average (window=5)
-      const ma = this.points.map((p, i, arr) => {
-        const start = Math.max(0, i - 4);
-        const slice = arr.slice(start, i + 1);
-        return { t: p.t, v: slice.reduce((s, x) => s + x.v, 0) / slice.length };
+      this.deferUiUpdate(() => {
+        this.points = (vals as PrometheusRangeValue[]).map((v) => ({
+          t: v[0] * 1000,
+          v: Number(v[1]),
+        }));
+        this.currentValue = this.points.length
+          ? this.points[this.points.length - 1].v
+          : 0;
+        this.lastUpdated$.next(Date.now());
+        this.computeStats(this.points.map((p) => p.v));
+        const ma = this.points.map((p, i, arr) => {
+          const start = Math.max(0, i - 4);
+          const slice = arr.slice(start, i + 1);
+          return {
+            t: p.t,
+            v: slice.reduce((s, x) => s + x.v, 0) / slice.length,
+          };
+        });
+        this.updateRecentSamples(this.points);
+        this.renderLine(this.points, ma);
+        this.renderHistogram(this.points.map((p) => p.v));
+        if (this.getSelectedMetric().kind === "gauge") {
+          this.currentRate = this.currentValue;
+          this.currentRateHuman = this.humanRate(this.currentRate);
+          const nextCap = Math.max(
+            1,
+            Number(this.stats.p95) * 1.15,
+            Number(this.stats.max) * 1.05,
+            this.currentRate * 1.05
+          );
+          this.gaugeCap = Math.max(nextCap, this.gaugeCap * 0.9);
+          this.renderGauge(this.currentRate, this.gaugeCap);
+        } else {
+          this.computeRate(this.points);
+        }
       });
-      this.updateRecentSamples(this.points);
-      this.renderLine(this.points, ma);
-      this.renderHistogram(this.points.map((p) => p.v));
-      if (this.getSelectedMetric().kind === "gauge") {
-        this.currentRate = this.currentValue;
-        this.currentRateHuman = this.humanRate(this.currentRate);
-        const nextCap = Math.max(
-          1,
-          Number(this.stats.p95) * 1.15,
-          Number(this.stats.max) * 1.05,
-          this.currentRate * 1.05
-        );
-        this.gaugeCap = Math.max(nextCap, this.gaugeCap * 0.9);
-        this.renderGauge(this.currentRate, this.gaugeCap);
-      } else {
-        this.computeRate(this.points);
-      }
     } catch {
       // ignore parse errors
     }
@@ -522,14 +583,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     for (const p of this.points)
       rows.push([new Date(p.t).toISOString(), String(p.v)].join(","));
     const blob = new Blob([rows.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "telemetry.csv";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    this.browser.downloadBlob(blob, "telemetry.csv");
   }
 
   private computeStats(values: number[]) {
@@ -887,15 +941,18 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   private fetchPulsarStatus(): void {
     this.http.get<PulsarStatus>("/api/v1/pulsar/status").subscribe(
       (status: PulsarStatus) => {
-        this.pulsarStatus = {
-          brokers: status.brokers || 0,
-          topics: status.topics || 0,
-          partitions: status.partitions || 0,
-        };
+        this.deferUiUpdate(() => {
+          this.pulsarStatus$.next({
+            brokers: status.brokers || 0,
+            topics: status.topics || 0,
+            partitions: status.partitions || 0,
+          });
+        });
       },
       () => {
-        // Keep previous status or set to 0 on error
-        this.pulsarStatus = { brokers: 0, topics: 0, partitions: 0 };
+        this.deferUiUpdate(() => {
+          this.pulsarStatus$.next({ brokers: 0, topics: 0, partitions: 0 });
+        });
       }
     );
   }
@@ -903,23 +960,26 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   private fetchRabbitMQStatus(): void {
     this.http.get<RabbitMQStatus>("/api/v1/rabbitmq/status").subscribe(
       (status: RabbitMQStatus) => {
-        this.rabbitMQStatus = {
-          status: status.status || "unknown",
-          connection: status.connection || "unknown",
-          queues: status.queues || {},
-          exchanges: status.exchanges || {},
-          error: status.error,
-        };
+        this.deferUiUpdate(() => {
+          this.rabbitMQStatus$.next({
+            status: status.status || "unknown",
+            connection: status.connection || "unknown",
+            queues: status.queues || {},
+            exchanges: status.exchanges || {},
+            error: status.error,
+          });
+        });
       },
       () => {
-        // Set to disconnected on error
-        this.rabbitMQStatus = {
-          status: "error",
-          connection: "error",
-          queues: {},
-          exchanges: {},
-          error: "Connection failed",
-        };
+        this.deferUiUpdate(() => {
+          this.rabbitMQStatus$.next({
+            status: "error",
+            connection: "error",
+            queues: {},
+            exchanges: {},
+            error: "Connection failed",
+          });
+        });
       }
     );
   }
@@ -980,18 +1040,23 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       .get<InfrastructureTelemetrySnapshot>("/api/v1/telemetry/infrastructure")
       .subscribe(
         (snapshot) => {
-          this.infrastructureTelemetry = this.normalizeInfraSnapshot(snapshot);
-          const pulsar = snapshot.services.pulsar;
-          if (pulsar && pulsar.source !== "unavailable") {
-            this.pulsarStatus = {
-              brokers: Math.round(Number(pulsar.brokers ?? 0)),
-              topics: Math.round(Number(pulsar.topics ?? 0)),
-              partitions: Math.round(Number(pulsar.partitions ?? 0)),
-            };
-          }
+          this.deferUiUpdate(() => {
+            this.infrastructureTelemetry =
+              this.normalizeInfraSnapshot(snapshot);
+            const pulsar = snapshot.services.pulsar;
+            if (pulsar && pulsar.source !== "unavailable") {
+              this.pulsarStatus$.next({
+                brokers: Math.round(Number(pulsar.brokers ?? 0)),
+                topics: Math.round(Number(pulsar.topics ?? 0)),
+                partitions: Math.round(Number(pulsar.partitions ?? 0)),
+              });
+            }
+          });
         },
         () => {
-          this.infrastructureTelemetry = null;
+          this.deferUiUpdate(() => {
+            this.infrastructureTelemetry = null;
+          });
         }
       );
   }
@@ -1107,24 +1172,35 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   fetchAlertSlo(): void {
-    this.alertSloLoading = true;
-    this.alertSloError = null;
+    // avoid toggling booleans mid-change-detection
+    this.deferUiUpdate(() => {
+      this.alertSloLoading$.next(true);
+      this.alertSloError$.next(null);
+    });
     this.http.get<AlertSloMetrics>("/api/v1/alerts/slo").subscribe(
       (slo) => {
-        this.alertSlo = slo;
-        this.alertSloLoading = false;
+        this.deferUiUpdate(() => {
+          this.alertSlo$.next(slo);
+          this.alertSloLoading$.next(false);
+        });
       },
       () => {
-        this.alertSloError = "Alert SLO endpoint unavailable";
-        this.alertSloLoading = false;
+        this.deferUiUpdate(() => {
+          this.alertSloError$.next("Alert SLO endpoint unavailable");
+          this.alertSloLoading$.next(false);
+        });
       }
     );
     this.http.get<TransientAlert[]>("/api/v1/alerts/dlq").subscribe(
       (dlq) => {
-        this.alertDlq = dlq;
+        this.deferUiUpdate(() => {
+          this.alertDlq$.next(dlq);
+        });
       },
       () => {
-        this.alertDlq = [];
+        this.deferUiUpdate(() => {
+          this.alertDlq$.next([]);
+        });
       }
     );
   }
@@ -1137,7 +1213,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
           this.fetchAlertSlo();
         },
         () => {
-          this.alertSloError = `Replay failed for alert ${alertId}`;
+          this.alertSloError$.next(`Replay failed for alert ${alertId}`);
         }
       );
   }
@@ -1148,7 +1224,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         this.fetchAlertSlo();
       },
       () => {
-        this.alertSloError = "Replay-all failed";
+        this.alertSloError$.next("Replay-all failed");
       }
     );
   }

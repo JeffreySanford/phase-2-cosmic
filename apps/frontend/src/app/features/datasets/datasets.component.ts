@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import {
   DatasetsService,
   Dataset,
@@ -12,13 +12,13 @@ import {
   standalone: false,
 })
 export class DatasetsComponent implements OnInit {
+  private ds = inject(DatasetsService);
+
   datasets: Dataset[] = [];
   name = "";
   description = "";
   error: string | null = null;
   initialLoadSettled = false;
-
-  constructor(private ds: DatasetsService) {}
 
   ngOnInit(): void {
     this.reload();

@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
 
@@ -14,7 +14,7 @@ export interface AppEnv {
 
 @Injectable({ providedIn: "root" })
 export class EnvironmentService {
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   load(): Observable<AppEnv> {
     return this.http.get<AppEnv>("/api/env");

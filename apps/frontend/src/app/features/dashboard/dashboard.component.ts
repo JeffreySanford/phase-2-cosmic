@@ -1,6 +1,19 @@
 import { HttpClient } from "@angular/common/http";
-import { Component, OnDestroy, OnInit } from "@angular/core";
-import { Observable, Subscription, forkJoin, of, timer } from "rxjs";
+import {
+  AfterViewInit,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from "@angular/core";
+import {
+  Observable,
+  Subscription,
+  forkJoin,
+  of,
+  timer,
+  BehaviorSubject,
+} from "rxjs";
 import { catchError, map, switchMap } from "rxjs/operators";
 import {
   LoadProfilePct,
@@ -62,8 +75,25 @@ type PrometheusRangeResponseLocal = {
   styleUrls: ["./dashboard.component.scss"],
   standalone: false,
 })
-export class DashboardComponent implements OnInit, OnDestroy {
-  loading = false;
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+  private deferUiUpdate(task: () => void): void {
+    // microtask delay keeps updates outside the current CD run
+    setTimeout(task, 0);
+  }
+  private readonly telemetry = inject(TelemetryService);
+  private readonly loadProfile = inject(LoadProfileService);
+  private readonly http = inject(HttpClient);
+  private readonly dataSource = inject(DataSourceService);
+  private readonly mock = inject(MockDataService);
+
+  // control the refresh button disabled state using a subject so that
+  // updates are pushed through the async pipe (and occur in their own
+  // change‑detection runs). the getter maintains backwards compatibility
+  // with existing tests.
+  readonly loading$ = new BehaviorSubject<boolean>(false);
+  get loading(): boolean {
+    return this.loading$.value;
+  }
   lastUpdated: Date | null = null;
   profilePct: LoadProfilePct = 10;
   pollingMs = 30000;
@@ -121,14 +151,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private readonly sub = new Subscription();
 
-  constructor(
-    private readonly telemetry: TelemetryService,
-    private readonly loadProfile: LoadProfileService,
-    private readonly http: HttpClient,
-    private readonly dataSource: DataSourceService,
-    private readonly mock: MockDataService
-  ) {}
-
   ngOnInit(): void {
     this.sub.add(
       this.loadProfile.profile$.subscribe((pct) => {
@@ -136,15 +158,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.pollingMs = this.pollingMsFor(pct);
       })
     );
+  }
 
-    this.sub.add(
-      this.loadProfile.pollingMs$
-        .pipe(switchMap((ms) => timer(0, ms)))
-        .subscribe(() => this.refresh())
-    );
+  ngAfterViewInit(): void {
+    this.deferUiUpdate(() => {
+      this.sub.add(
+        this.loadProfile.pollingMs$
+          .pipe(switchMap((ms) => timer(ms, ms)))
+          .subscribe(() => this.refresh())
+      );
 
-    // Refresh immediately when data source mode changes (live <-> mock)
-    this.sub.add(this.dataSource.mode$.subscribe(() => this.refresh()));
+      this.sub.add(this.dataSource.mode$.subscribe(() => this.refresh()));
+      this.refresh();
+    });
   }
 
   ngOnDestroy(): void {
@@ -152,7 +178,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   refresh(): void {
-    this.loading = true;
+    // don't set the flag until we're in the deferred run; keep the flag
+    // inside a subject so template updates cannot race with detection.
+    this.deferUiUpdate(() => {
+      this.loading$.next(true);
+    });
 
     const cpuLoad$ = this.probe(
       this.telemetry.queryInstant(
@@ -252,252 +282,264 @@ export class DashboardComponent implements OnInit, OnDestroy {
         bytesRange: bytesRange$,
         targetsRange: targetsRange$,
       }).subscribe((snapshot) => {
-        const liveCore =
-          snapshot.cpuLoad.ok &&
-          snapshot.targetsUp.ok &&
-          snapshot.generatorUp.ok &&
-          snapshot.bytesRate.ok &&
-          snapshot.diagnostics.ok;
-        this.widgetMode = liveCore ? "runtime" : "scaffold";
+        // perform all state updates asynchronously to avoid
+        // ExpressionChangedAfterItHasBeenCheckedError when the
+        // forkJoin resolves during the same detection cycle that
+        // triggered the refresh call. wrapping everything in a
+        // deferred task mirrors the pattern used for the loading flag.
+        this.deferUiUpdate(() => {
+          const liveCore =
+            snapshot.cpuLoad.ok &&
+            snapshot.targetsUp.ok &&
+            snapshot.generatorUp.ok &&
+            snapshot.bytesRate.ok &&
+            snapshot.diagnostics.ok;
+          this.widgetMode = liveCore ? "runtime" : "scaffold";
 
-        const files = (snapshot.diagnostics.value.files || []).filter(
-          (f) => f !== ".gitkeep"
-        );
-        const latest = files.length ? files.slice().sort().reverse()[0] : "n/a";
-        const fioCount = files.filter((f) => /^fio-/i.test(f)).length;
-        const iperfCount = files.filter((f) => /^iperf3-/i.test(f)).length;
-        const specsPresent = files.includes("system-specs.txt");
+          const files = (snapshot.diagnostics.value.files || []).filter(
+            (f) => f !== ".gitkeep"
+          );
+          const latest = files.length
+            ? files.slice().sort().reverse()[0]
+            : "n/a";
+          const fioCount = files.filter((f) => /^fio-/i.test(f)).length;
+          const iperfCount = files.filter((f) => /^iperf3-/i.test(f)).length;
+          const specsPresent = files.includes("system-specs.txt");
 
-        const cpuSeries = this.extractRangeValues(snapshot.cpuRange.value);
-        const bytesSeries = this.extractRangeValues(snapshot.bytesRange.value);
-        const targetsSeries = this.extractRangeValues(
-          snapshot.targetsRange.value
-        );
+          const cpuSeries = this.extractRangeValues(snapshot.cpuRange.value);
+          const bytesSeries = this.extractRangeValues(
+            snapshot.bytesRange.value
+          );
+          const targetsSeries = this.extractRangeValues(
+            snapshot.targetsRange.value
+          );
 
-        this.systemTiles = [
-          {
-            title: "System CPU Load",
-            value: `${Math.max(0, snapshot.cpuLoad.value).toFixed(2)}%`,
-            note: "process_cpu_seconds_total (1m rate)",
-            source: snapshot.cpuLoad.ok ? "live" : "fallback",
-            tone: this.cpuTone(snapshot.cpuLoad.value),
-            sparkPath: this.sparkPath(cpuSeries, 140, 30),
-          },
-          {
-            title: "Prometheus Targets Up",
-            value: String(Math.max(0, Math.round(snapshot.targetsUp.value))),
-            note: "sum(up)",
-            source: snapshot.targetsUp.ok ? "live" : "fallback",
-            tone: snapshot.targetsUp.value > 0 ? "violet" : "rose",
-            sparkPath: this.sparkPath(targetsSeries, 140, 30),
-          },
-          {
-            title: "Generator Scrape",
-            value: snapshot.generatorUp.value >= 1 ? "Healthy" : "Down",
-            note: 'up{job="data-generator"}',
-            source: snapshot.generatorUp.ok ? "live" : "fallback",
-            tone: snapshot.generatorUp.value >= 1 ? "mint" : "rose",
-            sparkPath: this.sparkPath(targetsSeries, 140, 30),
-          },
-          {
-            title: "Ingest Throughput",
-            value: this.formatBytesPerSecond(snapshot.bytesRate.value),
-            note: "rate(generator_bytes_produced_total[1m])",
-            source: snapshot.bytesRate.ok ? "live" : "fallback",
-            tone: snapshot.bytesRate.value > 0 ? "amber" : "violet",
-            sparkPath: this.sparkPath(bytesSeries, 140, 30),
-          },
-        ];
+          this.systemTiles = [
+            {
+              title: "System CPU Load",
+              value: `${Math.max(0, snapshot.cpuLoad.value).toFixed(2)}%`,
+              note: "process_cpu_seconds_total (1m rate)",
+              source: snapshot.cpuLoad.ok ? "live" : "fallback",
+              tone: this.cpuTone(snapshot.cpuLoad.value),
+              sparkPath: this.sparkPath(cpuSeries, 140, 30),
+            },
+            {
+              title: "Prometheus Targets Up",
+              value: String(Math.max(0, Math.round(snapshot.targetsUp.value))),
+              note: "sum(up)",
+              source: snapshot.targetsUp.ok ? "live" : "fallback",
+              tone: snapshot.targetsUp.value > 0 ? "violet" : "rose",
+              sparkPath: this.sparkPath(targetsSeries, 140, 30),
+            },
+            {
+              title: "Generator Scrape",
+              value: snapshot.generatorUp.value >= 1 ? "Healthy" : "Down",
+              note: 'up{job="data-generator"}',
+              source: snapshot.generatorUp.ok ? "live" : "fallback",
+              tone: snapshot.generatorUp.value >= 1 ? "mint" : "rose",
+              sparkPath: this.sparkPath(targetsSeries, 140, 30),
+            },
+            {
+              title: "Ingest Throughput",
+              value: this.formatBytesPerSecond(snapshot.bytesRate.value),
+              note: "rate(generator_bytes_produced_total[1m])",
+              source: snapshot.bytesRate.ok ? "live" : "fallback",
+              tone: snapshot.bytesRate.value > 0 ? "amber" : "violet",
+              sparkPath: this.sparkPath(bytesSeries, 140, 30),
+            },
+          ];
 
-        const ingestIntensity = this.normalize(
-          snapshot.bytesRate.value,
-          0,
-          1024 * 300
-        );
-        const recordsIntensity = this.normalize(
-          snapshot.recordsRate.value,
-          0,
-          800
-        );
-        const totalIntensity = this.normalize(
-          snapshot.totalBytes.value,
-          0,
-          1024 * 1024 * 1024
-        );
-        this.telemetryTiles = [
-          {
-            title: "Ingest Rate (1m)",
-            value: this.formatBytesPerSecond(snapshot.bytesRate.value),
-            query: "rate(generator_bytes_produced_total[1m])",
-            metricId: "generator_bytes_produced_total",
-            source: snapshot.bytesRate.ok ? "live" : "fallback",
-            intensity: ingestIntensity,
-          },
-          {
-            title: "Records Rate (1m)",
-            value: `${Math.max(0, snapshot.recordsRate.value).toFixed(
-              2
-            )} rec/s`,
-            query: "rate(generator_records_produced_total[1m])",
-            metricId: "generator_records_produced_total",
-            source: snapshot.recordsRate.ok ? "live" : "fallback",
-            intensity: recordsIntensity,
-          },
-          {
-            title: "Total Bytes",
-            // format using human units (KB/MB/GB/etc) so huge numbers are readable
-            value: this.formatBytes(Math.max(0, snapshot.totalBytes.value)),
-            query: "generator_bytes_produced_total",
-            metricId: "generator_bytes_produced_total",
-            source: snapshot.totalBytes.ok ? "live" : "fallback",
-            intensity: totalIntensity,
-          },
-          {
-            title: "System Load",
-            value: `${Math.max(0, snapshot.cpuLoad.value).toFixed(2)}%`,
-            query:
-              '100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))',
-            metricId: "system_cpu_load_pct",
-            source: snapshot.cpuLoad.ok ? "live" : "fallback",
-            intensity: this.normalize(snapshot.cpuLoad.value, 0, 100),
-          },
-        ];
-
-        this.diagnosticsSummary = {
-          systemSpecsPresent: specsPresent,
-          artifactCount: files.length,
-          fioCount,
-          iperfCount,
-          latestArtifact: latest,
-          source: snapshot.diagnostics.ok ? "live" : "fallback",
-        };
-
-        this.generatorStatus = {
-          scrapeUp: snapshot.generatorUp.value >= 1,
-          targetsUp: Math.max(0, Math.round(snapshot.targetsUp.value)),
-          lastSeen:
-            snapshot.generatorUp.value >= 1
-              ? new Date().toLocaleTimeString()
-              : "n/a",
-          source:
-            snapshot.generatorUp.ok && snapshot.targetsUp.ok
-              ? "live"
-              : "fallback",
-        };
-
-        const governanceRuntime =
-          snapshot.infrastructure.value.services.governanceRuntime;
-        const frontendSsr = snapshot.infrastructure.value.services.frontendSsr;
-        this.governanceSummary = {
-          completedTotal: Math.max(
+          const ingestIntensity = this.normalize(
+            snapshot.bytesRate.value,
             0,
-            Math.round(governanceRuntime?.completedTotal ?? 0)
-          ),
-          failedTotal: Math.max(
+            1024 * 300
+          );
+          const recordsIntensity = this.normalize(
+            snapshot.recordsRate.value,
             0,
-            Math.round(governanceRuntime?.failedTotal ?? 0)
-          ),
-          redisReadRate: this.formatRequestsPerSecond(
-            governanceRuntime?.redisReadRatePerSec ?? 0
-          ),
-          objectWriteRate: this.formatRequestsPerSecond(
-            governanceRuntime?.objectWriteRatePerSec ?? 0
-          ),
-          pulsarIngestRate: this.formatRequestsPerSecond(
-            governanceRuntime?.pulsarIngestReceiveRatePerSec ?? 0
-          ),
-          proxyRate: this.formatRequestsPerSecond(
-            frontendSsr?.governanceProxyRatePerSec ?? 0
-          ),
-          source:
-            snapshot.infrastructure.ok &&
-            (governanceRuntime?.source === "prometheus" ||
-              frontendSsr?.source === "prometheus")
-              ? "live"
-              : "fallback",
-        };
+            800
+          );
+          const totalIntensity = this.normalize(
+            snapshot.totalBytes.value,
+            0,
+            1024 * 1024 * 1024
+          );
+          this.telemetryTiles = [
+            {
+              title: "Ingest Rate (1m)",
+              value: this.formatBytesPerSecond(snapshot.bytesRate.value),
+              query: "rate(generator_bytes_produced_total[1m])",
+              metricId: "generator_bytes_produced_total",
+              source: snapshot.bytesRate.ok ? "live" : "fallback",
+              intensity: ingestIntensity,
+            },
+            {
+              title: "Records Rate (1m)",
+              value: `${Math.max(0, snapshot.recordsRate.value).toFixed(
+                2
+              )} rec/s`,
+              query: "rate(generator_records_produced_total[1m])",
+              metricId: "generator_records_produced_total",
+              source: snapshot.recordsRate.ok ? "live" : "fallback",
+              intensity: recordsIntensity,
+            },
+            {
+              title: "Total Bytes",
+              // format using human units (KB/MB/GB/etc) so huge numbers are readable
+              value: this.formatBytes(Math.max(0, snapshot.totalBytes.value)),
+              query: "generator_bytes_produced_total",
+              metricId: "generator_bytes_produced_total",
+              source: snapshot.totalBytes.ok ? "live" : "fallback",
+              intensity: totalIntensity,
+            },
+            {
+              title: "System Load",
+              value: `${Math.max(0, snapshot.cpuLoad.value).toFixed(2)}%`,
+              query:
+                '100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))',
+              metricId: "system_cpu_load_pct",
+              source: snapshot.cpuLoad.ok ? "live" : "fallback",
+              intensity: this.normalize(snapshot.cpuLoad.value, 0, 100),
+            },
+          ];
 
-        this.alerts = this.buildAlerts(
-          snapshot.cpuLoad.value,
-          snapshot.bytesRate.value,
-          snapshot.generatorUp.value,
-          files.length
-        );
-        this.cpuLoadPct = this.clamp(snapshot.cpuLoad.value, 0, 100);
-        this.bytesRateValue = Math.max(0, snapshot.bytesRate.value);
-        this.recordsRateValue = Math.max(0, snapshot.recordsRate.value);
-        this.totalBytesValue = Math.max(0, snapshot.totalBytes.value);
-        this.healthScore = this.clamp(
-          Math.round(
-            (snapshot.generatorUp.value >= 1 ? 34 : 6) +
-              this.normalize(100 - this.cpuLoadPct, 0, 100) * 34 +
-              this.normalize(this.bytesRateValue, 0, 1024 * 300) * 18 +
-              this.normalize(files.length, 0, 12) * 14
-          ),
-          0,
-          100
-        );
-        this.systemEnergy = this.clamp(
-          Math.round(
-            this.normalize(this.bytesRateValue, 0, 1024 * 300) * 62 +
-              this.normalize(this.recordsRateValue, 0, 900) * 38
-          ),
-          0,
-          100
-        );
-        this.signalBands = [
-          {
-            label: "Telemetry Throughput",
-            value: this.clamp(Math.round(ingestIntensity * 100), 0, 100),
-            tone: "violet",
-          },
-          {
-            label: "Pipeline Velocity",
-            value: this.clamp(Math.round(recordsIntensity * 100), 0, 100),
-            tone: "mint",
-          },
-          {
-            label: "System Headroom",
-            value: this.clamp(Math.round(100 - this.cpuLoadPct), 0, 100),
-            tone: "amber",
-          },
-          {
-            label: "Operational Health",
-            value: this.healthScore,
-            tone: "rose",
-          },
-        ];
-        const criticals = this.alerts.filter(
-          (a) => a.level === "critical"
-        ).length;
-        const warnings = this.alerts.filter(
-          (a) => a.level === "warning"
-        ).length;
-        this.headerKpis = [
-          {
-            label: "CPU Load",
-            value: `${this.cpuLoadPct.toFixed(0)}%`,
-            tone: this.cpuTone(this.cpuLoadPct),
-          },
-          {
-            label: "Ingest Rate",
-            value: this.formatBytesPerSecond(this.bytesRateValue),
-            tone: "violet",
-          },
-          {
-            label: "Health Score",
-            value: `${this.healthScore}%`,
-            tone: this.healthScore >= 70 ? "mint" : "amber",
-          },
-          {
-            label: "Alerts",
-            value: `${criticals}/${warnings}`,
-            tone: criticals > 0 ? "rose" : warnings > 0 ? "amber" : "mint",
-          },
-        ];
+          this.diagnosticsSummary = {
+            systemSpecsPresent: specsPresent,
+            artifactCount: files.length,
+            fioCount,
+            iperfCount,
+            latestArtifact: latest,
+            source: snapshot.diagnostics.ok ? "live" : "fallback",
+          };
 
-        this.lastUpdated = new Date();
-        this.loading = false;
+          this.generatorStatus = {
+            scrapeUp: snapshot.generatorUp.value >= 1,
+            targetsUp: Math.max(0, Math.round(snapshot.targetsUp.value)),
+            lastSeen:
+              snapshot.generatorUp.value >= 1
+                ? new Date().toLocaleTimeString()
+                : "n/a",
+            source:
+              snapshot.generatorUp.ok && snapshot.targetsUp.ok
+                ? "live"
+                : "fallback",
+          };
+
+          const governanceRuntime =
+            snapshot.infrastructure.value.services.governanceRuntime;
+          const frontendSsr =
+            snapshot.infrastructure.value.services.frontendSsr;
+          this.governanceSummary = {
+            completedTotal: Math.max(
+              0,
+              Math.round(governanceRuntime?.completedTotal ?? 0)
+            ),
+            failedTotal: Math.max(
+              0,
+              Math.round(governanceRuntime?.failedTotal ?? 0)
+            ),
+            redisReadRate: this.formatRequestsPerSecond(
+              governanceRuntime?.redisReadRatePerSec ?? 0
+            ),
+            objectWriteRate: this.formatRequestsPerSecond(
+              governanceRuntime?.objectWriteRatePerSec ?? 0
+            ),
+            pulsarIngestRate: this.formatRequestsPerSecond(
+              governanceRuntime?.pulsarIngestReceiveRatePerSec ?? 0
+            ),
+            proxyRate: this.formatRequestsPerSecond(
+              frontendSsr?.governanceProxyRatePerSec ?? 0
+            ),
+            source:
+              snapshot.infrastructure.ok &&
+              (governanceRuntime?.source === "prometheus" ||
+                frontendSsr?.source === "prometheus")
+                ? "live"
+                : "fallback",
+          };
+
+          this.alerts = this.buildAlerts(
+            snapshot.cpuLoad.value,
+            snapshot.bytesRate.value,
+            snapshot.generatorUp.value,
+            files.length
+          );
+          this.cpuLoadPct = this.clamp(snapshot.cpuLoad.value, 0, 100);
+          this.bytesRateValue = Math.max(0, snapshot.bytesRate.value);
+          this.recordsRateValue = Math.max(0, snapshot.recordsRate.value);
+          this.totalBytesValue = Math.max(0, snapshot.totalBytes.value);
+          this.healthScore = this.clamp(
+            Math.round(
+              (snapshot.generatorUp.value >= 1 ? 34 : 6) +
+                this.normalize(100 - this.cpuLoadPct, 0, 100) * 34 +
+                this.normalize(this.bytesRateValue, 0, 1024 * 300) * 18 +
+                this.normalize(files.length, 0, 12) * 14
+            ),
+            0,
+            100
+          );
+          this.systemEnergy = this.clamp(
+            Math.round(
+              this.normalize(this.bytesRateValue, 0, 1024 * 300) * 62 +
+                this.normalize(this.recordsRateValue, 0, 900) * 38
+            ),
+            0,
+            100
+          );
+          this.signalBands = [
+            {
+              label: "Telemetry Throughput",
+              value: this.clamp(Math.round(ingestIntensity * 100), 0, 100),
+              tone: "violet",
+            },
+            {
+              label: "Pipeline Velocity",
+              value: this.clamp(Math.round(recordsIntensity * 100), 0, 100),
+              tone: "mint",
+            },
+            {
+              label: "System Headroom",
+              value: this.clamp(Math.round(100 - this.cpuLoadPct), 0, 100),
+              tone: "amber",
+            },
+            {
+              label: "Operational Health",
+              value: this.healthScore,
+              tone: "rose",
+            },
+          ];
+          const criticals = this.alerts.filter(
+            (a) => a.level === "critical"
+          ).length;
+          const warnings = this.alerts.filter(
+            (a) => a.level === "warning"
+          ).length;
+          this.headerKpis = [
+            {
+              label: "CPU Load",
+              value: `${this.cpuLoadPct.toFixed(0)}%`,
+              tone: this.cpuTone(this.cpuLoadPct),
+            },
+            {
+              label: "Ingest Rate",
+              value: this.formatBytesPerSecond(this.bytesRateValue),
+              tone: "violet",
+            },
+            {
+              label: "Health Score",
+              value: `${this.healthScore}%`,
+              tone: this.healthScore >= 70 ? "mint" : "amber",
+            },
+            {
+              label: "Alerts",
+              value: `${criticals}/${warnings}`,
+              tone: criticals > 0 ? "rose" : warnings > 0 ? "amber" : "mint",
+            },
+          ];
+
+          this.lastUpdated = new Date();
+          this.loading$.next(false);
+        });
       })
     );
   }

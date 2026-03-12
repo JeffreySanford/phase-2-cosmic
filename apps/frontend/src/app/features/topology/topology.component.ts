@@ -4,9 +4,14 @@ import {
   ElementRef,
   OnInit,
   OnDestroy,
+  Renderer2,
+  RendererFactory2,
   ViewChild,
+  inject,
 } from "@angular/core";
+import { DOCUMENT } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
+import { BehaviorSubject } from "rxjs";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
 import {
@@ -44,6 +49,15 @@ let _d3: D3Module | null = null;
   standalone: false,
 })
 export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
+  private http = inject(HttpClient);
+  private dialog = inject(MatDialog);
+  private dataSource = inject(DataSourceService);
+  private mock = inject(MockDataService);
+  private loadProfile = inject(LoadProfileService);
+  private document = inject(DOCUMENT, { optional: true });
+  private rendererFactory = inject(RendererFactory2);
+  private renderer: Renderer2 = this.rendererFactory.createRenderer(null, null);
+
   @ViewChild("graph", { static: true }) graphEl!: ElementRef<HTMLDivElement>;
 
   private svg?: D3Selection | null;
@@ -51,12 +65,29 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   private simulation?: D3Simulation | null;
   private d3: D3Module | null = null;
 
-  public loading = false;
+  // using subjects prevents binding races when the flag flips during
+  // async callbacks. the getter keeps existing unit tests happy.
+  private readonly loading$: BehaviorSubject<boolean>;
+  get loading(): boolean {
+    return this.loading$.value;
+  }
   public lastError: string | null = null;
   public topologySource: "live" | "mock" | "unavailable" = "live";
   public hasTopologyData = false;
   public showMode: "live" | "max" = "live";
-  public aggCurrentMBps = 0;
+  // throughput aggregate used in header; updated frequently during
+  // topology and metrics polling. expose as subject so template updates
+  // occur safely.
+  readonly aggCurrentMBps$: BehaviorSubject<number>;
+  get aggCurrentMBps(): number {
+    return this.aggCurrentMBps$.value;
+  }
+
+  constructor() {
+    this.loading$ = new BehaviorSubject<boolean>(false);
+    this.aggCurrentMBps$ = new BehaviorSubject<number>(0);
+  }
+
   public aggMaxMBps = 0;
   public totalLinkCount = 0;
   public liveLinkCount = 0;
@@ -71,16 +102,22 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public toggleFullscreen(): void {
     this.isFullscreen = !this.isFullscreen;
-    const shell = this.graphEl?.nativeElement?.closest(".topology-graph-shell");
+    const shell = this.getGraphHostElement()?.closest(
+      ".topology-graph-shell"
+    ) as HTMLElement | null;
     if (shell) {
-      shell.classList.toggle("is-fullscreen", this.isFullscreen);
+      if (this.isFullscreen) {
+        this.renderer.addClass(shell, "is-fullscreen");
+      } else {
+        this.renderer.removeClass(shell, "is-fullscreen");
+      }
     }
 
     if (this.isFullscreen) {
       // request browser fullscreen for the shell container (not whole app)
       shell?.requestFullscreen?.();
     } else {
-      document.exitFullscreen?.();
+      this.document?.exitFullscreen?.();
     }
   }
   // mission‑closure metrics
@@ -119,12 +156,14 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   );
   private fitViewport = { scale: 1, x: 0, y: 0 };
   private shouldAutoFitViewport = false;
-  private simulationCooldownHandle: number | null = null;
+  private simulationCooldownHandle: ReturnType<typeof setTimeout> | null = null;
   public showProvenanceFilterHelper = false;
-  private provenanceFilterHelperTimeout: number | null = null;
+  private provenanceFilterHelperTimeout: ReturnType<typeof setTimeout> | null =
+    null;
   // live polling interval id
-  private livePollInterval: number | null = null;
+  private livePollInterval: ReturnType<typeof setInterval> | null = null;
   private profileSub?: { unsubscribe: () => void };
+  private removeResizeListener?: () => void;
   // friendly per-link form entries for settings UI
   public perLinkEntries: Array<{
     key: string;
@@ -137,13 +176,23 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     utilPct?: number;
   }> = [];
 
-  constructor(
-    private http: HttpClient,
-    private dialog: MatDialog,
-    private dataSource: DataSourceService,
-    private mock: MockDataService,
-    private loadProfile: LoadProfileService
-  ) {}
+  private deferUiUpdate(task: () => void): void {
+    setTimeout(task, 0);
+  }
+
+  private getGraphHostElement(): HTMLDivElement | null {
+    return this.graphEl?.nativeElement ?? null;
+  }
+
+  private getSvgElement(): SVGSVGElement | null {
+    return this.getGraphHostElement()?.querySelector("svg") ?? null;
+  }
+
+  private getParticleLayerElement(): SVGGElement | null {
+    return this.getSvgElement()?.querySelector(
+      "g.viewport g.flow-particles"
+    ) as SVGGElement | null;
+  }
 
   ngOnInit(): void {
     this.profilePct = this.loadProfile.current;
@@ -1127,23 +1176,25 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     ) as SVGCircleElement[];
 
     existing.slice(desiredCount).forEach((node) => node.remove());
+    const svgDocument = this.document;
+    if (!svgDocument) return;
 
     for (let i = existing.length; i < desiredCount; i++) {
-      const particle = document.createElementNS(
+      const particle = svgDocument.createElementNS(
         "http://www.w3.org/2000/svg",
         "circle"
       );
       particle.setAttribute("class", "flow-particle");
       particle.setAttribute("data-key", key);
 
-      const anim = document.createElementNS(
+      const anim = svgDocument.createElementNS(
         "http://www.w3.org/2000/svg",
         "animateMotion"
       );
       anim.setAttribute("repeatCount", "indefinite");
       anim.setAttribute("rotate", "auto");
       anim.setAttribute("begin", `${(i * durationSec) / desiredCount}s`);
-      const mpath = document.createElementNS(
+      const mpath = svgDocument.createElementNS(
         "http://www.w3.org/2000/svg",
         "mpath"
       );
@@ -1220,13 +1271,19 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async ngAfterViewInit(): Promise<void> {
     await this.initSvg();
-    this.loadTopology();
-    window.addEventListener("resize", this.onResize);
+    // Defer topology loading until after the initial render pass to avoid NG0100.
+    this.deferUiUpdate(() => this.loadTopology());
+    this.removeResizeListener = this.renderer.listen(
+      "window",
+      "resize",
+      this.onResize
+    );
   }
 
   ngOnDestroy(): void {
     this.stopSimulation();
-    window.removeEventListener("resize", this.onResize);
+    this.removeResizeListener?.();
+    this.removeResizeListener = undefined;
     this.profileSub?.unsubscribe();
     this.stopLivePoll();
     this.clearProvenanceHelperTimeout();
@@ -1283,7 +1340,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   private showTransientProvenanceHelper(): void {
     this.showProvenanceFilterHelper = true;
     this.clearProvenanceHelperTimeout();
-    this.provenanceFilterHelperTimeout = window.setTimeout(() => {
+    this.provenanceFilterHelperTimeout = setTimeout(() => {
       this.showProvenanceFilterHelper = false;
       this.provenanceFilterHelperTimeout = null;
     }, 5000);
@@ -1297,7 +1354,8 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private async initSvg() {
-    const el = this.graphEl.nativeElement;
+    const el = this.getGraphHostElement();
+    if (!el) return;
     const w = el.clientWidth || 800;
     const h = Math.max(360, el.clientHeight || 480);
     await this.loadD3();
@@ -1378,7 +1436,8 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.svg) return;
     this.stopSimulation();
     this.svg.selectAll("*").remove?.();
-    const el = this.graphEl.nativeElement;
+    const el = this.getGraphHostElement();
+    if (!el) return;
     const w = el.clientWidth || 800;
     const h = Math.max(360, el.clientHeight || 480);
     this.svg.attr("viewBox", `0 0 ${w} ${h}`).attr("height", h);
@@ -1395,7 +1454,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     const summaryLinks =
       this.fullTopologyLinks.length > 0 ? this.fullTopologyLinks : links;
     // attach precomputed stats to links and compute aggregates (use numeric fields when available)
-    this.aggCurrentMBps = 0;
+    this.aggCurrentMBps$.next(0);
     this.aggMaxMBps = 0;
     this.totalLinkCount = summaryLinks.length;
     this.liveLinkCount = 0;
@@ -1407,7 +1466,9 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       this.statsRef(ln)._stats = stats;
       const cur = Number(stats?.throughputMBpsCurrent ?? NaN);
       const max = Number(stats?.throughputMBpsMax ?? NaN);
-      this.aggCurrentMBps += Number.isFinite(cur) ? cur : 0;
+      this.aggCurrentMBps$.next(
+        this.aggCurrentMBps + (Number.isFinite(cur) ? cur : 0)
+      );
       this.aggMaxMBps += Number.isFinite(max) ? max : 0;
       switch (stats.source) {
         case "prometheus":
@@ -1516,9 +1577,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // DOM-create per-link flow particles that follow the path via <animateMotion>
     try {
-      const particleLayerEl = this.graphEl.nativeElement.querySelector(
-        "svg g.viewport g.flow-particles"
-      ) as SVGGElement | null;
+      const particleLayerEl = this.getParticleLayerElement();
       if (particleLayerEl) {
         // remove any existing flow particles (defensive)
         Array.from(particleLayerEl.querySelectorAll(".flow-particle")).forEach(
@@ -1653,9 +1712,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
         // update particle element positions/durations if needed
         try {
-          const particleLayerEl = this.graphEl.nativeElement.querySelector(
-            "svg g.viewport g.flow-particles"
-          ) as SVGGElement | null;
+          const particleLayerEl = this.getParticleLayerElement();
           if (particleLayerEl) {
             for (const ln of links) {
               const key = this.getLinkKey(ln);
@@ -1695,7 +1752,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
           this.applyViewportTransform();
         }
       });
-    this.simulationCooldownHandle = window.setTimeout(() => {
+    this.simulationCooldownHandle = setTimeout(() => {
       this.freezeNodePositions(nodes);
       this.applyViewportTransform();
       this.simulation?.stop();
@@ -1721,7 +1778,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     // immediate poll
     this.pollMetricsAndAnimate();
     // poll every pollIntervalSec seconds
-    this.livePollInterval = window.setInterval(
+    this.livePollInterval = setInterval(
       () => this.pollMetricsAndAnimate(),
       Math.max(1000, Math.round(this.pollIntervalSec * 1000))
     );
@@ -1741,40 +1798,38 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.http.get<TopologyMetricsResponse>("/api/metrics/topology").subscribe(
       (res) => {
-        this.lastError = null;
-        const metrics = this.normalizeTopologyMetricsResponse(res);
-        this.captureMissionMetrics(res);
-        for (const ln of this.currentTopologyData().links) {
-          const key = this.getLinkKey(ln);
-          const prev = this.statsRef(ln)._stats;
-          const m = this.metricForLink(metrics, ln);
-          if (m) {
-            const stats = prev ?? ({} as LinkStats);
-            const prevVal = Number(stats.throughputMBpsCurrent ?? 0);
-            this.populateStatsFromMetric(stats, m);
-            this.statsRef(ln)._stats = stats;
-            // animate if change significant by percentage of max or sensitivityPct
-            const maxVal = Number(stats.throughputMBpsMax ?? 1);
-            const delta = Math.abs((m.currentMBps || 0) - prevVal);
-            const pctChange = maxVal > 0 ? (delta / maxVal) * 100 : 0;
-            // adjust particle speed based on utilization (immediate)
-            try {
-              const svgEl = this.graphEl.nativeElement.querySelector(
-                "svg"
-              ) as SVGSVGElement | null;
-              if (svgEl) {
-                this.syncParticlesForLink(svgEl, key, stats);
+        this.deferUiUpdate(() => {
+          this.lastError = null;
+          const metrics = this.normalizeTopologyMetricsResponse(res);
+          this.captureMissionMetrics(res);
+          for (const ln of this.currentTopologyData().links) {
+            const key = this.getLinkKey(ln);
+            const prev = this.statsRef(ln)._stats;
+            const m = this.metricForLink(metrics, ln);
+            if (m) {
+              const stats = prev ?? ({} as LinkStats);
+              const prevVal = Number(stats.throughputMBpsCurrent ?? 0);
+              this.populateStatsFromMetric(stats, m);
+              this.statsRef(ln)._stats = stats;
+              const maxVal = Number(stats.throughputMBpsMax ?? 1);
+              const delta = Math.abs((m.currentMBps || 0) - prevVal);
+              const pctChange = maxVal > 0 ? (delta / maxVal) * 100 : 0;
+              try {
+                const svgEl = this.getSvgElement();
+                if (svgEl) {
+                  this.syncParticlesForLink(svgEl, key, stats);
+                }
+              } catch {
+                return;
               }
-            } catch {
-              return;
-            }
-            if (pctChange >= this.sensitivityPct) {
-              this.animatePulse(key || "0");
-              this.flashLine(key || "0");
+              if (pctChange >= this.sensitivityPct) {
+                this.animatePulse(key || "0");
+                this.flashLine(key || "0");
+              }
             }
           }
-        }
-        this.applyCurrentTopologyView(true);
+          this.applyCurrentTopologyView(true);
+        });
       },
       () => {
         this.lastError =
@@ -1785,9 +1840,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private animatePulse(key: string) {
     try {
-      const svgEl = this.graphEl.nativeElement.querySelector(
-        "svg"
-      ) as SVGSVGElement | null;
+      const svgEl = this.getSvgElement();
       if (!svgEl) return;
       const selector = `.link-dot[data-key="${key}"]`;
       const el = svgEl.querySelector(selector) as SVGCircleElement | null;
@@ -1810,9 +1863,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private flashLine(key: string) {
     try {
-      const svgEl = this.graphEl.nativeElement.querySelector(
-        "svg"
-      ) as SVGSVGElement | null;
+      const svgEl = this.getSvgElement();
       if (!svgEl) return;
       const line = svgEl.querySelector(
         `line[data-key="${key}"]`
@@ -1963,7 +2014,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!event.active) this.simulation.alphaTarget(0);
     d.fx = event.x;
     d.fy = event.y;
-    this.simulationCooldownHandle = window.setTimeout(() => {
+    this.simulationCooldownHandle = setTimeout(() => {
       this.freezeNodePositions(this.lastNodes);
       this.simulation?.stop();
       this.simulationCooldownHandle = null;
@@ -1980,7 +2031,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadTopology(forceApi = false) {
-    this.loading = true;
+    this.loading$.next(true);
     this.lastError = null;
     // In live mode, fail honestly instead of silently substituting mock data.
     const api = "/api/topology";
@@ -1991,7 +2042,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       const links = this.mockLinks();
       this.setCanonicalTopology(nodes, links);
       this.applyCurrentTopologyView();
-      this.loading = false;
+      this.loading$.next(false);
       this.initialLoadSettled = true;
       return;
     }
@@ -1999,23 +2050,27 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     if (forceApi) {
       this.http.get<{ nodes: TopoNode[]; links: TopoLink[] }>(api).subscribe(
         (res) => {
-          this.topologySource = "live";
-          this.hasTopologyData = true;
-          const nodes = res.nodes ?? [];
-          const links = res.links ?? [];
-          this.setCanonicalTopology(nodes, links);
-          this.applyCurrentTopologyView();
-          this.loading = false;
-          this.initialLoadSettled = true;
+          this.deferUiUpdate(() => {
+            this.topologySource = "live";
+            this.hasTopologyData = true;
+            const nodes = res.nodes ?? [];
+            const links = res.links ?? [];
+            this.setCanonicalTopology(nodes, links);
+            this.applyCurrentTopologyView();
+            this.loading$.next(false);
+            this.initialLoadSettled = true;
+          });
         },
         () => {
-          this.topologySource = "unavailable";
-          this.hasTopologyData = false;
-          this.clearGraph();
-          this.lastError =
-            "Live topology data is unavailable. Retry when the topology API is online.";
-          this.loading = false;
-          this.initialLoadSettled = true;
+          this.deferUiUpdate(() => {
+            this.topologySource = "unavailable";
+            this.hasTopologyData = false;
+            this.clearGraph();
+            this.lastError =
+              "Live topology data is unavailable. Retry when the topology API is online.";
+            this.loading$.next(false);
+            this.initialLoadSettled = true;
+          });
         }
       );
       return;
@@ -2023,23 +2078,27 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.http.get<{ nodes: TopoNode[]; links: TopoLink[] }>(api).subscribe(
       (res) => {
-        this.topologySource = "live";
-        this.hasTopologyData = true;
-        const nodes = res.nodes ?? [];
-        const links = res.links ?? [];
-        this.setCanonicalTopology(nodes, links);
-        this.applyCurrentTopologyView();
-        this.loading = false;
-        this.initialLoadSettled = true;
+        this.deferUiUpdate(() => {
+          this.topologySource = "live";
+          this.hasTopologyData = true;
+          const nodes = res.nodes ?? [];
+          const links = res.links ?? [];
+          this.setCanonicalTopology(nodes, links);
+          this.applyCurrentTopologyView();
+          this.loading$.next(false);
+          this.initialLoadSettled = true;
+        });
       },
       () => {
-        this.topologySource = "unavailable";
-        this.hasTopologyData = false;
-        this.clearGraph();
-        this.lastError =
-          "Live topology data is unavailable. Switch to mock mode or retry when the topology API is online.";
-        this.loading = false;
-        this.initialLoadSettled = true;
+        this.deferUiUpdate(() => {
+          this.topologySource = "unavailable";
+          this.hasTopologyData = false;
+          this.clearGraph();
+          this.lastError =
+            "Live topology data is unavailable. Switch to mock mode or retry when the topology API is online.";
+          this.loading$.next(false);
+          this.initialLoadSettled = true;
+        });
       }
     );
   }
@@ -2049,7 +2108,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     this.fullTopologyLinks = [];
     this.lastNodes = [];
     this.lastLinks = [];
-    this.aggCurrentMBps = 0;
+    this.aggCurrentMBps$.next(0);
     this.aggMaxMBps = 0;
     this.latestNodeActivity = {};
     this.svg?.selectAll("*").remove?.();

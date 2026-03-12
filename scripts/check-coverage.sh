@@ -57,7 +57,8 @@ check_node() {
       FAILED=1
     fi
   else
-    echo "No frontend coverage summary found; skipping Node coverage check."
+    echo "No frontend coverage summary found."
+    FAILED=1
   fi
 }
 

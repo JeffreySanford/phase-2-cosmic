@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Observable, BehaviorSubject } from "rxjs";
 
@@ -9,6 +9,8 @@ export interface VoServices {
 
 @Injectable({ providedIn: "root" })
 export class VoService {
+  private http = inject(HttpClient);
+
   private static readonly DEFAULT_WORKFLOW_SAMPLES: Record<
     string,
     Record<string, unknown>
@@ -99,8 +101,6 @@ export class VoService {
   private _workflowSamples: Record<string, Record<string, unknown>> = {
     ...VoService.DEFAULT_WORKFLOW_SAMPLES,
   };
-
-  constructor(private http: HttpClient) {}
 
   /** Returns a curated sample payload for the given VO workflow type, or null. */
   getSampleForType(type: string): Record<string, unknown> | null {

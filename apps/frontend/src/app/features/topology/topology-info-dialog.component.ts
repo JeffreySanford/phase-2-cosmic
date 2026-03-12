@@ -1,4 +1,4 @@
-import { Component, Inject } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 
 export interface TopologyNodeDialogData {
@@ -37,10 +37,8 @@ export type TopologyInfoDialogData =
   standalone: false,
 })
 export class TopologyInfoDialogComponent {
-  constructor(
-    public dialogRef: MatDialogRef<TopologyInfoDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: TopologyInfoDialogData
-  ) {}
+  dialogRef = inject<MatDialogRef<TopologyInfoDialogComponent>>(MatDialogRef);
+  data = inject<TopologyInfoDialogData>(MAT_DIALOG_DATA);
 
   close(): void {
     this.dialogRef.close();

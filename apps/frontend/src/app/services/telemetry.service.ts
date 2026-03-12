@@ -1,5 +1,5 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { map } from "rxjs/operators";
 import { Observable } from "rxjs";
 import { DataSourceService } from "./data-source.service";
@@ -10,14 +10,12 @@ import { RequestCacheService } from "./request-cache.service";
 // the browser doesn't need direct CORS access to the Prometheus server.
 @Injectable({ providedIn: "root" })
 export class TelemetryService {
-  private proxy = "/api/proxy/prometheus";
+  private http = inject(HttpClient);
+  private dataSource = inject(DataSourceService);
+  private mock = inject(MockDataService);
+  private cache = inject(RequestCacheService);
 
-  constructor(
-    private http: HttpClient,
-    private dataSource: DataSourceService,
-    private mock: MockDataService,
-    private cache: RequestCacheService
-  ) {}
+  private proxy = "/api/proxy/prometheus";
 
   queryInstant(metric: string): Observable<number> {
     if (this.dataSource.mode === "mock") {

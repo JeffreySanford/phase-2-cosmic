@@ -68,14 +68,14 @@
           <mat-expansion-panel (opened)="refreshPulsarDetails()">
             <mat-expansion-panel-header>
               <mat-panel-title>
-                Pulsar — Brokers: {{ pulsarStatus.brokers }} · Topics: {{ pulsarStatus.topics }} · Partitions: {{ pulsarStatus.partitions }}
+                Pulsar — Brokers: {{ (pulsarStatus$ | async)?.brokers }} · Topics: {{ (pulsarStatus$ | async)?.topics }} · Partitions: {{ (pulsarStatus$ | async)?.partitions }}
               </mat-panel-title>
             </mat-expansion-panel-header>
             <div class="status-details">
               <div class="status-summary">
-                <div>Brokers: <strong>{{ pulsarStatus.brokers }}</strong></div>
-                <div>Topics: <strong>{{ pulsarStatus.topics }}</strong></div>
-                <div>Partitions: <strong>{{ pulsarStatus.partitions }}</strong></div>
+                <div>Brokers: <strong>{{ (pulsarStatus$ | async)?.brokers }}</strong></div>
+                <div>Topics: <strong>{{ (pulsarStatus$ | async)?.topics }}</strong></div>
+                <div>Partitions: <strong>{{ (pulsarStatus$ | async)?.partitions }}</strong></div>
               </div>
               <div class="status-actions">
                 <button mat-stroked-button (click)="refreshPulsarDetails()">Refresh</button>
@@ -90,13 +90,13 @@
           <mat-expansion-panel (opened)="refreshRabbitDetails()">
             <mat-expansion-panel-header>
               <mat-panel-title>
-                RabbitMQ — Status: {{ rabbitMQStatus.status }} · Connection: {{ rabbitMQStatus.connection }} · Queues: {{ getRabbitQueuesCount() }} · Exchanges: {{ getRabbitExchangesCount() }}
+                RabbitMQ — Status: {{ (rabbitMQStatus$ | async)?.status }} · Connection: {{ (rabbitMQStatus$ | async)?.connection }} · Queues: {{ getRabbitQueuesCount() }} · Exchanges: {{ getRabbitExchangesCount() }}
               </mat-panel-title>
             </mat-expansion-panel-header>
             <div class="status-details">
               <div class="status-summary">
-                <div>Status: <strong>{{ rabbitMQStatus.status }}</strong></div>
-                <div>Connection: <strong>{{ rabbitMQStatus.connection }}</strong></div>
+                <div>Status: <strong>{{ (rabbitMQStatus$ | async)?.status }}</strong></div>
+                <div>Connection: <strong>{{ (rabbitMQStatus$ | async)?.connection }}</strong></div>
                 <div>Queues: <strong>{{ getRabbitQueuesCount() }}</strong></div>
                 <div>Exchanges: <strong>{{ getRabbitExchangesCount() }}</strong></div>
               </div>
@@ -111,7 +111,7 @@
           </mat-expansion-panel>
         </mat-accordion>
 
-        <app-infra-tabs [infra]="infrastructureTelemetry" [alertSlo]="alertSlo" [alertSloError]="alertSloError"></app-infra-tabs>
+        <app-infra-tabs *ngIf="infrastructureTelemetry" [infra]="infrastructureTelemetry" [alertSlo]="alertSlo$ | async" [alertSloError]="alertSloError$ | async"></app-infra-tabs>
 
         </mat-tab> <!-- end of Overview tab -->
       <mat-tab label="Trend">
@@ -194,8 +194,8 @@
       <mat-tab>
         <ng-template mat-tab-label>
           <span
-            [matBadge]="alertDlq.length"
-            [matBadgeHidden]="alertDlq.length === 0"
+            [matBadge]="(alertDlq$ | async)?.length"
+            [matBadgeHidden]="(alertDlq$ | async)?.length === 0"
             matBadgeColor="warn"
             matBadgeSize="small"
             matBadgeOverlap="false">
@@ -205,59 +205,61 @@
         <div class="tab-content">
 
           <!-- Loading spinner -->
-          <div *ngIf="alertSloLoading" class="alert-loading">
+          <div *ngIf="alertSloLoading$ | async" class="alert-loading">
             <mat-spinner diameter="32"></mat-spinner>
             <span>Fetching alert SLO metrics…</span>
           </div>
 
           <!-- Error banner -->
-          <div *ngIf="alertSloError" class="alert-error-banner">
+          <div *ngIf="alertSloError$ | async" class="alert-error-banner">
             <mat-icon>error_outline</mat-icon>
-            <span>{{ alertSloError }}</span>
+            <span>{{ alertSloError$ | async }}</span>
           </div>
 
           <!-- SLO Metric Cards -->
-          <div *ngIf="alertSlo && !alertSloLoading" class="slo-grid">
+          <ng-container *ngIf="alertSlo$ | async as slo">
+          <div *ngIf="(alertSloLoading$ | async) === false" class="slo-grid">
             <div class="slo-card">
               <div class="slo-label">
                 <mat-icon>notifications</mat-icon> Ingested Total
               </div>
-              <div class="slo-value">{{ alertSlo.alertIngestedTotal }}</div>
+              <div class="slo-value">{{ slo.alertIngestedTotal }}</div>
             </div>
             <div class="slo-card">
               <div class="slo-label">
                 <mat-icon>timer</mat-icon> Latency p50
               </div>
-              <div class="slo-value">{{ alertSlo.alertLatencyMsP50 | number:'1.1-1' }} ms</div>
+              <div class="slo-value">{{ slo.alertLatencyMsP50 | number:'1.1-1' }} ms</div>
             </div>
             <div class="slo-card">
               <div class="slo-label">
                 <mat-icon>timer</mat-icon> Latency p95
               </div>
-              <div class="slo-value">{{ alertSlo.alertLatencyMsP95 | number:'1.1-1' }} ms</div>
+              <div class="slo-value">{{ slo.alertLatencyMsP95 | number:'1.1-1' }} ms</div>
             </div>
             <div class="slo-card">
               <div class="slo-label">
                 <mat-icon>timer</mat-icon> Latency p99
               </div>
-              <div class="slo-value">{{ alertSlo.alertLatencyMsP99 | number:'1.1-1' }} ms</div>
+              <div class="slo-value">{{ slo.alertLatencyMsP99 | number:'1.1-1' }} ms</div>
             </div>
-            <div class="slo-card" [class.slo-warn]="alertSlo.dlqDepth > 10">
+            <div class="slo-card" [class.slo-warn]="slo.dlqDepth > 10">
               <div class="slo-label">
                 <mat-icon>inbox</mat-icon> DLQ Depth
               </div>
-              <div class="slo-value">{{ alertSlo.dlqDepth }}</div>
+              <div class="slo-value">{{ slo.dlqDepth }}</div>
             </div>
             <div class="slo-card">
               <div class="slo-label">
                 <mat-icon>replay</mat-icon> Replays Total
               </div>
-              <div class="slo-value">{{ alertSlo.replaysTotal }}</div>
+              <div class="slo-value">{{ slo.replaysTotal }}</div>
             </div>
           </div>
+          </ng-container>
 
           <!-- Refresh button always visible -->
-          <div class="slo-actions" *ngIf="!alertSloLoading">
+          <div class="slo-actions" *ngIf="(alertSloLoading$ | async) === false">
             <button mat-stroked-button (click)="fetchAlertSlo()"
                     aria-label="Refresh alert SLO">
               <mat-icon>refresh</mat-icon> Refresh
@@ -265,11 +267,11 @@
           </div>
 
           <!-- DLQ Table + Replay Controls — only shown when DLQ is non-empty -->
-          <div class="dlq-section" *ngIf="!alertSloLoading && alertDlq.length > 0">
+          <div class="dlq-section" *ngIf="(alertSloLoading$ | async) === false && ((alertDlq$ | async)?.length ?? 0) > 0">
             <div class="dlq-header">
               <span class="dlq-title">
                 <mat-icon>inbox</mat-icon> Dead Letter Queue
-                <span class="dlq-count">({{ alertDlq.length }})</span>
+                <span class="dlq-count">({{ (alertDlq$ | async)?.length }})</span>
               </span>
               <button mat-stroked-button color="warn"
                       (click)="replayAllFromDlq()"
@@ -290,7 +292,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let alert of alertDlq">
+                <tr *ngFor="let alert of alertDlq$ | async">
                   <td>{{ alert.eventType }}</td>
                   <td>
                     <span class="severity-badge"
@@ -316,8 +318,8 @@
             </table>
           </div>
 
-          <div class="slo-measured-at" *ngIf="alertSlo">
-            Measured at {{ alertSlo.measuredAt | date:'HH:mm:ss' }}
+          <div class="slo-measured-at" *ngIf="alertSlo$ | async as slo2">
+            Measured at {{ slo2.measuredAt | date:'HH:mm:ss' }}
           </div>
         </div>
       </mat-tab>

@@ -1,15 +1,15 @@
 <mat-card class="promql-card" [ngClass]="'tone-' + tone">
   <mat-card-title>{{ title }}</mat-card-title>
   <mat-card-content>
-    <div class="profile">Load {{ profilePct }}%</div>
-    <div class="value">{{ displayValue() }}</div>
-    <svg *ngIf="path" class="spark" viewBox="0 0 140 32" preserveAspectRatio="none">
-      <path [attr.d]="path" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <div class="profile">Load {{ (profilePct$ | async) }}%</div>
+    <div class="value" *ngIf="currentValue$ | async as cv">{{ displayValue(cv) }}</div>
+    <svg *ngIf="path$ | async as p" class="spark" viewBox="0 0 140 32" preserveAspectRatio="none">
+      <path [attr.d]="p" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
     <div class="meta">{{ query }}</div>
-    <div class="meta" *ngIf="lastUpdated">Updated {{ lastUpdated | date:'mediumTime' }}</div>
+    <div class="meta" *ngIf="lastUpdated$ | async as lu">Updated {{ lu | date:'mediumTime' }}</div>
     <div class="actions">
-      <button mat-button (click)="refresh()" [disabled]="loading">Refresh</button>
+      <button mat-button (click)="refresh()" [disabled]="loading$ | async">Refresh</button>
     </div>
   </mat-card-content>
 </mat-card>

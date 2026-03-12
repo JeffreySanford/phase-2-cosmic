@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Observable, throwError } from "rxjs";
 import { catchError } from "rxjs/operators";
@@ -29,10 +29,10 @@ export interface AllocateError {
 
 @Injectable({ providedIn: "root" })
 export class TridentAllocatorService {
+  private http = inject(HttpClient);
+
   /** Base URL of the simulator; override for non-default ports / environments. */
   allocatorBase = "http://localhost:7777";
-
-  constructor(private http: HttpClient) {}
 
   allocate(req: AllocateRequest): Observable<FspAllocationPlan> {
     return this.http

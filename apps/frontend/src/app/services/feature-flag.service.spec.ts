@@ -33,7 +33,9 @@ describe("FeatureFlagService", () => {
     service.override({ "jobs.lineage": true });
 
     // Simulate reinitialisation from fresh TestBed
-    const reloaded = new FeatureFlagService();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({});
+    const reloaded = TestBed.inject(FeatureFlagService);
     expect(reloaded.isEnabled("jobs.lineage")).toBe(true);
   });
 

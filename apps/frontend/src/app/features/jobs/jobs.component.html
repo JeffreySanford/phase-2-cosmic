@@ -1,7 +1,7 @@
 <div class="jobs-view">
 <mat-card>
   <mat-card-title>Governance Jobs</mat-card-title>
-  <app-disclaimer-banner type="demo" [dismissible]="true" [ready]="initialLoadSettled"></app-disclaimer-banner>
+  <app-disclaimer-banner type="demo" [dismissible]="true" [ready]="(initialLoadSettled$ | async) || false"></app-disclaimer-banner>
   <mat-card-content>
     <div class="toolbar-legend-row">
       <div class="toolbar">
@@ -16,7 +16,7 @@
           <span class="scanner-inline__stat">Dispatched&nbsp;<strong>{{ runningCount }}</strong></span>
         </span>
         <span class="spacer"></span>
-        <div *ngIf="loading" class="loading-inline">
+        <div *ngIf="loading$ | async" class="loading-inline">
           <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
         </div>
       </div>
@@ -274,7 +274,7 @@
       </div>
     </div>
 
-    <div *ngIf="initialLoadSettled && (!jobs || jobs.length === 0) && !loading" class="empty-state">
+    <div *ngIf="(initialLoadSettled$ | async) && (!jobs || jobs.length === 0) && !(loading$ | async)" class="empty-state">
       <mat-icon>work_off</mat-icon>
       <p>No jobs found. Click <strong>Add five jobs</strong> to queue 5 demo jobs and watch them process.</p>
     </div>

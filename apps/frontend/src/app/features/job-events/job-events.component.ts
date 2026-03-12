@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from "@angular/core";
+import { Component, OnInit, OnDestroy, inject } from "@angular/core";
 import { Subscription } from "rxjs";
 import { BrokerEventsService } from "../../services/broker-events.service";
 
@@ -14,10 +14,10 @@ interface BrokerEvent {
   standalone: false,
 })
 export class JobEventsComponent implements OnInit, OnDestroy {
+  private broker = inject(BrokerEventsService);
+
   recentEvents: BrokerEvent[] = [];
   private sub?: Subscription;
-
-  constructor(private broker: BrokerEventsService) {}
 
   ngOnInit(): void {
     this.sub = this.broker.events.subscribe((evt) => {

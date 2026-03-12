@@ -61,6 +61,14 @@ function clickTabByLabel(
   (target.nativeElement as HTMLElement).click();
 }
 
+function settleTelemetryView(
+  fixture: ComponentFixture<TelemetryComponent>,
+  ms = 0
+): void {
+  tick(ms);
+  fixture.detectChanges();
+}
+
 describe("TelemetryComponent", () => {
   let component: TelemetryComponent;
   let fixture: ComponentFixture<TelemetryComponent>;
@@ -227,6 +235,7 @@ describe("TelemetryComponent", () => {
       measuredAt: new Date().toISOString(),
     });
     httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
+    settleTelemetryView(fixture);
 
     expect(component.pulsarStatus.brokers).toBe(2);
     expect(component.pulsarStatus.topics).toBe(10);
@@ -285,6 +294,7 @@ describe("TelemetryComponent", () => {
       measuredAt: new Date().toISOString(),
     });
     httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
+    settleTelemetryView(fixture);
 
     expect(component.rabbitMQStatus.status).toBe("connected");
     expect(component.rabbitMQStatus.connection).toBe("connected");
@@ -328,6 +338,7 @@ describe("TelemetryComponent", () => {
       measuredAt: new Date().toISOString(),
     });
     httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
+    settleTelemetryView(fixture);
 
     expect(component.pulsarStatus.brokers).toBe(0);
     expect(component.pulsarStatus.topics).toBe(0);
@@ -371,6 +382,7 @@ describe("TelemetryComponent", () => {
       measuredAt: new Date().toISOString(),
     });
     httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
+    settleTelemetryView(fixture);
 
     expect(component.rabbitMQStatus.status).toBe("error");
     expect(component.rabbitMQStatus.connection).toBe("error");
@@ -424,6 +436,7 @@ describe("TelemetryComponent", () => {
       measuredAt: "2025-01-01T00:00:00Z",
     });
     httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
+    settleTelemetryView(fixture);
 
     expect(component.alertSlo).not.toBeNull();
     expect(component.alertSlo?.alertIngestedTotal).toBe(42);
@@ -464,6 +477,7 @@ describe("TelemetryComponent", () => {
       .expectOne("/api/v1/alerts/slo")
       .error(new ErrorEvent("alert-slo-error"));
     httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
+    settleTelemetryView(fixture);
 
     expect(component.alertSloError).toBe("Alert SLO endpoint unavailable");
     expect(component.alertSloLoading).toBe(false);
@@ -645,21 +659,18 @@ describe("TelemetryComponent", () => {
     });
     httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
 
-    fixture.detectChanges();
+    settleTelemetryView(fixture);
     clickTabByLabel(fixture, "Overview");
-    fixture.detectChanges();
-    tick();
+    settleTelemetryView(fixture);
     clickTabByLabel(fixture, "Nest SSR");
-    fixture.detectChanges();
-    tick();
+    settleTelemetryView(fixture);
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain("API Traffic");
     expect(text).toContain("By API Group");
     expect(text).toContain("Prometheus Proxy");
 
     clickTabByLabel(fixture, "Observability");
-    fixture.detectChanges();
-    tick();
+    settleTelemetryView(fixture);
     const observabilityText = fixture.nativeElement.textContent as string;
     expect(observabilityText).toContain("Observability");
     expect(observabilityText).toContain("Grafana");
@@ -667,8 +678,7 @@ describe("TelemetryComponent", () => {
     expect(observabilityText).toContain("Alertmanager");
 
     clickTabByLabel(fixture, "Operators");
-    fixture.detectChanges();
-    tick();
+    settleTelemetryView(fixture);
     const operatorsText = fixture.nativeElement.textContent as string;
     expect(operatorsText).toContain("Transient Alerts");
     expect(operatorsText).toContain("Replay throughput");
@@ -681,16 +691,14 @@ describe("TelemetryComponent", () => {
     expect(operatorsText).toContain("Manifest reads");
 
     clickTabByLabel(fixture, "Brokers");
-    fixture.detectChanges();
-    tick();
+    settleTelemetryView(fixture);
     const brokersText = fixture.nativeElement.textContent as string;
     expect(brokersText).toContain("Java Ingest Consumer");
     expect(brokersText).toContain("Retries");
     expect(brokersText).toContain("Latency");
 
     clickTabByLabel(fixture, "Java Governance Runtime");
-    fixture.detectChanges();
-    tick();
+    settleTelemetryView(fixture);
     const governanceText = fixture.nativeElement.textContent as string;
     expect(governanceText).toContain("Scheduler Pressure");
     expect(governanceText).toContain("Queued jobs");
@@ -709,8 +717,7 @@ describe("TelemetryComponent", () => {
     expect(governanceText).toContain("vo.adql.query");
 
     clickTabByLabel(fixture, "Executors");
-    fixture.detectChanges();
-    tick();
+    settleTelemetryView(fixture);
     const executorsText = fixture.nativeElement.textContent as string;
     expect(executorsText).toContain("VO Adapter");
     expect(executorsText).toContain("TACC Adapter");

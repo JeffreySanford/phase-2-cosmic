@@ -1,13 +1,40 @@
 # Coding Standards
 
+> **Note:** this document represents _v1_ of the coding standards. A modular v2 version has been
+> created under `documentation/development/coding-standards/` with separate topic files and
+> automated checklists. New edits should target the v2 files; this file is retained for
+> compatibility.
+
 Alignment anchors
 
-- Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
-- Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
+- Frontend UX source of truth: [FRONTEND_UI.md](/documentation/frontend/FRONTEND_UI.md)
+- Execution backlog: [../TODO.md](/documentation/planning/TODO.md)
 - Delivery plan: [../ROADMAP.md](/ROADMAP.md)
 
 Status date: 2026-03-09
 Canonical scope: `documentation/product/PRODUCT-CHARTER.md` + `SCOPE-LOCK.md`.
+
+## Why These Standards Exist
+
+These standards exist to keep a multi-language, multi-service repository maintainable, testable, secure, and
+operable as it grows. In this workspace Angular, NestJS, Java, Go, Python, Docker, Kafka, RabbitMQ, Pulsar,
+Prometheus, and Grafana are not isolated technologies; they form a single delivery system. Small inconsistencies at
+one boundary become expensive failures at another. A weak DTO contract becomes a broken consumer. A missing
+timeout becomes a stuck container. A bad metric name becomes an invisible outage. A casual shortcut in one service
+becomes tribal knowledge for the entire repo.
+
+These rules are intended to:
+
+- reduce regression risk during rapid delivery
+- make failures easier to detect, diagnose, and recover from
+- keep service boundaries explicit and stable
+- prevent architecture drift in a large Nx monorepo
+- support safe onboarding of new developers across multiple stacks
+- improve CI reliability and release confidence
+- preserve observability, auditability, and security as first-class engineering concerns
+
+The goal is not ceremony for its own sake. The goal is to make correct implementation the default, make bad
+patterns obvious early, and keep the codebase from slowly turning into a distributed landfill with dashboards.
 
 ---
 
@@ -21,12 +48,23 @@ Canonical scope: `documentation/product/PRODUCT-CHARTER.md` + `SCOPE-LOCK.md`.
 6. [Python](#6-python)
 7. [MVP Boundaries in Code](#7-mvp-boundaries-in-code)
 8. [Deferred Work Handling](#8-deferred-work-handling)
+9. [Messaging — Kafka, RabbitMQ, Pulsar](#9-messaging--kafka-rabbitmq-pulsar)
+10. [Docker & Containers](#10-docker--containers)
+11. [Observability — Prometheus, Grafana, Tracing](#11-observability--prometheus-grafana-tracing)
+12. [Security](#12-security)
+13. [Database & Persistence](#13-database--persistence)
+14. [Naming & File Conventions](#14-naming--file-conventions)
 
 ---
 
 ## 1. Cross-Cutting Rules
 
 These rules apply to every language and service in the repository.
+
+These rules matter because consistency across services is what keeps a polyglot platform
+understandable. Without shared expectations for testing, logging, configuration, and review, each
+service becomes its own tiny kingdom with its own weird customs, and then integration becomes
+archaeology.
 
 ### Testing
 
@@ -56,11 +94,107 @@ These rules apply to every language and service in the repository.
 - All PRs must pass lint, unit tests, and the full `pnpm run quality:ci` pipeline before merge.
 - No new `TODO` comments without a linked issue ID.
 
+### Repository architecture boundaries
+
+All code must respect Nx project boundaries. Cross-project imports must occur only through declared public APIs
+(`index.ts`, exported interfaces, or explicitly documented module boundaries).
+
+> **Automated check:** ESLint enforces this via the `@nx/enforce-module-boundaries` rule (see
+> `eslint.config.js`). CI also runs `pnpm nx dep-graph --scan` and will fail on any newly introduced
+> cycles.
+
+Do not import from another library’s internal file paths (for example `libs/foo/src/lib/internal/...`). Import only
+from the library root or documented public subpaths.
+
+Shared libraries must be capability-based, not dumping grounds. Avoid generic libraries named `shared-utils`,
+`common`, or `helpers` unless they contain strongly cohesive functionality.
+
+Circular dependencies between Nx projects are forbidden. CI must fail on newly introduced circular dependency graphs — the
+`pnpm nx dep-graph --scan` command is run in the build pipeline to detect them automatically.
+
+Each app or service must own its bounded domain. If two services need the same behavior, extract a shared contract or
+utility library rather than copy‑pasting logic.
+
+### API and contract discipline
+
+Every externally consumed API must have an explicit contract: OpenAPI for HTTP services, AsyncAPI or equivalent
+schema documentation for messaging flows, and typed DTO/event definitions for internal consumers.
+
+Breaking contract changes require a versioning decision and changelog entry before merge.
+
+Request and response DTOs are boundary contracts, not internal domain models. Do not leak persistence entities or
+transport-specific payloads into business logic.
+
+All timestamps crossing service boundaries must use ISO 8601 UTC unless a contract explicitly requires otherwise.
+
+IDs must be stable and explicit. Do not overload display names, labels, or user-entered text as technical identifiers.
+
+### Idempotency and retries
+
+All message consumers and mutating API endpoints must be designed with retry behavior in mind.
+
+At-least-once delivery must be assumed for Kafka, RabbitMQ, and Pulsar consumers unless explicitly documented
+otherwise.
+
+Operations that may be retried must be idempotent or protected by deduplication keys, transactional guards, or
+equivalent replay-safe logic.
+
+Never assume “message received once” in business logic.
+
+### Time, clocks, and scheduling
+
+Do not call system time directly in business logic if deterministic testing matters. Use an injectable clock/provider
+abstraction in TypeScript, Java, Go, and Python where appropriate.
+
+Scheduled jobs must document cadence, timeout, overlap behavior, and failure policy.
+
+Timezone conversions belong at the boundary layer. Internal service logic should prefer UTC.
+
+### Data handling
+
+Validate early at service boundaries and normalize once. Do not repeatedly sanitize the same payload across layers.
+
+Any field that originates from user input, queue payloads, or external APIs must be treated as untrusted until
+validated.
+
+PII, secrets, access tokens, and regulated data must be explicitly classified in code comments or contract docs where
+they cross service boundaries.
+
+Avoid “stringly typed” business logic for enums, statuses, event names, and command names. Use explicit
+enums/constants/value objects.
+
+### Performance and resilience
+
+All outbound network calls must define explicit timeouts. No default infinite waits.
+
+All cross-service calls must define retry policy, backoff policy, and circuit-breaking strategy where failure
+fan-out is possible.
+
+Bulkheads should be used around slow or failure-prone integrations where operationally relevant.
+
+Any code path that can amplify load across multiple downstream systems must be called out in code review.
+
+### Documentation and ADRs
+
+Significant architectural decisions require an ADR before or alongside implementation. Examples include
+introducing a new broker, changing auth flow, adopting a new persistence model, or adding a new cross-cutting
+library.
+
+README files for services must include: purpose, local run commands, key environment variables, ports,
+dependencies, health endpoints, metrics endpoint, and test commands.
+
+If a decision is temporary, the expiry condition must be documented. “Temporary” without a removal trigger is just
+architecture debt wearing a mustache.
+
 ---
 
 ## 2. Static Analysis & Security Toolchain
 
 The repository enforces code quality and security rules through three complementary free/open-source tools. All three run automatically in CI on every push and PR.
+
+These tools matter because humans miss things, especially in large repos. Static analysis catches
+classes of defects early, enforces baseline quality automatically, and reduces the chance that obvious
+security issues survive into production because someone was tired, rushed, or feeling unusually optimistic.
 
 ### CodeQL (Security SAST)
 
@@ -108,11 +242,58 @@ The repository enforces code quality and security rules through three complement
 
 `test:all` is the full kitchen-sink gate: `quality:ci` + container integration tests + Semgrep SAST.
 
+#### Dependency and container scanning
+
+All lockfiles, container images, and OS packages used in CI or runtime images must be scanned for known
+vulnerabilities.
+
+Add an image-scanning tool such as Trivy or Grype to CI for all Dockerfiles and published images.
+
+High and critical vulnerabilities in runtime dependencies or base images block merge unless explicitly waived with
+documented justification and expiry date.
+
+Base image tags must be pinned to explicit versions, never floating tags like `latest`.
+
+#### Secrets and credential hygiene
+
+Secret scanning must run in CI and pre-commit hooks where feasible.
+
+No credentials, tokens, certificates, SSH keys, or `.env` files may be committed, even in test fixtures, unless
+clearly fake and labeled as non-secret examples.
+
+Example configuration files must end in `.example` and contain placeholders only.
+
+#### SBOM and provenance
+
+Release artifacts and container images should generate an SBOM.
+
+Production images should be traceable to a commit SHA, build pipeline run, and version tag.
+
+Signed artifacts/images are preferred for release builds where the toolchain supports it.
+
 ---
 
 ## 3. TypeScript — Angular & NestJS
 
-See the canonical developer run and environment docs: [GETTING_STARTED.md](/docuentation/overview/GETTING_STARTED.md) and [ENVIRONMENT.md](/docuentation/infra/ENVIRONMENT.md).
+These standards matter because the frontend and API layers change constantly and tend to accumulate
+shortcuts fast. Strong typing, thin components, DTO validation, and Nx boundaries keep the Angular/Nest
+stack scalable instead of letting it decay into tightly coupled reactive spaghetti with pretty buttons.
+
+See the canonical developer run and environment docs: [GETTING_STARTED.md](/documentation/overview/GETTING_STARTED.md) and [ENVIRONMENT.md](/documentation/infra/ENVIRONMENT.md).
+
+### Workspace and library design
+
+Each Nx library must have a clearly defined type: UI, feature, data-access, util, or contract. Do not mix
+these concerns in the same library.
+
+Angular feature libraries may depend on UI, data-access, and contract libraries, but UI libraries must not
+depend on feature libraries.
+
+NestJS application layers should follow controller → service → repository/client boundaries. Controllers do not
+call repositories directly.
+
+Shared DTO and contract libraries must not import framework-specific runtime code unless explicitly intended
+for that purpose.
 
 ### Package manager
 
@@ -123,18 +304,31 @@ See the canonical developer run and environment docs: [GETTING_STARTED.md](/docu
 #### TypeScript
 
 - Strict mode is mandatory (`"strict": true` in `tsconfig`). Never use `as any` or `@ts-ignore` except to work around a verified upstream bug, with a comment explaining why.
+- Prefer `unknown` over `any` when a type is genuinely unknown.
+- Use discriminated unions for multi-state results and event payload families where practical.
+- Avoid boolean argument flags in public methods. Replace with named option objects or separate methods.
+- Public methods returning async data must return `Observable<T>` or `Promise<T>` consistently per layer conventions. Do not mix styles arbitrarily within the same subsystem.
+- Prefer `readonly` types for DTOs, config objects, and immutable state structures.
 - Keep `libs/shared/models` as the single source of truth for shared types. Do not duplicate model definitions across apps.
 - Nx-first task execution: run builds, tests, and linting via `pnpm nx <target> <project>`, not raw `tsc`/`jest`/`eslint` invocations.
 
 #### Angular
 
 - Module-mode policy: all `@Component` and `@Directive` declarations MUST explicitly set `standalone: false`. Enforced by `pnpm run standalone:check`.
+- Standalone components are not allowed by default in this workspace. Any exception must be explicitly documented and justified by an approved migration plan.
 - No inline templates or styles. Components must reference external `.html` and `.scss` files. Never use `template:` or `styles:` literals in decorators.
 - **Do not use any inline CSS in templates** (no `style="..."`, `[ngStyle]`, or `[style.x]` attributes). All styling belongs in the component’s SCSS so that Angular Material 3 theming (MD3) and global style rules work correctly.
   - For cases where the style value must be computed at runtime (widths, positions, colors, etc.), use a helper directive such as `appDynamicStyle`, host bindings, or set CSS custom properties from the component class so the templates remain free of inline styles.
+- Angular Signals are not allowed by default in application code for this workspace. Do not introduce `signal()`, `computed()`, or `effect()` without a documented workspace-level decision.
+- Prefer `ChangeDetectionStrategy.OnPush` for all components unless a documented exception exists.
 - Favor RxJS observables (hot/live streams) over ad-hoc Promises for UI and service flows. Keep subscription lifecycles explicit — always unsubscribe via `takeUntilDestroyed`, `AsyncPipe`, or an explicit `ngOnDestroy`.
+- Prefer Observable-based UI state and polling flows over Promise-first component orchestration. `async` / `await` is acceptable only at narrow integration boundaries such as dynamic imports, one-time bootstrapping, or isolated browser APIs.
 - Use the observer pattern via services for cross-component communication. Do not pass data through deeply nested `@Input`/`@Output` chains.
 - Components must be thin: no business logic, no HTTP calls, no direct store access. Delegate to services.
+- Initial render must be lifecycle-safe. Do not mutate template-bound state during the first render check in a way that triggers Angular `NG0100`; start first-load polling and subscription-driven UI mutations only after the initial render settles.
+- Prefer Angular-native event and rendering APIs over raw DOM access. Use `Renderer2`, `@HostListener`, `@ViewChild`, or RxJS event streams before `window.addEventListener`, `document.querySelector`, or manual DOM mutation.
+- Prefer injected `DOCUMENT` over direct `document` access when document access is required.
+- Raw DOM access is allowed only at narrow integration boundaries such as D3, fullscreen, or file-download interop, and must stay localized and teardown-safe.
 
 #### NestJS
 
@@ -142,7 +336,7 @@ See the canonical developer run and environment docs: [GETTING_STARTED.md](/docu
 - Validate all inbound DTOs with `class-validator`; throw `BadRequestException` for invalid payloads at the controller boundary.
 - Modules must be self-contained: declare providers, imports, and exports explicitly. No `global: true` modules except for core infrastructure (config, logger).
 
-### NestJS Testing
+### TypeScript / Angular / NestJS Testing
 
 - Every UI component includes a unit test (`*.spec.ts`). Key interactive components include a Cypress e2e test covering main interactions.
 - Include test stubs when scaffolding new components.
@@ -151,6 +345,11 @@ See the canonical developer run and environment docs: [GETTING_STARTED.md](/docu
 ---
 
 ## 4. Java — Spring Boot
+
+These standards matter because Java services often become long-lived system anchors. Clear layering,
+DTO separation, constructor injection, and disciplined testing keep Spring Boot services predictable,
+testable, and resistant to the kind of enterprise bloat that arrives wearing a badge and calling itself
+flexibility.
 
 Services: `apps/java-governance` (`com.cosmic.governance`), `tools/java-ingest` (`org.phase2.ingest`).
 Runtime: Java 21+. Framework: Spring Boot 3.x with Jakarta EE namespaces (`jakarta.*`, not `javax.*`).
@@ -189,9 +388,9 @@ src/main/java/<package>/
 - Use Java records for immutable DTOs. If mutation is required, use a plain class with final fields and a canonical constructor.
 - Do not expose JPA/Hibernate entities directly in API responses. Map to DTOs at the service boundary.
 
-### JavaConfiguration
+### Java Configuration
 
-- Externalise all values via `@Value("${property.key:defaultValue}")`. Include a sensible default for every property so the service starts in a minimal environment.
+- Prefer `@ConfigurationProperties` for typed configuration. Use `@Value` only for isolated one-off properties or when a full record is overkill; always include a sensible default so the service starts in a minimal environment.
 - Group related config into a `@ConfigurationProperties` record when three or more related properties exist together.
 
 ### Messaging (Kafka / RabbitMQ)
@@ -221,6 +420,10 @@ src/main/java/<package>/
 ---
 
 ## 5. Go
+
+These standards matter because Go makes it easy to write code that looks simple while hiding concurrency
+leaks, silent errors, and operational chaos. Explicit context handling, bounded concurrency, structured
+logging, and clear package design keep small binaries from becoming fast little disasters.
 
 Service: `tools/data-generator` (`github.com/cosmic-horizon/data-generator`). Go version: 1.21+.
 
@@ -262,6 +465,7 @@ tools/<service>/
 ### Go Logging
 
 - Use the standard `log` package for simple binaries. For services with multiple subsystems, use a structured logger (e.g. `log/slog` from Go 1.21+).
+- Prefer `log/slog` for all new Go services so structured fields remain consistent across environments.
 - Never use `fmt.Println` in production code paths.
 
 ### Formatting & linting
@@ -281,6 +485,10 @@ tools/<service>/
 ---
 
 ## 6. Python
+
+These standards matter because Python is excellent for tooling and pipelines, but it will happily let quick
+scripts become production dependencies without anyone admitting it happened. Type hints, packaging,
+testing, and linting reduce the risk of “temporary” scripts becoming permanent mystery machinery.
 
 Python is used for data-pipeline scripts and tooling. Version: 3.11+.
 
@@ -329,7 +537,7 @@ tools/<service>/
 - Absolute imports only. No relative imports (`from .foo import bar` is forbidden outside of `__init__.py` namespace re-exports).
 - Each module has a single responsibility. If a file exceeds ~300 lines, extract a collaborator.
 
-### PythonError handling
+### Python Error Handling
 
 - Catch specific exception types. Bare `except:` or `except Exception:` are forbidden except at top-level entry points where you must log and exit gracefully.
 - Use custom exception classes that inherit from a service-level base exception for domain errors.
@@ -363,7 +571,208 @@ tools/<service>/
 
 ## 8. Deferred Work Handling
 
-If implementing v1.1/v2 work (comments, [Mode B](/docuentation/viewer/VIEWER_MODEB.md), FITS proxy), gate with explicit roadmap updates first.
+If implementing v1.1/v2 work (comments, [Mode B](/documentation/viewer/VIEWER_MODEB.md), FITS proxy), gate with explicit roadmap updates first.
+
+## 9. Messaging — Kafka, RabbitMQ, Pulsar
+
+These standards matter because asynchronous systems fail in ways that are harder to see and harder to
+debug than request/response code. Schema discipline, retry safety, idempotency, dead-letter handling, and
+correlation metadata are what prevent message-driven systems from becoming haunted.
+
+### Event design
+
+Every message must declare an explicit event name/type and schema version.
+
+Event payloads must be self-describing enough for independent consumers to validate them without
+reverse-engineering producer code.
+
+Do not use anonymous maps or untyped JSON blobs for durable cross-service contracts unless absolutely
+unavoidable and documented.
+
+Include trace or correlation identifiers in all message metadata where supported.
+
+### Delivery semantics
+
+Producers and consumers must document expected delivery semantics: at-most-once, at-least-once, or
+exactly-once-like behavior.
+
+Consumers must be replay-safe.
+
+Ordering assumptions must be explicit. Never assume global ordering unless the platform and
+topic/partition model actually guarantees it.
+
+### Broker-specific discipline
+
+Kafka topics, RabbitMQ exchanges/queues, and Pulsar topics/subscriptions must be provisioned via code or
+declarative infra, not tribal knowledge.
+
+Retention, TTL, dead-lettering, retry topics/queues, and partitioning strategy must be documented for each
+production message flow.
+
+Consumer group or subscription naming must follow a documented convention.
+
+### Failure handling
+
+Poison messages must have a deterministic handling path: reject, DLQ, quarantine, or park for operator
+review.
+
+Retrying a bad payload forever is not resilience; it is a denial-of-service attack with extra steps.
+
+Listener code must emit structured logs containing event type, correlation ID, retry attempt if known, and
+failure class.
+
+## 10. Docker & Containers
+
+These standards matter because containers are part of the runtime, not just packaging. Weak Docker
+discipline leads to bloated images, root processes, fragile local stacks, inconsistent CI behavior, and
+production surprises that somehow always happen on Friday.
+
+### Image construction
+
+Use multi-stage Docker builds for all production images unless the service is genuinely trivial.
+
+Runtime images must contain only runtime dependencies. Build tools, package managers, and test-only assets
+should not ship in final images.
+
+Containers must run as non-root unless there is a documented and approved exception.
+
+Use minimal base images appropriate to the runtime, pinned to explicit versions.
+
+### Container runtime behavior
+
+Every container must define a healthcheck or expose a health endpoint suitable for orchestrators and local
+compose environments.
+
+Containers must fail fast on invalid startup configuration.
+
+Logs must write to stdout/stderr in containerized environments; do not depend on file-based logs inside
+containers.
+
+Persistent data directories, if used, must be explicit and mounted intentionally.
+
+### Compose and local dev
+
+docker/dev-compose.yml services must have stable service names, documented ports, and deterministic startup
+requirements.
+
+Compose files must distinguish required services from optional developer convenience services.
+
+Local stack scripts must support partial startup for targeted development workflows where feasible.
+
+## 11. Observability — Prometheus, Grafana, Tracing
+
+These standards matter because if a service fails and nobody can tell why, then the code is only technically
+running. Good metrics, logs, tracing, and dashboards turn outages from guesswork into diagnosis and make
+performance and reliability measurable instead of mystical.
+
+### Metrics design
+
+Metrics names must follow a documented naming convention by subsystem and unit.
+
+Histograms are preferred over ad-hoc average calculations for request and processing durations.
+
+Gauge usage must be intentional; avoid gauges for values that are really monotonically increasing counts.
+
+Business metrics and technical metrics should be distinguishable by naming and dashboard placement.
+
+### Logging and correlation
+
+All inbound HTTP requests and asynchronous message-handling flows should propagate a correlation ID /
+trace ID.
+
+Logs must include service name, environment, version, and correlation identifier where possible.
+
+Log messages should be human-readable and machine-parsable. Do not bury the actual failure cause in
+decorative prose.
+
+### Tracing
+
+Distributed tracing is strongly recommended for cross-service flows involving HTTP plus messaging
+boundaries.
+
+Trace propagation must be preserved across producer and consumer boundaries where supported by client
+libraries and infra.
+
+### Dashboards and alerts
+
+Grafana dashboards for production services must include: request/message volume, error rate, latency,
+saturation or queue depth, and dependency health.
+
+Alerts must be actionable. Alert on symptoms that require intervention, not on every transient hiccup.
+
+## 12. Security
+
+These standards matter because security failures are usually boundary failures: bad validation, weak auth
+checks, leaked secrets, missing audit trails, or unsafe assumptions about trust. Security has to be embedded
+in normal development practice, not stapled on during panic.
+
+### Authn / authz
+
+Authentication and authorization checks must occur at trusted boundaries and must never rely solely on
+client-provided claims without verification.
+
+Role checks, permission checks, and policy decisions must be centralized and testable.
+
+Privileged actions must emit audit logs with actor, action, target, and outcome.
+
+### Input and output safety
+
+All external input is untrusted.
+
+Output encoding must match sink type: HTML, JSON, SQL parameters, shell arguments, file paths, etc.
+
+Never construct SQL, shell commands, or broker-routing primitives by string concatenation from untrusted
+input.
+
+### Secrets and keys
+
+Secrets must come from environment, secret managers, mounted files, or equivalent secure injection paths.
+
+Secret rotation procedures must be documented for production dependencies.
+
+Certificates and private keys must never be embedded in code, fixtures, or container images.
+
+### Auditability
+
+Security-relevant events require structured audit logging separate from noisy operational debug output.
+
+Audit events must be immutable in intent and not rely on best-effort debug logs for reconstruction.
+
+## 13. Database & Persistence
+
+These standards matter because persistence decisions outlive most application code. Migration discipline,
+query visibility, indexing awareness, and pagination rules prevent data stores from becoming the place where
+performance, correctness, and maintainability go to die.
+
+Schema changes must be applied through versioned migrations.
+
+Destructive migrations require explicit rollback or remediation planning.
+
+Index strategy for new tables/collections must be considered during implementation, not after production
+falls over.
+
+Soft delete behavior, if used, must be explicit and consistent.
+
+Repository/query methods must not hide expensive full scans behind innocent names.
+
+Pagination must be explicit for potentially unbounded result sets.
+
+## 14. Naming & File Conventions
+
+These standards matter because naming is architecture in plain English. Good names reduce cognitive load, reveal
+intent, and make systems easier to navigate. Bad names create confusion that no amount of clever code can
+fully undo.
+
+Names must reflect business meaning, not implementation accidents.
+
+Avoid vague names such as data, info, manager, helper, processor, or misc unless the scope is extremely
+obvious.
+
+Event names should be past-tense for facts and imperative for commands, and those two categories must not be
+mixed casually.
+
+Filenames, package names, library names, queue names, and topic names should follow a documented
+convention consistent across the repo.
 
 ---
 

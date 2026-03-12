@@ -29,8 +29,8 @@
   </p>
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="allocator-form">
-    <p *ngIf="!simulatorAvailable" class="simulator-warning">
-      ⚠️ {{ simulatorMessage }}
+    <p *ngIf="(simulatorAvailable$ | async) === false" class="simulator-warning">
+      ⚠️ {{ simulatorMessage$ | async }}
     </p>
     <h3>Scheduling Block</h3>
 
@@ -99,9 +99,9 @@
         mat-raised-button
         color="primary"
         type="submit"
-        [disabled]="loading || form.invalid"
+        [disabled]="(loading$ | async) || form.invalid"
       >
-        {{ loading ? "Allocating…" : "Allocate" }}
+        {{ (loading$ | async) ? "Allocating…" : "Allocate" }}
       </button>
       <button
         mat-icon-button
@@ -119,7 +119,7 @@
         mat-stroked-button
         type="button"
         (click)="downloadReport()"
-        [disabled]="!plan && !error"
+        [disabled]="(plan$ | async) == null && (error$ | async) == null"
         matTooltip="Download JSON report"
       >
         Download report
@@ -128,15 +128,15 @@
   </form>
 
   <!-- Success -->
-  <div *ngIf="plan" class="result result--success">
+  <div *ngIf="plan$ | async as plan" class="result result--success">
     <h3>Allocation Plan</h3>
     <dl>
       <dt>Plan ID</dt>
-      <dd>{{ plan.planId }}</dd>
+      <dd>{{ plan?.planId }}</dd>
       <dt>Subarray</dt>
-      <dd>{{ plan.subarray }}</dd>
+      <dd>{{ plan?.subarray }}</dd>
       <dt>FSPs assigned</dt>
-      <dd>{{ plan.allocations.length }}</dd>
+      <dd>{{ plan?.allocations?.length }}</dd>
     </dl>
     <details>
       <summary>Full plan JSON</summary>
@@ -145,10 +145,10 @@
   </div>
 
   <!-- Conflict / error -->
-  <div *ngIf="error" class="result result--error">
-    <h3>Allocation Failed — {{ error.code }}</h3>
-    <p class="error-message">{{ error.message }}</p>
-    <ul *ngIf="error.conflicts?.length">
+  <div *ngIf="error$ | async as error" class="result result--error">
+    <h3>Allocation Failed — {{ error?.code }}</h3>
+    <p class="error-message">{{ error?.message }}</p>
+    <ul *ngIf="error?.conflicts?.length">
       <li *ngFor="let c of error.conflicts">{{ c }}</li>
     </ul>
   </div>

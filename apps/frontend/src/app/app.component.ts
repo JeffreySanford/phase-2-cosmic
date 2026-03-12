@@ -1,4 +1,4 @@
-import { Component } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { Router } from "@angular/router";
 import { SidebarService } from "./base/sidebar/sidebar.service";
 import { StartupWarmService } from "./services/startup-warm.service";
@@ -10,14 +10,14 @@ import { StartupWarmService } from "./services/startup-warm.service";
   standalone: false,
 })
 export class AppComponent {
+  private router = inject(Router);
+  private sidebarService = inject(SidebarService);
+  private startupWarm = inject(StartupWarmService);
+
   title = "frontend";
   sidebarCollapsed = false;
 
-  constructor(
-    private router: Router,
-    private sidebarService: SidebarService,
-    private startupWarm: StartupWarmService
-  ) {
+  constructor() {
     this.startupWarm.warm();
   }
 

@@ -8,10 +8,10 @@ import {
   ViewChild,
   ElementRef,
   Renderer2,
-  Inject,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   NgZone,
+  inject,
 } from "@angular/core";
 import { DOCUMENT } from "@angular/common";
 import { SidebarService } from "../../base/sidebar/sidebar.service";
@@ -19,7 +19,7 @@ import {
   isAladinPrefetched as _isAladinPrefetched,
   getAladinInitPromise,
 } from "../../services/aladin-prefetch.service";
-import { from, of, defer, interval, throwError } from "rxjs";
+import { from, of, defer, interval, throwError, Subscription } from "rxjs";
 import {
   mergeMap,
   catchError,
@@ -51,6 +51,17 @@ type AladinModuleDefault =
   | ((...args: unknown[]) => unknown)
   | { aladin?: AladinFactory; wasmLibs?: Record<string, unknown> };
 
+type WindowWithCustomEvent = Window & {
+  CustomEvent: new (
+    type: string,
+    eventInitDict?: CustomEventInit<unknown>
+  ) => CustomEvent<unknown>;
+};
+
+type WindowWithResizeObserver = Window & {
+  ResizeObserver: typeof ResizeObserver;
+};
+
 interface AladinModule {
   default?: AladinModuleDefault;
   aladin?: AladinFactory;
@@ -66,6 +77,12 @@ interface AladinModule {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ViewerComponent implements AfterViewInit, OnDestroy {
+  private renderer = inject(Renderer2);
+  private doc = inject<Document>(DOCUMENT);
+  private cdr = inject(ChangeDetectorRef);
+  private ngZone = inject(NgZone);
+  private sidebarService = inject(SidebarService);
+
   @ViewChild("aladinContainer", { static: true })
   containerRef!: ElementRef<HTMLElement>;
 
@@ -84,14 +101,36 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
   private injectedScripts: HTMLScriptElement[] = [];
   private isDestroyed = false;
   private resizeObserver?: ResizeObserver;
+  private sidebarSubscription?: Subscription;
 
-  constructor(
-    private renderer: Renderer2,
-    @Inject(DOCUMENT) private doc: Document,
-    private cdr: ChangeDetectorRef,
-    private ngZone: NgZone,
-    private sidebarService: SidebarService
-  ) {}
+  private get browserWindow(): Window | null {
+    return this.doc?.defaultView ?? null;
+  }
+
+  private dispatchBrowserEvent(
+    type: "resize" | "aladin-ready",
+    detail?: Record<string, unknown>
+  ): void {
+    const browserWindow = this.browserWindow;
+    if (!browserWindow) return;
+    try {
+      if (type === "resize") {
+        browserWindow.dispatchEvent(new Event("resize"));
+        return;
+      }
+      if (
+        typeof (browserWindow as Partial<WindowWithCustomEvent>).CustomEvent ===
+        "function"
+      ) {
+        const customEventWindow = browserWindow as WindowWithCustomEvent;
+        browserWindow.dispatchEvent(
+          new customEventWindow.CustomEvent(type, { detail })
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   ngAfterViewInit(): void {
     this.initViewer()
@@ -104,8 +143,11 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
       .subscribe(() => {
         // set up a resize observer to notify Aladin of container size changes
         const el = this.containerRef.nativeElement;
-        if (typeof ResizeObserver !== "undefined") {
-          this.resizeObserver = new ResizeObserver(() => {
+        const ResizeObserverCtor = (
+          this.browserWindow as Partial<WindowWithResizeObserver> | null
+        )?.ResizeObserver;
+        if (typeof ResizeObserverCtor === "function") {
+          this.resizeObserver = new ResizeObserverCtor(() => {
             try {
               const rect = el.getBoundingClientRect();
               if (this.instance && typeof this.instance.resize === "function") {
@@ -115,33 +157,36 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
               // ignore
             }
           });
-          this.resizeObserver.observe(el);
+          // guard against undefined to satisfy TS
+          this.resizeObserver?.observe(el);
         }
 
         // track sidebar collapse events so our viewer redraws when the stage width changes
-        this.sidebarService.collapsed$.subscribe(() => {
-          setTimeout(() => {
-            try {
-              const rect = el.getBoundingClientRect();
-              if (this.instance && typeof this.instance.resize === "function") {
-                this.instance.resize(rect.width, rect.height);
+        this.sidebarSubscription = this.sidebarService.collapsed$.subscribe(
+          () => {
+            setTimeout(() => {
+              try {
+                const rect = el.getBoundingClientRect();
+                if (
+                  this.instance &&
+                  typeof this.instance.resize === "function"
+                ) {
+                  this.instance.resize(rect.width, rect.height);
+                }
+                this.dispatchBrowserEvent("resize");
+              } catch {
+                // ignore
               }
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(new Event("resize"));
-              }
-            } catch {
-              // ignore
-            }
-          }, 100);
-        });
+            }, 100);
+          }
+        );
       });
   }
 
   // Run a function when the browser is idle (requestIdleCallback) with a setTimeout fallback.
   // Returns a promise that resolves/rejects with the function result.
   private runWhenIdle<T>(fn: () => T | Promise<T>): Promise<T> {
-    if (typeof window === "undefined")
-      return Promise.resolve(fn() as Promise<T>);
+    if (!this.browserWindow) return Promise.resolve(fn() as Promise<T>);
 
     return new Promise<T>((resolve, reject) => {
       const run = () => {
@@ -187,6 +232,8 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
       }
       this.resizeObserver = undefined;
     }
+    this.sidebarSubscription?.unsubscribe();
+    this.sidebarSubscription = undefined;
 
     try {
       if (this.instance && typeof this.instance.remove === "function") {
@@ -302,9 +349,11 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
             (m.wasmLibs as Record<string, unknown>)["core"]
           )
             return true;
-          const w = (this.doc.defaultView ?? window) as Window & {
-            aladin?: AladinModule;
-          };
+          const browserWindow = this.browserWindow as
+            | (Window & { aladin?: AladinModule })
+            | null;
+          const w = browserWindow ?? null;
+          if (!w) return false;
           const a = w.aladin;
           if (
             a &&
@@ -420,20 +469,9 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
           /* ignore */
         }
         try {
-          if (
-            typeof window !== "undefined" &&
-            typeof CustomEvent === "function"
-          ) {
-            try {
-              window.dispatchEvent(
-                new CustomEvent("aladin-ready", {
-                  detail: { instance: this.instance },
-                })
-              );
-            } catch {
-              /* ignore */
-            }
-          }
+          this.dispatchBrowserEvent("aladin-ready", {
+            instance: this.instance,
+          });
         } catch {
           /* ignore */
         }

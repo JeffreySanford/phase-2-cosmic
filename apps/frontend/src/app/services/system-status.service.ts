@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { BehaviorSubject, Observable, forkJoin, interval, of } from "rxjs";
 import { HttpClient } from "@angular/common/http";
 import { catchError, map } from "rxjs/operators";
@@ -28,6 +28,10 @@ export interface SystemStatus {
   providedIn: "root",
 })
 export class SystemStatusService {
+  private http = inject(HttpClient);
+  private dataSource = inject(DataSourceService);
+  private mock = inject(MockDataService);
+
   private statusSubject = new BehaviorSubject<SystemStatus>({
     health: "healthy",
     lastCheck: new Date(),
@@ -40,11 +44,7 @@ export class SystemStatusService {
 
   public status$: Observable<SystemStatus> = this.statusSubject.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private dataSource: DataSourceService,
-    private mock: MockDataService
-  ) {
+  constructor() {
     // Check health every 30 seconds
     interval(30000).subscribe(() => this.checkHealth());
     // Initial check

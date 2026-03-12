@@ -1,10 +1,17 @@
+import { TestBed } from "@angular/core/testing";
 import { firstValueFrom } from "rxjs";
 import { MockDataService } from "./mock-data.service";
 import { LoadProfileService } from "./load-profile.service";
 
 describe("MockDataService", () => {
   it("keeps CPU telemetry near saturation at the 100% profile", async () => {
-    const service = new MockDataService({ current: 100 } as LoadProfileService);
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: LoadProfileService, useValue: { current: 100 } },
+        MockDataService,
+      ],
+    });
+    const service = TestBed.inject(MockDataService);
 
     const res = (await firstValueFrom(
       service.telemetryRange(
@@ -25,7 +32,13 @@ describe("MockDataService", () => {
   });
 
   it("derives the instant value from the same metric-specific series", async () => {
-    const service = new MockDataService({ current: 50 } as LoadProfileService);
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: LoadProfileService, useValue: { current: 50 } },
+        MockDataService,
+      ],
+    });
+    const service = TestBed.inject(MockDataService);
 
     const value = await firstValueFrom(
       service.telemetryInstant('up{job="data-generator"}')

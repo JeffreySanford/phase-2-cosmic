@@ -1,4 +1,4 @@
-import { Component } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { SettingsService } from "./settings.service";
 
 @Component({
@@ -8,5 +8,5 @@ import { SettingsService } from "./settings.service";
   standalone: false,
 })
 export class SettingsComponent {
-  constructor(public readonly settings: SettingsService) {}
+  readonly settings = inject(SettingsService);
 }

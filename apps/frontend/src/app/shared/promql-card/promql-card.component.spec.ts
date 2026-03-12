@@ -56,9 +56,9 @@ describe("PromqlCardComponent", () => {
   it("loads aligned value and sparkline data on refresh", (done) => {
     component.refresh();
     setTimeout(() => {
-      expect(component.currentValue).toBe(3);
-      expect(component.points.length).toBeGreaterThan(0);
-      expect(component.path).toContain("M");
+      expect(component.currentValue$.value).toBe(3);
+      expect(component.points$.value.length).toBeGreaterThan(0);
+      expect(component.path$.value).toContain("M");
       done();
     }, 50);
   });
@@ -66,7 +66,7 @@ describe("PromqlCardComponent", () => {
   it("formats percent metrics using a stable percent domain", () => {
     component.query =
       '100 * sum(rate(process_cpu_seconds_total{job=~"data-generator|java-ingest"}[1m]))';
-    component.currentValue = 96.25;
+    component.currentValue$.next(96.25);
 
     expect(component.displayValue()).toBe("96.3%");
   });

@@ -1,4 +1,4 @@
-import { Injectable, Optional } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { of } from "rxjs";
 import { catchError } from "rxjs/operators";
@@ -8,13 +8,11 @@ import { prefetchAladin } from "./aladin-prefetch.service";
 
 @Injectable({ providedIn: "root" })
 export class StartupWarmService {
-  private warmed = false;
+  private http = inject(HttpClient, { optional: true });
+  private dataSource = inject(DataSourceService);
+  private cache = inject(RequestCacheService);
 
-  constructor(
-    @Optional() private http: HttpClient | null,
-    private dataSource: DataSourceService,
-    private cache: RequestCacheService
-  ) {}
+  private warmed = false;
 
   warm(): void {
     if (this.warmed) return;

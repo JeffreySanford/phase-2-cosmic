@@ -27,6 +27,7 @@ import {
 } from "@angular/material/dialog";
 import { MatTabsModule } from "@angular/material/tabs";
 import { HttpClientModule } from "@angular/common/http";
+import { DOCUMENT } from "@angular/common";
 
 import { AppComponent } from "./app.component";
 import { SharedModule } from "./shared/shared.module";
@@ -113,7 +114,10 @@ import { TridentAllocatorComponent } from "./features/diagnostics/trident-alloca
     provideAppInitializer(() => {
       const initializerFn = ((dataSource: DataSourceService) => () => {
         try {
-          const params = new URLSearchParams(window.location.search);
+          const document = inject(DOCUMENT, { optional: true });
+          const params = new URLSearchParams(
+            document?.defaultView?.location?.search ?? ""
+          );
           if (params.get("mode") === "mock") {
             dataSource.setMode("mock");
           }

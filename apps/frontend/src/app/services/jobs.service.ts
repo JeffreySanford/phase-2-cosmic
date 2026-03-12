@@ -1,5 +1,6 @@
+import { DOCUMENT } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { Observable, of, throwError, interval } from "rxjs";
 import {
   map,
@@ -40,10 +41,18 @@ export interface JobSubmitResponse {
 
 @Injectable({ providedIn: "root" })
 export class JobsService {
-  private base = "/api/v1/jobs";
-  // single declaration; duplicate removed
+  private http = inject(HttpClient);
+  private document = inject(DOCUMENT, { optional: true });
 
-  constructor(private http: HttpClient) {}
+  private base = "/api/v1/jobs";
+
+  private toAbsoluteArtifactUrl(url: string): string {
+    if (!url.startsWith("/")) {
+      return url;
+    }
+    const origin = this.document?.defaultView?.location?.origin;
+    return origin ? `${origin}${url}` : url;
+  }
 
   list(
     workflow?: string,
@@ -156,8 +165,8 @@ export class JobsService {
           (arr || []).map((a) => ({
             name: a.name,
             url:
-              a.url && typeof a.url === "string" && a.url.startsWith("/")
-                ? window.location.origin + a.url
+              a.url && typeof a.url === "string"
+                ? this.toAbsoluteArtifactUrl(a.url)
                 : a.url,
           }))
         )

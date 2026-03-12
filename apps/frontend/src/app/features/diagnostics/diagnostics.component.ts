@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy } from "@angular/core";
+import { AfterViewInit, Component, OnDestroy, inject } from "@angular/core";
+import { BehaviorSubject } from "rxjs";
 import { HttpClient } from "@angular/common/http";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
@@ -33,7 +34,13 @@ export interface JobEvent {
   styleUrls: ["./diagnostics.component.scss"],
   standalone: false,
 })
-export class DiagnosticsComponent implements OnInit, OnDestroy {
+export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
+  private http = inject(HttpClient);
+  private dataSource = inject(DataSourceService);
+  private mock = inject(MockDataService);
+  private loadProfile = inject(LoadProfileService);
+  private cache = inject(RequestCacheService);
+
   private eventStream?: EventSource;
   /** Formats a live event for pretty display */
   formatEvent(event: JobEvent): string {
@@ -91,8 +98,15 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   index: DiagnosticsIndex | null = null;
   /** Live events received from the broker */
   jobEvents: JobEvent[] = [];
-  loading = false;
+
+  // reactive state subjects to avoid ExpressionChangedAfterItHasBeenChecked
+  readonly loading$ = new BehaviorSubject<boolean>(false);
+  get loading(): boolean {
+    return this.loading$.value;
+  }
+
   error: string | null = null;
+
   systemSpecs: string | null = null;
   dockerServices: DockerServiceStatus[] = [];
   visibleFileCount = 5;
@@ -104,33 +118,39 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   // mission closure metrics
   timingDriftNs?: number;
   rfiEventRate?: number;
-  initialLoadSettled = false;
+
+  readonly initialLoadSettled$ = new BehaviorSubject<boolean>(false);
+  get initialLoadSettled(): boolean {
+    return this.initialLoadSettled$.value;
+  }
+
   // VO services
   // external-source preview removed from diagnostics; see Datasets / Viewer instead
   commissioningScenarios: CommissioningScenario[] = [];
-  commissioningLoading = false;
+  readonly commissioningLoading$ = new BehaviorSubject<boolean>(false);
+  get commissioningLoading(): boolean {
+    return this.commissioningLoading$.value;
+  }
   commissioningError: string | null = null;
   private pollSubscription?: Subscription;
   private brokerPollSubscription?: Subscription;
 
-  constructor(
-    private http: HttpClient,
-    private dataSource: DataSourceService,
-    private mock: MockDataService,
-    private loadProfile: LoadProfileService,
-    private cache: RequestCacheService
-  ) {}
+  private deferUiUpdate(task: () => void): void {
+    setTimeout(task, 0);
+  }
 
-  ngOnInit(): void {
-    this.fetchIndex();
-    this.fetchDockerServices();
-    this.fetchPulsarStatus();
-    this.fetchRabbitMQStatus();
-    this.fetchTimingMetrics();
-    this.fetchCommissioningScenarios();
-    this.startPolling();
-    this.startBrokerPolling();
-    this.connectEventStream();
+  ngAfterViewInit(): void {
+    this.deferUiUpdate(() => {
+      this.fetchIndex();
+      this.fetchDockerServices();
+      this.fetchPulsarStatus();
+      this.fetchRabbitMQStatus();
+      this.fetchTimingMetrics();
+      this.fetchCommissioningScenarios();
+      this.startPolling();
+      this.startBrokerPolling();
+      this.connectEventStream();
+    });
   }
 
   ngOnDestroy(): void {
@@ -158,7 +178,9 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       try {
         const data = JSON.parse(event.data);
         // Add new event to the front, keep max 10
-        this.jobEvents = [data, ...this.jobEvents].slice(0, 10);
+        this.deferUiUpdate(() => {
+          this.jobEvents = [data, ...this.jobEvents].slice(0, 10);
+        });
       } catch (_e) {
         // ignore malformed events
       }
@@ -200,8 +222,10 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       )
       .subscribe(
         (res) => {
-          this.timingDriftNs = res.timing_drift_ns;
-          this.rfiEventRate = res.rfi_event_rate;
+          this.deferUiUpdate(() => {
+            this.timingDriftNs = res.timing_drift_ns;
+            this.rfiEventRate = res.rfi_event_rate;
+          });
         },
         () => {
           // ignore errors; diagnostics already shows other failures
@@ -215,70 +239,82 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   // intentionally left blank - diagnostics no longer fetches VO summaries
 
   fetchCommissioningScenarios(): void {
-    this.commissioningLoading = true;
-    this.commissioningError = null;
+    this.deferUiUpdate(() => {
+      this.commissioningLoading$.next(true);
+      this.commissioningError = null;
+    });
     if (this.dataSource.mode === "mock") {
-      this.commissioningScenarios = [
-        {
-          id: "antenna_calibration",
-          name: "Antenna Calibration",
-          type: "aiv",
-          description: "Mock: validates antenna calibration parameters.",
-          requiredParameters: [
-            "antennaId",
-            "targetFrequencyMHz",
-            "pointingModelVersion",
-          ],
-        },
-        {
-          id: "timing_sync",
-          name: "Timing Synchronisation",
-          type: "aiv",
-          description: "Mock: validates timing reference synchronisation.",
-          requiredParameters: [
-            "referenceElementId",
-            "maxDriftNs",
-            "syncProtocol",
-          ],
-        },
-        {
-          id: "rfi_baseline",
-          name: "RFI Baseline Survey",
-          type: "aiv",
-          description: "Mock: validates RFI environment baseline.",
-          requiredParameters: [
-            "siteId",
-            "frequencyRangeMHz",
-            "maxOccupancyPercent",
-          ],
-        },
-      ];
-      this.commissioningLoading = false;
+      this.deferUiUpdate(() => {
+        this.commissioningScenarios = [
+          {
+            id: "antenna_calibration",
+            name: "Antenna Calibration",
+            type: "aiv",
+            description: "Mock: validates antenna calibration parameters.",
+            requiredParameters: [
+              "antennaId",
+              "targetFrequencyMHz",
+              "pointingModelVersion",
+            ],
+          },
+          {
+            id: "timing_sync",
+            name: "Timing Synchronisation",
+            type: "aiv",
+            description: "Mock: validates timing reference synchronisation.",
+            requiredParameters: [
+              "referenceElementId",
+              "maxDriftNs",
+              "syncProtocol",
+            ],
+          },
+          {
+            id: "rfi_baseline",
+            name: "RFI Baseline Survey",
+            type: "aiv",
+            description: "Mock: validates RFI environment baseline.",
+            requiredParameters: [
+              "siteId",
+              "frequencyRangeMHz",
+              "maxOccupancyPercent",
+            ],
+          },
+        ];
+      });
+      this.commissioningLoading$.next(false);
       return;
     }
     this.http
       .get<CommissioningScenario[]>("/api/v1/commissioning/scenarios")
       .subscribe(
         (res) => {
-          this.commissioningScenarios = res;
-          this.commissioningLoading = false;
+          this.deferUiUpdate(() => {
+            this.commissioningScenarios = res;
+            this.commissioningLoading$.next(false);
+          });
         },
         (err) => {
-          this.commissioningError = String(err?.message || err);
-          this.commissioningLoading = false;
+          this.deferUiUpdate(() => {
+            this.commissioningError = String(err?.message || err);
+            this.commissioningLoading$.next(false);
+          });
         }
       );
   }
 
   fetchIndex() {
-    this.loading = true;
-    this.error = null;
+    this.deferUiUpdate(() => {
+      this.loading$.next(true);
+      this.error = null;
+    });
     if (this.dataSource.mode === "mock") {
       this.mock.diagnosticsIndex().subscribe((res) => {
-        this.index = res as DiagnosticsIndex;
-        this.sortedFiles = this.sortFilesByRecency(this.index?.files || []);
-        this.loading = false;
-        this.initialLoadSettled = true;
+        this.deferUiUpdate(() => {
+          this.index = res as DiagnosticsIndex;
+          this.sortedFiles = this.sortFilesByRecency(this.index?.files || []);
+          this.loading$.next(false);
+          this.initialLoadSettled$.next(true);
+        });
       });
       return;
     }
@@ -288,26 +324,34 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       )
       .subscribe(
         (res) => {
-          this.index = res;
-          this.sortedFiles = this.sortFilesByRecency(res.files);
-          this.loading = false;
-          this.initialLoadSettled = true;
+          this.deferUiUpdate(() => {
+            this.index = res;
+            this.sortedFiles = this.sortFilesByRecency(res.files);
+            this.loading$.next(false);
+            this.initialLoadSettled$.next(true);
+          });
         },
         (err) => {
-          this.error = String(err?.message || err);
-          this.loading = false;
-          this.initialLoadSettled = true;
+          this.deferUiUpdate(() => {
+            this.error = String(err?.message || err);
+            this.loading$.next(false);
+            this.initialLoadSettled$.next(true);
+          });
         }
       );
   }
 
   viewSystemSpecs() {
-    this.loading = true;
-    this.systemSpecs = null;
+    this.deferUiUpdate(() => {
+      this.loading$.next(true);
+      this.systemSpecs = null;
+    });
     if (this.dataSource.mode === "mock") {
       this.mock.systemSpecsText().subscribe((txt) => {
-        this.systemSpecs = txt;
-        this.loading = false;
+        this.deferUiUpdate(() => {
+          this.systemSpecs = txt;
+          this.loading$.next(false);
+        });
       });
       return;
     }
@@ -315,28 +359,34 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       .get("/api/diagnostics/system-specs", { responseType: "text" })
       .subscribe(
         (txt) => {
-          this.systemSpecs = txt;
-          this.loading = false;
+          this.deferUiUpdate(() => {
+            this.systemSpecs = txt;
+            this.loading$.next(false);
+          });
         },
         (err) => {
-          this.error = String(err?.message || err);
-          this.loading = false;
+          this.deferUiUpdate(() => {
+            this.error = String(err?.message || err);
+            this.loading$.next(false);
+          });
         }
       );
   }
 
   fetchDockerServices(silent = false) {
     if (!silent) {
-      this.loading = true;
+      this.loading$.next(true);
       this.error = null;
     }
     if (this.dataSource.mode === "mock") {
       this.mock.mockDockerServices().subscribe((res) => {
-        this.dockerServices = (res as DockerServiceStatus[]).filter(
-          (s) => s.name !== "Pulsar" && s.name !== "RabbitMQ"
-        );
-        this.lastUpdated = new Date();
-        if (!silent) this.loading = false;
+        this.deferUiUpdate(() => {
+          this.dockerServices = (res as DockerServiceStatus[]).filter(
+            (s) => s.name !== "Pulsar" && s.name !== "RabbitMQ"
+          );
+          this.lastUpdated = new Date();
+          if (!silent) this.loading$.next(false);
+        });
       });
       return;
     }
@@ -346,16 +396,20 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       )
       .subscribe(
         (res) => {
-          this.dockerServices = res.filter(
-            (s) => s.name !== "Pulsar" && s.name !== "RabbitMQ"
-          );
-          this.lastUpdated = new Date();
-          if (!silent) this.loading = false;
+          this.deferUiUpdate(() => {
+            this.dockerServices = res.filter(
+              (s) => s.name !== "Pulsar" && s.name !== "RabbitMQ"
+            );
+            this.lastUpdated = new Date();
+            if (!silent) this.loading$.next(false);
+          });
         },
         (err) => {
           if (!silent) {
-            this.error = String(err?.message || err);
-            this.loading = false;
+            this.deferUiUpdate(() => {
+              this.error = String(err?.message || err);
+              this.loading$.next(false);
+            });
           }
         }
       );
@@ -368,21 +422,24 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (status: PulsarStatus) => {
-          this.pulsarStatus = {
-            brokers: status.brokers || 0,
-            topics: status.topics || 0,
-            partitions: status.partitions || 0,
-            status: status.status,
-          };
+          this.deferUiUpdate(() => {
+            this.pulsarStatus = {
+              brokers: status.brokers || 0,
+              topics: status.topics || 0,
+              partitions: status.partitions || 0,
+              status: status.status,
+            };
+          });
         },
         error: (err) => {
-          // Keep previous status or set to 0 on error
-          this.pulsarStatus = {
-            brokers: 0,
-            topics: 0,
-            partitions: 0,
-            status: "offline",
-          };
+          this.deferUiUpdate(() => {
+            this.pulsarStatus = {
+              brokers: 0,
+              topics: 0,
+              partitions: 0,
+              status: "offline",
+            };
+          });
 
           console.log("Failed to fetch Pulsar status:", err);
         },
@@ -396,14 +453,18 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (status: RabbitMQStatus) => {
-          this.rabbitMQStatus = status;
+          this.deferUiUpdate(() => {
+            this.rabbitMQStatus = status;
+          });
         },
         error: (err) => {
-          this.rabbitMQStatus = {
-            status: "unavailable",
-            connection: "error",
-            error: err.message,
-          };
+          this.deferUiUpdate(() => {
+            this.rabbitMQStatus = {
+              status: "unavailable",
+              connection: "error",
+              error: err.message,
+            };
+          });
         },
       });
   }

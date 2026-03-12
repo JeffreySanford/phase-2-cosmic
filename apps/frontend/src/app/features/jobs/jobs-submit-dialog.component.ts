@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 import { JobsService } from "../../services/jobs.service";
@@ -16,6 +16,12 @@ export interface JobsSubmitData {
   standalone: false,
 })
 export class JobsSubmitDialogComponent implements OnInit {
+  dialogRef = inject<MatDialogRef<JobsSubmitDialogComponent>>(MatDialogRef);
+  data = inject<JobsSubmitData>(MAT_DIALOG_DATA);
+  private jobsSvc = inject(JobsService);
+  private voSvc = inject(VoService);
+  private fb = inject(FormBuilder);
+
   workflow = "ingest";
   payloadText = "";
   lineageObj: Record<string, unknown> | undefined;
@@ -119,13 +125,9 @@ export class JobsSubmitDialogComponent implements OnInit {
 
   public publicSources: Array<{ name: string; url: string }> = [];
 
-  constructor(
-    public dialogRef: MatDialogRef<JobsSubmitDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: JobsSubmitData,
-    private jobsSvc: JobsService,
-    private voSvc: VoService,
-    private fb: FormBuilder
-  ) {
+  constructor() {
+    const data = this.data;
+
     this.workflow = data?.workflow || "ingest";
     this.payloadText = data?.parameters
       ? JSON.stringify(data.parameters, null, 2)

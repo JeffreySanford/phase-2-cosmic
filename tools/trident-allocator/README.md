@@ -115,8 +115,7 @@ Returns `200 { "status": "ok", "service": "trident-allocator" }`.
 # From the workspace root (recommended)
 pnpm run test:trident-allocator
 
-# Under the hood this now uses Vitest; the command will pick up
-# `tools/trident-allocator/vitest.config.js` and run the same 20
+# Under the hood this now uses Jest; the command will run the same 20
 # assertions defined in `allocator.test.js`.
 ```
 

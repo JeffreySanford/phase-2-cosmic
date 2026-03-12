@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { Observable, of, throwError } from "rxjs";
 import { map, catchError, shareReplay } from "rxjs/operators";
 import { Result } from "./rx-utils";
@@ -33,8 +33,9 @@ export interface DatasetRequest {
 
 @Injectable({ providedIn: "root" })
 export class DatasetsService {
+  private http = inject(HttpClient);
+
   private base = "/api/v1/datasets";
-  constructor(private http: HttpClient) {}
 
   list(): Observable<Dataset[]> {
     // flatten metadata keys onto the dataset object so provenance fields

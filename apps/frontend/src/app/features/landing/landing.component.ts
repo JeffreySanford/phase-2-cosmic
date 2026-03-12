@@ -1,6 +1,13 @@
+import { DOCUMENT } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
-import { Component, OnDestroy, OnInit } from "@angular/core";
-import { Observable, Subscription, forkJoin, of } from "rxjs";
+import {
+  AfterViewInit,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from "@angular/core";
+import { Observable, Subscription, forkJoin, of, BehaviorSubject } from "rxjs";
 import { catchError, map } from "rxjs/operators";
 import { SidebarService } from "../../base/sidebar/sidebar.service";
 import { DatasetsService, Dataset } from "../../services/datasets.service";
@@ -47,9 +54,25 @@ interface ProbeResult<T> {
   styleUrls: ["./landing.component.scss"],
   standalone: false,
 })
-export class LandingComponent implements OnInit, OnDestroy {
+export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly jobsService = inject(JobsService);
+  private readonly datasetsService = inject(DatasetsService);
+  private readonly telemetryService = inject(TelemetryService);
+  private readonly http = inject(HttpClient);
+  private readonly document = inject(DOCUMENT, { optional: true });
+  private readonly dataSource = inject(DataSourceService);
+  private readonly mock = inject(MockDataService);
+
   collapsed = false;
-  loadingSnapshot = false;
+  // use a subject so that the template can consume the value through the
+  // async pipe if we wish, and to keep updates outside of change–detection
+  // cycles. existing tests expect a plain boolean property, so expose a
+  // getter for compatibility.
+  readonly loadingSnapshot$ = new BehaviorSubject<boolean>(true);
+  get loadingSnapshot(): boolean {
+    return this.loadingSnapshot$.value;
+  }
+
   lastUpdated: Date | null = null;
 
   statCards: StatCard[] = [
@@ -136,29 +159,33 @@ export class LandingComponent implements OnInit, OnDestroy {
 
   private readonly sub = new Subscription();
 
-  constructor(
-    sidebar: SidebarService,
-    private readonly jobsService: JobsService,
-    private readonly datasetsService: DatasetsService,
-    private readonly telemetryService: TelemetryService,
-    private readonly http: HttpClient,
-    private readonly dataSource: DataSourceService,
-    private readonly mock: MockDataService
-  ) {
+  private deferUiUpdate(task: () => void): void {
+    setTimeout(task, 0);
+  }
+
+  constructor() {
+    const sidebar = inject(SidebarService);
+
     this.sub.add(sidebar.collapsed$.subscribe((v) => (this.collapsed = v)));
   }
 
   ngOnInit(): void {
     // allow tests or manual URL to force mock data mode via query param
     try {
-      const params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(
+        this.document?.defaultView?.location?.search ?? ""
+      );
       if (params.get("mode") === "mock") {
         this.dataSource.setMode("mock");
       }
     } catch {
       // ignore; may happen in tests or unsupported browsers
     }
-    this.refreshSnapshot();
+  }
+
+  ngAfterViewInit(): void {
+    // Defer the first snapshot update until after the initial render pass.
+    this.deferUiUpdate(() => this.refreshSnapshot());
   }
 
   ngOnDestroy(): void {
@@ -166,7 +193,11 @@ export class LandingComponent implements OnInit, OnDestroy {
   }
 
   refreshSnapshot(): void {
-    this.loadingSnapshot = true;
+    // immediately mark the start of a load. we always call this method
+    // from a deferred callback (or a user click), so the assignment will
+    // happen outside of an active change–detection pass and won’t trigger
+    // an ExpressionChangedAfterItHasBeenCheckedError.
+    this.loadingSnapshot$.next(true);
 
     const jobs$ = this.probe<JobStatus[]>(this.jobsService.list(), []);
     const datasets$ = this.probe<Dataset[]>(this.datasetsService.list(), []);
@@ -199,151 +230,158 @@ export class LandingComponent implements OnInit, OnDestroy {
         up: up$,
         topology: topology$,
       }).subscribe((snapshot) => {
-        const activeJobs = snapshot.jobs.value.filter((job) =>
-          this.isActiveStatus(String(job.status))
-        ).length;
-        const diagnosticsCount = (
-          snapshot.diagnostics.value?.files || []
-        ).filter((f) => f !== ".gitkeep").length;
+        this.deferUiUpdate(() => {
+          const activeJobs = snapshot.jobs.value.filter((job) =>
+            this.isActiveStatus(String(job.status))
+          ).length;
+          const diagnosticsCount = (
+            snapshot.diagnostics.value?.files || []
+          ).filter((f) => f !== ".gitkeep").length;
 
-        this.statCards = [
-          {
-            label: "Governed Datasets",
-            value: String(snapshot.datasets.value.length),
-            note: snapshot.datasets.ok
-              ? "Authoritative catalog online"
-              : "Dataset API not reachable",
-            tone: "cyan",
-          },
-          {
-            label: "Active Jobs",
-            value: String(activeJobs),
-            note: snapshot.jobs.ok
-              ? `${snapshot.jobs.value.length} total jobs tracked`
-              : "Jobs API not reachable",
-            tone: "amber",
-          },
-          {
-            label: "Diagnostics Artifacts",
-            value: String(diagnosticsCount),
-            note: snapshot.diagnostics.ok
-              ? "Recent evidence available"
-              : "Diagnostics endpoint offline",
-            tone: "mint",
-          },
-          {
-            label: "Prometheus Targets Up",
-            value: snapshot.up.ok
-              ? String(Math.max(0, Math.round(snapshot.up.value)))
-              : "0",
-            note: snapshot.up.ok
-              ? "Telemetry heartbeat detected"
-              : "Prometheus proxy unavailable",
-            tone: "violet",
-          },
-        ];
+          this.statCards = [
+            {
+              label: "Governed Datasets",
+              value: String(snapshot.datasets.value.length),
+              note: snapshot.datasets.ok
+                ? "Authoritative catalog online"
+                : "Dataset API not reachable",
+              tone: "cyan",
+            },
+            {
+              label: "Active Jobs",
+              value: String(activeJobs),
+              note: snapshot.jobs.ok
+                ? `${snapshot.jobs.value.length} total jobs tracked`
+                : "Jobs API not reachable",
+              tone: "amber",
+            },
+            {
+              label: "Diagnostics Artifacts",
+              value: String(diagnosticsCount),
+              note: snapshot.diagnostics.ok
+                ? "Recent evidence available"
+                : "Diagnostics endpoint offline",
+              tone: "mint",
+            },
+            {
+              label: "Prometheus Targets Up",
+              value: snapshot.up.ok
+                ? String(Math.max(0, Math.round(snapshot.up.value)))
+                : "0",
+              note: snapshot.up.ok
+                ? "Telemetry heartbeat detected"
+                : "Prometheus proxy unavailable",
+              tone: "violet",
+            },
+          ];
 
-        this.quickChecks = [
-          {
-            label: "Jobs API",
-            status: snapshot.jobs.ok ? "healthy" : "degraded",
-            detail: snapshot.jobs.ok
-              ? "Responding with job records"
-              : "No response from /api/v1/jobs",
-            route: "/jobs",
-          },
-          {
-            label: "Dataset API",
-            status: snapshot.datasets.ok ? "healthy" : "degraded",
-            detail: snapshot.datasets.ok
-              ? "Catalog query succeeded"
-              : "No response from /api/v1/datasets",
-            route: "/datasets",
-          },
-          {
-            label: "Diagnostics API",
-            status: snapshot.diagnostics.ok ? "healthy" : "degraded",
-            detail: snapshot.diagnostics.ok
-              ? "Artifact index loaded"
-              : "No response from /api/diagnostics",
-            route: "/diagnostics",
-          },
-          {
-            label: "Telemetry Proxy",
-            status: snapshot.up.ok ? "healthy" : "degraded",
-            detail: snapshot.up.ok
-              ? "Prometheus query returned data"
-              : "No response from telemetry proxy",
-            route: "/telemetry",
-          },
-        ];
+          this.quickChecks = [
+            {
+              label: "Jobs API",
+              status: snapshot.jobs.ok ? "healthy" : "degraded",
+              detail: snapshot.jobs.ok
+                ? "Responding with job records"
+                : "No response from /api/v1/jobs",
+              route: "/jobs",
+            },
+            {
+              label: "Dataset API",
+              status: snapshot.datasets.ok ? "healthy" : "degraded",
+              detail: snapshot.datasets.ok
+                ? "Catalog query succeeded"
+                : "No response from /api/v1/datasets",
+              route: "/datasets",
+            },
+            {
+              label: "Diagnostics API",
+              status: snapshot.diagnostics.ok ? "healthy" : "degraded",
+              detail: snapshot.diagnostics.ok
+                ? "Artifact index loaded"
+                : "No response from /api/diagnostics",
+              route: "/diagnostics",
+            },
+            {
+              label: "Telemetry Proxy",
+              status: snapshot.up.ok ? "healthy" : "degraded",
+              detail: snapshot.up.ok
+                ? "Prometheus query returned data"
+                : "No response from telemetry proxy",
+              route: "/telemetry",
+            },
+          ];
 
-        // compute live topology percentage based on returned link sources
-        let coveragePercent = 0;
-        let coverageTone: "cyan" | "amber" | "mint" | "violet" = "mint";
-        let coverageNote: string | undefined;
+          // compute live topology percentage based on returned link sources
+          let coveragePercent = 0;
+          let coverageTone: "cyan" | "amber" | "mint" | "violet" = "mint";
+          let coverageNote: string | undefined;
 
-        if (!snapshot.topology.ok) {
-          // topology probe failed; show warning state
-          coverageNote = "Topology metrics unavailable";
-          coverageTone = "amber";
-        } else {
-          // topology payload can be either an array or a map/object
-          const topoLinksRaw = snapshot.topology.value.links || [];
-          let topoLinks: Array<{ source?: string }>;
-          if (Array.isArray(topoLinksRaw)) {
-            topoLinks = topoLinksRaw as Array<{ source?: string }>;
-          } else {
-            topoLinks = Object.values(
-              topoLinksRaw as Record<string, { source?: string }>
-            );
-          }
-
-          if (topoLinks.length === 0) {
-            // service responded but returned no links
-            coverageNote = "No topology links yet";
+          if (!snapshot.topology.ok) {
+            // topology probe failed; show warning state
+            coverageNote = "Topology metrics unavailable";
             coverageTone = "amber";
           } else {
-            const liveCount = topoLinks.filter(
-              (l) => l.source === "prometheus" || l.source === "admin"
-            ).length;
-            coveragePercent = this.toPercent(
-              (liveCount / topoLinks.length) * 100
-            );
+            // topology payload can be either an array or a map/object
+            const topoLinksRaw = snapshot.topology.value.links || [];
+            let topoLinks: Array<{ source?: string }>;
+            if (Array.isArray(topoLinksRaw)) {
+              topoLinks = topoLinksRaw as Array<{ source?: string }>;
+            } else {
+              topoLinks = Object.values(
+                topoLinksRaw as Record<string, { source?: string }>
+              );
+            }
+
+            if (topoLinks.length === 0) {
+              // service responded but returned no links
+              coverageNote = "No topology links yet";
+              coverageTone = "amber";
+            } else {
+              const liveCount = topoLinks.filter(
+                (l) => l.source === "prometheus" || l.source === "admin"
+              ).length;
+              coveragePercent = this.toPercent(
+                (liveCount / topoLinks.length) * 100
+              );
+            }
           }
-        }
 
-        this.signalBars = [
-          {
-            label: "Operational Visibility",
-            value: this.toPercent(snapshot.up.ok ? snapshot.up.value * 8 : 16),
-            tone: "cyan",
-          },
-          {
-            label: "Governance Coverage",
-            value: coveragePercent,
-            tone: coverageTone,
-            note: coverageNote,
-          },
-          {
-            // see comments above about semantic inversion; the value is a
-            // simple proxy for how many active jobs are in flight rather than
-            // an actual readiness percentage.
-            label: "Orchestration Load",
-            value: this.toPercent(activeJobs * 12),
-            tone: "amber",
-          },
-          {
-            label: "System Observability",
-            value: this.toPercent(
-              diagnosticsCount * 5 + (snapshot.diagnostics.ok ? 34 : 14)
-            ),
-            tone: "violet",
-          },
-        ];
+          this.signalBars = [
+            {
+              label: "Operational Visibility",
+              value: this.toPercent(
+                snapshot.up.ok ? snapshot.up.value * 8 : 16
+              ),
+              tone: "cyan",
+            },
+            {
+              label: "Governance Coverage",
+              value: coveragePercent,
+              tone: coverageTone,
+              note: coverageNote,
+            },
+            {
+              // see comments above about semantic inversion; the value is a
+              // simple proxy for how many active jobs are in flight rather than
+              // an actual readiness percentage.
+              label: "Orchestration Load",
+              value: this.toPercent(activeJobs * 12),
+              tone: "amber",
+            },
+            {
+              label: "System Observability",
+              value: this.toPercent(
+                diagnosticsCount * 5 + (snapshot.diagnostics.ok ? 34 : 14)
+              ),
+              tone: "violet",
+            },
+          ];
 
-        this.lastUpdated = new Date();
-        this.loadingSnapshot = false;
+          this.lastUpdated = new Date();
+          // make sure the transition back to "synchronized" happens outside
+          // of any active change detection cycle otherwise Angular will
+          // complain about a changed value later in the same tick.
+          this.deferUiUpdate(() => this.loadingSnapshot$.next(false));
+        });
       })
     );
   }

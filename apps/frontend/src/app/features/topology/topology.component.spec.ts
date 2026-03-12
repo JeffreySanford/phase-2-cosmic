@@ -64,61 +64,84 @@ describe("TopologyComponent", () => {
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
     matDialog = TestBed.inject(MatDialog) as unknown as { open: jest.Mock };
-    fixture.detectChanges();
   });
 
+  beforeEach(fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+  }));
+
   afterEach(() => {
+    // some tests trigger a metrics request that isn't explicitly flushed;
+    // clear any lingering requests so verify() doesn't complain.
+    httpMock.match("/api/metrics/topology").forEach((req) => req.flush({}));
     httpMock.verify();
     matDialog.open.mockReset();
   });
 
+  function settleTopologyView(ms = 0): void {
+    tick(ms);
+    fixture.detectChanges();
+  }
+
+  function flushLiveTopology(
+    topology: { nodes: unknown[]; links: unknown[] },
+    metrics: Record<string, unknown>
+  ): void {
+    httpMock.expectOne("/api/topology").flush(topology);
+    settleTopologyView();
+    httpMock.expectOne("/api/metrics/topology").flush(metrics);
+    settleTopologyView();
+  }
+
   function loadTopologyWithProvenanceMix(): void {
-    httpMock.expectOne("/api/topology").flush({
-      nodes: [
-        { id: "frontend", label: "Frontend" },
-        { id: "backend", label: "Backend" },
-        { id: "java-governance", label: "Java Governance" },
-        { id: "redis", label: "Redis" },
-      ],
-      links: [
-        { source: "frontend", target: "backend" },
-        { source: "backend", target: "java-governance" },
-        { source: "java-governance", target: "redis" },
-      ],
-    });
-    httpMock.expectOne("/api/metrics/topology").flush({
-      links: {
-        "frontend->backend": {
-          currentMBps: 12,
-          maxMBps: 20,
-          confidencePct: 96,
-          source: "prometheus",
-        },
-        "backend->java-governance": {
-          currentMBps: 6,
-          maxMBps: 12,
-          confidencePct: 84,
-          source: "admin",
-        },
-        "java-governance->redis": {
-          currentMBps: 1,
-          maxMBps: 10,
-          confidencePct: 48,
-          source: "derived",
-        },
+    flushLiveTopology(
+      {
+        nodes: [
+          { id: "frontend", label: "Frontend" },
+          { id: "backend", label: "Backend" },
+          { id: "java-governance", label: "Java Governance" },
+          { id: "redis", label: "Redis" },
+        ],
+        links: [
+          { source: "frontend", target: "backend" },
+          { source: "backend", target: "java-governance" },
+          { source: "java-governance", target: "redis" },
+        ],
       },
-    });
-    tick();
+      {
+        links: {
+          "frontend->backend": {
+            currentMBps: 12,
+            maxMBps: 20,
+            confidencePct: 96,
+            source: "prometheus",
+          },
+          "backend->java-governance": {
+            currentMBps: 6,
+            maxMBps: 12,
+            confidencePct: 84,
+            source: "admin",
+          },
+          "java-governance->redis": {
+            currentMBps: 1,
+            maxMBps: 10,
+            confidencePct: 48,
+            source: "derived",
+          },
+        },
+      }
+    );
     component["stopLivePoll"]();
     fixture.detectChanges();
     tick(1000);
   }
 
   it("should create", fakeAsync(() => {
-    httpMock.expectOne("/api/topology").flush({ nodes: [], links: [] });
-    const req1 = httpMock.expectOne("/api/metrics/topology");
-    req1.flush({ timing_drift_ns: 0, rfi_event_rate: 0 });
-    tick();
+    flushLiveTopology(
+      { nodes: [], links: [] },
+      { timing_drift_ns: 0, rfi_event_rate: 0 }
+    );
     // stop live polling to avoid leftover timers
     component["stopLivePoll"]();
     fixture.detectChanges();
@@ -131,32 +154,32 @@ describe("TopologyComponent", () => {
   }));
 
   it("renders header text and captures mission metrics", fakeAsync(() => {
-    httpMock.expectOne("/api/topology").flush({
-      nodes: [{ id: "frontend" }, { id: "backend" }],
-      links: [{ source: "frontend", target: "backend" }],
-    });
-    const req1 = httpMock.expectOne("/api/metrics/topology");
-    req1.flush({
-      timing_drift_ns: 42,
-      rfi_event_rate: 7,
-      nodeActivity: {
-        backend: {
-          businessRatePerSec: 4.5,
-          businessBytesPerSec: 1048576,
-          executorLabels: ["simulator 2.5/s", "vo 1.0/s"],
-        },
+    flushLiveTopology(
+      {
+        nodes: [{ id: "frontend" }, { id: "backend" }],
+        links: [{ source: "frontend", target: "backend" }],
       },
-      links: {
-        "frontend->backend": {
-          currentMBps: 12,
-          maxMBps: 40,
-          latencyMs: 18,
-          errorRatePct: 0.5,
-          source: "prometheus",
+      {
+        timing_drift_ns: 42,
+        rfi_event_rate: 7,
+        nodeActivity: {
+          backend: {
+            businessRatePerSec: 4.5,
+            businessBytesPerSec: 1048576,
+            executorLabels: ["simulator 2.5/s", "vo 1.0/s"],
+          },
         },
-      },
-    });
-    tick();
+        links: {
+          "frontend->backend": {
+            currentMBps: 12,
+            maxMBps: 40,
+            latencyMs: 18,
+            errorRatePct: 0.5,
+            source: "prometheus",
+          },
+        },
+      }
+    );
     component["stopLivePoll"]();
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
@@ -196,18 +219,18 @@ describe("TopologyComponent", () => {
     tick(5000);
   }));
 
-  it("shows an explicit unavailable state instead of falling back to mock in live mode", () => {
+  it("shows an explicit unavailable state instead of falling back to mock in live mode", fakeAsync(() => {
     httpMock
       .expectOne("/api/topology")
       .flush("missing", { status: 503, statusText: "Service Unavailable" });
-    fixture.detectChanges();
+    settleTopologyView();
 
     const el: HTMLElement = fixture.nativeElement;
     expect(component.topologySource).toBe("unavailable");
     expect(component.hasTopologyData).toBe(false);
     expect(component.lastError).toContain("Live topology data is unavailable");
     expect(el.textContent).toContain("Live topology data is unavailable");
-  });
+  }));
 
   it("defaults to all provenance filters active", fakeAsync(() => {
     loadTopologyWithProvenanceMix();
@@ -372,23 +395,28 @@ describe("TopologyComponent", () => {
   }));
 
   it("filters the visible graph in memory without losing the canonical topology", fakeAsync(() => {
-    httpMock.expectOne("/api/topology").flush({
-      nodes: [{ id: "frontend" }, { id: "backend" }, { id: "java-governance" }],
-      links: [
-        { source: "frontend", target: "backend" },
-        { source: "backend", target: "java-governance" },
-      ],
-    });
-    httpMock.expectOne("/api/metrics/topology").flush({
-      links: {
-        "frontend->backend": {
-          currentMBps: 10,
-          maxMBps: 25,
-          source: "prometheus",
-        },
+    flushLiveTopology(
+      {
+        nodes: [
+          { id: "frontend" },
+          { id: "backend" },
+          { id: "java-governance" },
+        ],
+        links: [
+          { source: "frontend", target: "backend" },
+          { source: "backend", target: "java-governance" },
+        ],
       },
-    });
-    tick();
+      {
+        links: {
+          "frontend->backend": {
+            currentMBps: 10,
+            maxMBps: 25,
+            source: "prometheus",
+          },
+        },
+      }
+    );
     component["stopLivePoll"]();
     fixture.detectChanges();
 
@@ -414,23 +442,28 @@ describe("TopologyComponent", () => {
   }));
 
   it("supports phase 5 toggle rules and preserves filters across refresh", fakeAsync(() => {
-    httpMock.expectOne("/api/topology").flush({
-      nodes: [{ id: "frontend" }, { id: "backend" }, { id: "java-governance" }],
-      links: [
-        { source: "frontend", target: "backend" },
-        { source: "backend", target: "java-governance" },
-      ],
-    });
-    httpMock.expectOne("/api/metrics/topology").flush({
-      links: {
-        "frontend->backend": {
-          currentMBps: 10,
-          maxMBps: 25,
-          source: "prometheus",
-        },
+    flushLiveTopology(
+      {
+        nodes: [
+          { id: "frontend" },
+          { id: "backend" },
+          { id: "java-governance" },
+        ],
+        links: [
+          { source: "frontend", target: "backend" },
+          { source: "backend", target: "java-governance" },
+        ],
       },
-    });
-    tick();
+      {
+        links: {
+          "frontend->backend": {
+            currentMBps: 10,
+            maxMBps: 25,
+            source: "prometheus",
+          },
+        },
+      }
+    );
     component["stopLivePoll"]();
 
     (
@@ -480,15 +513,20 @@ describe("TopologyComponent", () => {
     expect(component.effectiveProvenanceFilters()).toEqual(["prometheus"]);
 
     component.refresh();
-    httpMock.expectOne("/api/topology").flush({
-      nodes: [{ id: "frontend" }, { id: "backend" }, { id: "java-governance" }],
-      links: [
-        { source: "frontend", target: "backend" },
-        { source: "backend", target: "java-governance" },
-      ],
-    });
-    httpMock.expectOne("/api/metrics/topology").flush({});
-    tick();
+    flushLiveTopology(
+      {
+        nodes: [
+          { id: "frontend" },
+          { id: "backend" },
+          { id: "java-governance" },
+        ],
+        links: [
+          { source: "frontend", target: "backend" },
+          { source: "backend", target: "java-governance" },
+        ],
+      },
+      {}
+    );
     component["stopLivePoll"]();
 
     (
@@ -509,12 +547,13 @@ describe("TopologyComponent", () => {
   }));
 
   it("integrates filter messaging and viewport controls into the force-network UI", fakeAsync(() => {
-    httpMock.expectOne("/api/topology").flush({
-      nodes: [{ id: "frontend" }, { id: "backend" }],
-      links: [{ source: "frontend", target: "backend" }],
-    });
-    httpMock.expectOne("/api/metrics/topology").flush({});
-    tick();
+    flushLiveTopology(
+      {
+        nodes: [{ id: "frontend" }, { id: "backend" }],
+        links: [{ source: "frontend", target: "backend" }],
+      },
+      {}
+    );
     component["stopLivePoll"]();
     fixture.detectChanges();
 
@@ -543,34 +582,35 @@ describe("TopologyComponent", () => {
   }));
 
   it("keeps fidelity totals and summary counts based on the full snapshot while the graph is filtered", fakeAsync(() => {
-    httpMock.expectOne("/api/topology").flush({
-      nodes: [
-        { id: "frontend", label: "Frontend" },
-        { id: "backend", label: "Backend" },
-        { id: "java-governance", label: "Java Governance" },
-      ],
-      links: [
-        { source: "frontend", target: "backend" },
-        { source: "backend", target: "java-governance" },
-      ],
-    });
-    httpMock.expectOne("/api/metrics/topology").flush({
-      links: {
-        "frontend->backend": {
-          currentMBps: 10,
-          maxMBps: 20,
-          confidencePct: 96,
-          source: "prometheus",
-        },
-        "backend->java-governance": {
-          currentMBps: 0,
-          maxMBps: 18,
-          confidencePct: 48,
-          source: "derived",
-        },
+    flushLiveTopology(
+      {
+        nodes: [
+          { id: "frontend", label: "Frontend" },
+          { id: "backend", label: "Backend" },
+          { id: "java-governance", label: "Java Governance" },
+        ],
+        links: [
+          { source: "frontend", target: "backend" },
+          { source: "backend", target: "java-governance" },
+        ],
       },
-    });
-    tick();
+      {
+        links: {
+          "frontend->backend": {
+            currentMBps: 10,
+            maxMBps: 20,
+            confidencePct: 96,
+            source: "prometheus",
+          },
+          "backend->java-governance": {
+            currentMBps: 0,
+            maxMBps: 18,
+            confidencePct: 48,
+            source: "derived",
+          },
+        },
+      }
+    );
     component["stopLivePoll"]();
     fixture.detectChanges();
 
@@ -636,47 +676,48 @@ describe("TopologyComponent", () => {
   }));
 
   it("parses Phase 15/16 diagnostics block and exposes structural and fallback-derived counts", fakeAsync(() => {
-    httpMock.expectOne("/api/topology").flush({
-      nodes: [
-        { id: "frontend", label: "Frontend" },
-        { id: "backend", label: "Backend" },
-        { id: "zookeeper", label: "Zookeeper" },
-        { id: "kafka", label: "Kafka" },
-      ],
-      links: [
-        { source: "frontend", target: "backend" },
-        { source: "zookeeper", target: "kafka" },
-      ],
-    });
-    httpMock.expectOne("/api/metrics/topology").flush({
-      timing_drift_ns: 5,
-      diagnostics: {
-        structuralDerivedLinkCount: 3,
-        fallbackDerivedLinkCount: 2,
-        fallbackDerivedLinks: ["zookeeper->kafka", "prom->grafana"],
-        measurementPathCounts: {
-          "direct-prometheus": 18,
-          "derived-model": 5,
-        },
+    flushLiveTopology(
+      {
+        nodes: [
+          { id: "frontend", label: "Frontend" },
+          { id: "backend", label: "Backend" },
+          { id: "zookeeper", label: "Zookeeper" },
+          { id: "kafka", label: "Kafka" },
+        ],
+        links: [
+          { source: "frontend", target: "backend" },
+          { source: "zookeeper", target: "kafka" },
+        ],
       },
-      links: {
-        "frontend->backend": {
-          currentMBps: 10,
-          maxMBps: 20,
-          confidencePct: 96,
-          source: "prometheus",
-          measurementPath: "direct-prometheus",
+      {
+        timing_drift_ns: 5,
+        diagnostics: {
+          structuralDerivedLinkCount: 3,
+          fallbackDerivedLinkCount: 2,
+          fallbackDerivedLinks: ["zookeeper->kafka", "prom->grafana"],
+          measurementPathCounts: {
+            "direct-prometheus": 18,
+            "derived-model": 5,
+          },
         },
-        "zookeeper->kafka": {
-          currentMBps: 0,
-          maxMBps: 5,
-          confidencePct: 48,
-          source: "derived",
-          measurementPath: "derived-model",
+        links: {
+          "frontend->backend": {
+            currentMBps: 10,
+            maxMBps: 20,
+            confidencePct: 96,
+            source: "prometheus",
+            measurementPath: "direct-prometheus",
+          },
+          "zookeeper->kafka": {
+            currentMBps: 0,
+            maxMBps: 5,
+            confidencePct: 48,
+            source: "derived",
+            measurementPath: "derived-model",
+          },
         },
-      },
-    });
-    tick();
+      }
+    );
     component["stopLivePoll"]();
     fixture.detectChanges();
 

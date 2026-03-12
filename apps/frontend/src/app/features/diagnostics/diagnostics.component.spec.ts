@@ -1,4 +1,9 @@
-import { TestBed, ComponentFixture } from "@angular/core/testing";
+import {
+  TestBed,
+  ComponentFixture,
+  fakeAsync,
+  tick,
+} from "@angular/core/testing";
 import { Component, Input } from "@angular/core";
 import { DiagnosticsComponent } from "./diagnostics.component";
 import { BehaviorSubject } from "rxjs";
@@ -43,6 +48,7 @@ import {
   HttpClientTestingModule,
   HttpTestingController,
 } from "@angular/common/http/testing";
+import { FormsModule } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatSelectModule } from "@angular/material/select";
@@ -59,11 +65,23 @@ describe("DiagnosticsComponent", () => {
   const pollingMsSubject = new BehaviorSubject<number>(5000);
   let logSpy: jest.SpyInstance;
 
+  function startComponent(): void {
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+  }
+
+  function settleView(): void {
+    tick();
+    fixture.detectChanges();
+  }
+
   beforeEach(async () => {
     logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
     await TestBed.configureTestingModule({
       imports: [
         HttpClientTestingModule,
+        FormsModule,
         MatButtonModule,
         MatFormFieldModule,
         MatSelectModule,
@@ -167,8 +185,8 @@ describe("DiagnosticsComponent", () => {
     logSpy.mockRestore();
   });
 
-  it("fetches index and system-specs", () => {
-    fixture.detectChanges();
+  it("fetches index and system-specs", fakeAsync(() => {
+    startComponent();
     const req = httpMock.expectOne("/api/diagnostics");
     req.flush({
       path: "/tmp/logs",
@@ -179,6 +197,7 @@ describe("DiagnosticsComponent", () => {
         "payloads.log.20260302T170944Z",
       ],
     });
+    settleView();
     expect(comp.index).toBeTruthy();
     expect(comp.visibleFileCount).toBe(5);
     expect(comp.visibleFiles.length).toBe(3);
@@ -189,6 +208,7 @@ describe("DiagnosticsComponent", () => {
     comp.viewSystemSpecs();
     const req2 = httpMock.expectOne("/api/diagnostics/system-specs");
     req2.flush("cpu: test");
+    settleView();
     expect(comp.systemSpecs).toContain("cpu: test");
     // docker services called on init
     const req3 = httpMock.expectOne("/api/diagnostics/docker-services");
@@ -209,6 +229,7 @@ describe("DiagnosticsComponent", () => {
         icon: "stream",
       },
     ]);
+    settleView();
     // Pulsar is filtered out by the component; only Kafka remains
     expect(comp.dockerServices.length).toBe(1);
     expect(comp.dockerServices[0].name).toBe("Kafka");
@@ -222,10 +243,11 @@ describe("DiagnosticsComponent", () => {
       .expectOne("/api/v1/rabbitmq/status")
       .flush({ status: "unavailable", connection: "none" });
     httpMock.expectOne("/api/metrics/topology").flush({});
-  });
+    settleView();
+  }));
 
-  it("handles docker services with all status types", () => {
-    fixture.detectChanges();
+  it("handles docker services with all status types", fakeAsync(() => {
+    startComponent();
     httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
     const req = httpMock.expectOne("/api/diagnostics/docker-services");
     req.flush([
@@ -251,6 +273,7 @@ describe("DiagnosticsComponent", () => {
         icon: "memory",
       },
     ]);
+    settleView();
     expect(comp.dockerServices.length).toBe(3);
     expect(comp.dockerServices[0].status).toBe("online");
     expect(comp.dockerServices[1].status).toBe("offline");
@@ -264,22 +287,24 @@ describe("DiagnosticsComponent", () => {
       .expectOne("/api/v1/rabbitmq/status")
       .flush({ status: "unavailable", connection: "none" });
     httpMock.expectOne("/api/metrics/topology").flush({});
-  });
+    settleView();
+  }));
 
-  it("fetches timing/rfi metrics on init", () => {
-    fixture.detectChanges();
+  it("fetches timing/rfi metrics on init", fakeAsync(() => {
+    startComponent();
     httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
     httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
 
     const metricsReq = httpMock.expectOne("/api/metrics/topology");
     metricsReq.flush({ timing_drift_ns: 123, rfi_event_rate: 5 });
+    settleView();
     expect(comp.timingDriftNs).toBe(123);
     expect(comp.rfiEventRate).toBe(5);
     // DOM metrics are only visible under the second tab; component state is sufficient for unit test
-  });
+  }));
 
-  it("fetches Pulsar status on init and polling", () => {
-    fixture.detectChanges();
+  it("fetches Pulsar status on init and polling", fakeAsync(() => {
+    startComponent();
     httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
     httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
 
@@ -290,6 +315,7 @@ describe("DiagnosticsComponent", () => {
       topics: 15,
       partitions: 45,
     });
+    settleView();
     expect(comp.pulsarStatus.brokers).toBe(3);
     expect(comp.pulsarStatus.topics).toBe(15);
     expect(comp.pulsarStatus.partitions).toBe(45);
@@ -302,25 +328,29 @@ describe("DiagnosticsComponent", () => {
       queues: { "audit-queue": {}, "control-queue": {} },
       exchanges: { "audit-exchange": {}, "control-exchange": {} },
     });
+    settleView();
     expect(comp.rabbitMQStatus.status).toBe("connected");
     expect(comp.rabbitMQStatus.connection).toBe("connected");
-  });
+    settleView();
+  }));
 
-  it("handles Pulsar status error gracefully", () => {
-    fixture.detectChanges();
+  it("handles Pulsar status error gracefully", fakeAsync(() => {
+    startComponent();
     httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
     httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
 
     const pulsarReq = httpMock.expectOne("/api/v1/pulsar/status");
     pulsarReq.error(new ErrorEvent("network error"));
+    settleView();
 
     expect(comp.pulsarStatus.brokers).toBe(0);
     expect(comp.pulsarStatus.topics).toBe(0);
     expect(comp.pulsarStatus.partitions).toBe(0);
-  });
+    settleView();
+  }));
 
-  it("handles RabbitMQ status error gracefully", () => {
-    fixture.detectChanges();
+  it("handles RabbitMQ status error gracefully", fakeAsync(() => {
+    startComponent();
     httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
     httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
 
@@ -330,14 +360,16 @@ describe("DiagnosticsComponent", () => {
 
     const rabbitReq = httpMock.expectOne("/api/v1/rabbitmq/status");
     rabbitReq.error(new ErrorEvent("connection refused"));
+    settleView();
 
     expect(comp.rabbitMQStatus.status).toBe("unavailable");
     expect(comp.rabbitMQStatus.connection).toBe("error");
     expect(comp.rabbitMQStatus.error).toBeDefined();
-  });
+    settleView();
+  }));
 
-  it("fetches commissioning scenarios on init", () => {
-    fixture.detectChanges();
+  it("fetches commissioning scenarios on init", fakeAsync(() => {
+    startComponent();
     httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
     httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
 
@@ -366,24 +398,28 @@ describe("DiagnosticsComponent", () => {
         ],
       },
     ]);
+    settleView();
 
     expect(comp.commissioningScenarios.length).toBe(2);
     expect(comp.commissioningScenarios[0].id).toBe("antenna_calibration");
     expect(comp.commissioningScenarios[1].id).toBe("timing_sync");
     expect(comp.commissioningLoading).toBe(false);
     expect(comp.commissioningError).toBeNull();
-  });
+    settleView();
+  }));
 
-  it("handles commissioning scenarios fetch error gracefully", () => {
-    fixture.detectChanges();
+  it("handles commissioning scenarios fetch error gracefully", fakeAsync(() => {
+    startComponent();
     httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
     httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
 
     const commReq = httpMock.expectOne("/api/v1/commissioning/scenarios");
     commReq.error(new ErrorEvent("service unavailable"));
+    settleView();
 
     expect(comp.commissioningScenarios.length).toBe(0);
     expect(comp.commissioningLoading).toBe(false);
     expect(comp.commissioningError).toBeDefined();
-  });
+    settleView();
+  }));
 });

@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { of, Observable } from "rxjs";
 import { LoadProfileService } from "./load-profile.service";
 
@@ -8,7 +8,7 @@ function rand(min: number, max: number) {
 
 @Injectable({ providedIn: "root" })
 export class MockDataService {
-  constructor(private loadProfile: LoadProfileService) {}
+  private loadProfile = inject(LoadProfileService);
 
   private scale(): number {
     const pct = this.loadProfile.current ?? 10;

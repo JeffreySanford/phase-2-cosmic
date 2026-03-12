@@ -6,11 +6,13 @@
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  /* ensure the page content never overflows the viewport;
-     account for the fixed footer so only the inner card scrolls */
+  /* we no longer hide overflow at this level; global scrolling is
+     permitted and the outer scrollbar should be the primary scroll
+     surface. keep the height calculation to reserve space for the
+     footer but allow child elements to spill and drive document length. */
   height: calc(100vh - var(--app-footer-height, 48px));
-  min-height: 0; /* avoid inflexible growth when used in nested flex */
-  overflow: hidden; /* prevent outer scrollbar */
+  min-height: 0;
+  overflow: visible;
 }
 
 .controls {
@@ -34,7 +36,10 @@ mat-card {
 mat-card-content {
   display: flex;
   flex-direction: column;
-  overflow-y: hidden;
+  /* content flows naturally; scrolling is handled by the page itself.
+     we removed the previous inner scrollbar to avoid nested scrollbars
+     when global scrolling is available. */
+  overflow: visible;
   height: 100%; /* allow card to dictate height */
   padding-bottom: 12px;
 }
@@ -343,11 +348,12 @@ mat-tab-group {
   gap: 8px;
 }
 .samples-scroll {
-  max-height: 220px;
-  overflow-y: auto;
+  /* no explicit height/overflow; let the outer page scrollbar handle
+     vertical space. this removes the nested scrollbar that previously
+     appeared when the list grew. */
   display: grid;
   gap: 8px;
-  padding-right: 8px; /* room for scrollbar (matches custom scrollbar width) */
+  padding-right: 8px; /* preserve spacing where a scrollbar would have been */
 }
 .empty-note {
   margin: 12px 0;

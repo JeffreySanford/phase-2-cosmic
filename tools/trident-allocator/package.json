@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --experimental-vm-modules ../../node_modules/.bin/jest --testPathPattern=allocator\\.test\\.js --no-coverage"
+    "test": "node ../../scripts/run-jest.cjs --config ./jest.config.cjs --no-coverage"
   },
   "engines": {
     "node": ">=18"

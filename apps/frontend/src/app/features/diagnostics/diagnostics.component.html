@@ -4,7 +4,7 @@
     <app-disclaimer-banner
       type="demo"
       [dismissible]="true"
-      [ready]="initialLoadSettled"
+      [ready]="(initialLoadSettled$ | async) === true"
     ></app-disclaimer-banner>
 
     <p class="lead">
@@ -19,7 +19,7 @@
       <button
         mat-stroked-button
         (click)="viewSystemSpecs()"
-        [disabled]="loading"
+        [disabled]="loading$ | async"
       >
         View system-specs.txt
       </button>
@@ -32,7 +32,7 @@
       >
     </div>
 
-    <div *ngIf="loading" class="status">Loading…</div>
+    <div *ngIf="loading$ | async" class="status">Loading…</div>
     <div *ngIf="error" class="error">Error: {{ error }}</div>
   </div>
 
@@ -86,7 +86,7 @@
             <button
               mat-stroked-button
               (click)="fetchDockerServices()"
-              [disabled]="loading"
+              [disabled]="loading$ | async"
             >
               Refresh
             </button>
@@ -212,7 +212,7 @@
             Registered commissioning acceptance scenarios for ngVLA AIV
             readiness gate.
           </p>
-          <div *ngIf="commissioningLoading" class="status">
+          <div *ngIf="commissioningLoading$ | async" class="status">
             Loading scenarios…
           </div>
           <div *ngIf="commissioningError" class="error">
@@ -220,7 +220,7 @@
           </div>
           <div
             class="tiles-grid"
-            *ngIf="!commissioningLoading && !commissioningError"
+            *ngIf="(commissioningLoading$ | async) === false && !commissioningError"
           >
             <mat-card
               class="tile tile-online"

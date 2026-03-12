@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from "@angular/core";
+import { Component, OnInit, OnDestroy, inject } from "@angular/core";
 import {
   SystemStatusService,
   SystemStatus,
@@ -91,6 +91,8 @@ import { Subscription } from "rxjs";
   standalone: false,
 })
 export class StatusBandComponent implements OnInit, OnDestroy {
+  private statusService = inject(SystemStatusService);
+
   status: SystemStatus = {
     health: "healthy",
     lastCheck: new Date(),
@@ -104,8 +106,6 @@ export class StatusBandComponent implements OnInit, OnDestroy {
   shouldShow = true;
   private subscription?: Subscription;
   timestampDisplay = "";
-
-  constructor(private statusService: SystemStatusService) {}
 
   ngOnInit(): void {
     this.subscription = this.statusService.status$.subscribe((status) => {

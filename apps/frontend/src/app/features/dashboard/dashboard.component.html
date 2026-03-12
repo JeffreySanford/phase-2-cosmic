@@ -8,8 +8,8 @@
       <span class="chip">Profile {{ profilePct }}%</span>
       <span class="chip">Poll {{ pollingMs / 1000 }}s</span>
       <span class="chip">Mode {{ widgetMode }}</span>
-      <button mat-stroked-button color="primary" (click)="refresh()" [disabled]="loading">
-        {{ loading ? 'Refreshing...' : 'Refresh' }}
+      <button mat-stroked-button color="primary" (click)="refresh()" [disabled]="(loading$ | async)">
+        {{ (loading$ | async) ? 'Refreshing...' : 'Refresh' }}
       </button>
     </div>
   </header>

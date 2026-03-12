@@ -1,7 +1,12 @@
 import { HttpClient } from "@angular/common/http";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { MatTabsModule } from "@angular/material/tabs";
-import { ComponentFixture, TestBed } from "@angular/core/testing";
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
+} from "@angular/core/testing";
 import { RouterTestingModule } from "@angular/router/testing";
 import { BehaviorSubject, of, throwError } from "rxjs";
 import { SidebarService } from "../../base/sidebar/sidebar.service";
@@ -110,11 +115,13 @@ describe("LandingComponent", () => {
     }).compileComponents();
   });
 
-  beforeEach(() => {
+  beforeEach(fakeAsync(() => {
     fixture = TestBed.createComponent(LandingComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
-  });
+    tick();
+    fixture.detectChanges();
+  }));
 
   it("should create", () => {
     expect(component).toBeTruthy();
@@ -156,13 +163,15 @@ describe("LandingComponent", () => {
     expect(loadBar?.tone).toBe("amber");
   });
 
-  it("shows amber note when topology probe fails", () => {
+  it("shows amber note when topology probe fails", fakeAsync(() => {
     // make the telemetry service fail outright so probe() returns ok=false
     jest
       .spyOn(component["telemetryService"], "getTopologyMetrics")
       .mockReturnValue(throwError(() => new Error("network")));
 
     component.refreshSnapshot();
+    tick();
+    fixture.detectChanges();
     const coverageBar = component.signalBars.find(
       (b) => b.label === "Governance Coverage"
     );
@@ -170,14 +179,16 @@ describe("LandingComponent", () => {
     expect(coverageBar?.value).toBe(0);
     expect(coverageBar?.tone).toBe("amber");
     expect(coverageBar?.note).toContain("unavailable");
-  });
+  }));
 
-  it("shows amber note when topology returns no links", () => {
+  it("shows amber note when topology returns no links", fakeAsync(() => {
     jest
       .spyOn(component["telemetryService"], "getTopologyMetrics")
       .mockReturnValue(of({ links: [] }));
 
     component.refreshSnapshot();
+    tick();
+    fixture.detectChanges();
     const coverageBar = component.signalBars.find(
       (b) => b.label === "Governance Coverage"
     );
@@ -185,9 +196,9 @@ describe("LandingComponent", () => {
     expect(coverageBar?.value).toBe(0);
     expect(coverageBar?.tone).toBe("amber");
     expect(coverageBar?.note).toContain("No topology links yet");
-  });
+  }));
 
-  it("handles topology.links provided as object map", () => {
+  it("handles topology.links provided as object map", fakeAsync(() => {
     const mapPayload: TopologyMapPayload = {
       links: {
         "a->b": { source: "prometheus" },
@@ -201,6 +212,8 @@ describe("LandingComponent", () => {
       );
 
     component.refreshSnapshot();
+    tick();
+    fixture.detectChanges();
     const coverageBar = component.signalBars.find(
       (b) => b.label === "Governance Coverage"
     );
@@ -209,7 +222,7 @@ describe("LandingComponent", () => {
     expect(coverageBar?.value).toBe(50);
     expect(coverageBar?.tone).toBe("mint");
     expect(coverageBar?.note).toBeUndefined();
-  });
+  }));
 
   it("rounds computed coverage and clamps correctly for larger sets", () => {
     // construct a fake topology with 2 live links out of 11 total

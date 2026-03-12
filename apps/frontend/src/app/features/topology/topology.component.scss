@@ -8,6 +8,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* allow the page to scroll when toolbar + graph exceed viewport */
 }
 
 .toolbar {

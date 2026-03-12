@@ -61,8 +61,8 @@ describe("TridentAllocatorComponent", () => {
       .mockReturnValue(throwError(() => new Error("down")));
     fixture.detectChanges();
     tick();
-    expect(component.simulatorAvailable).toBeFalsy();
-    expect(component.simulatorMessage).toContain("unreachable");
+    expect(component.simulatorAvailable$.value).toBeFalsy();
+    expect(component.simulatorMessage$.value).toContain("unreachable");
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector(".simulator-warning")).toBeTruthy();
@@ -83,7 +83,7 @@ describe("TridentAllocatorComponent", () => {
       .mockReturnValue(of({ planId: "p", subarray: "s", allocations: [] }));
     fixture.detectChanges();
     tick();
-    expect(component.simulatorAvailable).toBeTruthy();
+    expect(component.simulatorAvailable$.value).toBeTruthy();
     component.form.patchValue({
       id: "sb1",
       subarray: "sub1",
