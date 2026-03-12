@@ -125,6 +125,14 @@ fi
 log "[start-all] Compose started. Launching local dev servers (SSR + frontend dev server)."
 export FRONTEND_PORT=${FRONTEND_PORT:-4000}
 
+CONCURRENTLY_JS="$REPO_ROOT/node_modules/concurrently/dist/bin/concurrently.js"
+export NODE_PATH="$REPO_ROOT/node_modules${NODE_PATH:+;$NODE_PATH}"
+if command -v cygpath >/dev/null 2>&1; then
+	WIN_REPO_ROOT="$(cygpath -w "$REPO_ROOT")"
+else
+	WIN_REPO_ROOT="$REPO_ROOT"
+fi
+
 # Kill any stale process already bound to the SSR port (e.g. a leftover tsx
 # --watch instance from a previous run) so the new server can bind cleanly.
 if command -v powershell.exe &>/dev/null; then
@@ -144,9 +152,9 @@ else
 fi
 
 # also launch the allocator simulator so it’s always available
-pnpm exec concurrently --kill-others-on-fail \
-  "node ./tools/trident-allocator/server.js" \
-  "pnpm run serve:ssr" \
-  "pnpm nx serve frontend" 2>&1 | tee -a "$LOG_FILE"
+node "$CONCURRENTLY_JS" --kill-others-on-fail \
+  "powershell.exe -NoProfile -Command \"Set-Location '$WIN_REPO_ROOT'; node ./tools/trident-allocator/server.js\"" \
+  "powershell.exe -NoProfile -Command \"Set-Location '$WIN_REPO_ROOT'; node .\\node_modules\\tsx\\dist\\cli.mjs --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts\"" \
+  "cmd.exe /d /s /c \"cd /d $WIN_REPO_ROOT && set NX_DAEMON=false&& pnpm nx serve frontend\"" 2>&1 | tee -a "$LOG_FILE"
 
 log "[start-all] finished"

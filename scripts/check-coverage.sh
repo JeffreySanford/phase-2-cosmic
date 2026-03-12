@@ -22,6 +22,8 @@ else:
     print("0 0")
 PY
     )
+    pct=${pct//$'\r'/}
+    miss=${miss//$'\r'/}
     total=$((pct + miss))
     if [[ $total -gt 0 ]]; then
       cov=$((100 * pct / total))
@@ -39,6 +41,7 @@ PY
 check_node() {
   # Nx outputs coverage to coverage/{projectRoot}; check frontend first, then workspace root fallback
   local summary=""
+  local cov=""
   if [[ -f "coverage/apps/frontend/coverage-summary.json" ]]; then
     summary="coverage/apps/frontend/coverage-summary.json"
   elif [[ -f "coverage/coverage-summary.json" ]]; then
@@ -47,6 +50,7 @@ check_node() {
 
   if [[ -n "$summary" ]]; then
     cov=$(jq -r '.total.lines.pct' "$summary" | cut -d. -f1)
+    cov=${cov//$'\r'/}
     echo "Node lines coverage: ${cov}% (from $summary)"
     if [[ $cov -lt $THRESHOLD ]]; then
       echo "Coverage below threshold ($THRESHOLD%)"

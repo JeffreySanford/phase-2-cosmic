@@ -73,16 +73,37 @@ describe("Diagnostics page", () => {
 
     cy.contains('[role="tab"]', "Broker Systems").click();
     cy.contains("Pulsar").should("exist");
-    cy.contains("Brokers: 3").should("exist");
-    cy.contains("Topics: 15").should("exist");
-    cy.contains("Partitions: 45").should("exist");
+    cy.contains("app-pulsar-status .stat-row", "Brokers").should(
+      "contain.text",
+      "3"
+    );
+    cy.contains("app-pulsar-status .stat-row", "Topics").should(
+      "contain.text",
+      "15"
+    );
+    cy.contains("app-pulsar-status .stat-row", "Partitions").should(
+      "contain.text",
+      "45"
+    );
 
     // Check that RabbitMQ status is displayed
     cy.contains("RabbitMQ").should("exist");
-    cy.contains("Status: connected").should("exist");
-    cy.contains("Connection: connected").should("exist");
-    cy.contains("Queues: 2").should("exist");
-    cy.contains("Exchanges: 2").should("exist");
+    cy.get("app-rabbitmq-status .tile-status").should(
+      "contain.text",
+      "connected"
+    );
+    cy.contains("app-rabbitmq-status .stat-row", "Connection").should(
+      "contain.text",
+      "connected"
+    );
+    cy.contains("app-rabbitmq-status .stat-row", "Queues").should(
+      "contain.text",
+      "2"
+    );
+    cy.contains("app-rabbitmq-status .stat-row", "Exchanges").should(
+      "contain.text",
+      "2"
+    );
   });
 
   it("should handle status API errors gracefully", () => {
@@ -108,13 +129,28 @@ describe("Diagnostics page", () => {
 
     cy.contains('[role="tab"]', "Broker Systems").click();
     cy.contains("Pulsar").should("exist");
-    cy.contains("Brokers: 0").should("exist");
-    cy.contains("Topics: 0").should("exist");
-    cy.contains("Partitions: 0").should("exist");
+    cy.contains("app-pulsar-status .stat-row", "Brokers").should(
+      "contain.text",
+      "0"
+    );
+    cy.contains("app-pulsar-status .stat-row", "Topics").should(
+      "contain.text",
+      "0"
+    );
+    cy.contains("app-pulsar-status .stat-row", "Partitions").should(
+      "contain.text",
+      "0"
+    );
 
     cy.contains("RabbitMQ").should("exist");
-    cy.contains("Status: unavailable").should("exist");
-    cy.contains("Connection: error").should("exist");
+    cy.get("app-rabbitmq-status .tile-status").should(
+      "contain.text",
+      "unavailable"
+    );
+    cy.contains("app-rabbitmq-status .stat-row", "Connection").should(
+      "contain.text",
+      "error"
+    );
   });
 
   it("should refresh status updates after a reload", () => {
@@ -153,7 +189,10 @@ describe("Diagnostics page", () => {
     cy.wait("@rabbitMQStatus");
 
     cy.contains('[role="tab"]', "Broker Systems").click();
-    cy.contains("Brokers: 1").should("be.visible");
+    cy.contains("app-pulsar-status .stat-row", "Brokers").should(
+      "contain.text",
+      "1"
+    );
 
     cy.reload();
     cy.wait("@diagnosticsIndex");

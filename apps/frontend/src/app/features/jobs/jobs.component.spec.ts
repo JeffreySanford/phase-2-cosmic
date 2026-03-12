@@ -1,7 +1,11 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { NO_ERRORS_SCHEMA } from "@angular/core";
 import { JobsComponent } from "./jobs.component";
-import { JobsService, JobStatus } from "../../services/jobs.service";
+import {
+  JobsService,
+  JobStatus,
+  JobSubmitResponse,
+} from "../../services/jobs.service";
 import { of, EMPTY } from "rxjs";
 import { HttpErrorResponse } from "@angular/common/http";
 import { MatDialogModule } from "@angular/material/dialog";
@@ -11,6 +15,7 @@ import { HttpClientTestingModule } from "@angular/common/http/testing";
 import { SnackService } from "../../services/snack.service";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
+import { throwError } from "rxjs";
 
 class StubJobsService {
   listHot() {
@@ -223,7 +228,7 @@ describe("JobsComponent", () => {
 
   it("does not emit console logs when submitting sample jobs", (done) => {
     const logSpy = jest.spyOn(console, "log");
-    const sample: any = {
+    const sample: JobSubmitResponse = {
       jobId: "j1",
       status: "QUEUED",
       queuedAt: new Date().toISOString(),
@@ -423,7 +428,6 @@ describe("JobsComponent", () => {
     });
 
     it("shows an error snackbar when the service call fails", () => {
-      const { throwError } = require("rxjs");
       jest
         .spyOn(component["jobsSvc"], "releaseDeferred")
         .mockReturnValue(throwError(() => new Error("network error")));
@@ -458,7 +462,8 @@ describe("JobsComponent", () => {
       expect(btn?.textContent?.trim()).toBe("Release");
 
       const spy = jest.spyOn(component, "releaseDeferred");
-      btn!.click();
+      expect(btn).not.toBeNull();
+      btn?.click();
       expect(spy).toHaveBeenCalled();
     });
   });

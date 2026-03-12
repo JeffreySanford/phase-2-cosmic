@@ -1,5 +1,5 @@
 describe("frontend-e2e", () => {
-  beforeEach(() => cy.visit("/"));
+  beforeEach(() => cy.visit("/landing"));
 
   it("should display welcome message", () => {
     // Custom command example, see `../support/commands.ts` file

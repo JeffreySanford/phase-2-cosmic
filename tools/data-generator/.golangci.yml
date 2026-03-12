@@ -1,6 +1,6 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/golangci/golangci-lint/master/.golangci.yml
-# golangci-lint configuration for tools/data-generator
+# golangci-lint config
+# for tools/data-generator
 # Run locally: golangci-lint run ./...
 # Install:     https://golangci-lint.run/usage/install/
 
@@ -15,18 +15,26 @@ linters:
   default: none
   enable:
     # Correctness
-    - errcheck # enforces checked error returns
-    - govet # reports suspicious constructs (vet suite)
-    - staticcheck # SA/ST/QF checks from staticcheck.io
-    - ineffassign # detects assignments whose value is never used
-    - unused # reports unused code
+    # enforces checked error returns
+    - errcheck
+    # reports suspicious constructs (vet suite)
+    - govet
+    # SA/ST/QF checks from staticcheck.io
+    - staticcheck
+    # detects assignments whose value is never used
+    - ineffassign
+    # reports unused code
+    - unused
     # Style / formatting (must match gofmt + goimports in CODING-STANDARDS.md)
     - gofmt
     - goimports
     # Safety patterns
-    - bodyclose # checks HTTP response body is closed after use
-    - nilerr # checks for returning nil alongside a non-nil error
-    - gosec # OWASP-aligned security checks
+    # checks HTTP response body is closed after use
+    - bodyclose
+    # checks for returning nil alongside a non-nil error
+    - nilerr
+    # OWASP-aligned security checks
+    - gosec
     # Simplification
     - gosimple
 formatters:
@@ -39,8 +47,10 @@ formatters:
   gosec:
     # Exclude informational findings that add noise without value
     excludes:
-      - G104 # Errors unhandled — covered by errcheck
-      - G304 # File path provided as taint input — expected for CLI tools
+      # Errors unhandled - covered by errcheck
+      - G104
+      # File path provided as taint input - expected for CLI tools
+      - G304
 
 issues:
   # Do not limit output — show all findings

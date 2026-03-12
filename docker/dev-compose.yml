@@ -392,7 +392,16 @@ services:
     volumes:
       - ..:/workspace
       - ~/.m2:/root/.m2
-    command: mvn -B -Dsurefire.skipAfterFailureCount=3 -Dfailsafe.skipAfterFailureCount=3 -f apps/java-governance/pom.xml verify -Pwith-containers
+    command:
+      - mvn
+      - -B
+      - -Dsurefire.skipAfterFailureCount=3
+      - -Dfailsafe.skipAfterFailureCount=3
+      - -f
+      - apps/java-governance/pom.xml
+      - clean
+      - verify
+      - -Pwith-containers
     environment:
       - SPRING_PROFILES_ACTIVE=docker,kafka
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092

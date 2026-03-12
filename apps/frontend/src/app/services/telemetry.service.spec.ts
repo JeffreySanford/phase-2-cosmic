@@ -66,8 +66,8 @@ describe("TelemetryService", () => {
   it("should fetch topology metrics via proxy", (done) => {
     const fakeMetrics = { links: [{ source: "prometheus" }] };
     service.getTopologyMetrics().subscribe((m) => {
-      expect((m as any).links.length).toBe(1);
-      expect((m as any).links[0].source).toBe("prometheus");
+      expect(m.links?.length).toBe(1);
+      expect(m.links?.[0]?.source).toBe("prometheus");
       done();
     });
 

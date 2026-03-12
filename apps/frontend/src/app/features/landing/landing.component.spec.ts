@@ -11,6 +11,10 @@ import { TelemetryService } from "../../services/telemetry.service";
 import { LandingComponent } from "./landing.component";
 import { SharedModule } from "../../shared/shared.module";
 
+type TopologyLink = { source: "prometheus" | "derived" | "admin" };
+type TopologyArrayPayload = { links: TopologyLink[] };
+type TopologyMapPayload = { links: Record<string, TopologyLink> };
+
 class StubSidebar {
   collapsed$ = new BehaviorSubject(false);
 
@@ -155,7 +159,7 @@ describe("LandingComponent", () => {
   it("shows amber note when topology probe fails", () => {
     // make the telemetry service fail outright so probe() returns ok=false
     jest
-      .spyOn((component as any).telemetryService, "getTopologyMetrics")
+      .spyOn(component["telemetryService"], "getTopologyMetrics")
       .mockReturnValue(throwError(() => new Error("network")));
 
     component.refreshSnapshot();
@@ -170,7 +174,7 @@ describe("LandingComponent", () => {
 
   it("shows amber note when topology returns no links", () => {
     jest
-      .spyOn((component as any).telemetryService, "getTopologyMetrics")
+      .spyOn(component["telemetryService"], "getTopologyMetrics")
       .mockReturnValue(of({ links: [] }));
 
     component.refreshSnapshot();
@@ -184,15 +188,17 @@ describe("LandingComponent", () => {
   });
 
   it("handles topology.links provided as object map", () => {
-    const mapPayload = {
+    const mapPayload: TopologyMapPayload = {
       links: {
         "a->b": { source: "prometheus" },
         "x->y": { source: "derived" },
       },
     };
     jest
-      .spyOn((component as any).telemetryService, "getTopologyMetrics")
-      .mockReturnValue(of(mapPayload));
+      .spyOn(component["telemetryService"], "getTopologyMetrics")
+      .mockReturnValue(
+        of(mapPayload as unknown as { links?: Array<{ source?: string }> })
+      );
 
     component.refreshSnapshot();
     const coverageBar = component.signalBars.find(
@@ -207,14 +213,14 @@ describe("LandingComponent", () => {
 
   it("rounds computed coverage and clamps correctly for larger sets", () => {
     // construct a fake topology with 2 live links out of 11 total
-    const topo: any = { links: [] };
+    const topo: TopologyArrayPayload = { links: [] };
     for (let i = 0; i < 11; i++) {
       topo.links.push({ source: i < 2 ? "prometheus" : "derived" });
     }
 
     // compute the percent exactly the way the component does
     const liveCount = topo.links.filter(
-      (l: any) => l.source === "prometheus" || l.source === "admin"
+      (l) => l.source === "prometheus" || l.source === "admin"
     ).length;
     const rawPct = (liveCount / topo.links.length) * 100;
     // apply the same toPercent logic directly

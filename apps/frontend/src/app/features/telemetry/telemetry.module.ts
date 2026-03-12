@@ -20,7 +20,6 @@ import { InfraTabsComponent } from "./infra-tabs.component";
 import { PulsarStatusComponent } from "./pulsar-status/pulsar-status.component";
 import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.component";
 
-
 @NgModule({
   declarations: [
     TelemetryComponent,

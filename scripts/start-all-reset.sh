@@ -790,10 +790,18 @@ printf "${DIM}Press ${BOLD}Ctrl+C${NC}${DIM} to stop the servers${NC}\n\n"
 
 log "[start-all-reset] launching dev servers (SSR + Angular)"
 export FRONTEND_PORT=${FRONTEND_PORT:-4000}
+
+CONCURRENTLY_JS="$REPO_ROOT/node_modules/concurrently/dist/bin/concurrently.js"
+export NODE_PATH="$REPO_ROOT/node_modules${NODE_PATH:+;$NODE_PATH}"
+if command -v cygpath >/dev/null 2>&1; then
+  WIN_REPO_ROOT="$(cygpath -w "$REPO_ROOT")"
+else
+  WIN_REPO_ROOT="$REPO_ROOT"
+fi
 # start allocator simulator along with SSR and frontend dev server
-pnpm exec concurrently --kill-others-on-fail \
-  "node ./tools/trident-allocator/server.js" \
-  "pnpm run serve:ssr" \
-  "pnpm nx serve frontend" 2>&1 | tee -a "$LOG_FILE"
+node "$CONCURRENTLY_JS" --kill-others-on-fail \
+  "powershell.exe -NoProfile -Command \"Set-Location '$WIN_REPO_ROOT'; node ./tools/trident-allocator/server.js\"" \
+  "powershell.exe -NoProfile -Command \"Set-Location '$WIN_REPO_ROOT'; node .\\node_modules\\tsx\\dist\\cli.mjs --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts\"" \
+  "cmd.exe /d /s /c \"cd /d $WIN_REPO_ROOT && set NX_DAEMON=false&& pnpm nx serve frontend\"" 2>&1 | tee -a "$LOG_FILE"
 
 log "[start-all-reset] dev servers stopped"

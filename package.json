@@ -89,7 +89,7 @@
     "jest-preset-angular": "~14.4.0",
     "markdown-link-check": "^3.14.2",
     "markdownlint-cli": "^0.47.0",
-    "nx": "22.5.2",
+    "nx": "19.8.4",
     "playwright": "^1.58.2",
     "prettier": "^2.6.2",
     "reflect-metadata": "^0.2.2",

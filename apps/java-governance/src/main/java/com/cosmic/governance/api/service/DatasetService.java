@@ -96,12 +96,13 @@ public class DatasetService {
             o = inMemoryStore.get(KEY_PREFIX + id);
             recordRedisRead("memory", o, true, Duration.between(startedAt, Instant.now()));
         }
-        if (o instanceof DatasetRecord) {
+        DatasetResponse response = coerceResponse(o);
+        if (response != null) {
             if (governanceRuntimeMetricsService != null) {
                 governanceRuntimeMetricsService.recordOperatorRead("dataset_get", o);
                 governanceRuntimeMetricsService.recordBusinessAction("dataset", "read", o);
             }
-            return Optional.of(toResponse((DatasetRecord) o));
+            return Optional.of(response);
         }
         return Optional.empty();
     }
@@ -132,9 +133,8 @@ public class DatasetService {
             });
         }
         var datasets = stream
-                .filter(DatasetRecord.class::isInstance)
-                .map(DatasetRecord.class::cast)
-                .map(this::toResponse)
+                .map(this::coerceResponse)
+                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
         if (governanceRuntimeMetricsService != null) {
             governanceRuntimeMetricsService.recordOperatorRead("dataset_list", datasets);
@@ -145,6 +145,24 @@ public class DatasetService {
 
     private DatasetResponse toResponse(DatasetRecord r) {
         return new DatasetResponse(r.getId(), r.getName(), r.getDescription(), r.getCreatedAt(), r.getMetadata(), r.getManifest());
+    }
+
+    @SuppressWarnings("unchecked")
+    private DatasetResponse coerceResponse(Object value) {
+        if (value instanceof DatasetRecord record) {
+            return toResponse(record);
+        }
+        if (value instanceof Map<?, ?> raw) {
+            return new DatasetResponse(
+                    (String) raw.get("id"),
+                    (String) raw.get("name"),
+                    (String) raw.get("description"),
+                    (String) raw.get("createdAt"),
+                    raw.get("metadata") instanceof Map<?, ?> metadata ? (Map<String, Object>) metadata : Map.of(),
+                    raw.get("manifest") instanceof Map<?, ?> manifest ? (Map<String, Object>) manifest : null
+            );
+        }
+        return null;
     }
 
     private void recordRedisRead(String store, Object payload, boolean success, Duration duration) {

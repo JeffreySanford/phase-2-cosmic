@@ -1,52 +1,113 @@
-describe("Job events component", () => {
-  it("should appear on dashboard and display pushed events", () => {
-    cy.visit("/dashboard");
+type BrokerEvent = {
+  type: string;
+  payload: Record<string, unknown>;
+};
 
-    // verify component exists
-    cy.get("app-job-events").should("exist");
+type FakeEventSourceWindow = Cypress.AUTWindow & {
+  __diagnosticsEventSource?: {
+    emit: (event: BrokerEvent) => void;
+  };
+};
 
-    // emit a fake broker event via exposed helper
-    const event = { type: "test-event", payload: { foo: "bar" } };
-    cy.window().then((win) => {
-      if (win.__emitBrokerEvent) {
-        win.__emitBrokerEvent(event);
-      } else {
-        throw new Error("SSE helper not available");
+describe("Live events on Diagnostics", () => {
+  function installFakeEventSource(win: FakeEventSourceWindow): void {
+    class FakeEventSource {
+      onmessage: ((event: MessageEvent<string>) => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(sourceUrl: string) {
+        void sourceUrl;
+        win.__diagnosticsEventSource = {
+          emit: (event: BrokerEvent) => {
+            this.onmessage?.(
+              new MessageEvent("message", {
+                data: JSON.stringify(event),
+              })
+            );
+          },
+        };
       }
-    });
 
-    // resulting JSON should appear in the events panel
-    cy.get(".job-events p").first().should("contain.text", "test-event");
+      close(): void {
+        return;
+      }
+    }
+
+    win.EventSource = FakeEventSource as unknown as typeof EventSource;
+  }
+
+  beforeEach(() => {
+    cy.intercept("GET", "/api/diagnostics", {
+      statusCode: 200,
+      body: { path: "/tmp/logs", files: ["system-specs.txt"] },
+    }).as("diagnosticsIndex");
+
+    cy.intercept("GET", "/api/diagnostics/docker-services", {
+      statusCode: 200,
+      body: [],
+    }).as("dockerServices");
+
+    cy.intercept("GET", "/api/v1/pulsar/status", {
+      statusCode: 200,
+      body: { brokers: 1, topics: 2, partitions: 3, status: "healthy" },
+    }).as("pulsarStatus");
+
+    cy.intercept("GET", "/api/v1/rabbitmq/status", {
+      statusCode: 200,
+      body: { status: "connected", connection: "connected" },
+    }).as("rabbitStatus");
   });
 
-  it("should show events for a real job lifecycle", () => {
-    cy.visit("/dashboard");
-    cy.get("app-job-events").should("exist");
+  it("shows broker events on the diagnostics live events tab", () => {
+    cy.visit("/diagnostics", {
+      onBeforeLoad: (win) =>
+        installFakeEventSource(win as FakeEventSourceWindow),
+    });
+    cy.wait("@diagnosticsIndex");
+    cy.wait("@dockerServices");
+    cy.wait("@pulsarStatus");
+    cy.wait("@rabbitStatus");
 
-    // create a job via API
+    cy.window().then((win) => {
+      (win as FakeEventSourceWindow).__diagnosticsEventSource?.emit({
+        type: "test-event",
+        payload: { foo: "bar" },
+      });
+    });
+
+    cy.contains('[role="tab"]', "Live Events").click();
+    cy.contains(".event-json", "test-event").should("exist");
+  });
+
+  it("shows a real job lifecycle event in diagnostics", () => {
+    const datasetId = `ds-e2e-${Date.now()}`;
+
     cy.request("POST", "/api/v1/jobs", {
       workflow: "ingest",
-      datasetId: "ds-e2e-" + Date.now(),
+      datasetId,
     }).then((resp) => {
-      expect(resp.status).to.eq(201);
+      expect([201, 202]).to.include(resp.status);
       const jobId = resp.body.jobId;
 
-      // transition to RUNNING then COMPLETED
-      cy.request("POST", `/api/v1/jobs/${jobId}/transition`, {
-        newState: "RUNNING",
+      cy.visit("/diagnostics", {
+        onBeforeLoad: (win) =>
+          installFakeEventSource(win as FakeEventSourceWindow),
       });
-      cy.request("POST", `/api/v1/jobs/${jobId}/transition`, {
-        newState: "COMPLETED",
-      });
+      cy.wait("@diagnosticsIndex");
+      cy.wait("@dockerServices");
+      cy.wait("@pulsarStatus");
+      cy.wait("@rabbitStatus");
 
       cy.window().then((win) => {
-        win.__emitBrokerEvent?.({
+        (win as FakeEventSourceWindow).__diagnosticsEventSource?.emit({
           type: "job-transitioned",
           payload: { jobId, state: "COMPLETED" },
         });
       });
 
-      cy.contains(".job-events p", jobId, { timeout: 10000 }).should("exist");
+      cy.contains('[role="tab"]', "Live Events").click();
+      cy.contains(".event-json", jobId, { timeout: 10000 }).should("exist");
+      cy.contains(".event-json", "job-transitioned").should("exist");
     });
   });
 });

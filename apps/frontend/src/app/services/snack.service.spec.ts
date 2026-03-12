@@ -87,7 +87,13 @@ describe("SnackService", () => {
   });
 
   it("does not patch MatSnackBar._attach when running under Jest", () => {
-    const sb: any = { open: jest.fn(), _attach: jest.fn() };
+    const sb: {
+      open: jest.Mock;
+      _attach: jest.Mock & { __stackingPatched?: boolean };
+    } = {
+      open: jest.fn(),
+      _attach: jest.fn(),
+    };
     new SnackService(sb as unknown as MatSnackBar);
     expect(sb._attach.__stackingPatched).toBeUndefined();
   });

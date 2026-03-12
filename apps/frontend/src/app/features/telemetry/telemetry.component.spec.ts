@@ -29,8 +29,15 @@ import { TelemetryService } from "../../services/telemetry.service";
 import { LoadProfileService } from "../../services/load-profile.service";
 import { VoService } from "../../services/vo.service";
 import { ActivatedRoute } from "@angular/router";
-import { asyncScheduler, BehaviorSubject, Observable, of, scheduled } from "rxjs";
+import {
+  asyncScheduler,
+  BehaviorSubject,
+  Observable,
+  of,
+  scheduled,
+} from "rxjs";
 import { SharedModule } from "../../shared/shared.module";
+import { InfrastructureTelemetrySnapshot } from "../../shared/types";
 
 type TelemetryComponentTestHooks = {
   loadD3: () => Observable<unknown>;
@@ -163,7 +170,7 @@ describe("TelemetryComponent", () => {
         alertmanager: { source: "prometheus" },
         pulsar: { source: "prometheus", brokers: 0, topics: 0, partitions: 0 },
       },
-    } as any;
+    } as InfrastructureTelemetrySnapshot;
     fixture.detectChanges();
 
     const infraDebug = fixture.debugElement.query(By.css("app-infra-tabs"));

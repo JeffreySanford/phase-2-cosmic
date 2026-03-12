@@ -1,13 +1,14 @@
-# Add files here to ignore them from prettier formatting
-/dist
-/coverage
-/.nx/cache
-/.nx/workspace-data
+.pnpm-store
+docker-store
+node_modules
+coverage
 .angular
+.nx
+coverage-report
+gh-artifacts
+logs
+dist
+tmp
 pnpm-lock.yaml
-pnpm-store
-apps/java-governance/target
-logs/
-**/logs/
-gh-artifacts/
-coverage-report/
+apps/**/target
+tools/**/target

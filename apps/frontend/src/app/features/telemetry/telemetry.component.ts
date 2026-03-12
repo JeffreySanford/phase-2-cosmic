@@ -53,8 +53,7 @@ type VoTableResponse = {
   links?: unknown[];
 };
 
-export 
-type TransientAlert = {
+export type TransientAlert = {
   id: string;
   eventType: string;
   severity: string;
@@ -826,7 +825,10 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         const ma = this.points.map((p, i, arr) => {
           const start = Math.max(0, i - 4);
           const slice = arr.slice(start, i + 1);
-          return { t: p.t, v: slice.reduce((s, x) => s + x.v, 0) / slice.length };
+          return {
+            t: p.t,
+            v: slice.reduce((s, x) => s + x.v, 0) / slice.length,
+          };
         });
         this.renderLine(this.points, ma);
         this.renderHistogram(this.points.map((p) => p.v));
