@@ -496,8 +496,13 @@ export class JobsComponent implements OnInit, OnDestroy {
               tap((created) => {
                 if (created && created.jobId) {
                   const jobId = created.jobId;
-                  this.jobsSvc.transition(jobId, "RUNNING").subscribe(() => {
-                    // no console logging; UI shows runtime via template
+                  this.jobsSvc.transition(jobId, "RUNNING").subscribe({
+                    next: () => {
+                      // no console logging; UI shows runtime via template
+                    },
+                    error: () => {
+                      // ignore; job watcher will handle missing/errored jobs
+                    },
                   });
                   // ensure the clock advances so runtime display updates
                   this.currentTime = Date.now();

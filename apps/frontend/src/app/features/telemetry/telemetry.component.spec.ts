@@ -302,6 +302,37 @@ describe("TelemetryComponent", () => {
     discardPeriodicTasks();
   }));
 
+  it("should compute non-zero throughput stats from range response", fakeAsync(() => {
+    telemetryServiceStub.queryRangeRate = jest.fn(() =>
+      of({
+        data: {
+          result: [
+            {
+              values: [
+                [1, "100"],
+                [2, "140"],
+                [3, "120"],
+                [4, "160"],
+              ],
+            },
+          ],
+        },
+      })
+    );
+    telemetryServiceStub.queryInstant = jest.fn(() => of(140));
+
+    fixture.detectChanges();
+    // Allow deferred tasks / polling triggers to run
+    tick(50);
+
+    expect(component.currentRate).toBeGreaterThan(0);
+    expect(component.currentRateHuman).not.toContain("0 B/s");
+    expect(component.stats.max).toBeGreaterThan(0);
+
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
   it("should handle Pulsar status error", fakeAsync(() => {
     fixture.detectChanges();
 

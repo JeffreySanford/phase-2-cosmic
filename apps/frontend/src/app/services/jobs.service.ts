@@ -116,7 +116,20 @@ export class JobsService {
     if (!this._jobCache.has(id)) {
       const obs = interval(this._watchPollIntervalMs).pipe(
         startWith(0),
-        switchMap(() => this.get(id)),
+        switchMap(() =>
+          this.get(id).pipe(
+            catchError((err) => {
+              // Preserve the polling stream even if the backend returns an error.
+              // This prevents unhandled HttpErrorResponses from crashing the UI.
+              console.warn("jobs.watchJob error", id, err);
+              return of({
+                jobId: id,
+                workflow: "unknown",
+                status: "ERROR",
+              } as JobStatus);
+            })
+          )
+        ),
         shareReplay({ bufferSize: 1, refCount: true })
       );
       this._jobCache.set(id, obs);

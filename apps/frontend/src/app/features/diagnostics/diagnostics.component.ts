@@ -97,7 +97,7 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
   }
   index: DiagnosticsIndex | null = null;
   /** Live events received from the broker */
-  jobEvents: JobEvent[] = [];
+  readonly jobEvents$ = new BehaviorSubject<JobEvent[]>([]);
 
   // reactive state subjects to avoid ExpressionChangedAfterItHasBeenChecked
   readonly loading$ = new BehaviorSubject<boolean>(false);
@@ -179,7 +179,8 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
         const data = JSON.parse(event.data);
         // Add new event to the front, keep max 10
         this.deferUiUpdate(() => {
-          this.jobEvents = [data, ...this.jobEvents].slice(0, 10);
+          const next = [data, ...this.jobEvents$.value].slice(0, 10);
+          this.jobEvents$.next(next);
         });
       } catch (_e) {
         // ignore malformed events

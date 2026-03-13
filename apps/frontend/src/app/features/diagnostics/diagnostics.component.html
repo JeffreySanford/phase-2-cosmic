@@ -145,13 +145,13 @@
               </div>
               <div class="tile-body">
                 <div class="live-events-list scrollable">
-                  <ng-container *ngFor="let event of jobEvents">
+                  <ng-container *ngFor="let event of (jobEvents$ | async)">
                     <div class="event-json">
                       <span>{{ formatEvent(event) }}</span>
                     </div>
                   </ng-container>
                 </div>
-                <p class="muted">Real-time WebSocket events from the broker. Showing {{ jobEvents.length }} events.</p>
+                <p class="muted">Real-time WebSocket events from the broker. Showing {{ (jobEvents$ | async)?.length || 0 }} events.</p>
               </div>
             </mat-card>
             <mat-card class="tile tile-files" *ngIf="index">

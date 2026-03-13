@@ -21,9 +21,9 @@ for f in "MVP_ACCEPTANCE_CRITERIA.md" "DEMO_CHECKLIST.md"; do
       echo "[ERROR] $f lacks any http/https citations"
       missing=1
     fi
-    # run a markdown link checker if available (installed via npm devDependency)
-    if command -v npx >/dev/null 2>&1; then
-      npx markdown-link-check -q "$f" || missing=1
+    # Use pnpm to avoid npm config warnings leaking into docs validation output.
+    if command -v pnpm >/dev/null 2>&1; then
+      pnpm exec markdown-link-check -q "$f" || missing=1
     fi
   fi
  done

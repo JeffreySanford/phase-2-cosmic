@@ -13,6 +13,8 @@ import org.testcontainers.containers.Network;
  */
 public abstract class TestcontainersConfig {
     protected static final Network TEST_NETWORK = Network.newNetwork();
+    private static final String FALLBACK_MESSAGE =
+            "[test] Testcontainers unavailable; using localhost Kafka/Redis defaults";
 
     protected static final KafkaContainer KAFKA;
     protected static final GenericContainer<?> REDIS;
@@ -29,7 +31,7 @@ public abstract class TestcontainersConfig {
             KAFKA.start();
             REDIS.start();
         } catch (Throwable t) {
-            System.err.println("[test] failed to start containers, tests will fall back to localhost");
+            System.out.println(FALLBACK_MESSAGE);
             // containers left null if start failed
         }
     }

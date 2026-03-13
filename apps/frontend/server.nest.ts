@@ -1451,7 +1451,13 @@ export class AppController {
   }
 
   private useEmbeddedE2eBackend(): boolean {
-    return process.env["USE_EMBEDDED_E2E_BACKEND"] === "true";
+    // Local developer experience: default to the embedded mock backend
+    // so frontend work does not require a running governance service.
+    const env = process.env["USE_EMBEDDED_E2E_BACKEND"];
+    if (env === undefined || env === null) {
+      return true;
+    }
+    return env === "true";
   }
 
   /**
@@ -1473,17 +1479,51 @@ export class AppController {
     );
   }
 
-  private embeddedPrometheusPayload(query: string) {
-    const value =
-      query.includes("sum(up)") || query.includes('up{job="data-generator"}')
-        ? "1"
-        : query.includes("generator_bytes_produced_total")
-        ? "524288"
-        : query.includes("generator_records_produced_total")
-        ? "120"
-        : query.includes("process_cpu_seconds_total")
-        ? "17.5"
-        : "1";
+  private embeddedPrometheusPayload(
+    query: string,
+    start?: number,
+    end?: number,
+    step?: number
+  ) {
+    // Provide mock Prometheus output for both instant and range queries.
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    const baseValue = (): number => {
+      if (query.includes("sum(up)") || query.includes('up{job="data-generator"}'))
+        return Math.random() > 0.97 ? 0 : 1;
+      if (query.includes("generator_bytes_produced_total"))
+        return 524288 + Math.round((nowSec % 60) * 1024);
+      if (query.includes("generator_records_produced_total"))
+        return 120 + Math.round((nowSec % 60) * 4);
+      if (query.includes("process_cpu_seconds_total"))
+        return 17.5 + Math.sin(nowSec / 30) * 3;
+      return 1 + Math.sin(nowSec / 10);
+    };
+
+    const instantValue = baseValue();
+
+    // Range query: return a matrix-style response with values over time
+    if (start !== undefined && end !== undefined && step !== undefined) {
+      const safeStep = Math.max(1, step);
+      const points: Array<[number, string]> = [];
+      for (let t = start; t <= end; t += safeStep) {
+        const wind = (t % 60) / 60;
+        const value = baseValue() * (0.8 + 0.4 * Math.sin(wind * Math.PI * 2));
+        points.push([t, value.toFixed(2)]);
+      }
+      return {
+        status: "success",
+        data: {
+          resultType: "matrix",
+          result: [
+            {
+              metric: {},
+              values: points,
+            },
+          ],
+        },
+      };
+    }
 
     return {
       status: "success",
@@ -1492,7 +1532,7 @@ export class AppController {
         result: [
           {
             metric: {},
-            value: [Math.floor(Date.now() / 1000), value],
+            value: [nowSec, String(instantValue)],
           },
         ],
       },
@@ -1501,6 +1541,14 @@ export class AppController {
 
   private embeddedTopologyMetrics() {
     const jobs = Array.from(embeddedJobStore.values());
+    // The landing page computes governance coverage from topology links.
+    // Ensure the embedded E2E backend returns a minimal set of links so the
+    // dashboard signal bars are meaningful even without an upstream governance service.
+    const links = [
+      { source: "prometheus" },
+      { source: "admin" },
+      { source: "derived" },
+    ];
     return {
       profilePct: 25,
       workers: 2,
@@ -1510,6 +1558,7 @@ export class AppController {
         running: jobs.filter((job) => job.status === "RUNNING").length,
         completed: jobs.filter((job) => job.status === "COMPLETED").length,
       },
+      links,
     };
   }
 
@@ -2316,7 +2365,10 @@ export class AppController {
 
     if (this.useEmbeddedE2eBackend()) {
       const query = String(req.query?.["query"] || "sum(up)");
-      res.status(200).json(this.embeddedPrometheusPayload(query));
+      const start = req.query?.["start"] ? Number(req.query["start"]) : undefined;
+      const end = req.query?.["end"] ? Number(req.query["end"]) : undefined;
+      const step = req.query?.["step"] ? Number(req.query["step"]) : undefined;
+      res.status(200).json(this.embeddedPrometheusPayload(query, start, end, step));
       return;
     }
 
