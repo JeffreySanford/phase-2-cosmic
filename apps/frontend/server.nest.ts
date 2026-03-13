@@ -1489,7 +1489,10 @@ export class AppController {
     const nowSec = Math.floor(Date.now() / 1000);
 
     const baseValue = (): number => {
-      if (query.includes("sum(up)") || query.includes('up{job="data-generator"}'))
+      if (
+        query.includes("sum(up)") ||
+        query.includes('up{job="data-generator"}')
+      )
         return Math.random() > 0.97 ? 0 : 1;
       if (query.includes("generator_bytes_produced_total"))
         return 524288 + Math.round((nowSec % 60) * 1024);
@@ -2365,10 +2368,14 @@ export class AppController {
 
     if (this.useEmbeddedE2eBackend()) {
       const query = String(req.query?.["query"] || "sum(up)");
-      const start = req.query?.["start"] ? Number(req.query["start"]) : undefined;
+      const start = req.query?.["start"]
+        ? Number(req.query["start"])
+        : undefined;
       const end = req.query?.["end"] ? Number(req.query["end"]) : undefined;
       const step = req.query?.["step"] ? Number(req.query["step"]) : undefined;
-      res.status(200).json(this.embeddedPrometheusPayload(query, start, end, step));
+      res
+        .status(200)
+        .json(this.embeddedPrometheusPayload(query, start, end, step));
       return;
     }
 

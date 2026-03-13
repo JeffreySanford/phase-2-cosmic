@@ -40,7 +40,6 @@ import {
 import { SharedModule } from "../../shared/shared.module";
 import { InfrastructureTelemetrySnapshot } from "../../shared/types";
 
-
 function clickTabByLabel(
   fixture: ComponentFixture<TelemetryComponent>,
   label: string,
@@ -149,7 +148,6 @@ describe("TelemetryComponent", () => {
     fixture = TestBed.createComponent(TelemetryComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
-
   });
 
   afterEach(() => {
@@ -304,22 +302,22 @@ describe("TelemetryComponent", () => {
   }));
 
   it("should compute non-zero throughput stats from range response", fakeAsync(() => {
-    telemetryServiceStub.queryRangeRate =
-      (jest.fn(() =>
-        of({
-          data: {
-            result: [
-              {
-                values: [
-                  [1, "100"],
-                  [2, "140"],
-                  [3, "120"],
-                  [4, "160"],
-                ],
-              },
-            ],
-          },
-        })) as any);
+    telemetryServiceStub.queryRangeRate = jest.fn(() =>
+      of({
+        data: {
+          result: [
+            {
+              values: [
+                [1, "100"],
+                [2, "140"],
+                [3, "120"],
+                [4, "160"],
+              ],
+            },
+          ],
+        },
+      })
+    ) as any;
     telemetryServiceStub.queryInstant = jest.fn(() => of(140));
 
     fixture.detectChanges();

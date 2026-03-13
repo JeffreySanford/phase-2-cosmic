@@ -12,7 +12,15 @@ import { HttpClient } from "@angular/common/http";
 import { TelemetryService } from "../../services/telemetry.service";
 import { VoService, VoServices } from "../../services/vo.service";
 import { BrowserPlatformService } from "../../services/browser-platform.service";
-import { BehaviorSubject, Subscription, timer, NEVER, from, of, forkJoin } from "rxjs";
+import {
+  BehaviorSubject,
+  Subscription,
+  timer,
+  NEVER,
+  from,
+  of,
+  forkJoin,
+} from "rxjs";
 import { switchMap, map, catchError } from "rxjs/operators";
 import { LoadProfileService } from "../../services/load-profile.service";
 import { TelemetryChartService } from "../../services/telemetry-chart.service";
@@ -31,7 +39,6 @@ type PrometheusRangeResult = {
   values: PrometheusRangeValue[];
 };
 type PrometheusRangeResponse = { data?: { result?: PrometheusRangeResult[] } };
-
 
 type Point = { t: number; v: number };
 type MetricKind = "counter" | "gauge";
@@ -271,9 +278,13 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     };
 
     forkJoin({
-      line: chartEl ? from(this.chart.initLineChart(chartEl, config)) : of(undefined),
+      line: chartEl
+        ? from(this.chart.initLineChart(chartEl, config))
+        : of(undefined),
       hist: histEl ? from(this.chart.initHistogram(histEl)) : of(undefined),
-      gauge: gaugeEl ? from(this.chart.initGauge(gaugeEl, config)) : of(undefined),
+      gauge: gaugeEl
+        ? from(this.chart.initGauge(gaugeEl, config))
+        : of(undefined),
     })
       .pipe(catchError(() => of(null)))
       .subscribe(() => {
@@ -481,8 +492,6 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-
-
   exportCsv() {
     if (!this.points || this.points.length === 0) return;
     const rows = ["timestamp,value"];
@@ -509,8 +518,6 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     const p95 = sorted[Math.max(0, Math.min(sorted.length - 1, idx))];
     this.stats = { min, max, avg, p95 };
   }
-
-
 
   private computeRate(points: Array<{ t: number; v: number }>) {
     if (!points || points.length < 2) {
@@ -667,7 +674,9 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  private renderHistogramForCurrentData(config: ReturnType<typeof this.getChartConfig>) {
+  private renderHistogramForCurrentData(
+    config: ReturnType<typeof this.getChartConfig>
+  ) {
     if (!this.points?.length) return;
     this.chart.renderHistogram(
       this.points.map((p) => p.v),

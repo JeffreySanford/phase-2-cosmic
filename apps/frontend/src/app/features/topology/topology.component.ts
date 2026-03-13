@@ -55,7 +55,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild("graph", { static: true }) graphEl!: ElementRef<HTMLDivElement>;
 
-
   // using subjects prevents binding races when the flag flips during
   // async callbacks. the getter keeps existing unit tests happy.
   private readonly loading$: BehaviorSubject<boolean>;
@@ -168,7 +167,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   private deferUiUpdate(task: () => void): void {
     setTimeout(task, 0);
   }
-
 
   ngOnInit(): void {
     this.profilePct = this.loadProfile.current;
@@ -480,7 +478,8 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       nodes,
       links,
       getLinkKey: (l) => this.getLinkKey(l),
-      getLinkSource: (l) => this.linkSourceData(this.statsRef(l)._stats?.source),
+      getLinkSource: (l) =>
+        this.linkSourceData(this.statsRef(l)._stats?.source),
       getLinkStats: (l) => this.statsRef(l)._stats,
       getLinkStroke: (l, stats) => ({
         stroke: "rgba(148, 163, 184, 0.34)",
@@ -535,8 +534,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       }),
       getNodeLabel: (node) => node.label ?? node.id,
       getNodeSummary: (node) => nodeSummaryById[node.id],
-      getNodeActivityLabel: (node, summary) =>
-        this.nodeActivityLabel(summary),
+      getNodeActivityLabel: (node, summary) => this.nodeActivityLabel(summary),
       onLinkClick: (link) => this.openLinkInfo(link),
       onNodeClick: (node) => this.openNodeInfo(node),
       onNodeDragStart: (event, node) => this.dragstarted(event, node),
@@ -1263,7 +1261,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     return "#60a5fa";
   }
 
-
   // Fetch metrics from backend Prometheus adapter at /api/metrics/topology
   // Expected shape: { "source->target": { currentMBps: number, maxMBps?: number } }
   private fetchMetrics() {
@@ -1326,7 +1323,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     this.clearProvenanceHelperTimeout();
   }
 
-
   private preserveNodePositions(nodes: TopoNode[]): void {
     const known = new Map(
       this.fullTopologyNodes.map((node) => [node.id, node] as const)
@@ -1382,9 +1378,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-
-
-
   private startLivePoll() {
     this.stopLivePoll();
     // immediate poll
@@ -1427,7 +1420,9 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
               const delta = Math.abs((m.currentMBps || 0) - prevVal);
               const pctChange = maxVal > 0 ? (delta / maxVal) * 100 : 0;
               try {
-                const particleLayerEl = this.dom.getParticleLayerElement(this.graphEl);
+                const particleLayerEl = this.dom.getParticleLayerElement(
+                  this.graphEl
+                );
                 if (particleLayerEl) {
                   this.dom.syncParticlesForLink(
                     particleLayerEl,
@@ -1457,7 +1452,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     );
   }
-
 
   private captureMissionMetrics(res: TopologyMetricsResponse): void {
     if (typeof res.timing_drift_ns === "number") {
