@@ -13,25 +13,20 @@ import {
   NgZone,
   inject,
 } from "@angular/core";
-import { DOCUMENT } from "@angular/common";
 import { SidebarService } from "../../base/sidebar/sidebar.service";
+import { BrowserPlatformService } from "../../services/browser-platform.service";
+import { Observable, defer, from, interval, isObservable, of, throwError, Subscription } from "rxjs";
 import {
-  isAladinPrefetched as _isAladinPrefetched,
-  getAladinInitPromise,
-} from "../../services/aladin-prefetch.service";
-import { from, of, defer, interval, throwError, Subscription } from "rxjs";
-import {
-  mergeMap,
   catchError,
-  filter,
   first,
+  filter,
   map,
-  timeout,
-  retryWhen,
-  delay,
-  tap,
   mapTo,
+  shareReplay,
   startWith,
+  switchMap,
+  tap,
+  timeout,
 } from "rxjs/operators";
 
 // Focused types for Aladin pieces used by the component
@@ -51,17 +46,6 @@ type AladinModuleDefault =
   | ((...args: unknown[]) => unknown)
   | { aladin?: AladinFactory; wasmLibs?: Record<string, unknown> };
 
-type WindowWithCustomEvent = Window & {
-  CustomEvent: new (
-    type: string,
-    eventInitDict?: CustomEventInit<unknown>
-  ) => CustomEvent<unknown>;
-};
-
-type WindowWithResizeObserver = Window & {
-  ResizeObserver: typeof ResizeObserver;
-};
-
 interface AladinModule {
   default?: AladinModuleDefault;
   aladin?: AladinFactory;
@@ -78,7 +62,7 @@ interface AladinModule {
 })
 export class ViewerComponent implements AfterViewInit, OnDestroy {
   private renderer = inject(Renderer2);
-  private doc = inject<Document>(DOCUMENT);
+  private browser = inject(BrowserPlatformService);
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
   private sidebarService = inject(SidebarService);
@@ -104,52 +88,42 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
   private sidebarSubscription?: Subscription;
 
   private get browserWindow(): Window | null {
-    return this.doc?.defaultView ?? null;
+    return this.browser.window;
   }
 
   private dispatchBrowserEvent(
     type: "resize" | "aladin-ready",
     detail?: Record<string, unknown>
   ): void {
-    const browserWindow = this.browserWindow;
-    if (!browserWindow) return;
-    try {
-      if (type === "resize") {
-        browserWindow.dispatchEvent(new Event("resize"));
-        return;
-      }
-      if (
-        typeof (browserWindow as Partial<WindowWithCustomEvent>).CustomEvent ===
-        "function"
-      ) {
-        const customEventWindow = browserWindow as WindowWithCustomEvent;
-        browserWindow.dispatchEvent(
-          new customEventWindow.CustomEvent(type, { detail })
-        );
-      }
-    } catch {
-      // ignore
-    }
+    this.browser.dispatchWindowEvent(type, detail);
+  }
+
+  private getContainerElement(): HTMLElement | null {
+    return this.containerRef?.nativeElement ?? null;
   }
 
   ngAfterViewInit(): void {
     this.initViewer()
       .pipe(
         catchError((err) => {
+          console.error("Viewer init failed:", err);
+          this.initViewer$ = undefined; // allow retries
           this.viewerError.emit(err);
           return of(void 0);
         })
       )
       .subscribe(() => {
         // set up a resize observer to notify Aladin of container size changes
-        const el = this.containerRef.nativeElement;
-        const ResizeObserverCtor = (
-          this.browserWindow as Partial<WindowWithResizeObserver> | null
-        )?.ResizeObserver;
-        if (typeof ResizeObserverCtor === "function") {
+        const el = this.getContainerElement();
+        const ResizeObserverCtor =
+          (this.browser.window as Window & {
+            ResizeObserver?: typeof ResizeObserver;
+          })?.ResizeObserver;
+        if (el && typeof ResizeObserverCtor === "function") {
+          const container = el; // narrow to non-null for use inside the callback
           this.resizeObserver = new ResizeObserverCtor(() => {
             try {
-              const rect = el.getBoundingClientRect();
+              const rect = container.getBoundingClientRect();
               if (this.instance && typeof this.instance.resize === "function") {
                 this.instance.resize(rect.width, rect.height);
               }
@@ -157,8 +131,7 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
               // ignore
             }
           });
-          // guard against undefined to satisfy TS
-          this.resizeObserver?.observe(el);
+          this.resizeObserver.observe(container);
         }
 
         // track sidebar collapse events so our viewer redraws when the stage width changes
@@ -166,7 +139,9 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
           () => {
             setTimeout(() => {
               try {
-                const rect = el.getBoundingClientRect();
+                const c = this.getContainerElement();
+                if (!c) return;
+                const rect = c.getBoundingClientRect();
                 if (
                   this.instance &&
                   typeof this.instance.resize === "function"
@@ -183,43 +158,6 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
       });
   }
 
-  // Run a function when the browser is idle (requestIdleCallback) with a setTimeout fallback.
-  // Returns a promise that resolves/rejects with the function result.
-  private runWhenIdle<T>(fn: () => T | Promise<T>): Promise<T> {
-    if (!this.browserWindow) return Promise.resolve(fn() as Promise<T>);
-
-    return new Promise<T>((resolve, reject) => {
-      const run = () => {
-        try {
-          // mark that we attempted to initialize Aladin (helps E2E tests detect module load attempts)
-          // Intentionally no-op here; readiness is emitted via `viewerReady` event.
-          Promise.resolve(fn()).then(resolve, reject);
-        } catch (err) {
-          reject(err);
-        }
-      };
-
-      const ric = (
-        globalThis as unknown as {
-          requestIdleCallback?: (
-            cb: () => void,
-            opts?: { timeout: number }
-          ) => number;
-        }
-      ).requestIdleCallback;
-      if (typeof ric === "function") {
-        try {
-          // timeout:500 ensures we don't wait more than 500ms even in dev mode
-          // where Zone.js / HMR keeps the browser perpetually busy.
-          ric(() => run(), { timeout: 500 });
-        } catch {
-          setTimeout(run, 0);
-        }
-      } else {
-        setTimeout(run, 0);
-      }
-    });
-  }
 
   ngOnDestroy(): void {
     this.isDestroyed = true;
@@ -255,324 +193,355 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
     this.injectedScripts = [];
   }
 
-  private initViewer() {
-    // Create minimal options for initial (fast) init — postpone expensive UI controls
+  private initViewer$?: Observable<void>;
+
+  private initViewer(): Observable<void> {
+    if (!this.initViewer$) {
+      this.initViewer$ = this.createInitViewer$().pipe(
+        shareReplay({ bufferSize: 1, refCount: false })
+      );
+    }
+    return this.initViewer$;
+  }
+
+  private createInitViewer$(): Observable<void> {
     const optsMinimal = {
       survey: this.survey,
       fov: this.fov,
       target: this.target,
       showReticle: this.showReticle,
-      // controls postponed until idle
       showLayersControl: false,
       showZoomControl: false,
       showFullScreenControl: false,
     } as Record<string, unknown>;
 
-    const optsControls: {
-      showLayersControl: boolean;
-      showZoomControl: boolean;
-      showFullScreenControl: boolean;
-    } = {
+    const optsControls = {
       showLayersControl: this.showLayersControl,
       showZoomControl: this.showZoomControl,
       showFullScreenControl: this.showFullScreenControl,
     };
 
-    if (
-      typeof performance !== "undefined" &&
-      typeof performance.mark === "function"
-    ) {
-      try {
-        performance.mark("viewer:import-start");
-      } catch {
-        /* ignore */
-      }
+    return defer(() => from(import("aladin-lite"))).pipe(
+      map((imported) => (imported && (imported.default ?? imported)) as AladinModule),
+      switchMap((mod) => this.callModuleInit$(mod).pipe(mapTo(mod))),
+      switchMap((mod) => this.waitForWasmReady$(mod).pipe(mapTo(mod))),
+      switchMap((mod) =>
+        this.createViewerInstance$(mod, optsMinimal, optsControls)
+      )
+    );
+  }
+
+  private callModuleInit$(mod: AladinModule): Observable<void> {
+    const init = mod?.init;
+    if (!init) return of(void 0);
+
+    return this.ngZone.runOutsideAngular(() =>
+      this.runWhenIdle$(() => {
+        if (typeof init === "function") {
+          return init();
+        }
+        // `init` can be a Promise (as seen in newer aladin-lite builds)
+        if (typeof (init as any).then === "function") {
+          return init as unknown as Promise<void>;
+        }
+        return void 0;
+      }).pipe(mapTo(void 0))
+    );
+  }
+
+  private createViewerInstance$(
+    mod: AladinModule,
+    optsMinimal: Record<string, unknown>,
+    optsControls: {
+      showLayersControl: boolean;
+      showZoomControl: boolean;
+      showFullScreenControl: boolean;
+    }
+  ): Observable<void> {
+    const container = this.getContainerElement();
+    if (!container) {
+      return throwError(() => new Error("Viewer container element not available"));
     }
 
-    const import$ = defer(() => from(import("aladin-lite"))).pipe(
-      tap(() => {
-        try {
-          if (
-            typeof performance !== "undefined" &&
-            typeof performance.mark === "function"
-          )
-            performance.mark("viewer:import-end");
-        } catch {
-          /* ignore */
-        }
-      }),
-      map((m) => (m && (m.default ?? m)) as AladinModule)
-    );
+    const factory = this.resolveFactory(mod);
+    if (!factory) {
+      return throwError(() => new Error("Aladin factory not found in module"));
+    }
 
-    const initAndWait$ = (mod: AladinModule) => {
-      const maybeInit = mod.init;
-      if (
-        typeof maybeInit === "function" &&
-        typeof performance !== "undefined" &&
-        typeof performance.mark === "function"
-      ) {
+    return this.ngZone.runOutsideAngular(() =>
+      this.runWhenIdle$(() =>
+        this.withPassiveListeners(() => {
+          const inst = factory(container, optsMinimal);
+          return inst;
+        })
+      ).pipe(
+        tap((inst) => {
+          this.handleViewerInstance(inst as ViewerInstance);
+          this.enableViewerControls(optsControls);
+        }),
+        mapTo(void 0),
+        catchError((err) => {
+          console.error("createViewerInstance$ failed", err);
+          return throwError(() => err);
+        }),
+        timeout({
+          each: 15000,
+          with: () =>
+            throwError(() =>
+              new Error("createViewerInstance$ timed out after 15s")
+            ),
+        })
+      )
+    );
+  }
+
+  private runWhenIdle$<T>(fn: () => T | PromiseLike<T> | Observable<T>): Observable<T> {
+    return new Observable<T>((subscriber) => {
+      let cancelled = false;
+      let sub: Subscription | undefined;
+
+      const run = () => {
+        if (cancelled) return;
+        const result = fn();
+        const obs = isObservable(result)
+          ? result
+          : from(Promise.resolve(result as PromiseLike<T>));
+        sub = obs.subscribe({
+          next: (value) => subscriber.next(value),
+          error: (err) => subscriber.error(err),
+          complete: () => subscriber.complete(),
+        });
+      };
+
+      const browserWindow = this.browser.window;
+      const timeoutFn = browserWindow?.setTimeout ?? setTimeout;
+      const clearFn = browserWindow?.clearTimeout ?? clearTimeout;
+
+      const handle = timeoutFn(() => {
+        run();
+      }, 0);
+
+      return () => {
+        cancelled = true;
+        sub?.unsubscribe();
+        if (typeof handle === "number") {
+          clearFn(handle);
+        }
+      };
+    });
+  }
+
+  private waitForWasmReady$(mod: AladinModule): Observable<void> {
+    // `aladin-lite` now sometimes exports `init` as a Promise already
+    // resolved when wasm is ready. If `init` is present we consider wasm ready.
+    if (mod?.init) {
+      return of(void 0);
+    }
+
+    return interval(100).pipe(
+      startWith(0),
+      filter(() => this.isWasmReady(mod)),
+      first(),
+      timeout({
+        each: 30000,
+        with: () =>
+          throwError(() =>
+            new Error("Aladin wasm did not become ready in time")
+          ),
+      }),
+      mapTo(void 0)
+    );
+  }
+
+  private isWasmReady(mod: AladinModule | null): boolean {
+    if (!mod) return false;
+    if (mod.wasmLibs && (mod.wasmLibs as Record<string, unknown>)["core"])
+      return true;
+    const browserWindow = this.browserWindow as
+      | (Window & { aladin?: AladinModule })
+      | null;
+    const w = browserWindow ?? null;
+    const a = w?.aladin;
+    if (a && a.wasmLibs && (a.wasmLibs as Record<string, unknown>)["core"])
+      return true;
+    if (mod.default && typeof mod.default === "object") {
+      const d = mod.default as unknown as { wasmLibs?: Record<string, unknown> };
+      return Boolean(d.wasmLibs?.["core"]);
+    }
+    return false;
+  }
+
+  private enableViewerControls(optsControls: {
+    showLayersControl: boolean;
+    showZoomControl: boolean;
+    showFullScreenControl: boolean;
+  }): void {
+    this.ngZone.runOutsideAngular(() => {
+      this.runWhenIdle$(() => {
         try {
-          performance.mark("viewer:init-start");
+          if (!this.instance) return;
+          const instAny = this.instance as NonNullable<ViewerInstance>;
+          const setOpts = instAny["setOptions"] as unknown;
+          if (typeof setOpts === "function") {
+            (setOpts as (o: typeof optsControls) => void)(optsControls);
+            return;
+          }
+
+          const addControl = instAny["addControl"] as unknown;
+          if (typeof addControl === "function") {
+            const addFn = addControl as (name: string) => void;
+            if (optsControls.showLayersControl) addFn("layers");
+            if (optsControls.showZoomControl) addFn("zoom");
+            if (optsControls.showFullScreenControl) addFn("fullscreen");
+            return;
+          }
+
+          const updateFn = instAny["update"] as unknown;
+          if (typeof updateFn === "function") {
+            (updateFn as (o: typeof optsControls) => void)(optsControls);
+          }
+        } catch {
+          // ignore — enabling controls is best-effort
+        }
+      }).subscribe({
+        error: () => {
+          /* ignore */
+        },
+      });
+    });
+  }
+
+  private handleViewerInstance(inst: ViewerInstance | null): void {
+    this.instance = inst ?? null;
+    this.viewerReady.emit(this.instance);
+
+    try {
+      this.cdr.markForCheck();
+    } catch {
+      /* ignore */
+    }
+
+    try {
+      const el = this.getContainerElement();
+      if (el && typeof el.setAttribute === "function") {
+        try {
+          el.setAttribute("data-viewer-ready", "true");
         } catch {
           /* ignore */
         }
       }
-      // Run module init outside Angular and during idle to avoid blocking change detection
-      const initPromise =
-        typeof maybeInit === "function"
-          ? this.ngZone.runOutsideAngular(() =>
-              this.runWhenIdle(() => Promise.resolve(maybeInit()))
-            )
-          : Promise.resolve(mod);
-      const init$ = from(initPromise).pipe(mapTo(mod));
-      // mark init end when init$ completes
-      const initMarked$ = init$.pipe(
-        tap(() => {
+    } catch {
+      /* ignore */
+    }
+
+    try {
+      this.dispatchBrowserEvent("aladin-ready", {
+        instance: this.instance,
+      });
+    } catch {
+      /* ignore */
+    }
+
+    // mark create end and measure
+    try {
+      if (
+        typeof performance !== "undefined" &&
+        typeof performance.mark === "function" &&
+        typeof performance.measure === "function"
+      ) {
+        try {
+          performance.mark("viewer:create-end");
+        } catch {
+          /* ignore */
+        }
+        try {
+          performance.measure(
+            "viewer:create",
+            "viewer:create-start",
+            "viewer:create-end"
+          );
+        } catch {
+          /* ignore */
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+
+    const optsControls = {
+      showLayersControl: this.showLayersControl,
+      showZoomControl: this.showZoomControl,
+      showFullScreenControl: this.showFullScreenControl,
+    };
+
+    try {
+      if (
+        typeof performance !== "undefined" &&
+        typeof performance.mark === "function"
+      )
+        performance.mark("viewer:controls-enable-start");
+    } catch {
+      /* ignore */
+    }
+
+    this.ngZone.runOutsideAngular(() => {
+      this.runWhenIdle$(() => {
+        try {
+          if (!this.instance) return;
+          const instAny = this.instance as NonNullable<ViewerInstance>;
+          const setOpts = instAny["setOptions"] as unknown;
+          if (typeof setOpts === "function") {
+            (setOpts as (o: typeof optsControls) => void)(optsControls);
+            return;
+          }
+
+          const addControl = instAny["addControl"] as unknown;
+          if (typeof addControl === "function") {
+            const addFn = addControl as (name: string) => void;
+            if (optsControls.showLayersControl) addFn("layers");
+            if (optsControls.showZoomControl) addFn("zoom");
+            if (optsControls.showFullScreenControl) addFn("fullscreen");
+            return;
+          }
+
+          const updateFn = instAny["update"] as unknown;
+          if (typeof updateFn === "function") {
+            (updateFn as (o: typeof optsControls) => void)(optsControls);
+          }
+        } catch {
+          // ignore — enabling controls is best-effort
+        } finally {
           try {
             if (
               typeof performance !== "undefined" &&
-              typeof performance.mark === "function"
-            )
-              performance.mark("viewer:init-end");
-          } catch {
-            /* ignore */
-          }
-        })
-      );
-      const poll$ = interval(100).pipe(
-        startWith(0),
-        map(() => {
-          const m = mod as AladinModule | null;
-          if (
-            m &&
-            m.wasmLibs &&
-            (m.wasmLibs as Record<string, unknown>)["core"]
-          )
-            return true;
-          const browserWindow = this.browserWindow as
-            | (Window & { aladin?: AladinModule })
-            | null;
-          const w = browserWindow ?? null;
-          if (!w) return false;
-          const a = w.aladin;
-          if (
-            a &&
-            a.wasmLibs &&
-            (a.wasmLibs as Record<string, unknown>)["core"]
-          )
-            return true;
-          if (m && m.default && typeof m.default === "object") {
-            const dd = m.default as unknown as {
-              wasmLibs?: Record<string, unknown>;
-            };
-            if (dd.wasmLibs && dd.wasmLibs["core"]) return true;
-          }
-          return false;
-        }),
-        filter(Boolean),
-        first(),
-        timeout({ each: 5000 }),
-        catchError(() => of(true)),
-        mapTo(mod)
-      );
-
-      return initMarked$.pipe(mergeMap(() => poll$));
-    };
-
-    const create$ = (mod: AladinModule) => {
-      const factory = this.resolveFactory(mod);
-      if (!factory)
-        return throwError(
-          () => new Error("Aladin factory not found in module")
-        );
-      if (
-        typeof performance !== "undefined" &&
-        typeof performance.mark === "function"
-      ) {
-        try {
-          performance.mark("viewer:create-start");
-        } catch {
-          /* ignore */
-        }
-      }
-      // create minimal viewer now, enable controls later when idle
-      // run factory invocation outside Angular to avoid Zone.js wrapping
-      return defer(() =>
-        from(
-          this.ngZone.runOutsideAngular(() =>
-            this.runWhenIdle(() =>
-              this.withPassiveListeners(() =>
-                factory(this.containerRef.nativeElement, optsMinimal)
-              )
-            )
-          )
-        )
-      );
-    };
-
-    const maxRetries = 5;
-
-    return import$.pipe(
-      mergeMap((mod) => {
-        // If prefetch is in-flight or complete, await the same promise
-        // so we never run a second parallel init() / WASM compile.
-        const prefetch = getAladinInitPromise();
-        if (prefetch) {
-          return from(prefetch.then(() => mod).catch(() => mod));
-        }
-        return initAndWait$(mod);
-      }),
-      mergeMap((mod) =>
-        create$(mod).pipe(
-          retryWhen((errors) =>
-            errors.pipe(
-              mergeMap((err: unknown, i: number) => {
-                const msg =
-                  err && typeof err === "object"
-                    ? String(
-                        (err as Error & { message?: string }).message ?? err
-                      )
-                    : String(err);
-                const transient = /WebClient|setProjection/i.test(msg);
-                if (!transient || i >= maxRetries)
-                  return throwError(() =>
-                    err instanceof Error ? err : new Error(String(err))
-                  );
-                const delayMs = Math.min(1000, 100 * Math.pow(2, i + 1));
-                return of(null).pipe(delay(delayMs));
-              })
-            )
-          )
-        )
-      ),
-      tap((inst) => {
-        this.instance = (inst as ViewerInstance) ?? null;
-        this.viewerReady.emit(this.instance);
-        // mark for check since we're OnPush
-        try {
-          this.cdr.markForCheck();
-        } catch {
-          /* ignore */
-        }
-
-        // signal readiness to external E2E tools and listeners
-        try {
-          const el = this.containerRef && this.containerRef.nativeElement;
-          if (el && typeof (el as HTMLElement).setAttribute === "function") {
-            try {
-              (el as HTMLElement).setAttribute("data-viewer-ready", "true");
-            } catch {
-              /* ignore */
-            }
-          }
-        } catch {
-          /* ignore */
-        }
-        try {
-          this.dispatchBrowserEvent("aladin-ready", {
-            instance: this.instance,
-          });
-        } catch {
-          /* ignore */
-        }
-
-        // mark create end and measure
-        try {
-          if (
-            typeof performance !== "undefined" &&
-            typeof performance.mark === "function" &&
-            typeof performance.measure === "function"
-          ) {
-            try {
-              performance.mark("viewer:create-end");
-            } catch {
-              /* ignore */
-            }
-            try {
-              performance.measure(
-                "viewer:create",
-                "viewer:create-start",
-                "viewer:create-end"
-              );
-            } catch {
-              /* ignore */
-            }
-          }
-        } catch {
-          /* ignore */
-        }
-
-        // enable controls in idle time to reduce initial blocking
-        try {
-          if (
-            typeof performance !== "undefined" &&
-            typeof performance.mark === "function"
-          )
-            performance.mark("viewer:controls-enable-start");
-        } catch {
-          /* ignore */
-        }
-        this.ngZone.runOutsideAngular(() =>
-          this.runWhenIdle(() => {
-            try {
-              if (!this.instance) return;
-              const instAny = this.instance as NonNullable<ViewerInstance>;
-              // try common APIs to enable controls if available (use bracket access for index signature)
-              // try common APIs to enable controls if available (use bracket access for index signature)
-              const setOpts = instAny["setOptions"] as unknown;
-              if (typeof setOpts === "function") {
-                // typed as accepting the control options object
-                (setOpts as (o: typeof optsControls) => void)(optsControls);
-                return;
-              }
-
-              const addControl = instAny["addControl"] as unknown;
-              if (typeof addControl === "function") {
-                const addFn = addControl as (name: string) => void;
-                if (optsControls.showLayersControl) addFn("layers");
-                if (optsControls.showZoomControl) addFn("zoom");
-                if (optsControls.showFullScreenControl) addFn("fullscreen");
-                return;
-              }
-
-              // fallback: if factory supports a lightweight reconfiguration call
-              const updateFn = instAny["update"] as unknown;
-              if (typeof updateFn === "function") {
-                (updateFn as (o: typeof optsControls) => void)(optsControls);
-              }
-            } catch {
-              // ignore — enabling controls is best-effort
-            } finally {
+              typeof performance.mark === "function" &&
+              typeof performance.measure === "function"
+            ) {
               try {
-                if (
-                  typeof performance !== "undefined" &&
-                  typeof performance.mark === "function" &&
-                  typeof performance.measure === "function"
-                ) {
-                  try {
-                    performance.mark("viewer:controls-enable-end");
-                  } catch {
-                    /* ignore */
-                  }
-                  try {
-                    performance.measure(
-                      "viewer:controls-enable",
-                      "viewer:controls-enable-start",
-                      "viewer:controls-enable-end"
-                    );
-                  } catch {
-                    /* ignore */
-                  }
-                }
+                performance.mark("viewer:controls-enable-end");
+              } catch {
+                /* ignore */
+              }
+              try {
+                performance.measure(
+                  "viewer:controls-enable",
+                  "viewer:controls-enable-start",
+                  "viewer:controls-enable-end"
+                );
               } catch {
                 /* ignore */
               }
             }
-          })
-        );
-      }),
-      mapTo(void 0)
-    );
+          } catch {
+            /* ignore */
+          }
+        }
+      }).subscribe({
+        error: () => {
+          /* ignore */
+        },
+      });
+    });
   }
 
   // factory-based creation handled in the observable init pipeline above
@@ -599,7 +568,8 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
   // non-passive listeners that trigger console violations. The original is restored
   // immediately after the wrapped function completes.
   private withPassiveListeners<T>(fn: () => T): T {
-    if (typeof window === "undefined") return fn();
+    const browserWindow = this.browser.window;
+    if (!browserWindow) return fn();
 
     const globalWin = globalThis as unknown as {
       EventTarget?: { prototype?: unknown };

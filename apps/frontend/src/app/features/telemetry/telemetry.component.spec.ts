@@ -26,6 +26,7 @@ import { MatExpansionModule } from "@angular/material/expansion";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { By } from "@angular/platform-browser";
 import { TelemetryService } from "../../services/telemetry.service";
+import { TelemetryChartService } from "../../services/telemetry-chart.service";
 import { LoadProfileService } from "../../services/load-profile.service";
 import { VoService } from "../../services/vo.service";
 import { ActivatedRoute } from "@angular/router";
@@ -39,11 +40,6 @@ import {
 import { SharedModule } from "../../shared/shared.module";
 import { InfrastructureTelemetrySnapshot } from "../../shared/types";
 
-type TelemetryComponentTestHooks = {
-  loadD3: () => Observable<unknown>;
-  initGauge: () => void;
-  ensureVizInitialized: () => void;
-};
 
 function clickTabByLabel(
   fixture: ComponentFixture<TelemetryComponent>,
@@ -81,6 +77,15 @@ describe("TelemetryComponent", () => {
     getPulsarStatus: jest.fn(() =>
       of({ brokers: 0, topics: 0, partitions: 0 })
     ),
+  };
+
+  const telemetryChartServiceStub = {
+    initLineChart: jest.fn(() => Promise.resolve()),
+    initHistogram: jest.fn(() => Promise.resolve()),
+    initGauge: jest.fn(() => Promise.resolve()),
+    renderLine: jest.fn(),
+    renderHistogram: jest.fn(),
+    renderGauge: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -134,6 +139,10 @@ describe("TelemetryComponent", () => {
             voLoading$: new BehaviorSubject(false),
           },
         },
+        {
+          provide: TelemetryChartService,
+          useValue: telemetryChartServiceStub,
+        },
       ],
     }).compileComponents();
 
@@ -141,14 +150,6 @@ describe("TelemetryComponent", () => {
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
 
-    const hooks = component as unknown as TelemetryComponentTestHooks;
-    jest
-      .spyOn(hooks, "loadD3")
-      .mockReturnValue(scheduled([{}], asyncScheduler));
-    jest.spyOn(hooks, "initGauge").mockImplementation(() => undefined);
-    jest
-      .spyOn(hooks, "ensureVizInitialized")
-      .mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -303,30 +304,69 @@ describe("TelemetryComponent", () => {
   }));
 
   it("should compute non-zero throughput stats from range response", fakeAsync(() => {
-    telemetryServiceStub.queryRangeRate = jest.fn(() =>
-      of({
-        data: {
-          result: [
-            {
-              values: [
-                [1, "100"],
-                [2, "140"],
-                [3, "120"],
-                [4, "160"],
-              ],
-            },
-          ],
-        },
-      })
-    );
+    telemetryServiceStub.queryRangeRate =
+      (jest.fn(() =>
+        of({
+          data: {
+            result: [
+              {
+                values: [
+                  [1, "100"],
+                  [2, "140"],
+                  [3, "120"],
+                  [4, "160"],
+                ],
+              },
+            ],
+          },
+        })) as any);
     telemetryServiceStub.queryInstant = jest.fn(() => of(140));
 
     fixture.detectChanges();
     // Allow deferred tasks / polling triggers to run
     tick(50);
 
+    // Flush any component-initialized API calls that we aren't explicitly testing in this spec.
+    httpMock
+      .expectOne("/api/v1/pulsar/status")
+      .flush({ brokers: 0, topics: 0, partitions: 0 });
+    httpMock.expectOne("/api/v1/rabbitmq/status").flush({
+      status: "unknown",
+      connection: "unknown",
+      queues: {},
+      exchanges: {},
+    });
+    httpMock.expectOne("/api/v1/telemetry/infrastructure").flush({
+      measuredAt: new Date().toISOString(),
+      source: "prometheus",
+      services: {
+        redis: { source: "prometheus" },
+        rabbitmq: { source: "prometheus" },
+        minio: { source: "prometheus" },
+        frontendSsr: { source: "prometheus" },
+        kafka: { source: "prometheus" },
+        javaIngest: { source: "prometheus" },
+        pulsar: {
+          source: "prometheus",
+          brokers: 0,
+          topics: 0,
+          partitions: 0,
+        },
+      },
+    });
+    httpMock.expectOne("/api/v1/alerts/slo").flush({
+      alertIngestedTotal: 0,
+      alertLatencyMsP50: 0,
+      alertLatencyMsP95: 0,
+      alertLatencyMsP99: 0,
+      dlqDepth: 0,
+      replaysTotal: 0,
+      measuredAt: new Date().toISOString(),
+    });
+    httpMock.expectOne("/api/v1/alerts/dlq").flush([]);
+
     expect(component.currentRate).toBeGreaterThan(0);
-    expect(component.currentRateHuman).not.toContain("0 B/s");
+    expect(component.currentRateHuman).not.toBe("0 B/s");
     expect(component.stats.max).toBeGreaterThan(0);
 
     component.ngOnDestroy();

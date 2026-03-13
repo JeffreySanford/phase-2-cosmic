@@ -9,11 +9,12 @@ import {
   ViewChild,
   inject,
 } from "@angular/core";
-import { DOCUMENT } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { BehaviorSubject } from "rxjs";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
+import { BrowserPlatformService } from "../../services/browser-platform.service";
+import { TopologyDomService } from "../../services/topology-dom.service";
 import {
   LoadProfilePct,
   LoadProfileService,
@@ -24,23 +25,16 @@ import {
   TopologyInfoDialogData,
 } from "./topology-info-dialog.component";
 import {
-  D3DragEvent,
-  D3Drag,
-  D3Module,
-  D3Selection,
-  D3Simulation,
   LinkStats,
   NodeActivityPoint,
   NodeSummary,
   ProvenanceFilter,
+  D3DragEvent,
   TopoLink,
   TopoNode,
   TopologyMetricPoint,
   TopologyMetricsResponse,
 } from "./topology.types";
-
-// d3 is ESM; load dynamically at runtime to avoid Jest/node transform issues
-let _d3: D3Module | null = null;
 
 @Component({
   selector: "app-topology",
@@ -54,16 +48,13 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   private dataSource = inject(DataSourceService);
   private mock = inject(MockDataService);
   private loadProfile = inject(LoadProfileService);
-  private document = inject(DOCUMENT, { optional: true });
+  private browser = inject(BrowserPlatformService);
+  private dom = inject(TopologyDomService);
   private rendererFactory = inject(RendererFactory2);
   private renderer: Renderer2 = this.rendererFactory.createRenderer(null, null);
 
   @ViewChild("graph", { static: true }) graphEl!: ElementRef<HTMLDivElement>;
 
-  private svg?: D3Selection | null;
-  private viewportGroup?: D3Selection | null;
-  private simulation?: D3Simulation | null;
-  private d3: D3Module | null = null;
 
   // using subjects prevents binding races when the flag flips during
   // async callbacks. the getter keeps existing unit tests happy.
@@ -102,9 +93,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public toggleFullscreen(): void {
     this.isFullscreen = !this.isFullscreen;
-    const shell = this.getGraphHostElement()?.closest(
-      ".topology-graph-shell"
-    ) as HTMLElement | null;
+    const shell = this.dom.getGraphShellElement(this.graphEl);
     if (shell) {
       if (this.isFullscreen) {
         this.renderer.addClass(shell, "is-fullscreen");
@@ -115,9 +104,9 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this.isFullscreen) {
       // request browser fullscreen for the shell container (not whole app)
-      shell?.requestFullscreen?.();
+      this.browser.requestFullscreen(shell);
     } else {
-      this.document?.exitFullscreen?.();
+      this.browser.exitFullscreen();
     }
   }
   // mission‑closure metrics
@@ -180,19 +169,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     setTimeout(task, 0);
   }
 
-  private getGraphHostElement(): HTMLDivElement | null {
-    return this.graphEl?.nativeElement ?? null;
-  }
-
-  private getSvgElement(): SVGSVGElement | null {
-    return this.getGraphHostElement()?.querySelector("svg") ?? null;
-  }
-
-  private getParticleLayerElement(): SVGGElement | null {
-    return this.getSvgElement()?.querySelector(
-      "g.viewport g.flow-particles"
-    ) as SVGGElement | null;
-  }
 
   ngOnInit(): void {
     this.profilePct = this.loadProfile.current;
@@ -210,10 +186,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private safeId(s: string): string {
-    return "path_" + s.replace(/[^a-zA-Z0-9_-]/g, "_");
-  }
-
   private getLinkKey(l: TopoLink): string {
     const s =
       typeof l.source === "string" ? l.source : (l.source as TopoNode).id;
@@ -228,10 +200,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private loadSettings() {
     try {
-      const d = localStorage.getItem("topology.defaultPerChannelMBps");
+      const d = this.browser.getStorageItem("topology.defaultPerChannelMBps");
       if (d)
         this.defaultPerChannelMBps = Number(d) || this.defaultPerChannelMBps;
-      const j = localStorage.getItem("topology.perLinkCapacity");
+      const j = this.browser.getStorageItem("topology.perLinkCapacity");
       if (j) this.perLinkCapacity = JSON.parse(j) as Record<string, number>;
     } catch {
       return;
@@ -302,11 +274,11 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       else delete this.perLinkCapacity[e.key];
     }
     try {
-      localStorage.setItem(
+      this.browser.setStorageItem(
         "topology.perLinkCapacity",
         JSON.stringify(this.perLinkCapacity)
       );
-      localStorage.setItem(
+      this.browser.setStorageItem(
         "topology.defaultPerChannelMBps",
         String(this.defaultPerChannelMBps)
       );
@@ -315,7 +287,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.showSettings = false;
     // re-render to pick up changed capacities
-    this.render(this.lastNodes, this.lastLinks, true);
+    this.applyCurrentTopologyView(true);
   }
 
   private syncProfileControls(pct: LoadProfilePct): void {
@@ -451,7 +423,135 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private applyCurrentTopologyView(skipFetch = false): void {
     const visible = this.visibleTopologyData();
-    this.render(visible.nodes, visible.links, skipFetch);
+
+    const nodes = visible.nodes;
+    const links = visible.links;
+
+    const summaryNodes =
+      this.fullTopologyNodes.length > 0 ? this.fullTopologyNodes : nodes;
+    const summaryLinks =
+      this.fullTopologyLinks.length > 0 ? this.fullTopologyLinks : links;
+
+    // attach precomputed stats to links and compute aggregates
+    this.aggCurrentMBps$.next(0);
+    this.aggMaxMBps = 0;
+    this.totalLinkCount = summaryLinks.length;
+    this.liveLinkCount = 0;
+    this.derivedLinkCount = 0;
+    this.mockLinkCount = 0;
+    this.unavailableLinkCount = 0;
+
+    summaryLinks.forEach((ln) => {
+      const stats = this.statsRef(ln)._stats ?? this.linkStats(ln);
+      this.statsRef(ln)._stats = stats;
+      const cur = Number(stats?.throughputMBpsCurrent ?? NaN);
+      const max = Number(stats?.throughputMBpsMax ?? NaN);
+      this.aggCurrentMBps$.next(
+        this.aggCurrentMBps + (Number.isFinite(cur) ? cur : 0)
+      );
+      this.aggMaxMBps += Number.isFinite(max) ? max : 0;
+      switch (stats.source) {
+        case "prometheus":
+        case "admin":
+          this.liveLinkCount += 1;
+          break;
+        case "mock":
+          this.mockLinkCount += 1;
+          break;
+        case "unavailable":
+          this.unavailableLinkCount += 1;
+          break;
+        default:
+          this.derivedLinkCount += 1;
+          break;
+      }
+    });
+
+    this.nodeSummaries = this.summarizeNodes(summaryNodes, summaryLinks);
+    this.recomputeConfidence(summaryLinks);
+    const nodeSummaryById = this.nodeSummaryMap();
+
+    // store last nodes/links for settings UI and optional metrics overlay
+    this.lastNodes = nodes;
+    this.lastLinks = links;
+    this.shouldAutoFitViewport = true;
+
+    this.dom.renderGraph({
+      nodes,
+      links,
+      getLinkKey: (l) => this.getLinkKey(l),
+      getLinkSource: (l) => this.linkSourceData(this.statsRef(l)._stats?.source),
+      getLinkStats: (l) => this.statsRef(l)._stats,
+      getLinkStroke: (l, stats) => ({
+        stroke: "rgba(148, 163, 184, 0.34)",
+        dasharray:
+          stats?.source === "prometheus"
+            ? "0"
+            : stats?.source === "admin"
+            ? "2 2"
+            : stats?.source === "mock"
+            ? "4 3"
+            : "8 5",
+        width: l.value ? Math.max(1, Math.log(l.value + 1)) : 1,
+      }),
+      getLinkDotStyle: (l, stats) => {
+        const cur = Number(stats?.throughputMBpsCurrent ?? 0);
+        const max = Number(stats?.throughputMBpsMax ?? 1);
+        const util = max > 0 ? (cur / max) * 100 : 0;
+        const fill =
+          stats?.source === "prometheus"
+            ? "#34d399"
+            : stats?.source === "admin"
+            ? "#60a5fa"
+            : stats?.source === "mock"
+            ? "#fbbf24"
+            : util >= 95
+            ? "#ef4444"
+            : util >= 75
+            ? "#f97316"
+            : util >= 50
+            ? "#f59e0b"
+            : "#ffffff";
+        const stroke =
+          stats?.source === "prometheus"
+            ? "#065f46"
+            : stats?.source === "admin"
+            ? "#1d4ed8"
+            : stats?.source === "mock"
+            ? "#92400e"
+            : util >= 95
+            ? "#7f1d1d"
+            : util >= 75
+            ? "#7c2d12"
+            : util >= 50
+            ? "#7c2e0a"
+            : "#6b7280";
+        return { fill, stroke, radius: 5 };
+      },
+      getNodeRingStyle: (node, summary) => ({
+        radius: this.nodeRingRadius(summary),
+        fill: this.nodeRingColor(node, summary),
+        stroke: this.nodeRingStroke(node, summary),
+      }),
+      getNodeLabel: (node) => node.label ?? node.id,
+      getNodeSummary: (node) => nodeSummaryById[node.id],
+      getNodeActivityLabel: (node, summary) =>
+        this.nodeActivityLabel(summary),
+      onLinkClick: (link) => this.openLinkInfo(link),
+      onNodeClick: (node) => this.openNodeInfo(node),
+      onNodeDragStart: (event, node) => this.dragstarted(event, node),
+      onNodeDrag: (event, node) => this.dragged(event, node),
+      onNodeDragEnd: (event, node) => this.dragended(event, node),
+    });
+
+    if (!skipFetch) {
+      if (this.showMode === "live") {
+        this.startLivePoll();
+      } else {
+        this.stopLivePoll();
+        this.fetchMetrics();
+      }
+    }
   }
 
   private visibleTopologyData(): { nodes: TopoNode[]; links: TopoLink[] } {
@@ -496,9 +596,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private applyViewportTransform(): void {
-    this.viewportGroup?.attr(
-      "transform",
-      `translate(${this.viewportTranslateX},${this.viewportTranslateY}) scale(${this.viewportScale})`
+    this.dom.setViewportTransform(
+      this.viewportScale,
+      this.viewportTranslateX,
+      this.viewportTranslateY
     );
   }
 
@@ -1162,70 +1263,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     return "#60a5fa";
   }
 
-  private syncParticlesForLink(
-    particleLayerEl: SVGGElement,
-    key: string,
-    stats?: LinkStats
-  ): void {
-    const desiredCount = this.particleCountForStats(stats);
-    const durationSec = this.particleDurationSec(stats);
-    const radius = this.particleRadius(stats);
-    const fill = this.particleColor(stats);
-    const existing = Array.from(
-      particleLayerEl.querySelectorAll(`.flow-particle[data-key="${key}"]`)
-    ) as SVGCircleElement[];
-
-    existing.slice(desiredCount).forEach((node) => node.remove());
-    const svgDocument = this.document;
-    if (!svgDocument) return;
-
-    for (let i = existing.length; i < desiredCount; i++) {
-      const particle = svgDocument.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "circle"
-      );
-      particle.setAttribute("class", "flow-particle");
-      particle.setAttribute("data-key", key);
-
-      const anim = svgDocument.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "animateMotion"
-      );
-      anim.setAttribute("repeatCount", "indefinite");
-      anim.setAttribute("rotate", "auto");
-      anim.setAttribute("begin", `${(i * durationSec) / desiredCount}s`);
-      const mpath = svgDocument.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "mpath"
-      );
-      mpath.setAttribute("href", `#${this.safeId(key)}`);
-      anim.appendChild(mpath);
-      particle.appendChild(anim);
-      particleLayerEl.appendChild(particle);
-    }
-
-    const particles = Array.from(
-      particleLayerEl.querySelectorAll(`.flow-particle[data-key="${key}"]`)
-    ) as SVGCircleElement[];
-    particles.forEach((particle, index) => {
-      particle.setAttribute("r", `${radius}`);
-      particle.setAttribute("fill", fill);
-      particle.setAttribute(
-        "opacity",
-        `${Math.max(0.38, 0.95 - index * 0.12)}`
-      );
-      const animEl = particle.querySelector(
-        "animateMotion"
-      ) as SVGAnimateElement | null;
-      if (animEl) {
-        animEl.setAttribute("dur", `${durationSec}s`);
-        animEl.setAttribute(
-          "begin",
-          `${(index * durationSec) / desiredCount}s`
-        );
-      }
-    });
-  }
 
   // Fetch metrics from backend Prometheus adapter at /api/metrics/topology
   // Expected shape: { "source->target": { currentMBps: number, maxMBps?: number } }
@@ -1270,7 +1307,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async ngAfterViewInit(): Promise<void> {
-    await this.initSvg();
+    await this.dom.initGraph(this.graphEl.nativeElement);
     // Defer topology loading until after the initial render pass to avoid NG0100.
     this.deferUiUpdate(() => this.loadTopology());
     this.removeResizeListener = this.renderer.listen(
@@ -1281,7 +1318,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.stopSimulation();
+    this.dom.stopSimulation();
     this.removeResizeListener?.();
     this.removeResizeListener = undefined;
     this.profileSub?.unsubscribe();
@@ -1289,14 +1326,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     this.clearProvenanceHelperTimeout();
   }
 
-  private stopSimulation(): void {
-    this.simulation?.stop();
-    this.simulation = null;
-    if (this.simulationCooldownHandle != null) {
-      clearTimeout(this.simulationCooldownHandle);
-      this.simulationCooldownHandle = null;
-    }
-  }
 
   private preserveNodePositions(nodes: TopoNode[]): void {
     const known = new Map(
@@ -1353,425 +1382,8 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private async initSvg() {
-    const el = this.getGraphHostElement();
-    if (!el) return;
-    const w = el.clientWidth || 800;
-    const h = Math.max(360, el.clientHeight || 480);
-    await this.loadD3();
-    const d3 = this.d3 as D3Module;
-    this.svg = d3
-      .select(el)
-      .append("svg")
-      .attr("width", "100%")
-      .attr("height", h)
-      .attr("viewBox", `0 0 ${w} ${h}`)
-      .attr("preserveAspectRatio", "xMidYMid meet");
-    this.viewportGroup = this.svg.append("g").attr("class", "viewport");
-  }
 
-  private async loadD3() {
-    if (this.d3) return this.d3;
-    if (_d3) {
-      this.d3 = _d3;
-      return this.d3;
-    }
-    try {
-      // dynamic import keeps Jest from attempting to statically parse ESM d3
-      const mod = await import("d3");
-      _d3 = mod;
-      this.d3 = mod;
-      return this.d3;
-    } catch (_err) {
-      // fallback: provide a minimal stub so tests can run without d3
-      const selection: D3Selection = {} as D3Selection;
-      selection.append = (_tag: string) => selection;
-      selection.attr = (_name: string, _value?: unknown) => selection;
-      selection.select = (_sel?: string) => selection;
-      selection.selectAll = (_sel: string) => selection;
-      selection.data = (_d: unknown[]) => selection;
-      selection.enter = () => selection;
-      selection.call = (_fn: unknown) => selection;
-      selection.text = (_t?: unknown) => selection;
-      selection.remove = () => selection;
 
-      const dragStub: D3Drag = {
-        on: (
-          _ev: string,
-          _handler: (event: D3DragEvent, d: TopoNode) => void
-        ) => dragStub,
-      };
-
-      const simStub: D3Simulation = {
-        stop: () => {
-          return simStub;
-        },
-        alpha: (_n: number) => simStub,
-        alphaDecay: (_n: number) => simStub,
-        alphaTarget: (_n: number) => simStub,
-        restart: () => {
-          return simStub;
-        },
-        velocityDecay: (_n: number) => simStub,
-        on: (_ev: string, _cb: () => void) => simStub,
-        force: (_name: string, _f: unknown) => simStub,
-      };
-
-      this.d3 = {
-        select: () => selection,
-        drag: () => dragStub,
-        forceSimulation: (_nodes: TopoNode[]) => simStub,
-        forceLink: (_links: TopoLink[]) => ({
-          id: () => ({ distance: () => ({}) }),
-        }),
-        forceCollide: (_radius: number) => ({ strength: () => ({}) }),
-        forceManyBody: () => ({ strength: () => ({}) }),
-        forceCenter: (_x: number, _y: number) => ({}),
-      };
-      return this.d3;
-    }
-  }
-
-  private render(nodes: TopoNode[], links: TopoLink[], skipFetch = false) {
-    if (!this.svg) return;
-    this.stopSimulation();
-    this.svg.selectAll("*").remove?.();
-    const el = this.getGraphHostElement();
-    if (!el) return;
-    const w = el.clientWidth || 800;
-    const h = Math.max(360, el.clientHeight || 480);
-    this.svg.attr("viewBox", `0 0 ${w} ${h}`).attr("height", h);
-    this.preserveNodePositions(nodes);
-
-    this.viewportGroup = this.svg.append("g").attr("class", "viewport");
-    const linkGroup = this.viewportGroup.append("g").attr("class", "links");
-    this.viewportGroup.append("g").attr("class", "flow-particles");
-    const nodeGroup = this.viewportGroup.append("g").attr("class", "nodes");
-
-    const d3 = this.d3 as D3Module;
-    const summaryNodes =
-      this.fullTopologyNodes.length > 0 ? this.fullTopologyNodes : nodes;
-    const summaryLinks =
-      this.fullTopologyLinks.length > 0 ? this.fullTopologyLinks : links;
-    // attach precomputed stats to links and compute aggregates (use numeric fields when available)
-    this.aggCurrentMBps$.next(0);
-    this.aggMaxMBps = 0;
-    this.totalLinkCount = summaryLinks.length;
-    this.liveLinkCount = 0;
-    this.derivedLinkCount = 0;
-    this.mockLinkCount = 0;
-    this.unavailableLinkCount = 0;
-    summaryLinks.forEach((ln) => {
-      const stats = this.statsRef(ln)._stats ?? this.linkStats(ln);
-      this.statsRef(ln)._stats = stats;
-      const cur = Number(stats?.throughputMBpsCurrent ?? NaN);
-      const max = Number(stats?.throughputMBpsMax ?? NaN);
-      this.aggCurrentMBps$.next(
-        this.aggCurrentMBps + (Number.isFinite(cur) ? cur : 0)
-      );
-      this.aggMaxMBps += Number.isFinite(max) ? max : 0;
-      switch (stats.source) {
-        case "prometheus":
-        case "admin":
-          this.liveLinkCount += 1;
-          break;
-        case "mock":
-          this.mockLinkCount += 1;
-          break;
-        case "unavailable":
-          this.unavailableLinkCount += 1;
-          break;
-        default:
-          this.derivedLinkCount += 1;
-          break;
-      }
-    });
-    this.nodeSummaries = this.summarizeNodes(summaryNodes, summaryLinks);
-    this.recomputeConfidence(summaryLinks);
-    const nodeSummaryById = this.nodeSummaryMap();
-
-    // store last nodes/links for settings UI and optional metrics overlay
-    this.lastNodes = nodes;
-    this.lastLinks = links;
-    this.shouldAutoFitViewport = true;
-    const link = linkGroup
-      .selectAll("line")
-      .data(links)
-      .enter()
-      .append("line")
-      .attr("data-key", (ln: TopoLink) => this.getLinkKey(ln))
-      .attr("data-source", (ln: TopoLink) =>
-        this.linkSourceData(this.statsRef(ln)._stats?.source)
-      )
-      .attr("stroke", "rgba(148, 163, 184, 0.34)")
-      .attr("stroke-dasharray", (ln: TopoLink) => {
-        const source = this.statsRef(ln)._stats?.source;
-        if (source === "prometheus") return "0";
-        if (source === "admin") return "2 2";
-        if (source === "mock") return "4 3";
-        return "8 5";
-      })
-      .attr("stroke-width", (d: TopoLink) =>
-        d.value ? Math.max(1, Math.log(d.value + 1)) : 1
-      );
-
-    // add small clickable dots at link midpoints
-    const linkDot = linkGroup
-      .selectAll(".link-dot")
-      .data(links)
-      .enter()
-      .append("circle")
-      .attr("class", "link-dot")
-      .attr("data-key", (ln: TopoLink) => this.getLinkKey(ln))
-      .attr("data-source", (ln: TopoLink) =>
-        this.linkSourceData(this.statsRef(ln)._stats?.source)
-      )
-      .attr("r", 5)
-      // color fill/stroke to indicate utilization/bottleneck
-      .attr("fill", (ln: TopoLink) => {
-        const stats = this.statsRef(ln)._stats;
-        if (stats?.source === "prometheus") return "#34d399";
-        if (stats?.source === "admin") return "#60a5fa";
-        if (stats?.source === "mock") return "#fbbf24";
-        const cur = Number(stats?.throughputMBpsCurrent ?? 0);
-        const max = Number(stats?.throughputMBpsMax ?? 1);
-        const util = max > 0 ? (cur / max) * 100 : 0;
-        if (util >= 95) return "#ef4444"; // red (critical)
-        if (util >= 75) return "#f97316"; // orange (high)
-        if (util >= 50) return "#f59e0b"; // amber
-        return "#ffffff";
-      })
-      .attr("stroke", (ln: TopoLink) => {
-        const stats = this.statsRef(ln)._stats;
-        if (stats?.source === "prometheus") return "#065f46";
-        if (stats?.source === "admin") return "#1d4ed8";
-        if (stats?.source === "mock") return "#92400e";
-        const cur = Number(stats?.throughputMBpsCurrent ?? 0);
-        const max = Number(stats?.throughputMBpsMax ?? 1);
-        const util = max > 0 ? (cur / max) * 100 : 0;
-        if (util >= 95) return "#7f1d1d";
-        if (util >= 75) return "#7c2d12";
-        if (util >= 50) return "#7c2e0a";
-        return "#6b7280";
-      })
-      .attr("stroke-width", 1)
-      .attr("style", "cursor:pointer")
-      .call((s: D3Selection) => {
-        if (s.on)
-          s.on("click", (_ev: unknown, datum: unknown) =>
-            this.openLinkInfo(datum as TopoLink)
-          );
-      });
-
-    // create invisible svg path elements for animateMotion and flow particles
-    const path = linkGroup
-      .selectAll(".link-path")
-      .data(links)
-      .enter()
-      .append("path")
-      .attr("class", "link-path")
-      .attr("fill", "none")
-      .attr("stroke", "transparent")
-      .attr("data-key", (ln: TopoLink) => this.getLinkKey(ln))
-      .attr("id", (ln: TopoLink) => this.safeId(this.getLinkKey(ln)));
-
-    // DOM-create per-link flow particles that follow the path via <animateMotion>
-    try {
-      const particleLayerEl = this.getParticleLayerElement();
-      if (particleLayerEl) {
-        // remove any existing flow particles (defensive)
-        Array.from(particleLayerEl.querySelectorAll(".flow-particle")).forEach(
-          (n) => n.remove()
-        );
-        for (const ln of links) {
-          const key = this.getLinkKey(ln);
-          this.syncParticlesForLink(
-            particleLayerEl,
-            key,
-            this.statsRef(ln)._stats
-          );
-        }
-      }
-    } catch (e) {
-      void e;
-    }
-
-    const node = nodeGroup
-      .selectAll("g")
-      .data(nodes)
-      .enter()
-      .append("g")
-      .call(
-        d3
-          .drag()
-          .on("start", (event: D3DragEvent, d: TopoNode) =>
-            this.dragstarted(event, d)
-          )
-          .on("drag", (event: D3DragEvent, d: TopoNode) =>
-            this.dragged(event, d)
-          )
-          .on("end", (event: D3DragEvent, d: TopoNode) =>
-            this.dragended(event, d)
-          )
-      );
-
-    node
-      .append("circle")
-      .attr("class", "node-ring")
-      .attr("r", (d: TopoNode) => this.nodeRingRadius(nodeSummaryById[d.id]))
-      .attr("fill", (d: TopoNode) =>
-        this.nodeRingColor(d, nodeSummaryById[d.id])
-      )
-      .attr("fill-opacity", 0.18)
-      .attr("stroke", (d: TopoNode) =>
-        this.nodeRingStroke(d, nodeSummaryById[d.id])
-      )
-      .attr("stroke-width", 1.4);
-
-    node
-      .append("circle")
-      .attr("r", 14)
-      .attr("fill", (d: TopoNode) => {
-        if (d.group === "ngvla") return "#4caf50"; // Green for ngVLA array segments
-        if (d.group === "infra") return "#90caf9"; // Blue for infrastructure
-        return "#ffd54f"; // Yellow for application nodes
-      })
-      .attr("stroke", "#0f172a");
-    node
-      .append("text")
-      .attr("x", 18)
-      .attr("y", 4)
-      .attr("font-size", 12)
-      .attr("fill", "#f8fafc")
-      .attr("font-weight", 600)
-      .attr("paint-order", "stroke")
-      .attr("stroke", "rgba(2, 6, 23, 0.9)")
-      .attr("stroke-width", 3)
-      .attr("stroke-linejoin", "round")
-      .text((d: TopoNode) => d.label ?? d.id);
-
-    node
-      .append("text")
-      .attr("class", "node-activity")
-      .attr("x", 18)
-      .attr("y", 18)
-      .attr("font-size", 10)
-      .attr("fill", (d: TopoNode) =>
-        this.nodeRingColor(d, nodeSummaryById[d.id])
-      )
-      .attr("font-weight", 700)
-      .attr("paint-order", "stroke")
-      .attr("stroke", "rgba(2, 6, 23, 0.92)")
-      .attr("stroke-width", 3)
-      .attr("stroke-linejoin", "round")
-      .text((d: TopoNode) => this.nodeActivityLabel(nodeSummaryById[d.id]));
-
-    this.simulation = d3
-      .forceSimulation(nodes)
-      .force(
-        "link",
-        d3
-          .forceLink(links)
-          .id((d: TopoNode) => d.id)
-          .distance(100)
-      )
-      .force("charge", d3.forceManyBody().strength(-280))
-      .force("center", d3.forceCenter(w / 2, h / 2))
-      .force("collide", d3.forceCollide(44).strength(0.7))
-      .alpha(0.22)
-      .alphaDecay(0.16)
-      .velocityDecay(0.4)
-      .on("tick", () => {
-        link.attr("x1", (ln: TopoLink) => {
-          const s = ln.source as TopoNode;
-          return s.x ?? 0;
-        });
-        link.attr("y1", (ln: TopoLink) => {
-          const s = ln.source as TopoNode;
-          return s.y ?? 0;
-        });
-        link.attr("x2", (ln: TopoLink) => {
-          const t = ln.target as TopoNode;
-          return t.x ?? 0;
-        });
-        link.attr("y2", (ln: TopoLink) => {
-          const t = ln.target as TopoNode;
-          return t.y ?? 0;
-        });
-
-        // update path d attribute to match the link line so animateMotion follows
-        path.attr("d", (ln: TopoLink) => {
-          const s = ln.source as TopoNode;
-          const t = ln.target as TopoNode;
-          const sx = Math.round(s.x ?? 0);
-          const sy = Math.round(s.y ?? 0);
-          const tx = Math.round(t.x ?? 0);
-          const ty = Math.round(t.y ?? 0);
-          return `M ${sx} ${sy} L ${tx} ${ty}`;
-        });
-
-        // update particle element positions/durations if needed
-        try {
-          const particleLayerEl = this.getParticleLayerElement();
-          if (particleLayerEl) {
-            for (const ln of links) {
-              const key = this.getLinkKey(ln);
-              const stats = this.statsRef(ln)._stats;
-              this.syncParticlesForLink(particleLayerEl, key, stats);
-            }
-          }
-        } catch (e) {
-          void e;
-        }
-
-        node.attr(
-          "transform",
-          (nd: TopoNode) => `translate(${nd.x ?? 0},${nd.y ?? 0})`
-        );
-        // update link dot positions to midpoint of links
-        if (linkDot) {
-          linkDot.attr("cx", (ln: TopoLink) => {
-            const s = ln.source as TopoNode;
-            const t = ln.target as TopoNode;
-            const sx = s.x ?? 0;
-            const tx = t.x ?? 0;
-            return (sx + tx) / 2;
-          });
-          linkDot.attr("cy", (ln: TopoLink) => {
-            const s = ln.source as TopoNode;
-            const t = ln.target as TopoNode;
-            const sy = s.y ?? 0;
-            const ty = t.y ?? 0;
-            return (sy + ty) / 2;
-          });
-        }
-        if (this.shouldAutoFitViewport) {
-          this.fitGraphToViewport(nodes, w, h);
-          this.shouldAutoFitViewport = false;
-        } else {
-          this.applyViewportTransform();
-        }
-      });
-    this.simulationCooldownHandle = setTimeout(() => {
-      this.freezeNodePositions(nodes);
-      this.applyViewportTransform();
-      this.simulation?.stop();
-      this.simulationCooldownHandle = null;
-    }, 900);
-    node.on?.("click", (_event: unknown, datum: unknown) =>
-      this.openNodeInfo(datum as TopoNode)
-    );
-
-    // after render, start live polling if requested; otherwise try a one-off fetch
-    if (!skipFetch) {
-      if (this.showMode === "live") {
-        this.startLivePoll();
-      } else {
-        this.stopLivePoll();
-        this.fetchMetrics();
-      }
-    }
-  }
 
   private startLivePoll() {
     this.stopLivePoll();
@@ -1815,16 +1427,24 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
               const delta = Math.abs((m.currentMBps || 0) - prevVal);
               const pctChange = maxVal > 0 ? (delta / maxVal) * 100 : 0;
               try {
-                const svgEl = this.getSvgElement();
-                if (svgEl) {
-                  this.syncParticlesForLink(svgEl, key, stats);
+                const particleLayerEl = this.dom.getParticleLayerElement(this.graphEl);
+                if (particleLayerEl) {
+                  this.dom.syncParticlesForLink(
+                    particleLayerEl,
+                    key,
+                    this.particleCountForStats(stats),
+                    this.particleDurationSec(stats),
+                    this.particleRadius(stats),
+                    this.particleColor(stats)
+                  );
                 }
               } catch {
                 return;
               }
               if (pctChange >= this.sensitivityPct) {
-                this.animatePulse(key || "0");
-                this.flashLine(key || "0");
+                const svgEl = this.dom.getSvgElement(this.graphEl);
+                this.dom.animatePulse(svgEl, key || "0");
+                this.dom.flashLine(svgEl, key || "0");
               }
             }
           }
@@ -1838,58 +1458,6 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  private animatePulse(key: string) {
-    try {
-      const svgEl = this.getSvgElement();
-      if (!svgEl) return;
-      const selector = `.link-dot[data-key="${key}"]`;
-      const el = svgEl.querySelector(selector) as SVGCircleElement | null;
-      if (!el) return;
-      // scale pulse
-      el.animate(
-        [
-          { transform: "scale(1)", opacity: 1 },
-          { transform: "scale(1.8)", opacity: 0.6 },
-          { transform: "scale(1)", opacity: 1 },
-        ],
-        { duration: 700, easing: "ease-in-out" }
-      );
-      // brief stroke width flash on parent line
-      // nothing more here; flash handled by separate function
-    } catch (e) {
-      void e;
-    }
-  }
-
-  private flashLine(key: string) {
-    try {
-      const svgEl = this.getSvgElement();
-      if (!svgEl) return;
-      const line = svgEl.querySelector(
-        `line[data-key="${key}"]`
-      ) as SVGLineElement | null;
-      if (!line) return;
-      const original = line.getAttribute("stroke");
-      const anim = line.animate(
-        [
-          { stroke: original ?? "#bdbdbd", strokeWidth: "1px" },
-          { stroke: "#fffbeb", strokeWidth: "4px" },
-          { stroke: original ?? "#bdbdbd", strokeWidth: "1px" },
-        ],
-        { duration: 800, easing: "ease-in-out" }
-      );
-      anim.onfinish = () => {
-        try {
-          line.setAttribute("stroke", original || "#bdbdbd");
-          line.setAttribute("stroke-width", "1");
-        } catch {
-          return;
-        }
-      };
-    } catch {
-      return;
-    }
-  }
 
   private captureMissionMetrics(res: TopologyMetricsResponse): void {
     if (typeof res.timing_drift_ns === "number") {
@@ -1997,9 +1565,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private dragstarted(event: D3DragEvent, d: TopoNode) {
-    if (!this.simulation) return;
     this.releaseNodePositions(this.lastNodes);
-    if (!event.active) this.simulation.alphaTarget(0.3).restart?.();
+    if (!event.active) {
+      this.dom.setSimulationAlphaTarget(0.3);
+    }
     d.fx = event.x;
     d.fy = event.y;
   }
@@ -2010,13 +1579,14 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private dragended(event: D3DragEvent, d: TopoNode) {
-    if (!this.simulation) return;
-    if (!event.active) this.simulation.alphaTarget(0);
+    if (!event.active) {
+      this.dom.setSimulationAlphaTarget(0);
+    }
     d.fx = event.x;
     d.fy = event.y;
     this.simulationCooldownHandle = setTimeout(() => {
       this.freezeNodePositions(this.lastNodes);
-      this.simulation?.stop();
+      this.dom.stopSimulation();
       this.simulationCooldownHandle = null;
     }, 250);
   }
@@ -2111,7 +1681,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     this.aggCurrentMBps$.next(0);
     this.aggMaxMBps = 0;
     this.latestNodeActivity = {};
-    this.svg?.selectAll("*").remove?.();
+    this.dom.clear();
     this.stopLivePoll();
   }
 

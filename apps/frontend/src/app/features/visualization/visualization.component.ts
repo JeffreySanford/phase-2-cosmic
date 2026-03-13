@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
+import { BrowserPlatformService } from "../../services/browser-platform.service";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
 import { BehaviorSubject } from "rxjs";
@@ -17,6 +18,7 @@ interface TimePoint {
 })
 export class VisualizationComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
+  private browser = inject(BrowserPlatformService);
   private dataSource = inject(DataSourceService);
   private mock = inject(MockDataService);
 
@@ -144,14 +146,14 @@ export class VisualizationComponent implements OnInit, OnDestroy {
 
   startLive() {
     this.stopLive();
-    this.liveTimer = window.setInterval(() => {
+    this.liveTimer = this.browser.window?.setInterval(() => {
       this.fetchMetrics();
     }, 1000);
   }
 
   stopLive() {
     if (this.liveTimer) {
-      clearInterval(this.liveTimer);
+      this.browser.window?.clearInterval(this.liveTimer);
       this.liveTimer = undefined;
     }
   }

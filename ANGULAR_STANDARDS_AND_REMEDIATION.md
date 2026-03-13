@@ -1,6 +1,6 @@
 # Angular Standards And Remediation
 
-Status date: 2026-03-12
+Status date: 2026-03-13
 
 ## Progress Update
 
@@ -37,11 +37,9 @@ Completed or materially addressed since this document was created:
 Next steps (remaining work):
 
 - ✅ `TopologyComponent` no longer contains direct D3/SVG DOM mutations; all rendering work is now isolated in `TopologyDomService`, and any browser-global APIs are routed through `BrowserPlatformService`.
-- **Next step:** audit and tighten the `ViewerComponent` Aladin integration boundary.
-  - Goal: consolidate the remaining `nativeElement`/DOM access into a small adapter layer (similar to the topology adapter) and keep all browser globals routed through `BrowserPlatformService`.
-- **Next step:** resolve Angular 21 lifecycle test drift.
-  - Identify failing specs, update tests to use stable delay patterns (e.g., `deferUiUpdate`, `fakeAsync`/`tick`, or `waitForAsync`), and ensure CI reflects the corrected behavior.
-- **Next step:** add an automated check (lint rule / grep-based CI job) to prevent new direct global DOM access in feature code (e.g., `window.`, `document.`, `localStorage`, `querySelector`).
+- ✅ `ViewerComponent` Aladin boundary has been tightened so the only DOM boundary is `containerRef.nativeElement`, and the component now routes all browser globals (eg. resize timers, observers) through `BrowserPlatformService`.
+- ✅ Added an automated check script (`scripts/check-browser-globals.js`, invoked via `pnpm run lint:browser-globals`) to detect new uses of `window.`, `document.`, `localStorage`, `querySelector`, etc.
+- ✅ Resolved Angular 21 lifecycle test drift by stabilizing the failing `TelemetryComponent` spec (fixed HTTP mock flushes and adjusted expectations to match updated throughput formatting).
 
 This document proposes explicit Angular coding-standard additions for this repository and summarizes the current remediation backlog for browser-global and direct-DOM usage in the frontend.
 
@@ -154,11 +152,12 @@ Ranked first by severity, then by ease of cleanup.
   How it was fixed:
   all D3/SVG rendering and DOM mutation is now isolated in `TopologyDomService`, and browser globals are routed through `BrowserPlatformService`.
 
-- In progress: audit [apps/frontend/src/app/features/viewer/viewer.component.ts](/c:/repos/phase-2-cosmic/apps/frontend/src/app/features/viewer/viewer.component.ts) against its own MD spec
-  Current smell:
-  it already uses `Renderer2`, but still mixes in `nativeElement` and `window.dispatchEvent`
-  Recommended fix:
-  finish the abstraction consistently and isolate third-party viewer integration behind a narrower DOM boundary.
+- Completed: audit and refactor [apps/frontend/src/app/features/viewer/viewer.component.ts](/c:/repos/phase-2-cosmic/apps/frontend/src/app/features/viewer/viewer.component.ts) to align with the browser-global policy.
+  What changed:
+  - Converted init flow to a hot `Observable` pipeline (no Promise-driven UI flow)
+  - Removed unused global imports and ensured `nativeElement` usage is strictly bounded to the single integration boundary
+  - Eliminated unsafe `!` assertions and fixed lifecycle race hazards by sharing init results via `shareReplay`
+  - Verified behavior via unit tests (all frontend tests passing)
 
 ### 3. Medium Severity, Easy Wins
 

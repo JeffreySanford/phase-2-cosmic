@@ -12,6 +12,7 @@ import {
   inject,
 } from "@angular/core";
 import { NavigationEnd, Router } from "@angular/router";
+import { BrowserPlatformService } from "../../services/browser-platform.service";
 import {
   LoadProfilePct,
   LoadProfileService,
@@ -35,6 +36,7 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
   private readonly dataSource = inject(DataSourceService);
   private readonly router = inject(Router);
   private readonly renderer = inject(Renderer2);
+  private readonly browser = inject(BrowserPlatformService);
   private readonly document = inject(DOCUMENT);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -90,7 +92,9 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
       () => this.updateFooterHeightVar()
     );
     const footer = this.footerRef?.nativeElement;
-    const ResizeObserverCtor = this.document.defaultView?.ResizeObserver;
+    const ResizeObserverCtor = (
+      this.browser.window as Window & { ResizeObserver?: typeof ResizeObserver }
+    )?.ResizeObserver;
     if (!footer || !ResizeObserverCtor) {
       return;
     }
@@ -99,7 +103,7 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
       this.resizeObserver = new ResizeObserverCtor(() =>
         this.updateFooterHeightVar()
       );
-      this.resizeObserver.observe(footer);
+      this.resizeObserver?.observe(footer);
     });
   }
 

@@ -12,9 +12,10 @@ import { HttpClient } from "@angular/common/http";
 import { TelemetryService } from "../../services/telemetry.service";
 import { VoService, VoServices } from "../../services/vo.service";
 import { BrowserPlatformService } from "../../services/browser-platform.service";
-import { BehaviorSubject, Subscription, timer, NEVER, from, of } from "rxjs";
+import { BehaviorSubject, Subscription, timer, NEVER, from, of, forkJoin } from "rxjs";
 import { switchMap, map, catchError } from "rxjs/operators";
 import { LoadProfileService } from "../../services/load-profile.service";
+import { TelemetryChartService } from "../../services/telemetry-chart.service";
 import {
   InfrastructureTelemetrySnapshot,
   InfraTelemetryServiceMetrics,
@@ -31,10 +32,6 @@ type PrometheusRangeResult = {
 };
 type PrometheusRangeResponse = { data?: { result?: PrometheusRangeResult[] } };
 
-type D3Module = typeof import("d3");
-let _d3: D3Module | null = null;
-type D3SVG = ReturnType<D3Module["select"]> | null;
-type D3G = ReturnType<D3Module["select"]> | null;
 
 type Point = { t: number; v: number };
 type MetricKind = "counter" | "gauge";
@@ -83,6 +80,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   private http = inject(HttpClient);
   voService = inject(VoService);
   private browser = inject(BrowserPlatformService);
+  private chart = inject(TelemetryChartService);
 
   @ViewChild("chart") chartEl?: ElementRef<HTMLDivElement>;
   @ViewChild("hist") histEl?: ElementRef<HTMLDivElement>;
@@ -216,11 +214,9 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   private routeSub?: Subscription;
   private stop$ = new BehaviorSubject<boolean>(false);
 
-  private svg: D3SVG | null = null;
-  private histSvg: D3SVG | null = null;
-  private gaugeSvg: D3SVG | null = null;
-  private gaugeGroup: D3G | null = null;
-  private d3: D3Module | null = null;
+  private chartInitialized = false;
+  private histInitialized = false;
+  private gaugeInitialized = false;
   private pollerStarted = false;
 
   private deferUiUpdate(task: () => void): void {
@@ -262,19 +258,50 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.loadD3().subscribe(() => {
-      this.initGauge();
-      this.ensureVizInitialized();
-      // Start data loading after the first render cycle to avoid NG0100 on initial paint.
-      this.deferUiUpdate(() => {
-        this.fetchAllTelemetry();
-        this.startPolling();
+    const chartEl = this.chartEl?.nativeElement;
+    const histEl = this.histEl?.nativeElement;
+    const gaugeEl = this.gaugeEl?.nativeElement;
+
+    const config = {
+      lineColor: this.cssVar("--color-accent-2", "#7b61ff"),
+      maColor: this.cssVar("--color-accent-1", "#ff6b6b"),
+      focusColor: this.cssVar("--color-accent-3", "#00e5ff"),
+      histogramColor: this.cssVar("--color-accent-3", "#00e5ff"),
+      gaugeColor: this.cssVar("--color-accent-1", "#ff6b6b"),
+    };
+
+    forkJoin({
+      line: chartEl ? from(this.chart.initLineChart(chartEl, config)) : of(undefined),
+      hist: histEl ? from(this.chart.initHistogram(histEl)) : of(undefined),
+      gauge: gaugeEl ? from(this.chart.initGauge(gaugeEl, config)) : of(undefined),
+    })
+      .pipe(catchError(() => of(null)))
+      .subscribe(() => {
+        this.chartInitialized = true;
+        this.histInitialized = true;
+        this.gaugeInitialized = true;
+        this.ensureVizInitialized();
+
+        // Start data loading after the first render cycle to avoid NG0100 on initial paint.
+        this.deferUiUpdate(() => {
+          this.fetchAllTelemetry();
+          this.startPolling();
+        });
       });
-    });
   }
 
   private cssVar(name: string, fallback = ""): string {
     return this.browser.readCssVar(name, fallback);
+  }
+
+  private getChartConfig() {
+    return {
+      lineColor: this.cssVar("--color-accent-2", "#7b61ff"),
+      maColor: this.cssVar("--color-accent-1", "#ff6b6b"),
+      focusColor: this.cssVar("--color-accent-3", "#00e5ff"),
+      histogramColor: this.cssVar("--color-accent-3", "#00e5ff"),
+      gaugeColor: this.cssVar("--color-accent-1", "#ff6b6b"),
+    };
   }
 
   ngOnDestroy(): void {
@@ -372,9 +399,19 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         );
         this.gaugeCap = Math.max(nextCap, this.gaugeCap * 0.9);
         this.updateRecentSamples(this.points);
-        this.renderLine(this.points, ma);
-        this.renderHistogram(this.points.map((p) => p.v));
-        this.renderGauge(this.currentRate, this.gaugeCap);
+        this.chart.renderLine(
+          this.points,
+          ma,
+          this.currentRate,
+          this.gaugeCap,
+          (v) => this.humanRate(v),
+          this.getChartConfig()
+        );
+        this.chart.renderHistogram(
+          this.points.map((p) => p.v),
+          (v) => this.humanRate(v),
+          this.getChartConfig().histogramColor
+        );
       });
     } catch {
       // ignore
@@ -406,8 +443,19 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
           };
         });
         this.updateRecentSamples(this.points);
-        this.renderLine(this.points, ma);
-        this.renderHistogram(this.points.map((p) => p.v));
+        this.chart.renderLine(
+          this.points,
+          ma,
+          this.currentRate,
+          this.gaugeCap,
+          (v) => this.humanRate(v),
+          this.getChartConfig()
+        );
+        this.chart.renderHistogram(
+          this.points.map((p) => p.v),
+          (v) => this.humanRate(v),
+          this.getChartConfig().histogramColor
+        );
         if (this.getSelectedMetric().kind === "gauge") {
           this.currentRate = this.currentValue;
           this.currentRateHuman$.next(this.humanRate(this.currentRate));
@@ -418,7 +466,12 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
             this.currentRate * 1.05
           );
           this.gaugeCap = Math.max(nextCap, this.gaugeCap * 0.9);
-          this.renderGauge(this.currentRate, this.gaugeCap);
+          this.chart.renderGauge(
+            this.currentRate,
+            this.gaugeCap,
+            (v) => this.humanRate(v),
+            this.getChartConfig()
+          );
         } else {
           this.computeRate(this.points);
         }
@@ -428,163 +481,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // initialize main line chart
-  private initChart(): void {
-    const d3 = this.d3 as D3Module;
-    const el = this.chartEl?.nativeElement;
-    if (!el) return;
-    const w = el.clientWidth || 600;
-    const h = 160;
-    this.svg = d3.select(el).append("svg").attr("width", w).attr("height", h);
-    this.svg
-      .append("path")
-      .attr("class", "line")
-      .attr("fill", "none")
-      .attr("stroke", this.cssVar("--color-accent-2", "#7b61ff"))
-      .attr("stroke-width", 2);
-    this.svg
-      .append("path")
-      .attr("class", "ma")
-      .attr("fill", "none")
-      .attr("stroke", this.cssVar("--color-accent-1", "#ff6b6b"))
-      .attr("stroke-width", 1.5)
-      .style("stroke-dasharray", "4 2");
-    // tooltip/focus group
-    this.svg.append("g").attr("class", "focus").style("display", "none");
-    this.svg
-      .select("g.focus")
-      .append("circle")
-      .attr("r", 3)
-      .attr("fill", this.cssVar("--color-accent-3", "#00e5ff"));
-    this.svg
-      .select("g.focus")
-      .append("text")
-      .attr("class", "focus-text")
-      .attr("x", 8)
-      .attr("y", -8)
-      .attr("font-size", 11);
-    // overlay for mouse events
-    this.svg
-      .append("rect")
-      .attr("class", "overlay")
-      .attr("fill", "none")
-      .attr("pointer-events", "all");
-  }
 
-  private renderLine(
-    points: Array<{ t: number; v: number }>,
-    ma: Array<{ t: number; v: number }>
-  ) {
-    if (!this.svg) return;
-    const d3 = this.d3 as D3Module;
-    const el = this.chartEl?.nativeElement;
-    if (!el) return;
-    const w = el.clientWidth || 600;
-    const h = el.clientHeight || 160;
-    const margin = { left: 88, right: 6, top: 6, bottom: 18 };
-    const timeExtent = d3.extent(points, (d: Point) => new Date(d.t)) as
-      | [Date, Date]
-      | undefined;
-    const x = d3
-      .scaleTime()
-      .range([margin.left, w - margin.right])
-      .domain(timeExtent ?? [new Date(0), new Date()]);
-    // Use actual values instead of percent-normalizing to avoid flat-top rendering.
-    const minV = Number(d3.min(points, (d: Point) => d.v) ?? 0);
-    const maxV = Math.max(1, Number(d3.max(points, (d: Point) => d.v) ?? 1));
-    const span = Math.max(1e-9, maxV - minV);
-    const pad = span * 0.12;
-    const yMin = Math.max(0, minV - pad);
-    const yMax = maxV + pad;
-    const y = d3
-      .scaleLinear()
-      .range([h - margin.bottom, margin.top])
-      .domain([yMin, yMax]);
-    const lineGen = d3
-      .line()
-      .x((d: unknown) => x(new Date((d as Point).t)))
-      .y((d: unknown) => y((d as Point).v))
-      .defined((d: unknown) => isFinite((d as Point).v)) as (
-      data?: Point[] | null
-    ) => string | null;
-
-    const maLineGen = d3
-      .line()
-      .x((d: unknown) => x(new Date((d as Point).t)))
-      .y((d: unknown) => y((d as Point).v))
-      .defined((d: unknown) => isFinite((d as Point).v)) as (
-      data?: Point[] | null
-    ) => string | null;
-
-    this.svg.attr("width", w).attr("height", h);
-    this.svg
-      .select("path.line")
-      .datum(points)
-      .attr("d", lineGen(points) ?? "");
-    this.svg
-      .select("path.ma")
-      .datum(ma)
-      .attr("d", maLineGen(ma) ?? "");
-    this.renderGauge(this.currentRate, this.gaugeCap);
-
-    // Axes: remove previous axes and draw new ones
-    this.svg.selectAll("g.x-axis").remove();
-    this.svg.selectAll("g.y-axis").remove();
-    const xAxis = d3
-      .axisBottom(x)
-      .ticks(6)
-      .tickFormat(d3.timeFormat("%H:%M") as (d: Date) => string);
-    const yAxis = d3
-      .axisLeft(y)
-      .ticks(5)
-      .tickFormat((d: number) => this.humanRate(Number(d)));
-    this.svg
-      .append("g")
-      .attr("class", "x-axis")
-      .attr("transform", `translate(0,${h - margin.bottom})`)
-      .call(xAxis);
-    this.svg
-      .append("g")
-      .attr("class", "y-axis")
-      .attr("transform", `translate(${margin.left},0)`)
-      .call(yAxis);
-
-    // update overlay size and mouse handlers
-    const svgRef = this.svg as D3SVG;
-    const overlay = svgRef
-      .select("rect.overlay")
-      .attr("x", 0)
-      .attr("y", 0)
-      .attr("width", w)
-      .attr("height", h);
-    const bisect = d3.bisector((d: Point) => d.t).left;
-    overlay.on("mousemove", (event: PointerEvent) => {
-      const [mx] = d3.pointer(event as PointerEvent);
-      const x0 = x.invert(mx) as Date;
-      const t = x0.getTime();
-      const i = Math.max(0, Math.min(points.length - 1, bisect(points, t) - 1));
-      const p = points[i] ?? points[points.length - 1];
-      if (!p) return;
-      const fx = x(new Date(p.t));
-      const fy = y(p.v);
-      const focus = svgRef.select("g.focus");
-      focus.style("display", null as unknown as string);
-      focus.select("circle").attr("cx", fx).attr("cy", fy);
-      const labelX = Math.max(margin.left + 4, Math.min(fx + 8, w - 180));
-      const labelY = Math.max(
-        margin.top + 12,
-        Math.min(fy - 8, h - margin.bottom - 4)
-      );
-      focus
-        .select("text.focus-text")
-        .attr("x", labelX)
-        .attr("y", labelY)
-        .text(`${new Date(p.t).toLocaleTimeString()} ${this.humanRate(p.v)}`);
-    });
-    overlay.on("mouseleave", () =>
-      svgRef.select("g.focus").style("display", "none")
-    );
-  }
 
   exportCsv() {
     if (!this.points || this.points.length === 0) return;
@@ -613,175 +510,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stats = { min, max, avg, p95 };
   }
 
-  private initGauge() {
-    const el = this.gaugeEl?.nativeElement;
-    if (!el) return;
-    const w = (el.clientWidth as number) || 220;
-    const h = (el.clientHeight as number) || 110;
-    const d3 = this.d3 as D3Module;
-    this.gaugeSvg = d3
-      .select(el)
-      .append("svg")
-      .attr("width", w)
-      .attr("height", h);
-    const gx = w / 2;
-    const gy = h / 1.35; // move the half-donut up to sit tighter under the Throughput label
-    this.gaugeGroup = this.gaugeSvg
-      .append("g")
-      .attr("class", "gauge")
-      .attr("transform", `translate(${gx},${gy})`);
-    // background arc
-    this.gaugeGroup
-      .append("path")
-      .attr("class", "gauge-bg")
-      .attr("fill", this.cssVar("--color-muted", "#e0e0e0"));
-    // foreground arc
-    this.gaugeGroup
-      .append("path")
-      .attr("class", "gauge-arc")
-      .attr("fill", this.cssVar("--color-accent-1", "#ff6b6b"));
-    // label
-    this.gaugeGroup
-      .append("text")
-      .attr("class", "gauge-text")
-      .attr("y", -6)
-      .attr("text-anchor", "middle")
-      .attr("font-size", 12);
-  }
 
-  private renderGauge(value: number, cap: number) {
-    if (!this.gaugeGroup) return;
-    const d3 = this.d3 as D3Module;
-    const capNorm = Math.max(1, cap);
-    const start = -Math.PI / 2;
-    const end = start + Math.min(1, Math.max(0, value) / capNorm) * Math.PI;
-    const inner = 30;
-    const outer = 50;
-    const arc = d3
-      .arc()
-      .innerRadius(inner)
-      .outerRadius(outer)
-      .startAngle(start)
-      .endAngle(end as number);
-    const full = d3
-      .arc()
-      .innerRadius(inner)
-      .outerRadius(outer)
-      .startAngle(-Math.PI / 2)
-      .endAngle(Math.PI / 2);
-    this.gaugeGroup
-      .select("path.gauge-bg")
-      .attr("d", full as unknown as string);
-    this.gaugeGroup
-      .select("path.gauge-arc")
-      .attr("d", arc as unknown as string);
-    const pct = Math.min(
-      100,
-      Math.max(0, (Math.max(0, value) / capNorm) * 100)
-    );
-    this.gaugeGroup
-      .select("text.gauge-text")
-      .attr("font-size", 14)
-      .attr("y", -12)
-      .text(`${this.humanRate(value)} (${pct.toFixed(0)}%)`);
-  }
-
-  private initHist(): void {
-    const el = this.histEl?.nativeElement;
-    if (!el) return;
-    const w = el.clientWidth || 300;
-    const h = el.clientHeight || 140;
-    const d3 = this.d3 as D3Module;
-    this.histSvg = d3
-      .select(el)
-      .append("svg")
-      .attr("width", w)
-      .attr("height", h);
-  }
-
-  private renderHistogram(values: number[]) {
-    if (!this.histSvg) return;
-    const d3 = this.d3 as D3Module;
-    const el = this.histEl?.nativeElement;
-    if (!el) return;
-    const w = el.clientWidth || 300;
-    const h = el.clientHeight || 140;
-    const margin = { left: 32, right: 8, top: 6, bottom: 22 };
-    this.histSvg.attr("width", w).attr("height", h);
-
-    const data = (values || []).filter((v) => isFinite(v) && v >= 0);
-    if (data.length === 0) {
-      this.histSvg.selectAll("*").remove();
-      return;
-    }
-
-    const x = d3
-      .scaleLinear()
-      .domain([0, (d3.max(data) ?? 1) * 1.05])
-      .range([margin.left, w - margin.right]);
-    // create typed bins from d3.bin output
-    type RawBin = Array<number> & { x0?: number; x1?: number };
-    const rawBins = d3.bin().thresholds(16)(data) as RawBin[];
-    type Bin = { x0: number; x1: number; length: number; values: number[] };
-    const bins: Bin[] = rawBins.map((b) => ({
-      x0: Number(b.x0 ?? 0),
-      x1: Number(b.x1 ?? 0),
-      length: b.length,
-      values: Array.from(b),
-    }));
-
-    const y = d3
-      .scaleLinear()
-      .domain([0, Math.max(1, Number(d3.max(bins, (b: Bin) => b.length) ?? 1))])
-      .range([h - margin.bottom, margin.top]);
-
-    const g = this.histSvg
-      .selectAll("g.bin")
-      .data(bins, (d: unknown) => `${(d as Bin).x0}-${(d as Bin).x1}`);
-    const gEnter = g.enter().append("g").attr("class", "bin");
-    gEnter.append("rect");
-    const all = gEnter.merge(g);
-
-    all
-      .select("rect")
-      .attr("x", (d: Bin) => x(d.x0))
-      .attr("y", (d: Bin) => y(d.length))
-      .attr("width", (d: Bin) => Math.max(1, x(d.x1) - x(d.x0) - 1))
-      .attr("height", (d: Bin) => h - margin.bottom - y(d.length))
-      .attr("fill", this.cssVar("--color-accent-3", "#00e5ff"));
-    g.exit().remove();
-
-    this.histSvg.selectAll("g.hist-x-axis").remove();
-    this.histSvg
-      .append("g")
-      .attr("class", "hist-x-axis")
-      .attr("transform", `translate(0,${h - margin.bottom})`)
-      .call(
-        d3
-          .axisBottom(x)
-          .ticks(5)
-          .tickFormat((d: number) => this.humanRate(Number(d)))
-      );
-  }
-
-  private loadD3() {
-    if (this.d3) return of(this.d3);
-    if (_d3) {
-      this.d3 = _d3;
-      return of(this.d3);
-    }
-    return from(import("d3")).pipe(
-      map((mod: D3Module) => {
-        _d3 = mod;
-        this.d3 = mod;
-        return this.d3;
-      }),
-      catchError(() => {
-        this.d3 = null;
-        return of(null);
-      })
-    );
-  }
 
   private computeRate(points: Array<{ t: number; v: number }>) {
     if (!points || points.length < 2) {
@@ -879,31 +608,72 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private ensureVizInitialized() {
-    // initialise SVG containers on demand. even if the parent height is
-    // zero at the moment, later render calls (`fetchRangeAndRender`) will
-    // resize them when the element grows.
-    if (this.selectedVizTab === 0 && !this.svg) {
-      this.initChart();
-      if (this.points?.length) {
-        const ma = this.points.map((p, i, arr) => {
-          const start = Math.max(0, i - 4);
-          const slice = arr.slice(start, i + 1);
-          return {
-            t: p.t,
-            v: slice.reduce((s, x) => s + x.v, 0) / slice.length,
-          };
-        });
-        this.renderLine(this.points, ma);
-        this.renderHistogram(this.points.map((p) => p.v));
-        this.renderGauge(this.currentRate, this.gaugeCap);
+    const config = this.getChartConfig();
+
+    if (this.selectedVizTab === 0) {
+      if (!this.chartInitialized) {
+        const chartEl = this.chartEl?.nativeElement;
+        if (chartEl) {
+          from(this.chart.initLineChart(chartEl, config)).subscribe(() => {
+            this.chartInitialized = true;
+            this.renderCurrentData(config);
+          });
+        }
+      } else {
+        this.renderCurrentData(config);
       }
     }
-    if (this.selectedVizTab === 1 && !this.histSvg) {
-      this.initHist();
-      if (this.points?.length) {
-        this.renderHistogram(this.points.map((p) => p.v));
+
+    if (this.selectedVizTab === 1) {
+      if (!this.histInitialized) {
+        const histEl = this.histEl?.nativeElement;
+        if (histEl) {
+          from(this.chart.initHistogram(histEl)).subscribe(() => {
+            this.histInitialized = true;
+            this.renderHistogramForCurrentData(config);
+          });
+        }
+      } else {
+        this.renderHistogramForCurrentData(config);
       }
     }
+  }
+
+  private renderCurrentData(config: ReturnType<typeof this.getChartConfig>) {
+    if (!this.points?.length) return;
+
+    const ma = this.points.map((p, i, arr) => {
+      const start = Math.max(0, i - 4);
+      const slice = arr.slice(start, i + 1);
+      return {
+        t: p.t,
+        v: slice.reduce((s, x) => s + x.v, 0) / slice.length,
+      };
+    });
+
+    this.chart.renderLine(
+      this.points,
+      ma,
+      this.currentRate,
+      this.gaugeCap,
+      (v) => this.humanRate(v),
+      config
+    );
+
+    this.chart.renderHistogram(
+      this.points.map((p) => p.v),
+      (v) => this.humanRate(v),
+      config.histogramColor
+    );
+  }
+
+  private renderHistogramForCurrentData(config: ReturnType<typeof this.getChartConfig>) {
+    if (!this.points?.length) return;
+    this.chart.renderHistogram(
+      this.points.map((p) => p.v),
+      (v) => this.humanRate(v),
+      config.histogramColor
+    );
   }
 
   private updateRecentSamples(points: Array<{ t: number; v: number }>) {

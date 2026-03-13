@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "nx-no-cloud": "node ./scripts/run-nx-no-cloud.cjs",
     "start:all": "sh ./scripts/start-all.sh",
     "serve:ssr": "pnpm exec tsx --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts",
     "start:all:reset": "node ./tools/run-with-logs.js \"sh ./scripts/start-all-reset.sh\" start-all-reset",
@@ -10,6 +11,7 @@
     "lint:docker": "node ./scripts/hadolint-runner.js",
     "lint:yaml": "node ./scripts/yamllint-runner.js",
     "lint:go": "sh ./scripts/lint-go.sh",
+    "lint:browser-globals": "node ./scripts/check-browser-globals.js",
     "lint:python": "sh ./scripts/lint-python.sh",
     "format:fix": "node ./node_modules/prettier/bin-prettier.js --write \"**/*.{ts,tsx,js,jsx,json,md,scss,yml,yaml}\"",
     "format:check:changed": "node ./node_modules/prettier/bin-prettier.js --check \"**/*.{ts,tsx,js,jsx,json,md,scss,yml,yaml}\"",
