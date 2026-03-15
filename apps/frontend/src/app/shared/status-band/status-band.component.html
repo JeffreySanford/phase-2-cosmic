@@ -14,6 +14,22 @@
       <span class="status-badge" [class.status-badge--offline]="status.services.diagnostics === 'offline'">
         Diagnostics
       </span>
+      <span
+        *ngIf="stressActive"
+        class="status-badge status-badge--stress"
+        matTooltip="Stress mode is active: runtime load is being generated"
+      >
+        Stress {{ stressModeLabel }}
+        <ng-container *ngIf="profilePct !== null">({{ profilePct }}%)</ng-container>
+        <ng-container *ngIf="workerCount !== null"> - {{ workerCount }} workers</ng-container>
+      </span>
+      <span
+        *ngIf="stressActive && profileNote"
+        class="status-badge status-badge--stress"
+        matTooltip="Stress profile note"
+      >
+        {{ profileNote }}
+      </span>
     </div>
   </div>
 </div>

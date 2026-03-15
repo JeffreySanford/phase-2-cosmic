@@ -5,7 +5,8 @@
   "scripts": {
     "nx-no-cloud": "node ./scripts/run-nx-no-cloud.cjs",
     "start:all": "sh ./scripts/start-all.sh",
-    "serve:ssr": "pnpm exec tsx --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts",
+    "serve:ssr": "node ./node_modules/tsx/dist/cli.mjs --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts",
+    "serve:ssr:e2e": "node ./node_modules/tsx/dist/cli.mjs --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts",
     "start:all:reset": "node ./tools/run-with-logs.js \"sh ./scripts/start-all-reset.sh\" start-all-reset",
     "lint": "node ./scripts/run-nx-no-cloud.cjs run-many --target=lint --projects=frontend-e2e,frontend,ui-theme --parallel=false && pnpm run lint:docker && pnpm run lint:yaml && pnpm run format:fix",
     "lint:docker": "node ./scripts/hadolint-runner.js",
@@ -43,6 +44,9 @@
     "test:all": "pnpm run quality:ci && pnpm run test:java:it && pnpm run analyze:semgrep",
     "playwright:install": "pnpm exec playwright install --with-deps",
     "docs:validate": "bash scripts/check-docs.sh",
+    "validate:load": "node scripts/validate-100pct-load.js",
+    "validate:stress": "bash scripts/check-stress-containers.sh",
+    "validate:ci:stress": "bash scripts/ci-validate-stress.sh",
     "e2e:playwright": "pnpm exec playwright test --config=tools/playwright/playwright.config.ts --reporter=html",
     "ci:integration": "pnpm run test:trident-allocator && pnpm run test:java:governance:it",
     "coverage:check": "bash scripts/check-coverage.sh 90"
@@ -57,12 +61,11 @@
     "@angular/compiler-cli": "21.2.3",
     "@angular/language-service": "21.2.3",
     "@apidevtools/swagger-parser": "^12.1.0",
-    "@esbuild/win32-x64": "0.27.3",
+    "@esbuild/win32-x64": "0.27.4",
     "@eslint/js": "^9.8.0",
     "@nestjs/common": "^11.1.14",
     "@nestjs/core": "^11.1.14",
     "@nestjs/platform-express": "^11.1.14",
-    "@nx/nx-win32-x64-msvc": "22.5.4",
     "@nrwl/angular": "19.8.4",
     "@nrwl/workspace": "^19.8.4",
     "@nx/cypress": "22.5.4",
@@ -70,6 +73,7 @@
     "@nx/eslint-plugin": "22.5.4",
     "@nx/jest": "22.5.4",
     "@nx/js": "22.5.4",
+    "@nx/nx-win32-x64-msvc": "22.5.4",
     "@nx/web": "22.5.4",
     "@playwright/test": "^1.58.2",
     "@rollup/rollup-win32-x64-msvc": "^4.59.0",
@@ -77,6 +81,7 @@
     "@swc-node/register": "1.11.1",
     "@swc/core": "1.15.8",
     "@swc/helpers": "0.5.18",
+    "@types/dockerode": "^3.3.2",
     "@types/express": "4.17.14",
     "@types/jest": "^29.5.12",
     "@types/node": "20.19.0",
@@ -86,6 +91,8 @@
     "angular-eslint": "^21.3.0",
     "cross-env": "^7.0.3",
     "cypress": "15.8.0",
+    "dockerode": "^3.3.2",
+    "esbuild": "^0.27.4",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-cypress": "^3.5.0",
@@ -134,7 +141,9 @@
   "packageManager": "pnpm@10.32.1",
   "pnpm": {
     "overrides": {
-      "@nestjs/platform-express>multer": "^2.1.1"
+      "@nestjs/platform-express>multer": "^2.1.1",
+      "esbuild": "0.27.4",
+      "@esbuild/*": "0.27.4"
     },
     "onlyBuiltDependencies": [
       "@nestjs/core",

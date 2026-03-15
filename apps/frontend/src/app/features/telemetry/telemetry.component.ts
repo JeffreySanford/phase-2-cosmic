@@ -12,6 +12,8 @@ import { HttpClient } from "@angular/common/http";
 import { TelemetryService } from "../../services/telemetry.service";
 import { VoService, VoServices } from "../../services/vo.service";
 import { BrowserPlatformService } from "../../services/browser-platform.service";
+import { DataSourceService } from "../../services/data-source.service";
+import { MockDataService } from "../../services/mock-data.service";
 import {
   BehaviorSubject,
   Subscription,
@@ -21,7 +23,7 @@ import {
   of,
   forkJoin,
 } from "rxjs";
-import { switchMap, map, catchError } from "rxjs/operators";
+import { switchMap, catchError } from "rxjs/operators";
 import { LoadProfileService } from "../../services/load-profile.service";
 import { TelemetryChartService } from "../../services/telemetry-chart.service";
 import {
@@ -40,9 +42,8 @@ type PrometheusRangeResult = {
 };
 type PrometheusRangeResponse = { data?: { result?: PrometheusRangeResult[] } };
 
-type Point = { t: number; v: number };
 type MetricKind = "counter" | "gauge";
-type MetricFormat = "bytes_per_sec" | "records_per_sec" | "percent";
+type MetricFormat = "bytes_per_sec" | "records_per_sec" | "percent" | "count";
 type MetricOption = {
   id: string;
   label: string;
@@ -83,11 +84,15 @@ export type TransientAlert = {
 export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   private telemetry = inject<TelemetryService>(TelemetryService);
   private loadProfile = inject<LoadProfileService>(LoadProfileService);
+  private dataSource = inject(DataSourceService);
+  private mock = inject(MockDataService);
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
   voService = inject(VoService);
   private browser = inject(BrowserPlatformService);
   private chart = inject(TelemetryChartService);
+
+  dataMode$ = this.dataSource.mode$;
 
   @ViewChild("chart") chartEl?: ElementRef<HTMLDivElement>;
   @ViewChild("hist") histEl?: ElementRef<HTMLDivElement>;
@@ -123,6 +128,30 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       kind: "gauge",
       format: "percent",
     },
+    {
+      id: "runtime_load_workers",
+      label: "Stress workers",
+      rangeQuery: "frontend_ssr_runtime_load_profile_workers",
+      instantQuery: "frontend_ssr_runtime_load_profile_workers",
+      kind: "gauge",
+      format: "count",
+    },
+    {
+      id: "runtime_load_pct",
+      label: "Stress profile (%)",
+      rangeQuery: "frontend_ssr_runtime_load_profile_pct",
+      instantQuery: "frontend_ssr_runtime_load_profile_pct",
+      kind: "gauge",
+      format: "percent",
+    },
+    {
+      id: "runtime_load_bytes_per_sec",
+      label: "Stress worker bytes/s",
+      rangeQuery: "frontend_ssr_runtime_load_worker_bytes_total",
+      instantQuery: "frontend_ssr_runtime_load_worker_bytes_total",
+      kind: "counter",
+      format: "bytes_per_sec",
+    },
   ];
 
   metric$ = new BehaviorSubject<string>(this.metricOptions[0].id);
@@ -133,13 +162,39 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.currentValue$.value;
   }
 
+  // Stress load stream values (updated via SSE)
+  stressProfile$ = new BehaviorSubject<{
+    profilePct: number;
+    workers: number;
+    mode: string;
+    note: string;
+  }>({
+    profilePct: 10,
+    workers: 0,
+    mode: "baseline",
+    note: "",
+  });
+  stressWorkerBytes$ = new BehaviorSubject<number>(0);
+  stressWorkerBytesPerSec$ = new BehaviorSubject<number>(0);
+
+  get currentValueLabel(): string {
+    const metric = this.getSelectedMetric();
+    return metric.kind === "counter" ? "Total" : "Current value";
+  }
+
   currentRate = 0; // in units per second (matches metric units, e.g., bytes/sec)
+  currentRatePct = 0; // normalized percentage for progress bar (0-100)
 
   currentRateHuman$ = new BehaviorSubject<string>("0 B/s");
   get currentRateHuman(): string {
     return this.currentRateHuman$.value;
   }
   points: Array<{ t: number; v: number }> = [];
+
+  // Sparkline path for small inline trend charts on the stat cards.
+  sparklinePath = "";
+  sparklineWidth = 100;
+  sparklineHeight = 18;
 
   // prototype status data for Pulsar component -- wrapped in subjects to avoid
   // change-detection races when the values flip while the template is being
@@ -219,6 +274,8 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   private pollSub?: Subscription;
   private profileSub?: Subscription;
   private routeSub?: Subscription;
+  private telemetryStreamSub?: Subscription;
+  private telemetryReconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private stop$ = new BehaviorSubject<boolean>(false);
 
   private chartInitialized = false;
@@ -228,6 +285,30 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private deferUiUpdate(task: () => void): void {
     setTimeout(task, 0);
+  }
+
+  private scheduleTelemetryReconnect(delayMs = 3000): void {
+    if (this.telemetryReconnectTimer) {
+      clearTimeout(this.telemetryReconnectTimer);
+    }
+    if (this.stop$.value) return;
+    this.telemetryReconnectTimer = setTimeout(() => {
+      this.startTelemetryStream();
+    }, delayMs);
+  }
+
+  private startTelemetryStream(): void {
+    this.telemetryStreamSub?.unsubscribe();
+    if (this.stop$.value) return;
+
+    this.telemetryStreamSub = this.telemetry.telemetryStream().subscribe(
+      (payload) => this.handleTelemetryStream(payload),
+      () => {
+        // Retry SSE on failure.
+        this.telemetryStreamSub?.unsubscribe();
+        this.scheduleTelemetryReconnect();
+      }
+    );
   }
 
   ngOnInit(): void {
@@ -244,6 +325,10 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
       if (pct === 25) this.pollIntervalMs$.next(15000);
       if (pct === 50) this.pollIntervalMs$.next(5000);
       if (pct === 100) this.pollIntervalMs$.next(1000);
+      // Refresh the telemetry range chart when the runtime load profile changes
+      // (e.g. switching to 100% stress). This ensures the chart reflects any
+      // new data produced by the generator.
+      this.fetchRangeAndRender();
     });
     // VO samples are provided by VoService voSamples$ (hot observable)
 
@@ -296,6 +381,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
         // Start data loading after the first render cycle to avoid NG0100 on initial paint.
         this.deferUiUpdate(() => {
           this.fetchAllTelemetry();
+          this.startTelemetryStream();
           this.startPolling();
         });
       });
@@ -319,11 +405,18 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.pollSub?.unsubscribe();
     this.profileSub?.unsubscribe();
     this.routeSub?.unsubscribe();
+    this.telemetryStreamSub?.unsubscribe();
+    if (this.telemetryReconnectTimer) {
+      clearTimeout(this.telemetryReconnectTimer);
+      this.telemetryReconnectTimer = null;
+    }
     this.stop$.next(true);
     this.stop$.complete();
   }
 
   private fetchAllTelemetry(): void {
+    // Keep historical charts populated via a single range query, then update live
+    // metrics via SSE.
     this.fetchRangeAndRender();
     this.fetchPulsarStatus();
     this.fetchRabbitMQStatus();
@@ -338,7 +431,13 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.pollerStarted = true;
     this.pollSub = this.pollIntervalMs$
       .pipe(switchMap((ms) => (ms > 0 ? timer(ms, ms) : NEVER)))
-      .subscribe(() => this.fetchAllTelemetry());
+      .subscribe(() => {
+        // Keep non-stream metrics (Pulsar/Rabbit, infra) updated.
+        this.fetchPulsarStatus();
+        this.fetchRabbitMQStatus();
+        this.fetchInfrastructureTelemetry();
+        this.fetchAlertSlo();
+      });
   }
 
   private fetchRangeAndRender(): void {
@@ -347,6 +446,19 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     const end = Math.floor(Date.now() / 1000);
     const start = end - range;
     const step = Math.max(Math.floor(range / 120), 1); // ~120 samples
+
+    // If we're showing the stress worker throughput metric, use the SSE stream
+    // to keep the chart updated rather than re-polling Prometheus continuously.
+    if (selectedMetric.id === "runtime_load_bytes_per_sec") {
+      // Still fetch initial history to populate the charts.
+      this.telemetry
+        .queryRangeRate(selectedMetric.rangeQuery, start, end, step, "1m")
+        .subscribe((res: unknown) =>
+          this.handleRateResponse(res as PrometheusRangeResponse)
+        );
+      return;
+    }
+
     if (selectedMetric.kind === "counter") {
       this.telemetry
         .queryRangeRate(selectedMetric.rangeQuery, start, end, step, "1m")
@@ -367,17 +479,6 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
           this.handleRangeResponse(res as PrometheusRangeResponse)
         );
     }
-
-    // Fetch Pulsar status
-    this.telemetry.getPulsarStatus().subscribe((status) => {
-      this.deferUiUpdate(() => {
-        this.pulsarStatus$.next({
-          brokers: status.brokers,
-          topics: status.topics,
-          partitions: status.partitions,
-        });
-      });
-    });
   }
 
   private handleRateResponse(res: PrometheusRangeResponse): void {
@@ -409,6 +510,10 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
           this.currentRate * 1.05
         );
         this.gaugeCap = Math.max(nextCap, this.gaugeCap * 0.9);
+        this.currentRatePct =
+          this.gaugeCap > 0
+            ? Math.min(100, (this.currentRate / this.gaugeCap) * 100)
+            : 0;
         this.updateRecentSamples(this.points);
         this.chart.renderLine(
           this.points,
@@ -423,6 +528,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
           (v) => this.humanRate(v),
           this.getChartConfig().histogramColor
         );
+        this.sparklinePath = this.computeSparklinePath(this.points);
       });
     } catch {
       // ignore
@@ -467,6 +573,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
           (v) => this.humanRate(v),
           this.getChartConfig().histogramColor
         );
+        this.sparklinePath = this.computeSparklinePath(this.points);
         if (this.getSelectedMetric().kind === "gauge") {
           this.currentRate = this.currentValue;
           this.currentRateHuman$.next(this.humanRate(this.currentRate));
@@ -477,6 +584,10 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
             this.currentRate * 1.05
           );
           this.gaugeCap = Math.max(nextCap, this.gaugeCap * 0.9);
+          this.currentRatePct =
+            this.gaugeCap > 0
+              ? Math.min(100, (this.currentRate / this.gaugeCap) * 100)
+              : 0;
           this.chart.renderGauge(
             this.currentRate,
             this.gaugeCap,
@@ -519,6 +630,37 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stats = { min, max, avg, p95 };
   }
 
+  private computeSparklinePath(
+    points: Array<{ t: number; v: number }>,
+    width = this.sparklineWidth,
+    height = this.sparklineHeight
+  ): string {
+    if (!points || points.length === 0) {
+      return "";
+    }
+
+    const vals = points.map((p) => p.v).filter(isFinite);
+    if (vals.length === 0) return "";
+
+    const minV = Math.min(...vals);
+    const maxV = Math.max(...vals);
+    const span = Math.max(1, maxV - minV);
+
+    const normalized = vals.map((v) => (v - minV) / span);
+
+    const step = width / Math.max(1, normalized.length - 1);
+
+    const pointsString = normalized
+      .map((v, i) => {
+        const x = i * step;
+        const y = height - v * height;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+
+    return `M ${pointsString}`;
+  }
+
   private computeRate(points: Array<{ t: number; v: number }>) {
     if (!points || points.length < 2) {
       this.currentRate = 0;
@@ -549,12 +691,85 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentRateHuman$.next(this.humanRate(this.currentRate));
   }
 
+  private handleTelemetryStream(payload: {
+    ts: number;
+    runtimeLoadProfile: {
+      profilePct: number;
+      workers: number;
+      mode: string;
+      note: string;
+    };
+    workerBytesTotal: number;
+    workerBytesPerSec: number;
+  }) {
+    // This stream is primarily used to drive the stress-worker metrics.
+    // Update the always-visible stress panel fields
+    this.stressProfile$.next(payload.runtimeLoadProfile);
+    this.stressWorkerBytes$.next(payload.workerBytesTotal);
+    this.stressWorkerBytesPerSec$.next(payload.workerBytesPerSec);
+
+    if (this.getSelectedMetric().id === "runtime_load_bytes_per_sec") {
+      const value = payload.workerBytesPerSec;
+      const now = Date.now();
+      this.currentValue$.next(payload.workerBytesTotal);
+      this.currentRate = value;
+      this.currentRateHuman$.next(this.humanRate(this.currentRate));
+
+      // Append a point for charting
+      this.points.push({ t: now, v: value });
+      if (this.points.length > 200) {
+        this.points.shift();
+      }
+      this.computeStats(this.points.map((p) => p.v));
+
+      const ma = this.points.map((p, i, arr) => {
+        const start = Math.max(0, i - 4);
+        const slice = arr.slice(start, i + 1);
+        return {
+          t: p.t,
+          v: slice.reduce((s, x) => s + x.v, 0) / slice.length,
+        };
+      });
+
+      const nextCap = Math.max(
+        1,
+        Number(this.stats.p95) * 1.15,
+        Number(this.stats.max) * 1.05,
+        this.currentRate * 1.05
+      );
+      this.gaugeCap = Math.max(nextCap, this.gaugeCap * 0.9);
+      this.currentRatePct = Math.min(
+        100,
+        (this.currentRate / this.gaugeCap) * 100
+      );
+
+      this.chart.renderLine(
+        this.points,
+        ma,
+        this.currentRate,
+        this.gaugeCap,
+        (v) => this.humanRate(v),
+        this.getChartConfig()
+      );
+      this.chart.renderHistogram(
+        this.points.map((p) => p.v),
+        (v) => this.humanRate(v),
+        this.getChartConfig().histogramColor
+      );
+      this.sparklinePath = this.computeSparklinePath(this.points);
+    }
+  }
+
   private humanRate(v: number) {
     const metric = this.getSelectedMetric();
     if (!isFinite(v)) return "0";
 
     if (metric.format === "percent") {
       return `${v.toFixed(2)}%`;
+    }
+
+    if (metric.format === "count") {
+      return new Intl.NumberFormat().format(Math.round(v));
     }
 
     if (metric.format === "records_per_sec") {
@@ -596,6 +811,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   setRangeSec(sec: number) {
     this.timeRangeSec$.next(sec);
+    this.fetchRangeAndRender();
   }
 
   setMetric(m: string) {
@@ -711,6 +927,7 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   get rateCardTitle(): string {
     const selected = this.getSelectedMetric();
     if (selected.format === "percent") return "System Load";
+    if (selected.format === "count") return "Workers";
     if (selected.format === "records_per_sec") return "Throughput (records)";
     return "Throughput";
   }
@@ -824,10 +1041,27 @@ export class TelemetryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private fetchInfrastructureTelemetry(): void {
+    if (this.dataSource.mode === "mock") {
+      this.mock.infrastructureTelemetry().subscribe((snapshot) => {
+        this.deferUiUpdate(() => {
+          this.infrastructureTelemetry = this.normalizeInfraSnapshot(snapshot);
+          const pulsar = snapshot.services.pulsar;
+          if (pulsar && pulsar.source !== "unavailable") {
+            this.pulsarStatus$.next({
+              brokers: Math.round(Number(pulsar.brokers ?? 0)),
+              topics: Math.round(Number(pulsar.topics ?? 0)),
+              partitions: Math.round(Number(pulsar.partitions ?? 0)),
+            });
+          }
+        });
+      });
+      return;
+    }
+
     this.http
       .get<InfrastructureTelemetrySnapshot>("/api/v1/telemetry/infrastructure")
       .subscribe(
-        (snapshot) => {
+        (snapshot: InfrastructureTelemetrySnapshot) => {
           this.deferUiUpdate(() => {
             this.infrastructureTelemetry =
               this.normalizeInfraSnapshot(snapshot);

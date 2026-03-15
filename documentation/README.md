@@ -6,7 +6,8 @@ Alignment anchors
 - Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
 - Delivery plan: [../ROADMAP.md](/ROADMAP.md)
 
-This folder contains the Phase 2 documentation for moving Cosmic Horizon past prototype into production-grade, real-world specifications. It includes an expanded executive summary, architecture descriptions, component-level designs for the Operational Streaming Plane and the Governance & Orchestration Control Plane, provenance and data-trust guidance, and deployment recommendations.
+This folder contains the Phase 2 documentation for moving Cosmic Horizon past prototype into production-grade, real-world specifications. It includes an expanded executive summary, architecture descriptions, component-level designs for the Operational Streaming Plane and the Governance & Orchestration
+Control Plane, provenance and data-trust guidance, and deployment recommendations.
 
 Files:
 
@@ -21,6 +22,7 @@ Files:
 - [MISSION_GATES.md](/docuentation/ngvla/MISSION_GATES.md) — release readiness criteria tied to mission outcomes
 - [DECISIONS.md](/docuentation/architecture/DECISIONS.md) — mission-critical architecture and scope decision log
 - [PROFESSIONAL_CONSOLE_SPEC.md](/docuentation/architecture/PROFESSIONAL_CONSOLE_SPEC.md) — single-source professional console product specification
+- [STRESS_TEST.md](/docuentation/stress-test/README.md) — stress load and validation tooling, replay, and CI artifacts
 - [API_CONTRACT_STATUS.md](/docuentation/data/API_CONTRACT_STATUS.md) — implemented vs target API contract status matrix
 
 - [GETTING_STARTED.md](/docuentation/overview/GETTING_STARTED.md) — developer quickstart: bring up dev infra and frontend

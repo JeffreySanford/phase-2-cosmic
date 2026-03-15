@@ -6,6 +6,18 @@ import { DataSourceService } from "./data-source.service";
 import { MockDataService } from "./mock-data.service";
 import { RequestCacheService } from "./request-cache.service";
 
+export interface TelemetryStreamPayload {
+  ts: number;
+  runtimeLoadProfile: {
+    profilePct: number;
+    workers: number;
+    mode: string;
+    note: string;
+  };
+  workerBytesTotal: number;
+  workerBytesPerSec: number;
+}
+
 // Prometheus helper. Uses the frontend proxy at `/api/proxy/prometheus` so
 // the browser doesn't need direct CORS access to the Prometheus server.
 @Injectable({ providedIn: "root" })
@@ -119,6 +131,34 @@ export class TelemetryService {
         lastUpdated: string;
       }>("/api/v1/pulsar/status")
     );
+  }
+
+  telemetryStream(): Observable<TelemetryStreamPayload> {
+    if (this.dataSource.mode === "mock") {
+      return this.mock.telemetryStream();
+    }
+    return new Observable((observer) => {
+      const es = new EventSource("/api/telemetry/stream");
+      const notify = (data: string) => {
+        try {
+          const payload = JSON.parse(data) as TelemetryStreamPayload;
+          observer.next(payload);
+        } catch {
+          // ignore malformed messages
+        }
+      };
+
+      es.onmessage = (event: MessageEvent) => notify(event.data);
+      es.addEventListener("telemetry", (event: Event) => {
+        notify((event as MessageEvent<string>).data);
+      });
+
+      es.onerror = (err) => {
+        observer.error(err);
+        es.close();
+      };
+      return () => es.close();
+    });
   }
 
   /**

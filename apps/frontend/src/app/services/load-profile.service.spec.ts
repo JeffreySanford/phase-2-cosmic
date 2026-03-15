@@ -23,6 +23,7 @@ describe("LoadProfileService", () => {
           provide: DataSourceService,
           useValue: {
             mode$: mode$.asObservable(),
+            setMode: (mode: DataMode) => mode$.next(mode),
             get mode() {
               return mode$.value;
             },
@@ -54,6 +55,10 @@ describe("LoadProfileService", () => {
     httpMock
       .expectOne("/api/load-profile")
       .flush({ profilePct: 10, mode: "baseline" });
+    service.setStress(true);
+    httpMock
+      .expectOne("/api/load-profile")
+      .flush({ profilePct: 10, mode: "baseline" });
 
     service.setProfile(50);
     const req = httpMock.expectOne("/api/load-profile");
@@ -68,6 +73,10 @@ describe("LoadProfileService", () => {
   });
 
   it("should fall back to local state when runtime apply fails", () => {
+    httpMock
+      .expectOne("/api/load-profile")
+      .flush({}, { status: 500, statusText: "error" });
+    service.setStress(true);
     httpMock
       .expectOne("/api/load-profile")
       .flush({}, { status: 500, statusText: "error" });
@@ -112,5 +121,77 @@ describe("LoadProfileService", () => {
     req.flush({ profilePct: 50, mode: "runtime-controlled" });
 
     expect(service.current).toBe(50);
+  });
+
+  it("should record profile history and replay it", () => {
+    httpMock
+      .expectOne("/api/load-profile")
+      .flush({ profilePct: 10, mode: "baseline" });
+
+    // enable stress mode to allow runtime calls and history tracking
+    service.setStress(true);
+    httpMock
+      .expectOne("/api/load-profile")
+      .flush({ profilePct: 10, mode: "baseline" });
+
+    service.setProfile(25);
+    let req = httpMock.expectOne("/api/load-profile");
+    req.flush({ profilePct: 25, mode: "runtime-controlled" });
+
+    service.setProfile(50);
+    req = httpMock.expectOne("/api/load-profile");
+    req.flush({ profilePct: 50, mode: "runtime-controlled" });
+
+    // Replay should make the same calls again (in order)
+    jest.useFakeTimers();
+    service.replayHistory(0);
+    jest.runAllTimers();
+
+    const replayReqs = httpMock.match("/api/load-profile");
+    expect(replayReqs).toHaveLength(3);
+    const [replayStatusReq, replayReq1, replayReq2] = replayReqs;
+    replayStatusReq.flush({ profilePct: 10, mode: "baseline" });
+    replayReq1.flush({ profilePct: 25, mode: "runtime-controlled" });
+    replayReq2.flush({ profilePct: 50, mode: "runtime-controlled" });
+
+    jest.useRealTimers();
+  });
+
+  it("should schedule replay and stop it", () => {
+    httpMock
+      .expectOne("/api/load-profile")
+      .flush({ profilePct: 10, mode: "baseline" });
+
+    // enable stress mode to allow runtime calls and history tracking
+    service.setStress(true);
+    httpMock
+      .expectOne("/api/load-profile")
+      .flush({ profilePct: 10, mode: "baseline" });
+
+    service.setProfile(25);
+    let req = httpMock.expectOne("/api/load-profile");
+    req.flush({ profilePct: 25, mode: "runtime-controlled" });
+
+    service.setProfile(50);
+    req = httpMock.expectOne("/api/load-profile");
+    req.flush({ profilePct: 50, mode: "runtime-controlled" });
+
+    jest.useFakeTimers();
+
+    // Schedule replay; immediate replay should occur.
+    service.startReplaySchedule(1);
+    expect(service.isReplayScheduled).toBe(true);
+    jest.advanceTimersByTime(1);
+    const replayReqs = httpMock.match("/api/load-profile");
+    expect(replayReqs.length).toBeGreaterThanOrEqual(2);
+    replayReqs[0].flush({ profilePct: 25, mode: "runtime-controlled" });
+    replayReqs[1].flush({ profilePct: 50, mode: "runtime-controlled" });
+
+    service.stopReplaySchedule();
+    expect(service.isReplayScheduled).toBe(false);
+
+    // clear any remaining timers so they don't cause later HTTP calls
+    jest.clearAllTimers();
+    jest.useRealTimers();
   });
 });

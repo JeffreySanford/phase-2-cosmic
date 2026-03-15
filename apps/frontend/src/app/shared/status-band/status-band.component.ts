@@ -3,6 +3,7 @@ import {
   SystemStatusService,
   SystemStatus,
 } from "../../services/system-status.service";
+import { LoadProfileService } from "../../services/load-profile.service";
 import { Subscription } from "rxjs";
 
 /**
@@ -86,12 +87,18 @@ import { Subscription } from "rxjs";
       .status-badge--offline {
         background: rgba(198, 40, 40, 0.2);
       }
+
+      .status-badge--stress {
+        background: rgba(255, 193, 7, 0.2);
+        color: #795548;
+      }
     `,
   ],
   standalone: false,
 })
 export class StatusBandComponent implements OnInit, OnDestroy {
   private statusService = inject(SystemStatusService);
+  private loadProfile = inject(LoadProfileService);
 
   status: SystemStatus = {
     health: "healthy",
@@ -103,8 +110,19 @@ export class StatusBandComponent implements OnInit, OnDestroy {
     },
   };
 
+  stressActive = false;
+  stressModeLabel = "";
+  profilePct: number | null = null;
+  workerCount: number | null = null;
+  profileNote = "";
+
   shouldShow = true;
   private subscription?: Subscription;
+  private stressSubscription?: Subscription;
+  private modeSubscription?: Subscription;
+  private profileSubscription?: Subscription;
+  private workerSubscription?: Subscription;
+  private noteSubscription?: Subscription;
   timestampDisplay = "";
 
   ngOnInit(): void {
@@ -113,10 +131,34 @@ export class StatusBandComponent implements OnInit, OnDestroy {
       this.updateTimestampDisplay();
       this.shouldShow = true;
     });
+
+    this.stressSubscription = this.loadProfile.stress$.subscribe((stress) => {
+      this.stressActive = stress;
+    });
+    this.modeSubscription = this.loadProfile.mode$.subscribe((mode) => {
+      this.stressModeLabel =
+        mode === "runtime-controlled" ? "(stress load active)" : "";
+    });
+    this.profileSubscription = this.loadProfile.profile$.subscribe(
+      (profile) => {
+        this.profilePct = profile;
+      }
+    );
+    this.workerSubscription = this.loadProfile.workers$.subscribe((workers) => {
+      this.workerCount = workers;
+    });
+    this.noteSubscription = this.loadProfile.note$.subscribe((note) => {
+      this.profileNote = note;
+    });
   }
 
   ngOnDestroy(): void {
     this.subscription?.unsubscribe();
+    this.stressSubscription?.unsubscribe();
+    this.modeSubscription?.unsubscribe();
+    this.profileSubscription?.unsubscribe();
+    this.workerSubscription?.unsubscribe();
+    this.noteSubscription?.unsubscribe();
   }
 
   getIcon(): string {

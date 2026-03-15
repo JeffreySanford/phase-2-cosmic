@@ -137,6 +137,49 @@
   overflow: hidden;
 }
 
+:host ::ng-deep .topology-graph svg .node-core {
+  transition: fill 300ms ease, fill-opacity 300ms ease;
+}
+
+@keyframes node-core-pulse {
+  0% {
+    fill-opacity: 1;
+    stroke-width: 1;
+  }
+  25% {
+    fill-opacity: 0.82;
+    stroke-width: 2.4;
+  }
+  40% {
+    fill-opacity: 0.72;
+    stroke-width: 3.1;
+  }
+  65% {
+    fill-opacity: 0.86;
+    stroke-width: 2;
+  }
+  100% {
+    fill-opacity: 1;
+    stroke-width: 1;
+  }
+}
+
+:host ::ng-deep .node-core--pulse {
+  animation: node-core-pulse 280ms ease;
+}
+
+:host ::ng-deep .node-core--pulse--receive {
+  filter: drop-shadow(0 0 18px rgba(34, 197, 94, 0.8));
+}
+
+:host ::ng-deep .node-core--pulse--emit {
+  filter: drop-shadow(0 0 18px rgba(59, 130, 246, 0.8));
+}
+
+:host ::ng-deep .node-core--pulse--both {
+  filter: drop-shadow(0 0 18px rgba(139, 92, 246, 0.8));
+}
+
 .topology-graph-shell {
   position: relative;
   display: block;

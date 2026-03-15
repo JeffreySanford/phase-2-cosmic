@@ -13,19 +13,44 @@
     </mat-slide-toggle>
     <span class="toggle-label">Mock</span>
 
+    <span class="sep">|</span>
+    <span class="label">Stress</span>
+    <mat-slide-toggle
+      class="stress-toggle"
+      [checked]="stress$ | async"
+      (change)="onStressToggle($event)"
+      color="warn"
+    >
+    </mat-slide-toggle>
+
+    <button
+      mat-stroked-button
+      color="warn"
+      *ngIf="stress$ | async"
+      class="disable-stress"
+      (click)="disableStress()"
+    >
+      Disable stress
+    </button>
+
+    <ng-container *ngIf="stress$ | async">
+      <span class="sep">|</span>
+      <span class="label stress-active">Stress mode active</span>
+    </ng-container>
+
     <ng-container *ngIf="mode$ | async as mode">
       <span class="sep">|</span>
       <span class="label">Mode: {{ modeLabel(mode) }}</span>
     </ng-container>
 
-    <ng-container *ngIf="(mode$ | async) === 'mock'">
+    <ng-container *ngIf="(mode$ | async) === 'mock' || (stress$ | async)">
       <span class="sep">|</span>
       <span class="label">Load profile</span>
       <ng-container *ngIf="profile$ | async as profile">
         <button
           mat-stroked-button
           [matMenuTriggerFor]="profileMenu"
-          class="profile-trigger"
+          [ngClass]="{ 'profile-trigger': true, 'stress-active': stress$ | async }"
         >
           {{ profile }}%
         </button>

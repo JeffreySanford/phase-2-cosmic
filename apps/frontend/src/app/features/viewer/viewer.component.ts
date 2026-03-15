@@ -107,6 +107,15 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
     this.browser.dispatchWindowEvent(type, detail);
   }
 
+  private isPromiseLike(value: unknown): value is PromiseLike<void> {
+    return (
+      typeof value === "object" &&
+      value !== null &&
+      "then" in value &&
+      typeof value.then === "function"
+    );
+  }
+
   private getContainerElement(): HTMLElement | null {
     return this.containerRef?.nativeElement ?? null;
   }
@@ -250,11 +259,11 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
     return this.ngZone.runOutsideAngular(() =>
       this.runWhenIdle$(() => {
         if (typeof init === "function") {
-          return init();
-        }
-        // `init` can be a Promise (as seen in newer aladin-lite builds)
-        if (typeof (init as any).then === "function") {
-          return init as unknown as Promise<void>;
+          const result = init();
+          if (this.isPromiseLike(result)) {
+            return result;
+          }
+          return result;
         }
         return void 0;
       }).pipe(mapTo(void 0))

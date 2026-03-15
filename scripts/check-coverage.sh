@@ -15,17 +15,17 @@ STRICT=${COVERAGE_ENFORCE_STRICT:-0}
 check_jacoco() {
   if [[ -f "apps/java-governance/target/site/jacoco/jacoco.xml" ]]; then
     read -r pct miss < <(
-      python - <<'PY'
-import xml.etree.ElementTree as ET
+      node - <<'NODE'
+const fs = require("fs");
 
-root = ET.parse("apps/java-governance/target/site/jacoco/jacoco.xml").getroot()
-for counter in root.findall(".//counter"):
-    if counter.get("type") == "INSTRUCTION":
-        print(counter.get("covered", "0"), counter.get("missed", "0"))
-        break
-else:
-    print("0 0")
-PY
+const xml = fs.readFileSync("apps/java-governance/target/site/jacoco/jacoco.xml", "utf8");
+const match = xml.match(/<counter type="INSTRUCTION" missed="(\d+)" covered="(\d+)"/);
+if (match) {
+  process.stdout.write(`${match[2]} ${match[1]}\n`);
+} else {
+  process.stdout.write("0 0\n");
+}
+NODE
     )
     pct=${pct//$'\r'/}
     miss=${miss//$'\r'/}
@@ -54,7 +54,7 @@ check_node() {
   fi
 
   if [[ -n "$summary" ]]; then
-    cov=$(jq -r '.total.lines.pct' "$summary" | cut -d. -f1)
+    cov=$(node -e "const summary = require('./${summary}'); console.log(Math.trunc(summary.total.lines.pct));")
     cov=${cov//$'\r'/}
     echo "Node lines coverage: ${cov}% (from $summary)"
     if [[ $cov -lt $THRESHOLD ]]; then

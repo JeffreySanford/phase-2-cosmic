@@ -76,6 +76,14 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
     this.setMode(ev.checked ? "mock" : "live");
   }
 
+  onStressToggle(ev: MatSlideToggleChange) {
+    this.loadProfile.setStress(ev.checked);
+  }
+
+  get stress$() {
+    return this.loadProfile.stress$;
+  }
+
   get mode$() {
     return this.dataSource.mode$;
   }
@@ -123,6 +131,14 @@ export class FooterComponent implements AfterViewInit, OnDestroy {
 
   setProfile(pct: LoadProfilePct): void {
     this.loadProfile.setProfile(pct);
+  }
+
+  get stressActive$() {
+    return this.stress$;
+  }
+
+  disableStress(): void {
+    this.loadProfile.setStress(false);
   }
 
   modeLabel(mode: DataMode | null | undefined): string {

@@ -1,6 +1,7 @@
 import { Injectable, inject } from "@angular/core";
 import { of, Observable } from "rxjs";
 import { LoadProfileService } from "./load-profile.service";
+import { InfrastructureTelemetrySnapshot } from "../shared/types";
 
 function rand(min: number, max: number) {
   return Math.random() * (max - min) + min;
@@ -96,6 +97,31 @@ export class MockDataService {
     return of(last ? Number(last[1]) : 0);
   }
 
+  telemetryStream(): Observable<{
+    ts: number;
+    runtimeLoadProfile: {
+      profilePct: number;
+      workers: number;
+      mode: string;
+      note: string;
+    };
+    workerBytesTotal: number;
+    workerBytesPerSec: number;
+  }> {
+    const now = Date.now();
+    return of({
+      ts: now,
+      runtimeLoadProfile: {
+        profilePct: this.loadProfile.current ?? 10,
+        workers: Math.round((this.loadProfile.current ?? 10) / 25),
+        mode: "mock",
+        note: "mock",
+      },
+      workerBytesTotal: 0,
+      workerBytesPerSec: 0,
+    });
+  }
+
   // Diagnostics index mock
   diagnosticsIndex(): Observable<{ path: string; files: string[] }> {
     const now = new Date();
@@ -132,6 +158,100 @@ export class MockDataService {
         { source: "derived" },
         { source: "prometheus" },
       ],
+    });
+  }
+
+  // Mock infrastructure telemetry snapshot (used when DataSourceService mode is "mock")
+  infrastructureTelemetry(): Observable<InfrastructureTelemetrySnapshot> {
+    const s = this.scale();
+    const now = new Date().toISOString();
+    const base = (v: number) => Math.round(v * (0.5 + 0.5 * s));
+    const random = (min: number, max: number) =>
+      Math.round((Math.random() * (max - min) + min) * (0.5 + 0.5 * s));
+
+    const common = {
+      source: "mock",
+      status: "healthy",
+      ingressBytesPerSec: base(1024),
+      egressBytesPerSec: base(4096),
+      opsPerSec: base(8),
+      connectedClients: base(2),
+      memoryUsedBytes: base(1_000_000),
+      avgLatencyMs: random(5, 35),
+      errorRatePerSec: +(Math.random() * 0.05).toFixed(3),
+    };
+
+    return of({
+      measuredAt: now,
+      source: "mock",
+      services: {
+        redis: {
+          ...common,
+          hitRatePerSec: base(12),
+          missRatePerSec: base(3),
+          bypassRatePerSec: base(0.1),
+        },
+        rabbitmq: {
+          ...common,
+          queueDepth: base(3),
+          readyMessages: base(1),
+          unackedMessages: base(1),
+          publishRatePerSec: base(1.2),
+          deliverRatePerSec: base(1.0),
+        },
+        minio: {
+          ...common,
+          requestsPerSec: base(1.1),
+        },
+        nginx: {
+          ...common,
+          requestsPerSec: base(1.5),
+          avgLatencyMs: random(8, 25),
+        },
+        frontendSsr: {
+          ...common,
+          governanceProxyRatePerSec: base(2.2),
+          prometheusProxyRatePerSec: base(3.3),
+          frontendRequestRatePerSec: base(4.4),
+          frontendApiRequestRatePerSec: base(7.0),
+        },
+        kafka: {
+          ...common,
+          brokers: 1,
+          topics: 3,
+          consumerLag: base(0),
+        },
+        javaIngest: {
+          ...common,
+          receiveRatePerSec: base(4.0),
+          processedRatePerSec: base(3.9),
+          payloadBytesPerSec: base(1_200_000),
+        },
+        pulsar: {
+          ...common,
+          brokers: 1,
+          topics: 2,
+          partitions: 4,
+          publishRatePerSec: base(1.0),
+          deliverRatePerSec: base(0.9),
+        },
+        grafana: {
+          ...common,
+          requestsPerSec: base(0.7),
+        },
+        loki: {
+          ...common,
+          requestsPerSec: base(0.5),
+        },
+        alertmanager: {
+          ...common,
+          requestsPerSec: base(0.2),
+        },
+        governanceRuntime: {
+          ...common,
+          requestRatePerSec: base(1.8),
+        },
+      },
     });
   }
 

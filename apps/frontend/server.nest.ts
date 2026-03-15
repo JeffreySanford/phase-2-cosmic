@@ -14,10 +14,10 @@ import {
   All,
 } from "@nestjs/common";
 import { ExecutionPlansController } from "./src/app/controllers/execution-plans.controller";
+import { RuntimeLoadProfileService } from "./src/app/services/runtime-load-profile.service";
 
 import express from "express";
 import { createClient } from "redis";
-import { createServer as createViteServer } from "vite";
 import { CommonEngine } from "@angular/ssr/node";
 import { join } from "path";
 import {
@@ -28,7 +28,6 @@ import {
   readdirSync,
 } from "fs";
 import { Request, Response } from "express";
-import { spawn, type ChildProcess } from "child_process";
 
 type LoadProfilePct = 10 | 25 | 50 | 100;
 type TopologyNode = {
@@ -398,13 +397,6 @@ const PROFILE_MAP: Record<LoadProfilePct, RuntimeProfileSpec> = {
   },
 };
 
-type WorkerState = {
-  id: number;
-  cmd: string;
-  args: string[];
-  proc: ChildProcess;
-};
-
 interface SsrOptions {
   browserDistFolder: string;
   indexHtmlPath: string;
@@ -458,6 +450,191 @@ const frontendApiResponseBytesTotal: Record<string, number> = {};
 const frontendApiDurationBucketCounts: Record<string, number[]> = {};
 const frontendApiDurationCount: Record<string, number> = {};
 const frontendApiDurationSum: Record<string, number> = {};
+
+// Runtime load profile metrics (exposed via /metrics so Prometheus can track stress load)
+let runtimeLoadProfileMetrics: {
+  profilePct: LoadProfilePct;
+  workers: number;
+  mode: string;
+} = {
+  profilePct: 10,
+  workers: 0,
+  mode: "baseline",
+};
+
+type TelemetrySsePayload = {
+  ts: number;
+  runtimeLoadProfile: {
+    profilePct: LoadProfilePct;
+    workers: number;
+    mode: string;
+    note: string;
+  };
+  workerBytesTotal: number;
+  workerBytesPerSec: number;
+};
+
+const telemetrySseClients = new Set<Response>();
+let lastWorkerBytes = 0;
+let lastWorkerBytesAt = Date.now();
+
+function sendSse(res: Response, event: string, data: unknown) {
+  try {
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  } catch {
+    // ignore write failures
+  }
+}
+
+const telemetryDebugEnabled = process.env["DEBUG_TELEMETRY"] === "true";
+let lastTelemetryPayload: TelemetrySsePayload | null = null;
+let telemetryLogWatcher: any = null;
+let telemetryLogWatcherDebounce: NodeJS.Timeout | null = null;
+
+function broadcastTelemetry(payload: TelemetrySsePayload) {
+  lastTelemetryPayload = payload;
+  if (telemetryDebugEnabled) {
+    console.debug("telemetry: broadcasting", {
+      ts: payload.ts,
+      profilePct: payload.runtimeLoadProfile.profilePct,
+      workers: payload.runtimeLoadProfile.workers,
+      bytesPerSec: payload.workerBytesPerSec,
+    });
+  }
+
+  for (const res of Array.from(telemetrySseClients)) {
+    if (res.writableEnded || res.writableFinished) {
+      telemetrySseClients.delete(res);
+      continue;
+    }
+    sendSse(res, "telemetry", payload);
+  }
+}
+
+function getTelemetryPayload(): TelemetrySsePayload {
+  const now = Date.now();
+  const workerBytesTotal = getRuntimeLoadWorkerBytes();
+  const deltaBytes = workerBytesTotal - lastWorkerBytes;
+  const deltaTimeSec = Math.max(0.001, (now - lastWorkerBytesAt) / 1000);
+  const bytesPerSec = deltaBytes > 0 ? deltaBytes / deltaTimeSec : 0;
+  lastWorkerBytes = workerBytesTotal;
+  lastWorkerBytesAt = now;
+
+  return {
+    ts: now,
+    runtimeLoadProfile: {
+      ...runtimeLoadProfileMetrics,
+      note: PROFILE_MAP[runtimeLoadProfileMetrics.profilePct]?.note ?? "",
+    },
+    workerBytesTotal,
+    workerBytesPerSec: Math.round(bytesPerSec),
+  };
+}
+
+function getRuntimeLoadWorkerFileStats():
+  | Array<{ filename: string; size: number; mtimeMs: number }>
+  | undefined {
+  try {
+    const fs = require("fs");
+    const path = require("path");
+    const logsDir = path.join(process.cwd(), "tools", "data-generator", "logs");
+    const names = fs.readdirSync(logsDir);
+    const workerFiles = names.filter((n: string) =>
+      /^runtime-profile\.worker-\d+\.bin$/.test(n)
+    );
+    return workerFiles.map((filename: string) => {
+      try {
+        const st = fs.statSync(path.join(logsDir, filename));
+        return {
+          filename,
+          size: st.size,
+          mtimeMs: st.mtimeMs,
+        };
+      } catch {
+        return { filename, size: 0, mtimeMs: 0 };
+      }
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+function getTelemetryDebugInfo() {
+  return {
+    lastPayload: lastTelemetryPayload,
+    clientCount: telemetrySseClients.size,
+    workerFiles: getRuntimeLoadWorkerFileStats(),
+  };
+}
+
+function startTelemetryLogWatcher() {
+  try {
+    const fs = require("fs");
+    const path = require("path");
+    const logsDir = path.join(process.cwd(), "tools", "data-generator", "logs");
+    if (!fs.existsSync(logsDir)) {
+      return;
+    }
+    telemetryLogWatcher = fs.watch(logsDir, { persistent: false }, () => {
+      if (telemetryLogWatcherDebounce) return;
+      telemetryLogWatcherDebounce = setTimeout(() => {
+        telemetryLogWatcherDebounce = null;
+        broadcastTelemetry(getTelemetryPayload());
+      }, 50);
+    });
+  } catch (e) {
+    if (telemetryDebugEnabled) {
+      console.warn("Failed to watch telemetry log dir:", e);
+    }
+  }
+}
+
+function stopTelemetryLogWatcher() {
+  if (telemetryLogWatcher) {
+    telemetryLogWatcher.close();
+    telemetryLogWatcher = null;
+  }
+  if (telemetryLogWatcherDebounce) {
+    clearTimeout(telemetryLogWatcherDebounce);
+    telemetryLogWatcherDebounce = null;
+  }
+}
+
+setInterval(() => {
+  broadcastTelemetry(getTelemetryPayload());
+}, 1000);
+
+function updateRuntimeLoadProfileMetrics(status: {
+  profilePct: LoadProfilePct;
+  workers: number;
+  mode: string;
+}) {
+  runtimeLoadProfileMetrics = { ...status };
+}
+
+function getRuntimeLoadWorkerBytes(): number {
+  try {
+    const fs = require("fs");
+    const path = require("path");
+    const logsDir = path.join(process.cwd(), "tools", "data-generator", "logs");
+    const names = fs.readdirSync(logsDir);
+    const workerFiles = names.filter((n: string) =>
+      /^runtime-profile\.worker-\d+\.bin$/.test(n)
+    );
+    return workerFiles.reduce((sum: number, filename: string) => {
+      try {
+        const st = fs.statSync(path.join(logsDir, filename));
+        return sum + st.size;
+      } catch {
+        return sum;
+      }
+    }, 0);
+  } catch {
+    return 0;
+  }
+}
+
 const redisCacheDurationBucketCounts = new Array(
   REDIS_CACHE_DURATION_BUCKETS.length + 1
 ).fill(0);
@@ -881,6 +1058,29 @@ function renderPrometheusMetrics(): string {
     );
   }
 
+  // Runtime load profile metrics (stress mode workers + bytes written)
+  lines.push(
+    "# HELP frontend_ssr_runtime_load_profile_pct Current runtime load profile percentage.",
+    "# TYPE frontend_ssr_runtime_load_profile_pct gauge",
+    `frontend_ssr_runtime_load_profile_pct ${runtimeLoadProfileMetrics.profilePct}`
+  );
+  lines.push(
+    "# HELP frontend_ssr_runtime_load_profile_workers Number of active runtime load worker processes.",
+    "# TYPE frontend_ssr_runtime_load_profile_workers gauge",
+    `frontend_ssr_runtime_load_profile_workers ${runtimeLoadProfileMetrics.workers}`
+  );
+  lines.push(
+    "# HELP frontend_ssr_runtime_load_profile_mode Runtime load profile mode (baseline/runtime-controlled).",
+    "# TYPE frontend_ssr_runtime_load_profile_mode gauge",
+    `frontend_ssr_runtime_load_profile_mode{mode="${runtimeLoadProfileMetrics.mode}"} 1`
+  );
+  const runtimeWorkerBytes = getRuntimeLoadWorkerBytes();
+  lines.push(
+    "# HELP frontend_ssr_runtime_load_worker_bytes_total Total bytes written by runtime load worker processes (aggregated).",
+    "# TYPE frontend_ssr_runtime_load_worker_bytes_total gauge",
+    `frontend_ssr_runtime_load_worker_bytes_total ${runtimeWorkerBytes}`
+  );
+
   lines.push(
     "# HELP frontend_ssr_frontend_requests_total Total frontend-originated page requests handled by Nest SSR.",
     "# TYPE frontend_ssr_frontend_requests_total counter"
@@ -1265,171 +1465,41 @@ class SsrService {
   }
 }
 
-@Injectable()
-class RuntimeLoadProfileService {
-  private profile: LoadProfilePct = 10;
-  private workers: WorkerState[] = [];
-  private smokeTimer: NodeJS.Timeout | null = null;
-  private readonly defaultSmokeSeconds = 180;
-
-  status() {
-    return {
-      profilePct: this.profile,
-      workers: this.workers.length,
-      mode: this.workers.length > 0 ? "runtime-controlled" : "baseline",
-      note: PROFILE_MAP[this.profile].note,
-    };
-  }
-
-  async setProfile(
-    pct: LoadProfilePct,
-    smokeSeconds?: number
-  ): Promise<Record<string, unknown>> {
-    this.clearSmokeTimer();
-    await this.stopWorkers();
-    this.profile = pct;
-    const spec = PROFILE_MAP[pct];
-
-    if (spec.workers <= 0) {
-      return this.status();
-    }
-
-    const started: WorkerState[] = [];
-    try {
-      for (let i = 0; i < spec.workers; i++) {
-        const w = this.spawnWorker(i + 1, spec);
-        started.push(w);
-      }
-      this.workers = started;
-    } catch (e) {
-      for (const w of started) {
-        try {
-          w.proc.kill("SIGTERM");
-        } catch {
-          void 0;
-        }
-      }
-      this.workers = [];
-      this.profile = 10;
-      throw e;
-    }
-
-    if (pct === 100) {
-      const seconds = Math.max(
-        30,
-        Number(smokeSeconds || this.defaultSmokeSeconds)
-      );
-      this.smokeTimer = setTimeout(() => {
-        void this.setProfile(10).catch((err) =>
-          console.error("Auto-revert to 10% failed:", err)
-        );
-      }, seconds * 1000);
-    }
-
-    return this.status();
-  }
-
-  async shutdown(): Promise<void> {
-    this.clearSmokeTimer();
-    await this.stopWorkers();
-  }
-
-  private clearSmokeTimer() {
-    if (this.smokeTimer) {
-      clearTimeout(this.smokeTimer);
-      this.smokeTimer = null;
-    }
-  }
-
-  private resolveGeneratorExecutable(): string {
-    const isWin = process.platform === "win32";
-    const candidate = isWin
-      ? join(process.cwd(), "tools", "data-generator", "data-generator.exe")
-      : join(process.cwd(), "tools", "data-generator", "data-generator-linux");
-    if (!existsSync(candidate)) {
-      throw new Error(`data-generator executable not found at ${candidate}`);
-    }
-    return candidate;
-  }
-
-  private spawnWorker(id: number, spec: RuntimeProfileSpec): WorkerState {
-    const cmd = this.resolveGeneratorExecutable();
-    const logDir = join(process.cwd(), "tools", "data-generator", "logs");
-    try {
-      mkdirSync(logDir, { recursive: true });
-    } catch {
-      void 0;
-    }
-    const sink = `file:${join(logDir, `runtime-profile.worker-${id}.bin`)}`;
-    const args = [
-      `--rate=${spec.ratePerWorker}`,
-      `--payload-size=${spec.payloadSize}`,
-      "--no-stdout",
-      `--sink=${sink}`,
-      "--audit-every=2000",
-    ];
-
-    const proc = spawn(cmd, args, {
-      cwd: process.cwd(),
-      stdio: ["ignore", "ignore", "pipe"],
-      windowsHide: true,
-    });
-    proc.stderr?.on("data", (chunk) => {
-      const msg = String(chunk || "").trim();
-      if (msg) console.log(`[runtime-load worker-${id}] ${msg}`);
-    });
-    proc.on("exit", (code, signal) => {
-      console.log(
-        `[runtime-load worker-${id}] exited code=${code} signal=${signal}`
-      );
-      this.workers = this.workers.filter((w) => w.id !== id);
-    });
-    proc.on("error", (err) => {
-      console.error(`[runtime-load worker-${id}] error`, err);
-    });
-    return { id, cmd, args, proc };
-  }
-
-  private async stopWorkers(): Promise<void> {
-    const current = [...this.workers];
-    this.workers = [];
-    await Promise.all(
-      current.map(
-        (w) =>
-          new Promise<void>((resolve) => {
-            if (w.proc.killed || w.proc.exitCode !== null) {
-              resolve();
-              return;
-            }
-            const done = () => resolve();
-            w.proc.once("exit", done);
-            try {
-              w.proc.kill("SIGTERM");
-            } catch {
-              resolve();
-            }
-            setTimeout(() => {
-              if (w.proc.exitCode === null) {
-                try {
-                  w.proc.kill("SIGKILL");
-                } catch {
-                  void 0;
-                }
-              }
-              resolve();
-            }, 2000);
-          })
-      )
-    );
-  }
-}
-
 @Controller()
 export class AppController {
   constructor(
     private ssr: SsrService,
-    private runtimeLoad: RuntimeLoadProfileService
-  ) {}
+    private runtimeLoad?: RuntimeLoadProfileService
+  ) {
+    // In some development setups the runtime load service may not be provided via DI.
+    // Fall back to an explicit instance so stress profile endpoints still work.
+    if (!this.runtimeLoad) {
+      this.runtimeLoad = new RuntimeLoadProfileService();
+    }
+  }
+
+  @Get("api/telemetry/stream")
+  streamTelemetry(@Req() req: Request, @Res() res: Response) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    // Initial ping to establish the connection
+    sendSse(res, "connected", { ts: Date.now() });
+    telemetrySseClients.add(res);
+
+    // Send an initial snapshot immediately
+    sendSse(res, "telemetry", getTelemetryPayload());
+
+    req.on("close", () => {
+      telemetrySseClients.delete(res);
+    });
+  }
+
+  @Get("api/telemetry/debug")
+  telemetryDebug() {
+    return getTelemetryDebugInfo();
+  }
 
   private buildBaseCandidates(baseUrl: string): string[] {
     const out = [baseUrl];
@@ -2991,6 +3061,26 @@ export class AppController {
     return this.runtimeLoad.status();
   }
 
+  @Get("/api/load-profile/debug")
+  loadProfileDebug() {
+    const status = this.runtimeLoad
+      ? this.runtimeLoad.status()
+      : {
+          profilePct: 10,
+          workers: 0,
+          mode: "baseline",
+          note: PROFILE_MAP[10].note,
+        };
+
+    const workerDetails = this.runtimeLoad?.getWorkerSnapshots?.() ?? [];
+
+    return {
+      status,
+      workers: workerDetails,
+      telemetry: getTelemetryDebugInfo(),
+    };
+  }
+
   @Post("/api/load-profile")
   async setLoadProfile(
     @Req() req: Request,
@@ -3020,6 +3110,17 @@ export class AppController {
         pctRaw as LoadProfilePct,
         smokeSeconds
       );
+
+      // Keep SSE telemetry metrics in sync with the runtime load profile.
+      updateRuntimeLoadProfileMetrics(
+        result as {
+          profilePct: LoadProfilePct;
+          workers: number;
+          mode: string;
+          note: string;
+        }
+      );
+
       const topologyProfile = result as {
         profilePct?: number;
         workers?: number;
@@ -3710,7 +3811,8 @@ async function bootstrap() {
     process.env["DISABLE_NEST_VITE_DEV_SERVER"] !== "true"
   ) {
     try {
-      const vite = await createViteServer({
+      const { createServer } = await import("vite");
+      const vite = await createServer({
         root: process.cwd(),
         logLevel: "error",
         server: { middlewareMode: true as any },
@@ -3740,8 +3842,10 @@ async function bootstrap() {
   await initRedisClient();
   await app.listen(nestPort);
   console.log("Nest SSR server listening on", nestPort);
+  startTelemetryLogWatcher();
 
   const shutdown = async () => {
+    stopTelemetryLogWatcher();
     await runtimeLoad.shutdown();
   };
   process.on("SIGINT", () => {

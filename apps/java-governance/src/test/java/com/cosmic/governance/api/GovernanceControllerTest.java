@@ -85,7 +85,7 @@ class GovernanceControllerTest extends AbstractRedisTest {
     }
 
     @Test
-    void transitionWithVersionMismatchReturnsConflict() throws Exception {
+    void transitionWithVersionMismatchReturnsCurrentJobState() throws Exception {
         String body = """
                 {"workflow":"x","datasetId":"y","parameters":{"deferred":true},"requestedBy":"u"}
                 """;
@@ -104,8 +104,10 @@ class GovernanceControllerTest extends AbstractRedisTest {
         String trans = String.format("{\"state\":\"RUNNING\",\"expectedVersion\":%d}", ver+1);
         mockMvc.perform(post("/api/v1/jobs/" + jobId + "/transition")
                         .contentType(MediaType.APPLICATION_JSON).content(trans))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("version_mismatch"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.jobId").value(jobId))
+                .andExpect(jsonPath("$.status").value("QUEUED"))
+                .andExpect(jsonPath("$.version").value(ver));
     }
 
     @Test

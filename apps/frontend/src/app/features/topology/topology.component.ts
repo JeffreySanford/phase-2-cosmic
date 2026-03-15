@@ -430,7 +430,32 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     const summaryLinks =
       this.fullTopologyLinks.length > 0 ? this.fullTopologyLinks : links;
 
-    // attach precomputed stats to links and compute aggregates
+    const nodeSummaryById = this.refreshTopologySummaryState(
+      summaryNodes,
+      summaryLinks
+    );
+
+    // store last nodes/links for settings UI and optional metrics overlay
+    this.lastNodes = nodes;
+    this.lastLinks = links;
+    this.shouldAutoFitViewport = true;
+
+    this.dom.renderGraph(this.buildRenderConfig(nodes, links, nodeSummaryById));
+
+    if (!skipFetch) {
+      if (this.showMode === "live") {
+        this.startLivePoll();
+      } else {
+        this.stopLivePoll();
+        this.fetchMetrics();
+      }
+    }
+  }
+
+  private refreshTopologySummaryState(
+    summaryNodes: TopoNode[],
+    summaryLinks: TopoLink[]
+  ): Record<string, NodeSummary> {
     this.aggCurrentMBps$.next(0);
     this.aggMaxMBps = 0;
     this.totalLinkCount = summaryLinks.length;
@@ -467,21 +492,22 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.nodeSummaries = this.summarizeNodes(summaryNodes, summaryLinks);
     this.recomputeConfidence(summaryLinks);
-    const nodeSummaryById = this.nodeSummaryMap();
+    return this.nodeSummaryMap();
+  }
 
-    // store last nodes/links for settings UI and optional metrics overlay
-    this.lastNodes = nodes;
-    this.lastLinks = links;
-    this.shouldAutoFitViewport = true;
-
-    this.dom.renderGraph({
+  private buildRenderConfig(
+    nodes: TopoNode[],
+    links: TopoLink[],
+    nodeSummaryById: Record<string, NodeSummary>
+  ) {
+    return {
       nodes,
       links,
-      getLinkKey: (l) => this.getLinkKey(l),
-      getLinkSource: (l) =>
+      getLinkKey: (l: TopoLink) => this.getLinkKey(l),
+      getLinkSource: (l: TopoLink) =>
         this.linkSourceData(this.statsRef(l)._stats?.source),
-      getLinkStats: (l) => this.statsRef(l)._stats,
-      getLinkStroke: (l, stats) => ({
+      getLinkStats: (l: TopoLink) => this.statsRef(l)._stats,
+      getLinkStroke: (l: TopoLink, stats?: LinkStats) => ({
         stroke: "rgba(148, 163, 184, 0.34)",
         dasharray:
           stats?.source === "prometheus"
@@ -493,7 +519,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
             : "8 5",
         width: l.value ? Math.max(1, Math.log(l.value + 1)) : 1,
       }),
-      getLinkDotStyle: (l, stats) => {
+      getLinkDotStyle: (l: TopoLink, stats?: LinkStats) => {
         const cur = Number(stats?.throughputMBpsCurrent ?? 0);
         const max = Number(stats?.throughputMBpsMax ?? 1);
         const util = max > 0 ? (cur / max) * 100 : 0;
@@ -527,29 +553,30 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
             : "#6b7280";
         return { fill, stroke, radius: 5 };
       },
-      getNodeRingStyle: (node, summary) => ({
+      getNodeRingStyle: (node: TopoNode, summary?: NodeSummary) => ({
         radius: this.nodeRingRadius(summary),
         fill: this.nodeRingColor(node, summary),
         stroke: this.nodeRingStroke(node, summary),
       }),
-      getNodeLabel: (node) => node.label ?? node.id,
-      getNodeSummary: (node) => nodeSummaryById[node.id],
-      getNodeActivityLabel: (node, summary) => this.nodeActivityLabel(summary),
-      onLinkClick: (link) => this.openLinkInfo(link),
-      onNodeClick: (node) => this.openNodeInfo(node),
-      onNodeDragStart: (event, node) => this.dragstarted(event, node),
-      onNodeDrag: (event, node) => this.dragged(event, node),
-      onNodeDragEnd: (event, node) => this.dragended(event, node),
-    });
-
-    if (!skipFetch) {
-      if (this.showMode === "live") {
-        this.startLivePoll();
-      } else {
-        this.stopLivePoll();
-        this.fetchMetrics();
-      }
-    }
+      getNodeFill: (node: TopoNode, summary?: NodeSummary) =>
+        this.nodeCoreFill(node, summary),
+      getNodeFillOpacity: (_node: TopoNode, summary?: NodeSummary) =>
+        this.nodeCoreOpacity(summary),
+      getNodeCoreClass: (node: TopoNode, summary?: NodeSummary) =>
+        this.nodeCorePulseClass(node, summary),
+      getNodeLabel: (node: TopoNode) => node.label ?? node.id,
+      getNodeSummary: (node: TopoNode) => nodeSummaryById[node.id],
+      getNodeActivityLabel: (_node: TopoNode, summary?: NodeSummary) =>
+        this.nodeActivityLabel(summary),
+      onLinkClick: (link: TopoLink) => this.openLinkInfo(link),
+      onNodeClick: (node: TopoNode) => this.openNodeInfo(node),
+      onNodeDragStart: (event: D3DragEvent, node: TopoNode) =>
+        this.dragstarted(event, node),
+      onNodeDrag: (event: D3DragEvent, node: TopoNode) =>
+        this.dragged(event, node),
+      onNodeDragEnd: (event: D3DragEvent, node: TopoNode) =>
+        this.dragended(event, node),
+    };
   }
 
   private visibleTopologyData(): { nodes: TopoNode[]; links: TopoLink[] } {
@@ -1218,12 +1245,50 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private nodeCoreFill(node: TopoNode, summary?: NodeSummary): string {
+    const ingress = Number(summary?.ingressMBps ?? 0);
+    const egress = Number(summary?.egressMBps ?? 0);
+    if (ingress > 0 && egress > 0) {
+      return "rgba(99, 102, 241, 1)"; // both receive + emit (purple)
+    }
+    if (ingress > 0) {
+      return "rgba(34, 197, 94, 1)"; // receiving (green)
+    }
+    if (egress > 0) {
+      return "rgba(59, 130, 246, 1)"; // emitting (blue)
+    }
+    return "rgba(148, 163, 184, 1)"; // idle/unknown
+  }
+
+  private nodeCoreOpacity(summary?: NodeSummary): number {
+    const total =
+      Number(summary?.ingressMBps ?? 0) + Number(summary?.egressMBps ?? 0);
+    if (total <= 0) return 0.22;
+    const factor = Math.min(1, total / 1200);
+    return 0.22 + factor * 0.56;
+  }
+
   private nodeRingRadius(summary?: NodeSummary): number {
     const total = Number(summary?.totalMBps ?? 0);
     if (total >= 4000) return 22;
     if (total >= 1500) return 20;
     if (total >= 500) return 18.5;
     return 17;
+  }
+
+  private nodeCorePulseClass(
+    node: TopoNode,
+    summary?: NodeSummary
+  ): string | undefined {
+    const ingress = Number(summary?.ingressMBps ?? 0);
+    const egress = Number(summary?.egressMBps ?? 0);
+
+    if (ingress <= 0 && egress <= 0) return undefined;
+
+    const base = "node-core--pulse";
+    const mode =
+      ingress > 0 && egress > 0 ? "both" : ingress > 0 ? "receive" : "emit";
+    return `${base} ${base}--${mode}`;
   }
 
   private nodeActivityLabel(summary?: NodeSummary): string {
@@ -1443,7 +1508,26 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
               }
             }
           }
-          this.applyCurrentTopologyView(true);
+          const current = this.currentTopologyData();
+          const summaryNodes =
+            this.fullTopologyNodes.length > 0
+              ? this.fullTopologyNodes
+              : current.nodes;
+          const summaryLinks =
+            this.fullTopologyLinks.length > 0
+              ? this.fullTopologyLinks
+              : current.links;
+          const nodeSummaryById = this.refreshTopologySummaryState(
+            summaryNodes,
+            summaryLinks
+          );
+          this.dom.refreshGraphStyles(
+            this.buildRenderConfig(
+              current.nodes,
+              current.links,
+              nodeSummaryById
+            )
+          );
         });
       },
       () => {

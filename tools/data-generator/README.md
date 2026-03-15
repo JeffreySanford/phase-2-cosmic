@@ -42,7 +42,8 @@ The container now runs a startup diagnostics script that collects passive system
 
 ## Compose note
 
-The development `docker/dev-compose.yml` builds the local `tools/data-generator` Dockerfile when starting the compose stack. This ensures the container image contains `fio` and `iperf3` for optional active diagnostics and provides a stable runtime without relying on a host `go` toolchain. Logs are persisted to `tools/data-generator/logs` on the host when using the default compose setup.
+The development `docker/dev-compose.yml` builds the local `tools/data-generator` Dockerfile when starting the compose stack. This ensures the container image contains `fio` and `iperf3` for optional active diagnostics and provides a stable runtime without relying on a host `go` toolchain. Logs are
+persisted to `tools/data-generator/logs` on the host when using the default compose setup.
 
 Related documentation:
 
