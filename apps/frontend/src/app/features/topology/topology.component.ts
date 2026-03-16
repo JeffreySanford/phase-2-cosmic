@@ -987,6 +987,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private summarizeNodes(nodes: TopoNode[], links: TopoLink[]): NodeSummary[] {
+    // Some nodes exist purely to describe topology structure or tooling components.
+    // They should remain in the graph, but not be promoted into the "Most Active Services" list.
+    const EXCLUDE_FROM_ACTIVE_SERVICES = new Set(["grafana", "zookeeper"]);
+
     const summaries = new Map<string, NodeSummary>();
     const ensureSummary = (node: TopoNode): NodeSummary => {
       const existing = summaries.get(node.id);
@@ -1051,9 +1055,10 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       }))
       .filter(
         (summary) =>
-          summary.totalMBps > 0 ||
-          summary.businessRatePerSec > 0 ||
-          summary.businessBytesPerSec > 0
+          (summary.totalMBps > 0 ||
+            summary.businessRatePerSec > 0 ||
+            summary.businessBytesPerSec > 0) &&
+          !EXCLUDE_FROM_ACTIVE_SERVICES.has(summary.id)
       )
       .sort((a, b) => this.nodeSortScore(b) - this.nodeSortScore(a))
       .slice(0, 8);
