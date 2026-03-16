@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { MatSlideToggleModule } from "@angular/material/slide-toggle";
+import {
+  MatSlideToggleChange,
+  MatSlideToggleModule,
+} from "@angular/material/slide-toggle";
 import { MatMenuModule } from "@angular/material/menu";
 import { Router } from "@angular/router";
 import { FooterComponent } from "./footer.component";
@@ -11,14 +14,18 @@ describe("FooterComponent", () => {
   let component: FooterComponent;
   let fixture: ComponentFixture<FooterComponent>;
   let setProfileSpy: jest.Mock;
+  let setStressSpy: jest.Mock;
 
   beforeEach(async () => {
     setProfileSpy = jest.fn();
+    setStressSpy = jest.fn();
     const mockLoadProfile = {
       pollingMs$: of(1000),
       profile$: of(50),
       mode$: of("runtime-controlled"),
+      stress$: of(false),
       setProfile: setProfileSpy,
+      setStress: setStressSpy,
     } as unknown as LoadProfileService;
 
     const mockDataSource = {
@@ -61,5 +68,10 @@ describe("FooterComponent", () => {
     };
     component.setMode("mock");
     expect(ds.setMode).toHaveBeenCalledWith("mock");
+  });
+
+  it("should set stress mode when toggled", () => {
+    component.onStressToggle({ checked: true } as MatSlideToggleChange);
+    expect(setStressSpy).toHaveBeenCalledWith(true);
   });
 });

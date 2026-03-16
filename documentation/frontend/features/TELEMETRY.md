@@ -12,10 +12,13 @@ This document explains how Prometheus metrics are proxied to the frontend and ho
 
 Status: approved as a good direction for development realism, but it needs control-plane and metrics additions first.
 
-Current implementation status (March 2, 2026):
+Current implementation status (March 14, 2026):
 
-- A global footer load-profile selector (`10%`, `25%`, `50%`, `100%`) now exists in the frontend and propagates to telemetry widgets as a shared polling-intensity profile.
-- This is intentionally a scaffold for future development and does **not** yet enforce host CPU/GPU utilization targets by itself.
+- A global footer load-profile selector (`10%`, `25%`, `50%`, `100%`) now exists in the frontend and is backed by a runtime load profile API. The backend spawns and manages load generator workers and emits live telemetry via SSE.
+- The telemetry stream is delivered via `/api/telemetry/stream` and is triggered on worker log file changes (with a 1s heartbeat fallback), so the dashboard updates in near‑real time.
+- The backend exposes debug endpoints that let you inspect worker state and confirm that telemetry payloads are changing:
+  - `GET /api/load-profile/debug`
+  - `GET /api/telemetry/debug`
 
 ### Global stress-testing plan (development)
 
@@ -53,12 +56,12 @@ Phase 5 (next):
 
 ### Current constraints in this repository
 
-- `TelemetryComponent` is currently observability-only (Prometheus query UI), not a runtime load controller.
+- `TelemetryComponent` now consumes a live SSE stream (`/api/telemetry/stream`) for stress-related metrics, but other Prometheus-based metrics remain polled.
 - The metric dropdown currently contains only:
   - `generator_bytes_produced_total`
   - `generator_records_produced_total`
-- The data generator uses startup flags (`--rate`, `--payload-size`) and does not expose a runtime API to change load.
-- `system-specs` diagnostics are a startup snapshot (`system-specs.txt`), not a live stream.
+- Runtime load profile is now supported via `/api/load-profile` and debug endpoints, but the underlying generator still writes to disk and does not yet expose a direct runtime gRPC/HTTP control API (it is controlled by the Nest SSR orchestrator).
+- `system-specs` diagnostics are still a startup snapshot (`system-specs.txt`), not a live stream.
 - No live GPU utilization metric path exists today in the local stack.
 
 ### Recommended design

@@ -102,6 +102,49 @@ Returns detailed status for a single service by name (case-insensitive):
 }
 ```
 
+## Runtime Load Profile / Stress Telemetry (new)
+
+The frontend Stress Profile controls the backend runtime load profile, which spins up background worker processes/containers that write load metrics to disk.
+
+### `GET /api/load-profile`
+
+Returns the current profile status:
+
+```json
+{
+  "profilePct": 25,
+  "workers": 2,
+  "mode": "runtime-controlled",
+  "note": "low stress"
+}
+```
+
+### `POST /api/load-profile`
+
+Change the active profile (allowed values: `10`, `25`, `50`, `100`).
+
+### `GET /api/load-profile/debug`
+
+Debug view exposing:
+
+- status (same as `/api/load-profile`)
+- a snapshot of active worker processes/containers
+- the latest telemetry payload sent via SSE
+
+### `GET /api/telemetry/debug`
+
+Debug view exposing:
+
+- the last SSE telemetry payload
+- the number of active SSE clients connected
+- a list of worker log files (`tools/data-generator/logs/runtime-profile.worker-*.bin`) with size and modified time
+
+### Live telemetry stream
+
+The frontend consumes a Server-Sent Events (SSE) stream at `/api/telemetry/stream`. The server broadcasts a new payload when worker log files change, so the UI updates in near‑real time.
+
+This replaces earlier polling-based telemetry for stress metrics and makes the dashboard reflect real generated load more reliably.
+
 ### Messaging Status Endpoints
 
 The diagnostics view also displays detailed messaging broker status through dedicated API endpoints:

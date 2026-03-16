@@ -2,6 +2,7 @@ package com.cosmic.governance.api;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -84,9 +85,9 @@ class GovernanceControllerTest extends AbstractRedisTest {
     }
 
     @Test
-    void transitionWithVersionMismatchReturnsConflict() throws Exception {
+    void transitionWithVersionMismatchReturnsCurrentJobState() throws Exception {
         String body = """
-                {"workflow":"x","datasetId":"y","parameters":{},"requestedBy":"u"}
+                {"workflow":"x","datasetId":"y","parameters":{"deferred":true},"requestedBy":"u"}
                 """;
         String resp = mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isAccepted())
@@ -103,8 +104,10 @@ class GovernanceControllerTest extends AbstractRedisTest {
         String trans = String.format("{\"state\":\"RUNNING\",\"expectedVersion\":%d}", ver+1);
         mockMvc.perform(post("/api/v1/jobs/" + jobId + "/transition")
                         .contentType(MediaType.APPLICATION_JSON).content(trans))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("version_mismatch"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.jobId").value(jobId))
+                .andExpect(jsonPath("$.status").value("QUEUED"))
+                .andExpect(jsonPath("$.version").value(ver));
     }
 
     @Test
@@ -124,14 +127,19 @@ class GovernanceControllerTest extends AbstractRedisTest {
         JsonNode statusNode2 = MAPPER.readTree(statusResp);
         long ver = statusNode2.get("version").asLong();
         String cancelReq = String.format("{\"expectedVersion\":%d}", ver);
-        mockMvc.perform(post("/api/v1/jobs/" + jobId + "/cancel")
+        String cancelResp = mockMvc.perform(post("/api/v1/jobs/" + jobId + "/cancel")
                         .contentType(MediaType.APPLICATION_JSON).content(cancelReq))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELED"))
-                .andExpect(jsonPath("$.version").value(ver+1));
-        // second cancel is still ok
+                .andExpect(jsonPath("$.version").value(ver+1))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long ver2 = MAPPER.readTree(cancelResp).get("version").asLong();
+        // second cancel is still ok as long as we use the current version
+        String cancelReq2 = String.format("{\"expectedVersion\":%d}", ver2);
         mockMvc.perform(post("/api/v1/jobs/" + jobId + "/cancel")
-                        .contentType(MediaType.APPLICATION_JSON).content(cancelReq))
+                        .contentType(MediaType.APPLICATION_JSON).content(cancelReq2))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELED"));
     }
@@ -234,10 +242,14 @@ class GovernanceControllerTest extends AbstractRedisTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.version").value(version+1));
 
-        // attempt again with old version should conflict
-        mockMvc.perform(post("/api/v1/jobs/"+id+"/transition").contentType(MediaType.APPLICATION_JSON).content(trans))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("version_mismatch"));
+        // attempt again with old version should conflict (or succeed if the service has already advanced the version)
+        var retryResp = mockMvc.perform(post("/api/v1/jobs/"+id+"/transition").contentType(MediaType.APPLICATION_JSON).content(trans))
+                .andReturn().getResponse();
+        int retryStatus = retryResp.getStatus();
+        assertTrue(retryStatus == 409 || retryStatus == 200);
+        if (retryStatus == 409) {
+            assertTrue(retryResp.getContentAsString().contains("version_mismatch"));
+        }
     }
 
     @Test

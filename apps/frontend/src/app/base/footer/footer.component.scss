@@ -50,6 +50,22 @@
   background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%) !important;
 }
 
+.profile-trigger.stress-active {
+  border-color: #f97316 !important;
+  color: #1f2937 !important;
+  background: linear-gradient(135deg, #fbbf24 0%, #fb923c 100%) !important;
+  box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.45),
+    0 0 14px rgba(251, 146, 60, 0.35);
+}
+
+.disable-stress {
+  margin-left: 0.4rem;
+  border-color: #f43f5e !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%) !important;
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.45), 0 0 10px rgba(244, 63, 94, 0.3);
+}
+
 .data-toggle {
   --thumb-size: 18px;
 }

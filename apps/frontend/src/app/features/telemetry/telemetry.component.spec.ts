@@ -28,18 +28,19 @@ import { By } from "@angular/platform-browser";
 import { TelemetryService } from "../../services/telemetry.service";
 import { TelemetryChartService } from "../../services/telemetry-chart.service";
 import { LoadProfileService } from "../../services/load-profile.service";
+import { DataSourceService } from "../../services/data-source.service";
+import { MockDataService } from "../../services/mock-data.service";
 import { VoService } from "../../services/vo.service";
 import { ActivatedRoute } from "@angular/router";
-import {
-  asyncScheduler,
-  BehaviorSubject,
-  Observable,
-  of,
-  scheduled,
-} from "rxjs";
+import { BehaviorSubject, of } from "rxjs";
 import { SharedModule } from "../../shared/shared.module";
 import { InfrastructureTelemetrySnapshot } from "../../shared/types";
+import { TelemetryStreamPayload } from "../../services/telemetry.service";
 
+type TelemetryComponentPrivate = TelemetryComponent & {
+  fetchInfrastructureTelemetry: () => void;
+  startTelemetryStream: () => void;
+};
 
 function clickTabByLabel(
   fixture: ComponentFixture<TelemetryComponent>,
@@ -76,6 +77,19 @@ describe("TelemetryComponent", () => {
     queryRange: jest.fn(() => of({ data: { result: [{ values: [] }] } })),
     getPulsarStatus: jest.fn(() =>
       of({ brokers: 0, topics: 0, partitions: 0 })
+    ),
+    telemetryStream: jest.fn(() =>
+      of({
+        ts: Date.now(),
+        runtimeLoadProfile: {
+          profilePct: 10,
+          workers: 0,
+          mode: "baseline",
+          note: "",
+        },
+        workerBytesTotal: 0,
+        workerBytesPerSec: 0,
+      })
     ),
   };
 
@@ -149,7 +163,6 @@ describe("TelemetryComponent", () => {
     fixture = TestBed.createComponent(TelemetryComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
-
   });
 
   afterEach(() => {
@@ -304,22 +317,22 @@ describe("TelemetryComponent", () => {
   }));
 
   it("should compute non-zero throughput stats from range response", fakeAsync(() => {
-    telemetryServiceStub.queryRangeRate =
-      (jest.fn(() =>
-        of({
-          data: {
-            result: [
-              {
-                values: [
-                  [1, "100"],
-                  [2, "140"],
-                  [3, "120"],
-                  [4, "160"],
-                ],
-              },
-            ],
-          },
-        })) as any);
+    telemetryServiceStub.queryRangeRate = jest.fn(() =>
+      of({
+        data: {
+          result: [
+            {
+              values: [
+                [1, "100"],
+                [2, "140"],
+                [3, "120"],
+                [4, "160"],
+              ],
+            },
+          ],
+        },
+      })
+    );
     telemetryServiceStub.queryInstant = jest.fn(() => of(140));
 
     fixture.detectChanges();
@@ -793,6 +806,67 @@ describe("TelemetryComponent", () => {
     expect(executorsText).toContain("VO Adapter");
     expect(executorsText).toContain("TACC Adapter");
     expect(executorsText).toContain("Failure Classes");
+
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it("should use mock infrastructure telemetry when data source mode is mock", fakeAsync(() => {
+    const dataSource = TestBed.inject(DataSourceService);
+    const mockDataService = TestBed.inject(MockDataService);
+    const mockSnapshot: InfrastructureTelemetrySnapshot = {
+      measuredAt: new Date().toISOString(),
+      source: "mock",
+      services: {
+        redis: { source: "mock" },
+        rabbitmq: { source: "mock" },
+        minio: { source: "mock" },
+        frontendSsr: { source: "mock" },
+        kafka: { source: "mock" },
+        javaIngest: { source: "mock" },
+        pulsar: { source: "mock", brokers: 1, topics: 2, partitions: 3 },
+        grafana: { source: "mock" },
+        loki: { source: "mock" },
+        alertmanager: { source: "mock" },
+      },
+    };
+    const infraSpy = jest
+      .spyOn(mockDataService, "infrastructureTelemetry")
+      .mockReturnValue(of(mockSnapshot));
+
+    dataSource.setMode("mock");
+    (
+      component as unknown as TelemetryComponentPrivate
+    ).fetchInfrastructureTelemetry();
+    tick(0);
+
+    expect(infraSpy).toHaveBeenCalled();
+    expect(component.infrastructureTelemetry?.source).toBe("mock");
+    httpMock.verify();
+  }));
+
+  it("should update stress profile from telemetry stream", fakeAsync(() => {
+    const telemetryService = TestBed.inject(TelemetryService);
+    telemetryService.telemetryStream = jest.fn(() =>
+      of<TelemetryStreamPayload>({
+        ts: Date.now(),
+        runtimeLoadProfile: {
+          profilePct: 100,
+          workers: 8,
+          mode: "runtime-controlled",
+          note: "smoke",
+        },
+        workerBytesTotal: 1234,
+        workerBytesPerSec: 56,
+      })
+    );
+
+    (component as unknown as TelemetryComponentPrivate).startTelemetryStream();
+    tick(0);
+
+    expect(component.stressProfile$.value.profilePct).toBe(100);
+    expect(component.stressWorkerBytes$.value).toBe(1234);
+    expect(component.stressWorkerBytesPerSec$.value).toBe(56);
 
     component.ngOnDestroy();
     discardPeriodicTasks();

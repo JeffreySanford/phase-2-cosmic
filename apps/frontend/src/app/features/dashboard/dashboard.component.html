@@ -47,6 +47,114 @@
             </mat-card>
 
             <mat-card class="infographic-card">
+              <p class="mini-label">Stress Load</p>
+              <div class="stress-card">
+                <p>
+                  Mode:
+                  <strong>{{ stressActive ? 'active' : 'inactive' }}</strong>
+                </p>
+                <p>
+                  Profile:
+                  <strong>{{ profilePct }}%</strong>
+                </p>
+                <p>
+                  Workers:
+                  <strong>{{ stressWorkers }}</strong>
+                </p>
+                <p *ngIf="stressNote">
+                  Note: <em>{{ stressNote }}</em>
+                </p>
+                <div class="replay-controls">
+                  <button
+                    class="replay-history"
+                    mat-stroked-button
+                    color="primary"
+                    (click)="replayHistory(500)"
+                    [disabled]="!stressActive"
+                  >
+                    Replay history
+                  </button>
+
+                  <mat-form-field appearance="outline" class="replay-interval">
+                    <mat-label>Auto‑replay profile</mat-label>
+                    <mat-select
+                      [(value)]="selectedReplayProfile"
+                      (selectionChange)="onReplayProfileChange($event.value)"
+                      [disabled]="!stressActive"
+                    >
+                      <mat-option value="spike">Spike (fast loop)</mat-option>
+                      <mat-option value="ramp">Ramp (medium loop)</mat-option>
+                      <mat-option value="sustained">Sustained (slow loop)</mat-option>
+                      <mat-option value="chaos">Chaos (random)</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="replay-interval">
+                    <mat-label>Auto‑replay interval (ms)</mat-label>
+                    <input
+                      matInput
+                      type="number"
+                      min="100"
+                      max="60000"
+                      step="100"
+                      [(ngModel)]="replayIntervalMs"
+                      (ngModelChange)="onReplayIntervalChange($event)"
+                      #intervalInput="ngModel"
+                      [disabled]="!stressActive"
+                    />
+                    <mat-error *ngIf="intervalInput.invalid">
+                      Interval must be between {{ minReplayIntervalMs }} and
+                      {{ maxReplayIntervalMs }} ms
+                    </mat-error>
+                  </mat-form-field>
+
+                  <button
+                    class="auto-replay"
+                    mat-stroked-button
+                    color="primary"
+                    (click)="toggleAutoReplay()"
+                    [disabled]="!stressActive"
+                  >
+                    {{ autoReplayEnabled ? 'Stop auto-replay' : 'Start auto-replay' }}
+                  </button>
+
+                  <div class="auto-replay-banner" *ngIf="autoReplayEnabled">
+                    Auto‑replay is active
+                    <span *ngIf="replayCountdown$ | async as secs">
+                      — next run in {{ secs }}s
+                    </span>
+                  </div>
+                  <div class="auto-replay-health" *ngIf="autoReplayEnabled">
+                    <span
+                      class="badge"
+                      [attr.data-tone]="replayHealthTone"
+                    >
+                      {{ replayHealthLabel }}
+                    </span>
+                    <span *ngIf="replayRunHistory.length">
+                      | Runs: {{ replayRunHistory.length }}
+                    </span>
+                  </div>
+                </div>
+              <svg
+                *ngIf="stressActive"
+                class="stress-sparkline"
+                viewBox="0 0 140 40"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <path
+                  [attr.d]="sparkPath(stressWorkerHistory, 140, 40)"
+                  stroke="#22c55e"
+                  stroke-width="2"
+                  fill="none"
+                />
+              </svg>
+            </div>
+              <p class="mini-note">Real-time stress load profile and worker count.</p>
+            </mat-card>
+
+            <mat-card class="infographic-card">
               <p class="mini-label">System Energy</p>
               <div class="barscape">
                 <div class="barscape-row" *ngFor="let band of signalBands" [attr.data-tone]="band.tone">
@@ -89,8 +197,13 @@
             <div class="tile-grid telemetry">
               <a class="tile link" routerLink="/telemetry" [queryParams]="{ metric: tile.metricId }" *ngFor="let tile of telemetryTiles">
                 <p class="tile-title">{{ tile.title }}</p>
-                <p class="tile-value">{{ tile.value }}</p>
-                <p class="tile-note">{{ tile.query }}</p>
+                <p class="tile-value">
+                  {{ tile.value }}
+                  <span class="tile-intensity">({{ tile.intensity * 100 | number:'1.0-0' }}%)</span>
+                </p>
+                <p class="tile-note" *ngIf="tile.query">
+                  Query: {{ tile.query }}
+                </p>
                 <div class="intensity-track">
                   <span [appDynamicStyle]="{width: tile.intensity * 100 + '%'}"></span>
                 </div>

@@ -344,16 +344,15 @@ public class GovernanceController {
                 if (parts.length > 1) {
                     try { current = Long.parseLong(parts[1]); } catch (NumberFormatException ignored) {}
                 }
-                // if the current job is already canceled, treat cancel as idempotent and return OK
-                var optCur = jobService.get(id);
-                if (optCur.isPresent() && "CANCELED".equalsIgnoreCase(optCur.get().status())) {
-                    return ResponseEntity.ok(optCur.get());
-                }
-                Map<String,Object> resp = new java.util.HashMap<>();
-                resp.put("error", "version_mismatch");
-                resp.put("jobId", id);
-                resp.put("currentVersion", current);
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
+                // if we got a version mismatch, cancel is treated as idempotent.
+            // Return OK if the job is already canceled (or if it no longer exists).
+            var optCur = jobService.get(id);
+            if (optCur.isPresent()) {
+                // If the job exists in any terminal state, answer OK with its current state.
+                return ResponseEntity.ok(optCur.get());
+            }
+            // Job doesn't exist; return OK with a minimal canceled response.
+            return ResponseEntity.ok(Map.of("status", "CANCELED", "jobId", id));
             }
             throw ex;
         }

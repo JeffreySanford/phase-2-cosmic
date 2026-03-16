@@ -13,19 +13,8 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Polling</mat-label>
-            <mat-select (selectionChange)="setPolling($event.value)" [value]="'5s'">
-              <mat-option value="live">Live (1s)</mat-option>
-              <mat-option value="5s">5s</mat-option>
-              <mat-option value="15s">15s</mat-option>
-              <mat-option value="60s">60s</mat-option>
-              <mat-option value="off">Paused</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
             <mat-label>Time Range</mat-label>
-            <mat-select (selectionChange)="setRangeSec($event.value)" [value]="300">
+            <mat-select (selectionChange)="setRangeSec($event.value)" [value]="timeRangeSec$ | async">
               <mat-option [value]="300">5 minutes</mat-option>
               <mat-option [value]="900">15 minutes</mat-option>
               <mat-option [value]="3600">1 hour</mat-option>
@@ -33,12 +22,30 @@
           </mat-form-field>
         </div>
 
-        <p>Current: <strong>{{ formatCurrentValue((currentValue$ | async) ?? 0) }}</strong></p>
+        <div class="telemetry-header">
+          <p>Current: <strong>{{ formatCurrentValue((currentValue$ | async) ?? 0) }}</strong></p>
+          <span class="mode-chip" [ngClass]="(dataMode$ | async) | titlecase">
+            {{ (dataMode$ | async) | titlecase }} Data
+          </span>
+        </div>
         <div class="stats">
           <mat-card class="stat-card">
-            <mat-card-title>Current Value</mat-card-title>
+            <mat-card-title>{{ currentValueLabel }}</mat-card-title>
             <mat-card-content>
               <div class="big">{{ formatCurrentValue((currentValue$ | async) ?? 0) }}</div>
+              <svg
+                *ngIf="sparklinePath"
+                class="mini-sparkline"
+                [attr.viewBox]="`0 0 ${sparklineWidth} ${sparklineHeight}`"
+                preserveAspectRatio="none"
+              >
+                <path
+                  [attr.d]="sparklinePath"
+                  fill="none"
+                  stroke="var(--color-accent-2, #7b61ff)"
+                  stroke-width="1.5"
+                />
+              </svg>
             </mat-card-content>
           </mat-card>
           <mat-card class="stat-card">
@@ -46,15 +53,81 @@
             <mat-card-content>
               <div class="gauge-container" #gauge></div>
               <div class="big">{{ currentRateHuman }}</div>
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="currentRatePct"></div>
+              </div>
+              <svg
+                *ngIf="sparklinePath"
+                class="mini-sparkline"
+                [attr.viewBox]="`0 0 ${sparklineWidth} ${sparklineHeight}`"
+                preserveAspectRatio="none"
+              >
+                <path
+                  [attr.d]="sparklinePath"
+                  fill="none"
+                  stroke="var(--color-accent-2, #7b61ff)"
+                  stroke-width="1.5"
+                />
+              </svg>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card">
+            <mat-card-title>Stress status</mat-card-title>
+            <mat-card-content>
+              <div>
+                Profile: <strong>{{ (stressProfile$ | async)?.profilePct }}%</strong>
+                <span class="tag">{{ (stressProfile$ | async)?.mode }}</span>
+              </div>
+              <div>Workers: <strong>{{ (stressProfile$ | async)?.workers }}</strong></div>
+              <div>
+                Bytes/s: <strong>{{ (stressWorkerBytesPerSec$ | async) | number:'1.0-0' }}</strong>
+              </div>
+              <div>
+                Total bytes: <strong>{{ (stressWorkerBytes$ | async) | number }}</strong>
+              </div>
             </mat-card-content>
           </mat-card>
           <mat-card class="stat-card">
             <mat-card-title>Stats (range)</mat-card-title>
             <mat-card-content>
-              <div>Min: <strong>{{ formatStat(stats.min) }}</strong></div>
-              <div>Avg: <strong>{{ formatStat(stats.avg) }}</strong></div>
-              <div>Max: <strong>{{ formatStat(stats.max) }}</strong></div>
-              <div>P95: <strong>{{ formatStat(stats.p95) }}</strong></div>
+              <div class="stat-line">
+                <span>Min</span>
+                <span class="stat-value">{{ formatStat(stats.min) }}</span>
+                <span class="stat-bar">
+                  <span
+                    class="stat-bar-fill"
+                    [style.width.%]="stats.min ? (stats.min / (stats.max || 1)) * 100 : 0"
+                  ></span>
+                </span>
+              </div>
+              <div class="stat-line">
+                <span>Avg</span>
+                <span class="stat-value">{{ formatStat(stats.avg) }}</span>
+                <span class="stat-bar">
+                  <span
+                    class="stat-bar-fill"
+                    [style.width.%]="stats.max ? (stats.avg / stats.max) * 100 : 0"
+                  ></span>
+                </span>
+              </div>
+              <div class="stat-line">
+                <span>Max</span>
+                <span class="stat-value">{{ formatStat(stats.max) }}</span>
+                <span class="stat-bar">
+                  <span class="stat-bar-fill" style="width: 100%"></span>
+                </span>
+              </div>
+              <div class="stat-line">
+                <span>P95</span>
+                <span class="stat-value">{{ formatStat(stats.p95) }}</span>
+                <span class="stat-bar">
+                  <span
+                    class="stat-bar-fill"
+                    [style.width.%]="stats.max ? (stats.p95 / stats.max) * 100 : 0"
+                  ></span>
+                </span>
+              </div>
             </mat-card-content>
           </mat-card>
         </div>

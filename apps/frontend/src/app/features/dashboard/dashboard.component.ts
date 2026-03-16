@@ -13,11 +13,13 @@ import {
   of,
   timer,
   BehaviorSubject,
+  combineLatest,
 } from "rxjs";
 import { catchError, map, switchMap } from "rxjs/operators";
 import {
   LoadProfilePct,
   LoadProfileService,
+  ReplayMode,
 } from "../../services/load-profile.service";
 import { TelemetryService } from "../../services/telemetry.service";
 import { DataSourceService } from "../../services/data-source.service";
@@ -86,6 +88,90 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly dataSource = inject(DataSourceService);
   private readonly mock = inject(MockDataService);
 
+  replayIntervalMs = 5000;
+  readonly minReplayIntervalMs = 100;
+  readonly maxReplayIntervalMs = 60000;
+
+  replayMode: ReplayMode = "loop";
+  replayCountdown$: Observable<number | null> = of(null);
+
+  replayProfiles = [
+    {
+      key: "spike",
+      label: "Spike",
+      interval: 1000,
+      mode: "loop" as ReplayMode,
+    },
+    { key: "ramp", label: "Ramp", interval: 5000, mode: "loop" as ReplayMode },
+    {
+      key: "sustained",
+      label: "Sustained",
+      interval: 20000,
+      mode: "loop" as ReplayMode,
+    },
+    {
+      key: "chaos",
+      label: "Chaos",
+      interval: 5000,
+      mode: "random" as ReplayMode,
+    },
+  ];
+
+  selectedReplayProfile = "ramp";
+
+  replayHistory(intervalMs = 500): void {
+    this.loadProfile.replayHistory(intervalMs);
+  }
+
+  replayHealthLabel = "Safe";
+  replayHealthTone: "mint" | "amber" | "rose" = "mint";
+
+  onReplayIntervalChange(ms: number): void {
+    this.loadProfile.setReplayIntervalMs(ms);
+  }
+
+  onReplayModeChange(mode: ReplayMode): void {
+    this.loadProfile.setReplayMode(mode);
+  }
+
+  onReplayProfileChange(profileKey: string): void {
+    const profile = this.replayProfiles.find((p) => p.key === profileKey);
+    if (!profile) return;
+
+    this.selectedReplayProfile = profileKey;
+    this.replayIntervalMs = profile.interval;
+    this.replayMode = profile.mode;
+
+    this.loadProfile.setReplayMode(profile.mode);
+    this.loadProfile.setReplayIntervalMs(profile.interval);
+  }
+
+  get autoReplayEnabled(): boolean {
+    return this.loadProfile.isReplayScheduled;
+  }
+
+  get replayIntervalValid(): boolean {
+    return (
+      Number.isFinite(this.replayIntervalMs) &&
+      this.replayIntervalMs >= this.minReplayIntervalMs &&
+      this.replayIntervalMs <= this.maxReplayIntervalMs
+    );
+  }
+
+  toggleAutoReplay(): void {
+    if (this.loadProfile.isReplayScheduled) {
+      this.loadProfile.stopReplaySchedule();
+      return;
+    }
+
+    if (!this.replayIntervalValid) {
+      return;
+    }
+
+    // Use configured interval.
+    this.loadProfile.startReplaySchedule(this.replayIntervalMs);
+  }
+
   // control the refresh button disabled state using a subject so that
   // updates are pushed through the async pipe (and occur in their own
   // change‑detection runs). the getter maintains backwards compatibility
@@ -97,6 +183,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   lastUpdated: Date | null = null;
   profilePct: LoadProfilePct = 10;
   pollingMs = 30000;
+
+  stressActive = false;
+  stressWorkers = 0;
+  stressNote = "";
+
+  stressProfileHistory: number[] = [];
+  stressWorkerHistory: number[] = [];
+  stressHistoryMax = 40;
+
+  replayRunHistory: number[] = [];
 
   widgetMode: "runtime" | "scaffold" = "runtime";
 
@@ -156,6 +252,55 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.loadProfile.profile$.subscribe((pct) => {
         this.profilePct = pct;
         this.pollingMs = this.pollingMsFor(pct);
+        this.addStressHistory(pct, this.stressWorkers);
+      })
+    );
+
+    this.sub.add(
+      this.loadProfile.stress$.subscribe((active) => {
+        this.stressActive = active;
+      })
+    );
+
+    this.sub.add(
+      this.loadProfile.workers$.subscribe((count) => {
+        this.stressWorkers = count;
+        this.addStressHistory(this.profilePct, count);
+      })
+    );
+
+    this.sub.add(
+      this.loadProfile.note$.subscribe((note) => {
+        this.stressNote = note;
+      })
+    );
+
+    this.sub.add(
+      this.loadProfile.replayInterval$.subscribe((ms) => {
+        this.replayIntervalMs = ms;
+      })
+    );
+
+    this.sub.add(
+      this.loadProfile.replayMode$.subscribe((mode) => {
+        this.replayMode = mode;
+      })
+    );
+
+    this.sub.add(
+      this.loadProfile.replayRunTimestamps$.subscribe((runs) => {
+        this.replayRunHistory = runs;
+      })
+    );
+
+    this.replayCountdown$ = combineLatest([
+      this.loadProfile.nextReplayAt$,
+      timer(0, 1000),
+    ]).pipe(
+      map(([next]) => {
+        if (!next) return null;
+        const deltaSec = Math.ceil((next - Date.now()) / 1000);
+        return Math.max(0, deltaSec);
       })
     );
   }
@@ -171,6 +316,17 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.sub.add(this.dataSource.mode$.subscribe(() => this.refresh()));
       this.refresh();
     });
+  }
+
+  private addStressHistory(profile: number, workers: number): void {
+    this.stressProfileHistory = [
+      ...this.stressProfileHistory.slice(-this.stressHistoryMax + 1),
+      profile,
+    ];
+    this.stressWorkerHistory = [
+      ...this.stressWorkerHistory.slice(-this.stressHistoryMax + 1),
+      workers,
+    ];
   }
 
   ngOnDestroy(): void {
@@ -342,7 +498,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             {
               title: "Ingest Throughput",
               value: this.formatBytesPerSecond(snapshot.bytesRate.value),
-              note: "rate(generator_bytes_produced_total[1m])",
+              note: "sum(rate(generator_bytes_produced_total[1m]))",
               source: snapshot.bytesRate.ok ? "live" : "fallback",
               tone: snapshot.bytesRate.value > 0 ? "amber" : "violet",
               sparkPath: this.sparkPath(bytesSeries, 140, 30),
@@ -368,7 +524,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             {
               title: "Ingest Rate (1m)",
               value: this.formatBytesPerSecond(snapshot.bytesRate.value),
-              query: "rate(generator_bytes_produced_total[1m])",
+              query: "sum(rate(generator_bytes_produced_total[1m]))",
               metricId: "generator_bytes_produced_total",
               source: snapshot.bytesRate.ok ? "live" : "fallback",
               intensity: ingestIntensity,
@@ -465,6 +621,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             files.length
           );
           this.cpuLoadPct = this.clamp(snapshot.cpuLoad.value, 0, 100);
+          this.replayHealthLabel =
+            this.cpuLoadPct >= 85
+              ? "Overloaded"
+              : this.cpuLoadPct >= 65
+              ? "Warning"
+              : "Safe";
+          this.replayHealthTone =
+            this.cpuLoadPct >= 85
+              ? "rose"
+              : this.cpuLoadPct >= 65
+              ? "amber"
+              : "mint";
           this.bytesRateValue = Math.max(0, snapshot.bytesRate.value);
           this.recordsRateValue = Math.max(0, snapshot.recordsRate.value);
           this.totalBytesValue = Math.max(0, snapshot.totalBytes.value);
@@ -675,7 +843,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private sparkPath(points: number[], w: number, h: number): string {
+  sparkPath(points: number[], w: number, h: number): string {
     if (!points?.length) return "";
     const min = Math.min(...points);
     const max = Math.max(...points);

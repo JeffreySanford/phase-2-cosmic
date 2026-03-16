@@ -15,7 +15,16 @@ import {
 } from "@angular/core";
 import { SidebarService } from "../../base/sidebar/sidebar.service";
 import { BrowserPlatformService } from "../../services/browser-platform.service";
-import { Observable, defer, from, interval, isObservable, of, throwError, Subscription } from "rxjs";
+import {
+  Observable,
+  defer,
+  from,
+  interval,
+  isObservable,
+  of,
+  throwError,
+  Subscription,
+} from "rxjs";
 import {
   catchError,
   first,
@@ -98,6 +107,15 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
     this.browser.dispatchWindowEvent(type, detail);
   }
 
+  private isPromiseLike(value: unknown): value is PromiseLike<void> {
+    return (
+      typeof value === "object" &&
+      value !== null &&
+      "then" in value &&
+      typeof value.then === "function"
+    );
+  }
+
   private getContainerElement(): HTMLElement | null {
     return this.containerRef?.nativeElement ?? null;
   }
@@ -115,10 +133,11 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
       .subscribe(() => {
         // set up a resize observer to notify Aladin of container size changes
         const el = this.getContainerElement();
-        const ResizeObserverCtor =
-          (this.browser.window as Window & {
+        const ResizeObserverCtor = (
+          this.browser.window as Window & {
             ResizeObserver?: typeof ResizeObserver;
-          })?.ResizeObserver;
+          }
+        )?.ResizeObserver;
         if (el && typeof ResizeObserverCtor === "function") {
           const container = el; // narrow to non-null for use inside the callback
           this.resizeObserver = new ResizeObserverCtor(() => {
@@ -157,7 +176,6 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
         );
       });
   }
-
 
   ngOnDestroy(): void {
     this.isDestroyed = true;
@@ -222,7 +240,10 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
     };
 
     return defer(() => from(import("aladin-lite"))).pipe(
-      map((imported) => (imported && (imported.default ?? imported)) as AladinModule),
+      map(
+        (imported) =>
+          (imported && (imported.default ?? imported)) as AladinModule
+      ),
       switchMap((mod) => this.callModuleInit$(mod).pipe(mapTo(mod))),
       switchMap((mod) => this.waitForWasmReady$(mod).pipe(mapTo(mod))),
       switchMap((mod) =>
@@ -238,11 +259,11 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
     return this.ngZone.runOutsideAngular(() =>
       this.runWhenIdle$(() => {
         if (typeof init === "function") {
-          return init();
-        }
-        // `init` can be a Promise (as seen in newer aladin-lite builds)
-        if (typeof (init as any).then === "function") {
-          return init as unknown as Promise<void>;
+          const result = init();
+          if (this.isPromiseLike(result)) {
+            return result;
+          }
+          return result;
         }
         return void 0;
       }).pipe(mapTo(void 0))
@@ -260,7 +281,9 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
   ): Observable<void> {
     const container = this.getContainerElement();
     if (!container) {
-      return throwError(() => new Error("Viewer container element not available"));
+      return throwError(
+        () => new Error("Viewer container element not available")
+      );
     }
 
     const factory = this.resolveFactory(mod);
@@ -287,15 +310,17 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
         timeout({
           each: 15000,
           with: () =>
-            throwError(() =>
-              new Error("createViewerInstance$ timed out after 15s")
+            throwError(
+              () => new Error("createViewerInstance$ timed out after 15s")
             ),
         })
       )
     );
   }
 
-  private runWhenIdle$<T>(fn: () => T | PromiseLike<T> | Observable<T>): Observable<T> {
+  private runWhenIdle$<T>(
+    fn: () => T | PromiseLike<T> | Observable<T>
+  ): Observable<T> {
     return new Observable<T>((subscriber) => {
       let cancelled = false;
       let sub: Subscription | undefined;
@@ -345,8 +370,8 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
       timeout({
         each: 30000,
         with: () =>
-          throwError(() =>
-            new Error("Aladin wasm did not become ready in time")
+          throwError(
+            () => new Error("Aladin wasm did not become ready in time")
           ),
       }),
       mapTo(void 0)
@@ -365,7 +390,9 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
     if (a && a.wasmLibs && (a.wasmLibs as Record<string, unknown>)["core"])
       return true;
     if (mod.default && typeof mod.default === "object") {
-      const d = mod.default as unknown as { wasmLibs?: Record<string, unknown> };
+      const d = mod.default as unknown as {
+        wasmLibs?: Record<string, unknown>;
+      };
       return Boolean(d.wasmLibs?.["core"]);
     }
     return false;

@@ -123,8 +123,14 @@ else
 fi
 
 log "[start-all] Compose started. Launching local dev servers (SSR + frontend dev server)."
+# Angular dev server remains on 4200 via the Nx target config.
+# FRONTEND_PORT is the Nest SSR/proxy target port used by this workspace.
 export FRONTEND_PORT=${FRONTEND_PORT:-4000}
+export PORT=${PORT:-$FRONTEND_PORT}
 export ALLOCATOR_PORT=${ALLOCATOR_PORT:-7777}
+export REDIS_HOST=${REDIS_HOST:-127.0.0.1}
+export REDIS_PORT=${REDIS_PORT:-6379}
+export REDIS_URL=${REDIS_URL:-redis://${REDIS_HOST}:${REDIS_PORT}}
 
 if command -v cygpath >/dev/null 2>&1; then
 	WIN_REPO_ROOT="$(cygpath -w "$REPO_ROOT")"
@@ -165,8 +171,48 @@ kill_stale_port_listener() {
 	fi
 }
 
-kill_stale_port_listener "$FRONTEND_PORT" "SSR"
+wait_for_tcp_listener() {
+	local host="$1"
+	local port="$2"
+	local label="$3"
+	local timeout_seconds="${4:-30}"
+	local attempt=0
+
+	log "[start-all] Waiting for ${label} on ${host}:${port} (up to ${timeout_seconds}s)"
+	while [ "$attempt" -lt "$timeout_seconds" ]; do
+		if command -v powershell.exe &>/dev/null; then
+			if powershell.exe -NoProfile -Command "
+				try {
+					\$client = New-Object System.Net.Sockets.TcpClient
+					\$async = \$client.BeginConnect('${host}', ${port}, \$null, \$null)
+					if (-not \$async.AsyncWaitHandle.WaitOne(1000, \$false)) {
+						\$client.Close()
+						exit 1
+					}
+					\$client.EndConnect(\$async)
+					\$client.Close()
+					exit 0
+				} catch {
+					exit 1
+				}" >/dev/null 2>&1; then
+				return 0
+			fi
+		elif command -v nc >/dev/null 2>&1; then
+			if nc -z "$host" "$port" >/dev/null 2>&1; then
+				return 0
+			fi
+		fi
+		attempt=$((attempt + 1))
+		sleep 1
+	done
+
+	log "[start-all] ${label} on ${host}:${port} was not reachable before timeout; continuing anyway"
+	return 1
+}
+
+kill_stale_port_listener "$PORT" "SSR"
 kill_stale_port_listener "$ALLOCATOR_PORT" "allocator"
+wait_for_tcp_listener "$REDIS_HOST" "$REDIS_PORT" "Redis" 30 || true
 
 log "[start-all] launching dev servers"
 sanitize_windows_env() {

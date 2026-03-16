@@ -17,7 +17,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "./",
-        "command": "cross-env CYPRESS_webServerCommand=\"pnpm exec concurrently --kill-others-on-fail --success first \\\"cross-env FRONTEND_PORT=4100 DEV_SERVER_ORIGIN=http://127.0.0.1:4200 DISABLE_NEST_VITE_DEV_SERVER=true DISABLE_REDIS_CLIENT=true USE_EMBEDDED_E2E_BACKEND=true pnpm run serve:ssr\\\" \\\"cross-env FRONTEND_PORT=4100 pnpm exec nx run frontend:serve --host=127.0.0.1\\\"\" CYPRESS_BASE_URL=\"http://127.0.0.1:4200\" node scripts/run-cypress.js run --project apps/frontend-e2e"
+        "command": "node ./node_modules/cross-env/src/bin/cross-env.js CYPRESS_webServerCommand=\"node ./node_modules/concurrently/dist/bin/concurrently.js --kill-others-on-fail --success first \\\"node ./node_modules/cross-env/src/bin/cross-env.js FRONTEND_PORT=4100 DEV_SERVER_ORIGIN=http://127.0.0.1:4200 DISABLE_NEST_VITE_DEV_SERVER=true DISABLE_REDIS_CLIENT=true USE_EMBEDDED_E2E_BACKEND=true pnpm run serve:ssr:e2e\\\" \\\"node ./node_modules/cross-env/src/bin/cross-env.js FRONTEND_PORT=4100 pnpm exec nx run frontend:serve --host=127.0.0.1\\\"\" CYPRESS_BASE_URL=\"http://127.0.0.1:4200\" node scripts/run-cypress.js run --project apps/frontend-e2e"
       },
       "cache": false,
       "inputs": ["default", "^default"],
@@ -35,7 +35,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "./",
-        "command": "cross-env CYPRESS_webServerCommand=\"pnpm exec concurrently --kill-others-on-fail --success first \\\"cross-env FRONTEND_PORT=4100 DEV_SERVER_ORIGIN=http://127.0.0.1:4200 DISABLE_NEST_VITE_DEV_SERVER=true DISABLE_REDIS_CLIENT=true USE_EMBEDDED_E2E_BACKEND=true pnpm run serve:ssr\\\" \\\"cross-env FRONTEND_PORT=4100 pnpm exec nx run frontend:serve --host=127.0.0.1\\\"\" CYPRESS_BASE_URL=\"http://127.0.0.1:4200\" node scripts/run-cypress.js run --project apps/frontend-e2e"
+        "command": "node ./node_modules/cross-env/src/bin/cross-env.js CYPRESS_webServerCommand=\"node ./node_modules/concurrently/dist/bin/concurrently.js --kill-others-on-fail --success first \\\"node ./node_modules/cross-env/src/bin/cross-env.js FRONTEND_PORT=4100 DEV_SERVER_ORIGIN=http://127.0.0.1:4200 DISABLE_NEST_VITE_DEV_SERVER=true DISABLE_REDIS_CLIENT=true USE_EMBEDDED_E2E_BACKEND=true pnpm run serve:ssr:e2e\\\" \\\"node ./node_modules/cross-env/src/bin/cross-env.js FRONTEND_PORT=4100 pnpm exec nx run frontend:serve --host=127.0.0.1\\\"\" CYPRESS_BASE_URL=\"http://127.0.0.1:4200\" node scripts/run-cypress.js run --project apps/frontend-e2e"
       },
       "cache": false,
       "inputs": ["default", "^default"],
@@ -53,7 +53,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "./",
-        "command": "cross-env CYPRESS_webServerCommand=\"pnpm exec concurrently --kill-others-on-fail --success first \\\"cross-env FRONTEND_PORT=4100 DEV_SERVER_ORIGIN=http://127.0.0.1:4200 DISABLE_NEST_VITE_DEV_SERVER=true DISABLE_REDIS_CLIENT=true USE_EMBEDDED_E2E_BACKEND=true pnpm run serve:ssr\\\" \\\"cross-env FRONTEND_PORT=4100 pnpm exec nx run frontend:serve --host=127.0.0.1\\\"\" CYPRESS_BASE_URL=\"http://127.0.0.1:4200\" node scripts/run-cypress.js run --project apps/frontend-e2e --spec \"apps/frontend-e2e/src/e2e/datasets-provenance.cy.ts,apps/frontend-e2e/src/specs/jobs-lineage.spec.ts\""
+        "command": "node ./node_modules/cross-env/src/bin/cross-env.js CYPRESS_webServerCommand=\"node ./node_modules/concurrently/dist/bin/concurrently.js --kill-others-on-fail --success first \\\"node ./node_modules/cross-env/src/bin/cross-env.js FRONTEND_PORT=4100 DEV_SERVER_ORIGIN=http://127.0.0.1:4200 DISABLE_NEST_VITE_DEV_SERVER=true DISABLE_REDIS_CLIENT=true USE_EMBEDDED_E2E_BACKEND=true pnpm run serve:ssr:e2e\\\" \\\"node ./node_modules/cross-env/src/bin/cross-env.js FRONTEND_PORT=4100 pnpm exec nx run frontend:serve --host=127.0.0.1\\\"\" CYPRESS_BASE_URL=\"http://127.0.0.1:4200\" node scripts/run-cypress.js run --project apps/frontend-e2e --spec \"apps/frontend-e2e/src/e2e/datasets-provenance.cy.ts,apps/frontend-e2e/src/specs/jobs-lineage.spec.ts\""
       },
       "cache": false,
       "inputs": ["default", "^default"],

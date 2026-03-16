@@ -329,6 +329,7 @@ for that purpose.
 - Prefer Angular-native event and rendering APIs over raw DOM access. Use `Renderer2`, `@HostListener`, `@ViewChild`, or RxJS event streams before `window.addEventListener`, `document.querySelector`, or manual DOM mutation.
 - Prefer injected `DOCUMENT` over direct `document` access when document access is required.
 - Raw DOM access is allowed only at narrow integration boundaries such as D3, fullscreen, or file-download interop, and must stay localized and teardown-safe.
+- For ongoing remediation tracking (scan status, enforcement, and historical fixes), see [documentation/remediation/ANGULAR_STANDARDS_AND_REMEDIATION.md](../remediation/ANGULAR_STANDARDS_AND_REMEDIATION.md).
 
 #### NestJS
 
