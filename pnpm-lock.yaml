@@ -158,9 +158,6 @@ importers:
       '@swc/helpers':
         specifier: 0.5.18
         version: 0.5.18
-      '@types/cypress':
-        specifier: ^1.1.6
-        version: 1.1.6
       '@types/dockerode':
         specifier: ^3.3.2
         version: 3.3.47
@@ -3269,10 +3266,6 @@ packages:
 
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
-
-  '@types/cypress@1.1.6':
-    resolution: {integrity: sha512-CfeLLD3+6vIWe2AO5hR63f1c8EbRzrp/j1ExubAwOTpwZFZvF3Nm9cOPQiUwzNmAUmZuhO0QVH98Qlujni6nPw==}
-    deprecated: This is a stub types definition. cypress provides its own type definitions, so you do not need this installed.
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
@@ -12588,10 +12581,6 @@ snapshots:
   '@types/connect@3.4.38':
     dependencies:
       '@types/node': 20.19.0
-
-  '@types/cypress@1.1.6':
-    dependencies:
-      cypress: 15.8.0
 
   '@types/debug@4.1.12':
     dependencies:
