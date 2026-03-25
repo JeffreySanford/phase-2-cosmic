@@ -37,19 +37,16 @@ linters:
     - gosec
     # Simplification
     - gosimple
-formatters:
+
+linters-settings:
   goimports:
-    # Separate internal module imports from stdlib/third-party
     local-prefixes: github.com/cosmic-horizon
   govet:
     enable:
       - shadow
   gosec:
-    # Exclude informational findings that add noise without value
     excludes:
-      # Errors unhandled - covered by errcheck
       - G104
-      # File path provided as taint input - expected for CLI tools
       - G304
 
 issues:
@@ -63,3 +60,7 @@ issues:
       linters:
         - gosec
         - errcheck
+    # Exclude YAML files from all linters (handled by trunk)
+    - path: ".*\.(yaml|yml)$"
+      linters:
+        - "*"

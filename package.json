@@ -149,12 +149,13 @@
       "@nestjs/core",
       "@parcel/watcher",
       "@swc/core",
+      "cpu-features",
       "cypress",
       "esbuild",
       "lmdb",
       "msgpackr-extract",
       "nx",
-      "unrs-resolver"
+      "ssh2"
     ]
   }
 }

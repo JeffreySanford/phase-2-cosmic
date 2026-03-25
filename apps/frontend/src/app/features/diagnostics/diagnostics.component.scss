@@ -270,6 +270,29 @@
     box-shadow: 0 8px 24px rgba(11, 34, 58, 0.18);
   }
 }
+
+/* Status-based color coding for broker/service tiles */
+.tile-online,
+.tile-healthy {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: #fff;
+}
+
+.tile-degraded {
+  background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+  color: #1a1a1a;
+}
+
+.tile-offline {
+  background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+  color: #fff;
+}
+
+.tile-unknown {
+  background: linear-gradient(135deg, #607d8b 0%, #455a64 100%);
+  color: #fff;
+}
+
 .tile-title,
 .tile-status,
 .file-name,
