@@ -43,6 +43,11 @@ export const appRoutes: Route[] = [
         (m) => m.TelemetryModule
       ),
   },
+  {
+    path: "forge",
+    loadChildren: () =>
+      import("./features/forge/forge.module").then((m) => m.ForgeModule),
+  },
   { path: "settings", component: SettingsComponent },
   { path: "", redirectTo: "/landing", pathMatch: "full" },
   { path: "**", redirectTo: "/landing" },

@@ -128,6 +128,7 @@ log "[start-all] Compose started. Launching local dev servers (SSR + frontend de
 export FRONTEND_PORT=${FRONTEND_PORT:-4000}
 export PORT=${PORT:-$FRONTEND_PORT}
 export ALLOCATOR_PORT=${ALLOCATOR_PORT:-7777}
+export FORGE_API_HOST_PORT=${FORGE_API_HOST_PORT:-4101}
 export REDIS_HOST=${REDIS_HOST:-127.0.0.1}
 export REDIS_PORT=${REDIS_PORT:-6379}
 export REDIS_URL=${REDIS_URL:-redis://${REDIS_HOST}:${REDIS_PORT}}
@@ -212,6 +213,7 @@ wait_for_tcp_listener() {
 
 kill_stale_port_listener "$PORT" "SSR"
 kill_stale_port_listener "$ALLOCATOR_PORT" "allocator"
+kill_stale_port_listener "$FORGE_API_HOST_PORT" "forge-api"
 wait_for_tcp_listener "$REDIS_HOST" "$REDIS_PORT" "Redis" 30 || true
 
 log "[start-all] launching dev servers"
@@ -243,6 +245,7 @@ stop_bg_jobs() {
 trap 'stop_bg_jobs' EXIT INT TERM
 
 start_bg "allocator" node "$REPO_ROOT/tools/trident-allocator/server.js"
+start_bg "forge-api" node "$REPO_ROOT/apps/cosmic-forge-api/server.js"
 start_bg "ssr" sanitize_windows_env powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; node '.\\node_modules\\tsx\\dist\\cli.mjs' --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts"
 start_bg "frontend" sanitize_windows_env powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; Set-Item Env:NX_DAEMON false; pnpm nx serve frontend"
 

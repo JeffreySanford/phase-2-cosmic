@@ -871,6 +871,7 @@ function classifyFrontendRoute(path: string): string {
   if (!path || path === "/") return "landing";
   const normalized = path.split("?")[0].toLowerCase();
   if (normalized.startsWith("/dashboard")) return "dashboard";
+  if (normalized.startsWith("/forge")) return "forge";
   if (normalized.startsWith("/telemetry")) return "telemetry";
   if (normalized.startsWith("/topology")) return "topology";
   if (normalized.startsWith("/jobs")) return "jobs";
@@ -884,6 +885,7 @@ function classifyFrontendRoute(path: string): string {
 function classifyFrontendApiRoute(path: string): string {
   if (!path) return "other";
   const normalized = path.split("?")[0].toLowerCase();
+  if (normalized.startsWith("/api/forge")) return "forge";
   if (normalized === "/api/v1/telemetry/infrastructure") return "telemetry";
   if (normalized.startsWith("/api/v1/alerts")) return "alerts";
   if (normalized.startsWith("/api/v1/broker-events")) return "broker_events";
@@ -1892,6 +1894,13 @@ export class AppController {
     const governanceBase =
       process.env["GOVERNANCE_API_URL"] || "http://127.0.0.1:8082";
     return this.buildBaseCandidates(governanceBase);
+  }
+
+  private forgeBaseCandidates(): string[] {
+    const forgeBase =
+      process.env["FORGE_API_URL"] ||
+      `http://127.0.0.1:${process.env["FORGE_API_HOST_PORT"] || "4101"}`;
+    return this.buildBaseCandidates(forgeBase);
   }
 
   private mockInfrastructureTelemetry() {
@@ -3187,6 +3196,93 @@ export class AppController {
         control: "cosmic.control.exchange",
       },
       lastUpdated: new Date().toISOString(),
+    });
+  }
+
+  @All("/api/forge/*path")
+  async proxyForge(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const path = (req as any).path as string;
+    const method = (req.method || "GET").toUpperCase();
+
+    if (path === "/api/forge/health" && method === "GET") {
+      const targetUrls = this.forgeBaseCandidates().map((b) => `${b}/health`);
+
+      try {
+        const started = Date.now();
+        const response = await this.fetchWithFallback(
+          targetUrls,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          },
+          3000
+        );
+        const body = await response.json();
+        const responseBytes = Buffer.byteLength(JSON.stringify(body), "utf8");
+        recordFrontendApiMetrics(
+          "forge",
+          method,
+          response.status,
+          responseBytes,
+          (Date.now() - started) / 1000
+        );
+        res.status(response.status).json(body);
+        return;
+      } catch (e) {
+        console.error("Error proxying to Forge API:", e);
+        recordFrontendApiMetrics("forge", method, 502, 0, 0);
+        res.status(502).json({
+          error: "forge_proxy_error",
+          message: "Unable to reach Cosmic Forge API",
+        });
+        return;
+      }
+    }
+
+    if (path === "/api/forge/graphql" && method === "POST") {
+      const targetUrls = this.forgeBaseCandidates().map((b) => `${b}/graphql`);
+
+      try {
+        const started = Date.now();
+        const response = await this.fetchWithFallback(
+          targetUrls,
+          {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(req.body ?? {}),
+          },
+          3000
+        );
+        const body = await response.json();
+        const responseBytes = Buffer.byteLength(JSON.stringify(body), "utf8");
+        recordFrontendApiMetrics(
+          "forge",
+          method,
+          response.status,
+          responseBytes,
+          (Date.now() - started) / 1000
+        );
+        res.status(response.status).json(body);
+        return;
+      } catch (e) {
+        console.error("Error proxying Forge GraphQL:", e);
+        recordFrontendApiMetrics("forge", method, 502, 0, 0);
+        res.status(502).json({
+          error: "forge_graphql_proxy_error",
+          message: "Unable to reach Cosmic Forge GraphQL endpoint",
+        });
+        return;
+      }
+    }
+
+    res.status(501).json({
+      error: "forge_not_implemented",
+      message: "Forge route reserved but not yet implemented",
+      path,
+      method,
     });
   }
 

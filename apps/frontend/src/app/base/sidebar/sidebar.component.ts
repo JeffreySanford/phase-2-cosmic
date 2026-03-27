@@ -22,6 +22,7 @@ export class SidebarComponent {
     { path: "/view", label: "Viewer", icon: "👀" },
     { path: "/visualizations", label: "Visualizations", icon: "📊" },
     { path: "/jobs", label: "Jobs", icon: "🗂️" },
+    { path: "/forge", label: "Forge", icon: "🪐" },
     { path: "/topology", label: "Topology", icon: "🗺️" },
     { path: "/telemetry", label: "Telemetry", icon: "📡" },
     { path: "/diagnostics", label: "Diagnostics", icon: "🛠️" },
