@@ -13,6 +13,8 @@ export interface SystemStatus {
     governance: "online" | "offline";
     telemetry: "online" | "offline";
     diagnostics: "online" | "offline";
+    topology: "online" | "offline";
+    forge: "online" | "offline";
   };
 }
 
@@ -39,6 +41,8 @@ export class SystemStatusService {
       governance: "online",
       telemetry: "online",
       diagnostics: "online",
+      topology: "offline",
+      forge: "offline",
     },
   });
 
@@ -62,6 +66,8 @@ export class SystemStatusService {
             governance: "online",
             telemetry: "online",
             diagnostics: "online",
+            topology: "online",
+            forge: "online",
           },
         };
         this.statusSubject.next(newStatus);
@@ -73,17 +79,22 @@ export class SystemStatusService {
       governance: this.probe("/api/v1/health"),
       telemetry: this.probe("/api/proxy/prometheus?query=sum(up)"),
       diagnostics: this.probe("/api/diagnostics"),
+      topology: this.probe("/api/topology"),
+      forge: this.probe("/api/forge/health"),
     }).subscribe((result) => {
       const services: SystemStatus["services"] = {
         governance: result.governance ? "online" : "offline",
         telemetry: result.telemetry ? "online" : "offline",
         diagnostics: result.diagnostics ? "online" : "offline",
+        topology: result.topology ? "online" : "offline",
+        forge: result.forge ? "online" : "offline",
       };
       const onlineCount = Object.values(services).filter(
         (state) => state === "online"
       ).length;
+      const requiredServiceCount = Object.keys(services).length;
       const health: SystemStatus["health"] =
-        onlineCount === 3
+        onlineCount === requiredServiceCount
           ? "healthy"
           : onlineCount > 0
           ? "degraded"
