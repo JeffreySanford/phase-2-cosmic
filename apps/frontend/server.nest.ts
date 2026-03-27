@@ -15,6 +15,17 @@ import {
 } from "@nestjs/common";
 import { ExecutionPlansController } from "./src/app/controllers/execution-plans.controller";
 import { RuntimeLoadProfileService } from "./src/app/services/runtime-load-profile.service";
+import { ForgeProxyService } from "./src/server/forge/forge-proxy.service";
+import {
+  appendFrontendMetrics,
+  classifyFrontendApiRoute,
+  classifyFrontendRoute,
+  recordFrontendApiMetrics,
+  recordFrontendRequestMetrics,
+} from "./src/server/metrics/frontend-metrics";
+import { GovernanceUpstreamService } from "./src/server/governance/governance-upstream.service";
+import { GovernanceProxyService } from "./src/server/governance/governance-proxy.service";
+import { EmbeddedMockBackendService } from "./src/server/mock/embedded-mock-backend.service";
 
 import express from "express";
 import { createClient } from "redis";
@@ -28,6 +39,7 @@ import {
   readdirSync,
 } from "fs";
 import { Request, Response } from "express";
+import { Observable } from "rxjs";
 
 type LoadProfilePct = 10 | 25 | 50 | 100;
 type TopologyNode = {
@@ -40,329 +52,6 @@ type TopologyLink = {
   target: string;
   value?: number;
 };
-type EmbeddedJobRecord = {
-  jobId: string;
-  workflow: string;
-  datasetId?: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  requestedBy?: string;
-  lineage?: Record<string, unknown>;
-  parameters?: Record<string, unknown>;
-  logs: string[];
-  artifacts: Array<{
-    name: string;
-    url: string;
-    mimeType?: string;
-    size?: string;
-  }>;
-};
-
-const embeddedJobStore = new Map<string, EmbeddedJobRecord>();
-/** Inline JSON content for dev-mock artifact files, keyed by the artifact URL path. */
-const artifactContentStore = new Map<string, unknown>();
-let embeddedJobCounter = 0;
-let mockScanCount = 0;
-let mockDispatchCount = 0;
-let mockDispatchIntervalSeconds = 0.5;
-// Simulate the scanner ticking: every N seconds count all QUEUED→RUNNING transitions.
-setInterval(() => {
-  mockScanCount += 1;
-  for (const job of embeddedJobStore.values()) {
-    const prev = job.status;
-    advanceJobStatus(job);
-    if (
-      prev === "QUEUED" &&
-      (job.status === "RUNNING" || job.status === "COMPLETED")
-    ) {
-      mockDispatchCount += 1;
-    }
-  }
-}, mockDispatchIntervalSeconds * 1000);
-
-function createEmbeddedJobId(): string {
-  embeddedJobCounter += 1;
-  return `e2e-job-${Date.now()}-${embeddedJobCounter}`;
-}
-
-function createEmbeddedJob(
-  payload: Record<string, unknown>
-): EmbeddedJobRecord {
-  const now = new Date().toISOString();
-  const jobId = createEmbeddedJobId();
-  const requestedBy =
-    typeof payload["requestedBy"] === "string"
-      ? (payload["requestedBy"] as string)
-      : undefined;
-  const parameters =
-    payload["parameters"] && typeof payload["parameters"] === "object"
-      ? ({ ...(payload["parameters"] as Record<string, unknown>) } as Record<
-          string,
-          unknown
-        >)
-      : {};
-
-  if (requestedBy === "ui-sample") {
-    parameters["deferred"] = true;
-  }
-
-  return {
-    jobId,
-    workflow: String(payload["workflow"] || "import"),
-    datasetId: payload["datasetId"]
-      ? String(payload["datasetId"])
-      : "embedded-dataset",
-    status: "QUEUED",
-    createdAt: now,
-    updatedAt: now,
-    requestedBy,
-    lineage:
-      payload["lineage"] && typeof payload["lineage"] === "object"
-        ? { ...(payload["lineage"] as Record<string, unknown>) }
-        : {},
-    parameters,
-    logs: [`${now} job created`, `${now} status=QUEUED`],
-    artifacts: [],
-  };
-}
-
-// When a VO-type job completes in dev-mock mode, we synthesise an
-// "external-source" artifact so the Products tab and telemetry External Data
-// tab can show which VO service was called and what it returned.
-// This mirrors what VoJobExecutor.java writes to disk in real mode.
-function voExternalSourcePayload(
-  workflow: string,
-  params: Record<string, unknown>,
-  _jobId: string
-): Record<string, unknown> | null {
-  switch (workflow) {
-    case "vo.cone-search":
-    case "vo.scs":
-      return {
-        type: "external-source",
-        provider: String(params["provider"] ?? "HEASARC"),
-        sourceName: `Cone Search – ${params["target"] ?? "3C 273"} (r=${
-          params["radius"] ?? 0.1
-        }°)`,
-        accessUrl: String(
-          params["serviceUrl"] ?? "https://heasarc.gsfc.nasa.gov/xamin/vo/cone"
-        ),
-        sampleFields: ["source_name", "ra", "dec", "flux_erg_s_cm2", "mission"],
-        sampleRows: [
-          ["3C273", "187.2779", "2.0524", "1.62e-11", "Chandra/CXO"],
-          ["3C273_off1", "187.2960", "2.0714", "4.10e-14", "ROSAT/HRI"],
-          ["3C273_off2", "187.2610", "2.0341", "2.80e-14", "XMM-Newton"],
-        ],
-        links: [
-          {
-            accessUrl: `https://heasarc.gsfc.nasa.gov/xamin/vo/cone?target=${
-              params["target"] ?? "3C273"
-            }&radius=${params["radius"] ?? 0.1}&format=votable`,
-            semantics: "#this",
-            contentType: "application/x-votable+xml",
-          },
-        ],
-      };
-    case "vo.adql.query":
-      return {
-        type: "external-source",
-        provider: String(params["provider"] ?? "NRAO"),
-        sourceName: `ADQL Query – ${String(
-          params["tapUrl"] ?? "unknown TAP"
-        ).replace("https://", "")}`,
-        tapUrl: String(
-          params["tapUrl"] ?? "https://data-query.nrao.edu/tap/sync"
-        ),
-        sampleFields: ["obs_id", "ra", "dec", "t_exptime", "dataproduct_type"],
-        sampleRows: [
-          ["VLASS1.1+J123049+122322", "187.706", "12.390", "5.0", "image"],
-          ["VLASS1.1+J123051+122344", "187.713", "12.395", "5.0", "image"],
-          ["VLASS1.1+J123052+122316", "187.718", "12.388", "10.0", "image"],
-        ],
-        links: [],
-      };
-    case "vo.obscore.search":
-      return {
-        type: "external-source",
-        provider: String(params["provider"] ?? "NRAO"),
-        sourceName: `ObsCore Search – M87 cubes (r=${
-          (params["position"] as Record<string, unknown>)?.["radius"] ?? 0.2
-        }°)`,
-        tapUrl: String(
-          params["tapUrl"] ?? "https://data-query.nrao.edu/tap/sync"
-        ),
-        sampleFields: [
-          "obs_id",
-          "obs_title",
-          "s_ra",
-          "s_dec",
-          "dataproduct_type",
-        ],
-        sampleRows: [
-          [
-            "ALMA-M87-2017.1.00843",
-            "M87 ALMA Band 6",
-            "187.706",
-            "12.391",
-            "cube",
-          ],
-          ["EVLA-M87-13A-292", "M87 JVLA L-band", "187.705", "12.390", "cube"],
-        ],
-        links: [],
-      };
-    case "vo.datalink.resolve":
-      return {
-        type: "external-source",
-        provider: String(params["provider"] ?? "NRAO"),
-        sourceName: `DataLink – ${
-          params["datasetIdentifier"] ?? "unknown dataset"
-        }`,
-        accessUrl: String(
-          params["datalinkUrl"] ?? "https://data-query.nrao.edu/datalink"
-        ),
-        sampleFields: [
-          "ID",
-          "access_url",
-          "semantics",
-          "content_type",
-          "content_length",
-        ],
-        sampleRows: [
-          [
-            String(params["datasetIdentifier"] ?? ""),
-            "https://data-query.nrao.edu/products/ngvla-pilot-ms-0001.ms.tar",
-            "#this",
-            "application/tar",
-            "3221225472",
-          ],
-          [
-            String(params["datasetIdentifier"] ?? ""),
-            "https://data-query.nrao.edu/products/ngvla-pilot-ms-0001.fits",
-            "#preview",
-            "application/fits",
-            "104857600",
-          ],
-        ],
-        links: [],
-      };
-    case "vo.product.fetch":
-      return {
-        type: "external-source",
-        provider: String(params["provider"] ?? "NRAO"),
-        sourceName: `Product Download – ${
-          String(params["productUrl"] ?? "")
-            .split("/")
-            .pop() ?? "unknown"
-        }`,
-        accessUrl: String(params["productUrl"] ?? ""),
-        sampleFields: ["keyword", "value", "comment"],
-        sampleRows: [
-          ["SIMPLE", "T", "file conforms to FITS standard"],
-          ["BITPIX", "-32", "4-byte IEEE floating-point values"],
-          ["NAXIS", "4", "number of data axes"],
-          ["NAXIS1", "1024", "RA axis length"],
-          ["TELESCOP", "ngVLA", "Next Generation Very Large Array"],
-        ],
-        links: [],
-      };
-    default:
-      return null;
-  }
-}
-
-/** Registers an external-source artifact for a completed VO job. */
-function registerVoArtifact(job: EmbeddedJobRecord): void {
-  if (job.artifacts.length > 0) return; // already registered
-  const params = (job.parameters ?? {}) as Record<string, unknown>;
-  const payload = voExternalSourcePayload(job.workflow, params, job.jobId);
-  if (!payload) return;
-  const artifactName = "external-call.json";
-  const artifactUrl = `/api/v1/jobs/${job.jobId}/artifacts/${artifactName}`;
-  job.artifacts = [
-    { name: artifactName, url: artifactUrl, mimeType: "application/json" },
-  ];
-  artifactContentStore.set(artifactUrl, payload);
-}
-
-// Seed the embedded job store with realistic dev-mode jobs so the Jobs view
-// is populated immediately without requiring a running Java backend.
-{
-  const _now = Date.now();
-  const _seed = (
-    workflow: string,
-    status: string,
-    datasetId: string,
-    minsAgo: number
-  ): EmbeddedJobRecord => {
-    const createdAt = new Date(_now - minsAgo * 60_000).toISOString();
-    const j = createEmbeddedJob({
-      workflow,
-      datasetId,
-      requestedBy: "dev-seed",
-    });
-    j.status = status;
-    j.createdAt = createdAt;
-    j.updatedAt = createdAt;
-    j.logs = [`${createdAt} job created`, `${createdAt} status=${status}`];
-    // Artifacts stay [] in dev-mock mode; real output files come from the Java backend.
-    // Exception: seeded COMPLETED VO jobs get an external-source artifact so the
-    // Products tab shows something meaningful on first load.
-    if (status === "COMPLETED") {
-      registerVoArtifact(j);
-    }
-    return j;
-  };
-  for (const j of [
-    _seed("import", "COMPLETED", "ds-2026-alpha-001", 120),
-    _seed("vo.cone-search", "COMPLETED", "ds-2026-alpha-002", 90),
-    _seed("ingest", "RUNNING", "ds-2026-alpha-003", 45),
-    _seed("export", "QUEUED", "ds-2026-alpha-004", 10),
-    _seed("diagnostics", "COMPLETED", "ds-2026-alpha-005", 60),
-  ]) {
-    embeddedJobStore.set(j.jobId, j);
-  }
-}
-
-// Advance a job's status based on elapsed time so the UI shows a realistic
-// lifecycle without requiring a background timer.
-function advanceJobStatus(job: EmbeddedJobRecord): EmbeddedJobRecord {
-  if (job.status !== "QUEUED" && job.status !== "RUNNING") return job;
-  const ageMs = Date.now() - new Date(job.updatedAt).getTime();
-  const now = new Date().toISOString();
-
-  // determine whether this job should be treated as a long-running task
-  const isLongJob = () => {
-    // any VO workflow or explicit runtime hint is "long"; otherwise short
-    if (job.workflow.startsWith("vo.")) return true;
-    const hint = job.parameters?.["runtime"];
-    if (typeof hint === "string" && hint.toLowerCase() === "long") return true;
-    return false;
-  };
-
-  // latency thresholds (in milliseconds)
-  const QUEUED_TO_RUNNING_MS = 100; // almost instant transition
-  const SHORT_RUN_MS = 500;
-  const LONG_RUN_MS = 3_000;
-
-  if (job.status === "QUEUED" && ageMs > QUEUED_TO_RUNNING_MS) {
-    job.status = "RUNNING";
-    job.updatedAt = now;
-    job.logs.push(`${now} status=RUNNING`);
-  } else if (job.status === "RUNNING") {
-    const runThreshold = isLongJob() ? LONG_RUN_MS : SHORT_RUN_MS;
-    if (ageMs > runThreshold) {
-      job.status = "COMPLETED";
-      job.updatedAt = now;
-      job.logs.push(`${now} status=${job.status}`);
-      if (job.status === "COMPLETED") {
-        registerVoArtifact(job);
-      }
-    }
-  }
-  return job;
-}
-
 type RuntimeProfileSpec = {
   workers: number;
   ratePerWorker: number;
@@ -440,17 +129,6 @@ const prometheusProxyResponseBytesTotal: Record<string, number> = {};
 const prometheusProxyDurationBucketCounts: Record<string, number[]> = {};
 const prometheusProxyDurationCount: Record<string, number> = {};
 const prometheusProxyDurationSum: Record<string, number> = {};
-const frontendRequestsTotal: Record<string, number> = {};
-const frontendResponseBytesTotal: Record<string, number> = {};
-const frontendDurationBucketCounts: Record<string, number[]> = {};
-const frontendDurationCount: Record<string, number> = {};
-const frontendDurationSum: Record<string, number> = {};
-const frontendApiRequestsTotal: Record<string, number> = {};
-const frontendApiResponseBytesTotal: Record<string, number> = {};
-const frontendApiDurationBucketCounts: Record<string, number[]> = {};
-const frontendApiDurationCount: Record<string, number> = {};
-const frontendApiDurationSum: Record<string, number> = {};
-
 // Runtime load profile metrics (exposed via /metrics so Prometheus can track stress load)
 let runtimeLoadProfileMetrics: {
   profilePct: LoadProfilePct;
@@ -660,22 +338,6 @@ function governanceProxyKey(
   return `${route}|${method}|${statusClass}`;
 }
 
-function frontendRequestKey(
-  routeGroup: string,
-  method: string,
-  statusClass: string
-): string {
-  return `${routeGroup}|${method}|${statusClass}`;
-}
-
-function frontendApiKey(
-  apiGroup: string,
-  method: string,
-  statusClass: string
-): string {
-  return `${apiGroup}|${method}|${statusClass}`;
-}
-
 function prometheusProxyKey(method: string, statusClass: string): string {
   return `${method}|${statusClass}`;
 }
@@ -773,131 +435,6 @@ function recordPrometheusProxyMetrics(
     statusClass,
     durationSeconds
   );
-}
-
-function observeFrontendRequestDuration(
-  routeGroup: string,
-  method: string,
-  statusClass: string,
-  seconds: number
-): void {
-  const key = frontendRequestKey(routeGroup, method, statusClass);
-  const buckets =
-    frontendDurationBucketCounts[key] ??
-    new Array(GOVERNANCE_PROXY_DURATION_BUCKETS.length + 1).fill(0);
-  frontendDurationBucketCounts[key] = buckets;
-  frontendDurationCount[key] = (frontendDurationCount[key] ?? 0) + 1;
-  frontendDurationSum[key] = (frontendDurationSum[key] ?? 0) + seconds;
-  const idx = GOVERNANCE_PROXY_DURATION_BUCKETS.findIndex(
-    (bucket) => seconds <= bucket
-  );
-  buckets[idx === -1 ? buckets.length - 1 : idx] += 1;
-}
-
-function recordFrontendRequestMetrics(
-  routeGroup: string,
-  method: string,
-  status: number,
-  responseBytes: number,
-  durationSeconds: number
-): void {
-  const statusClass =
-    status >= 500
-      ? "5xx"
-      : status >= 400
-      ? "4xx"
-      : status >= 300
-      ? "3xx"
-      : "2xx";
-  const key = frontendRequestKey(routeGroup, method.toUpperCase(), statusClass);
-  frontendRequestsTotal[key] = (frontendRequestsTotal[key] ?? 0) + 1;
-  frontendResponseBytesTotal[key] =
-    (frontendResponseBytesTotal[key] ?? 0) + Math.max(0, responseBytes);
-  observeFrontendRequestDuration(
-    routeGroup,
-    method.toUpperCase(),
-    statusClass,
-    durationSeconds
-  );
-}
-
-function observeFrontendApiDuration(
-  apiGroup: string,
-  method: string,
-  statusClass: string,
-  seconds: number
-): void {
-  const key = frontendApiKey(apiGroup, method, statusClass);
-  const buckets =
-    frontendApiDurationBucketCounts[key] ??
-    new Array(GOVERNANCE_PROXY_DURATION_BUCKETS.length + 1).fill(0);
-  frontendApiDurationBucketCounts[key] = buckets;
-  frontendApiDurationCount[key] = (frontendApiDurationCount[key] ?? 0) + 1;
-  frontendApiDurationSum[key] = (frontendApiDurationSum[key] ?? 0) + seconds;
-  const idx = GOVERNANCE_PROXY_DURATION_BUCKETS.findIndex(
-    (bucket) => seconds <= bucket
-  );
-  buckets[idx === -1 ? buckets.length - 1 : idx] += 1;
-}
-
-function recordFrontendApiMetrics(
-  apiGroup: string,
-  method: string,
-  status: number,
-  responseBytes: number,
-  durationSeconds: number
-): void {
-  const statusClass =
-    status >= 500
-      ? "5xx"
-      : status >= 400
-      ? "4xx"
-      : status >= 300
-      ? "3xx"
-      : "2xx";
-  const key = frontendApiKey(apiGroup, method.toUpperCase(), statusClass);
-  frontendApiRequestsTotal[key] = (frontendApiRequestsTotal[key] ?? 0) + 1;
-  frontendApiResponseBytesTotal[key] =
-    (frontendApiResponseBytesTotal[key] ?? 0) + Math.max(0, responseBytes);
-  observeFrontendApiDuration(
-    apiGroup,
-    method.toUpperCase(),
-    statusClass,
-    durationSeconds
-  );
-}
-
-function classifyFrontendRoute(path: string): string {
-  if (!path || path === "/") return "landing";
-  const normalized = path.split("?")[0].toLowerCase();
-  if (normalized.startsWith("/dashboard")) return "dashboard";
-  if (normalized.startsWith("/forge")) return "forge";
-  if (normalized.startsWith("/telemetry")) return "telemetry";
-  if (normalized.startsWith("/topology")) return "topology";
-  if (normalized.startsWith("/jobs")) return "jobs";
-  if (normalized.startsWith("/viewer")) return "viewer";
-  if (normalized.startsWith("/datasets")) return "datasets";
-  if (normalized.startsWith("/diagnostics")) return "diagnostics";
-  if (normalized.startsWith("/settings")) return "settings";
-  return "other";
-}
-
-function classifyFrontendApiRoute(path: string): string {
-  if (!path) return "other";
-  const normalized = path.split("?")[0].toLowerCase();
-  if (normalized.startsWith("/api/forge")) return "forge";
-  if (normalized === "/api/v1/telemetry/infrastructure") return "telemetry";
-  if (normalized.startsWith("/api/v1/alerts")) return "alerts";
-  if (normalized.startsWith("/api/v1/broker-events")) return "broker_events";
-  if (normalized.startsWith("/api/v1/commissioning")) return "commissioning";
-  if (normalized.startsWith("/api/v1/health")) return "health";
-  if (normalized.startsWith("/api/v1/pulsar")) return "pulsar";
-  if (normalized.startsWith("/api/v1/rabbitmq")) return "rabbitmq";
-  if (normalized.startsWith("/api/v1/vo")) return "vo";
-  if (normalized.startsWith("/api/v1/jobs")) return "jobs";
-  if (normalized.startsWith("/api/v1/admin")) return "admin";
-  if (normalized.startsWith("/api/v1/public-sources")) return "public_sources";
-  return "other";
 }
 
 function renderPrometheusMetrics(): string {
@@ -1083,101 +620,7 @@ function renderPrometheusMetrics(): string {
     `frontend_ssr_runtime_load_worker_bytes_total ${runtimeWorkerBytes}`
   );
 
-  lines.push(
-    "# HELP frontend_ssr_frontend_requests_total Total frontend-originated page requests handled by Nest SSR.",
-    "# TYPE frontend_ssr_frontend_requests_total counter"
-  );
-  for (const [key, value] of Object.entries(frontendRequestsTotal)) {
-    const [routeGroup, method, statusClass] = key.split("|");
-    lines.push(
-      `frontend_ssr_frontend_requests_total{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${value}`
-    );
-  }
-
-  lines.push(
-    "# HELP frontend_ssr_frontend_response_bytes_total Total response bytes served by Nest SSR for frontend page requests.",
-    "# TYPE frontend_ssr_frontend_response_bytes_total counter"
-  );
-  for (const [key, value] of Object.entries(frontendResponseBytesTotal)) {
-    const [routeGroup, method, statusClass] = key.split("|");
-    lines.push(
-      `frontend_ssr_frontend_response_bytes_total{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${value}`
-    );
-  }
-
-  lines.push(
-    "# HELP frontend_ssr_frontend_request_duration_seconds Duration of frontend page requests handled by Nest SSR.",
-    "# TYPE frontend_ssr_frontend_request_duration_seconds histogram"
-  );
-  for (const key of Object.keys(frontendDurationBucketCounts)) {
-    const [routeGroup, method, statusClass] = key.split("|");
-    const buckets = frontendDurationBucketCounts[key];
-    let bucketCumulative = 0;
-    GOVERNANCE_PROXY_DURATION_BUCKETS.forEach((bucket, index) => {
-      bucketCumulative += buckets[index] ?? 0;
-      lines.push(
-        `frontend_ssr_frontend_request_duration_seconds_bucket{route_group="${routeGroup}",method="${method}",status_class="${statusClass}",le="${bucket}"} ${bucketCumulative}`
-      );
-    });
-    bucketCumulative += buckets[buckets.length - 1] ?? 0;
-    lines.push(
-      `frontend_ssr_frontend_request_duration_seconds_bucket{route_group="${routeGroup}",method="${method}",status_class="${statusClass}",le="+Inf"} ${bucketCumulative}`,
-      `frontend_ssr_frontend_request_duration_seconds_sum{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${
-        frontendDurationSum[key] ?? 0
-      }`,
-      `frontend_ssr_frontend_request_duration_seconds_count{route_group="${routeGroup}",method="${method}",status_class="${statusClass}"} ${
-        frontendDurationCount[key] ?? 0
-      }`
-    );
-  }
-
-  lines.push(
-    "# HELP frontend_ssr_frontend_api_requests_total Total frontend-originated API requests handled by Nest SSR.",
-    "# TYPE frontend_ssr_frontend_api_requests_total counter"
-  );
-  for (const [key, value] of Object.entries(frontendApiRequestsTotal)) {
-    const [apiGroup, method, statusClass] = key.split("|");
-    lines.push(
-      `frontend_ssr_frontend_api_requests_total{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${value}`
-    );
-  }
-
-  lines.push(
-    "# HELP frontend_ssr_frontend_api_response_bytes_total Total response bytes served by Nest SSR for frontend-originated API requests.",
-    "# TYPE frontend_ssr_frontend_api_response_bytes_total counter"
-  );
-  for (const [key, value] of Object.entries(frontendApiResponseBytesTotal)) {
-    const [apiGroup, method, statusClass] = key.split("|");
-    lines.push(
-      `frontend_ssr_frontend_api_response_bytes_total{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${value}`
-    );
-  }
-
-  lines.push(
-    "# HELP frontend_ssr_frontend_api_request_duration_seconds Duration of frontend-originated API requests handled by Nest SSR.",
-    "# TYPE frontend_ssr_frontend_api_request_duration_seconds histogram"
-  );
-  for (const key of Object.keys(frontendApiDurationBucketCounts)) {
-    const [apiGroup, method, statusClass] = key.split("|");
-    const buckets = frontendApiDurationBucketCounts[key];
-    let bucketCumulative = 0;
-    GOVERNANCE_PROXY_DURATION_BUCKETS.forEach((bucket, index) => {
-      bucketCumulative += buckets[index] ?? 0;
-      lines.push(
-        `frontend_ssr_frontend_api_request_duration_seconds_bucket{api_group="${apiGroup}",method="${method}",status_class="${statusClass}",le="${bucket}"} ${bucketCumulative}`
-      );
-    });
-    bucketCumulative += buckets[buckets.length - 1] ?? 0;
-    lines.push(
-      `frontend_ssr_frontend_api_request_duration_seconds_bucket{api_group="${apiGroup}",method="${method}",status_class="${statusClass}",le="+Inf"} ${bucketCumulative}`,
-      `frontend_ssr_frontend_api_request_duration_seconds_sum{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${
-        frontendApiDurationSum[key] ?? 0
-      }`,
-      `frontend_ssr_frontend_api_request_duration_seconds_count{api_group="${apiGroup}",method="${method}",status_class="${statusClass}"} ${
-        frontendApiDurationCount[key] ?? 0
-      }`
-    );
-  }
+  appendFrontendMetrics(lines);
 
   return lines.join("\n") + "\n";
 }
@@ -1471,7 +914,13 @@ class SsrService {
 export class AppController {
   constructor(
     private ssr: SsrService,
-    private runtimeLoad?: RuntimeLoadProfileService
+    private runtimeLoad: RuntimeLoadProfileService | undefined,
+    private readonly forgeProxyService: ForgeProxyService = new ForgeProxyService(),
+    private readonly governanceUpstreamService: GovernanceUpstreamService = new GovernanceUpstreamService(),
+    private readonly governanceProxyService: GovernanceProxyService = new GovernanceProxyService(
+      governanceUpstreamService
+    ),
+    private readonly embeddedMockBackendService: EmbeddedMockBackendService = new EmbeddedMockBackendService()
   ) {
     // In some development setups the runtime load service may not be provided via DI.
     // Fall back to an explicit instance so stress profile endpoints still work.
@@ -1501,54 +950,6 @@ export class AppController {
   @Get("api/telemetry/debug")
   telemetryDebug() {
     return getTelemetryDebugInfo();
-  }
-
-  private buildBaseCandidates(baseUrl: string): string[] {
-    const out = [baseUrl];
-    try {
-      const u = new URL(baseUrl);
-      if (u.hostname === "localhost") {
-        const v4 = new URL(baseUrl);
-        v4.hostname = "127.0.0.1";
-        out.push(v4.toString().replace(/\/$/, ""));
-      } else if (u.hostname === "127.0.0.1") {
-        const local = new URL(baseUrl);
-        local.hostname = "localhost";
-        out.push(local.toString().replace(/\/$/, ""));
-      }
-    } catch {
-      // ignore malformed base URL and use original only
-    }
-    return Array.from(new Set(out));
-  }
-
-  private useEmbeddedE2eBackend(): boolean {
-    // Local developer experience: default to the embedded mock backend
-    // so frontend work does not require a running governance service.
-    const env = process.env["USE_EMBEDDED_E2E_BACKEND"];
-    if (env === undefined || env === null) {
-      return true;
-    }
-    return env === "true";
-  }
-
-  /**
-   * When the embedded E2E backend is active we usually stub most governance
-   * endpoints, including job lifecycle logic.  For load‑generation or
-   * interactive debugging we may want the front‑end to continue talking to
-   * the real backend for job requests while still using the mock server for
-   * other feature toggles (public sources, dispatch metrics, etc.).
-   *
-   * Set `EMBEDDED_E2E_JOBS=false` in the environment to disable job handling
-   * in the embedded server; the request will then fall through to the normal
-   * proxy logic and be forwarded to whatever governance service is configured.
-   */
-  private interceptEmbeddedJobs(): boolean {
-    // default true when using embedded backend
-    return (
-      this.useEmbeddedE2eBackend() &&
-      process.env["EMBEDDED_E2E_JOBS"] !== "false"
-    );
   }
 
   private embeddedPrometheusPayload(
@@ -1611,29 +1012,6 @@ export class AppController {
           },
         ],
       },
-    };
-  }
-
-  private embeddedTopologyMetrics() {
-    const jobs = Array.from(embeddedJobStore.values());
-    // The landing page computes governance coverage from topology links.
-    // Ensure the embedded E2E backend returns a minimal set of links so the
-    // dashboard signal bars are meaningful even without an upstream governance service.
-    const links = [
-      { source: "prometheus" },
-      { source: "admin" },
-      { source: "derived" },
-    ];
-    return {
-      profilePct: 25,
-      workers: 2,
-      note: "embedded-e2e-backend",
-      counts: {
-        queued: jobs.filter((job) => job.status === "QUEUED").length,
-        running: jobs.filter((job) => job.status === "RUNNING").length,
-        completed: jobs.filter((job) => job.status === "COMPLETED").length,
-      },
-      links,
     };
   }
 
@@ -1701,206 +1079,6 @@ export class AppController {
         fallbackDerivedLinkCount: 0,
       },
     };
-  }
-
-  private tryHandleEmbeddedGovernance(req: Request, res: Response): boolean {
-    if (!this.useEmbeddedE2eBackend()) {
-      return false;
-    }
-
-    const path = req.path || req.originalUrl || "";
-    const method = (req.method || "GET").toUpperCase();
-    const sendJson = (statusCode: number, body: unknown) => {
-      res.status(statusCode).json(body);
-      return true;
-    };
-
-    if (method === "GET" && path === "/api/v1/public-sources") {
-      return sendJson(200, [
-        {
-          name: "Embedded Sample Source",
-          url: "https://example.invalid/embedded-source",
-        },
-      ]);
-    }
-
-    if (method === "GET" && path === "/api/v1/admin/dispatch") {
-      return sendJson(200, {
-        intervalSeconds: mockDispatchIntervalSeconds,
-        scannedCount: mockScanCount,
-        dispatchedCount: mockDispatchCount,
-      });
-    }
-
-    if (method === "POST" && path === "/api/v1/admin/dispatch") {
-      const newInterval = Number(
-        (req.body as { intervalSeconds?: number })?.intervalSeconds ||
-          mockDispatchIntervalSeconds
-      );
-      if (newInterval > 0) mockDispatchIntervalSeconds = newInterval;
-      return sendJson(200, {
-        intervalSeconds: mockDispatchIntervalSeconds,
-        scannedCount: mockScanCount,
-        dispatchedCount: mockDispatchCount,
-      });
-    }
-
-    if (method === "POST" && path === "/api/v1/admin/release-deferred") {
-      let released = 0;
-      for (const job of embeddedJobStore.values()) {
-        if (job.parameters?.["deferred"] === true) {
-          job.parameters["deferred"] = false;
-          job.status = "COMPLETED";
-          job.updatedAt = new Date().toISOString();
-          job.logs.push(`${job.updatedAt} status=COMPLETED`);
-          released += 1;
-        }
-      }
-      return sendJson(200, { released });
-    }
-
-    if (!this.interceptEmbeddedJobs()) {
-      // if job interception is disabled, let the request fall through to the
-      // governance proxy; we can still handle other mock endpoints above.
-      return false;
-    }
-
-    if (method === "GET" && path === "/api/v1/jobs/types") {
-      return sendJson(200, [
-        "import",
-        "ingest",
-        "export",
-        "diagnostics",
-        "cleanup",
-      ]);
-    }
-
-    if (method === "POST" && path === "/api/v1/jobs/validate") {
-      return sendJson(200, { valid: true });
-    }
-
-    if (method === "GET" && path === "/api/v1/jobs") {
-      const jobs = Array.from(embeddedJobStore.values()).sort((a, b) =>
-        b.createdAt.localeCompare(a.createdAt)
-      );
-      return sendJson(200, jobs);
-    }
-
-    if (method === "POST" && path === "/api/v1/jobs") {
-      const payload =
-        req.body && typeof req.body === "object"
-          ? (req.body as Record<string, unknown>)
-          : {};
-      const job = createEmbeddedJob(payload);
-      embeddedJobStore.set(job.jobId, job);
-      const statusCode = payload["requestedBy"] ? 202 : 201;
-      return sendJson(statusCode, {
-        jobId: job.jobId,
-        status: job.status,
-        queuedAt: job.createdAt,
-      });
-    }
-
-    const pathMatch = path.match(/^\/api\/v1\/jobs\/([^/]+)(?:\/(.+))?$/);
-    if (!pathMatch) {
-      return false;
-    }
-
-    const jobId = decodeURIComponent(pathMatch[1]);
-    const suffix = pathMatch[2] || "";
-    const job = embeddedJobStore.get(jobId);
-
-    if (!job) {
-      return sendJson(404, { error: "not_found", jobId });
-    }
-
-    if (method === "GET" && !suffix) {
-      return sendJson(200, job);
-    }
-
-    if (method === "DELETE" && !suffix) {
-      embeddedJobStore.delete(jobId);
-      res.status(204).send();
-      return true;
-    }
-
-    if (method === "POST" && suffix === "transition") {
-      const body =
-        req.body && typeof req.body === "object"
-          ? (req.body as Record<string, unknown>)
-          : {};
-      const nextState = String(body["newState"] || body["state"] || "QUEUED");
-      job.status = nextState;
-      job.updatedAt = new Date().toISOString();
-      job.logs.push(`${job.updatedAt} status=${nextState}`);
-      return sendJson(200, job);
-    }
-
-    if (method === "GET" && suffix === "lineage") {
-      return sendJson(200, job.lineage || {});
-    }
-
-    if (method === "PUT" && suffix === "lineage") {
-      job.lineage =
-        req.body && typeof req.body === "object"
-          ? { ...(req.body as Record<string, unknown>) }
-          : {};
-      job.updatedAt = new Date().toISOString();
-      return sendJson(200, job.lineage);
-    }
-
-    if (method === "GET" && suffix === "logs") {
-      return sendJson(200, job.logs);
-    }
-
-    if (method === "GET" && suffix === "artifacts") {
-      return sendJson(200, job.artifacts);
-    }
-
-    return false;
-  }
-
-  private async fetchWithTimeout(
-    url: string,
-    init: RequestInit,
-    timeoutMs = 7000
-  ): Promise<globalThis.Response> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort("timeout"), timeoutMs);
-    try {
-      return await fetch(url, { ...init, signal: controller.signal });
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  private async fetchWithFallback(
-    urls: string[],
-    init: RequestInit,
-    timeoutMs = 7000
-  ): Promise<globalThis.Response> {
-    let lastError: unknown;
-    for (const url of urls) {
-      try {
-        return await this.fetchWithTimeout(url, init, timeoutMs);
-      } catch (e) {
-        lastError = e;
-      }
-    }
-    throw lastError ?? new Error("fetch_failed");
-  }
-
-  private governanceBaseCandidates(): string[] {
-    const governanceBase =
-      process.env["GOVERNANCE_API_URL"] || "http://127.0.0.1:8082";
-    return this.buildBaseCandidates(governanceBase);
-  }
-
-  private forgeBaseCandidates(): string[] {
-    const forgeBase =
-      process.env["FORGE_API_URL"] ||
-      `http://127.0.0.1:${process.env["FORGE_API_HOST_PORT"] || "4101"}`;
-    return this.buildBaseCandidates(forgeBase);
   }
 
   private mockInfrastructureTelemetry() {
@@ -2336,17 +1514,17 @@ export class AppController {
 
   @Get("/api/metrics/topology")
   async proxyTopologyMetrics(@Res() res: Response): Promise<void> {
-    if (this.useEmbeddedE2eBackend()) {
-      res.status(200).json(this.embeddedTopologyMetrics());
+    if (this.embeddedMockBackendService.useEmbeddedE2eBackend()) {
+      res.status(200).json(this.embeddedMockBackendService.embeddedTopologyMetrics());
       return;
     }
 
-    const targetUrls = this.governanceBaseCandidates().map(
+    const targetUrls = this.governanceUpstreamService.governanceBaseCandidates().map(
       (b) => `${b}/api/v1/metrics/topology`
     );
     try {
       const started = Date.now();
-      const upstream = await this.fetchWithFallback(
+      const upstream = await this.governanceUpstreamService.fetchWithFallback(
         targetUrls,
         { method: "GET" },
         7000
@@ -2379,7 +1557,7 @@ export class AppController {
 
   @Get("/api/v1/visualization/metrics")
   async proxyVisualizationMetrics(@Res() res: Response): Promise<void> {
-    if (this.useEmbeddedE2eBackend()) {
+    if (this.embeddedMockBackendService.useEmbeddedE2eBackend()) {
       const now = Date.now();
       const sparkline = Array.from({ length: 40 }, (_, i) => ({
         t: now - (40 - i) * 1000,
@@ -2403,12 +1581,12 @@ export class AppController {
       return;
     }
 
-    const targetUrls = this.governanceBaseCandidates().map(
+    const targetUrls = this.governanceUpstreamService.governanceBaseCandidates().map(
       (b) => `${b}/api/v1/visualization/metrics`
     );
     try {
       const started = Date.now();
-      const upstream = await this.fetchWithFallback(
+      const upstream = await this.governanceUpstreamService.fetchWithFallback(
         targetUrls,
         { method: "GET" },
         7000
@@ -2445,7 +1623,7 @@ export class AppController {
       return;
     }
 
-    if (this.useEmbeddedE2eBackend()) {
+    if (this.embeddedMockBackendService.useEmbeddedE2eBackend()) {
       const query = String(req.query?.["query"] || "sum(up)");
       const start = req.query?.["start"]
         ? Number(req.query["start"])
@@ -2478,11 +1656,15 @@ export class AppController {
 
     const isRange = qp.has("start") || qp.has("end") || qp.has("step");
     const path = isRange ? "/api/v1/query_range" : "/api/v1/query";
-    const baseCandidates = this.buildBaseCandidates(prom);
+    const baseCandidates = this.governanceUpstreamService.buildBaseCandidates(prom);
     const urls = baseCandidates.map((b) => `${b}${path}?${qp.toString()}`);
     const started = Date.now();
     try {
-      const r = await this.fetchWithFallback(urls, { method: "GET" }, 7000);
+      const r = await this.governanceUpstreamService.fetchWithFallback(
+        urls,
+        { method: "GET" },
+        7000
+      );
       const body = await r.text();
       const ct = r.headers.get("content-type") || "application/json";
       if (!r.ok) {
@@ -2761,7 +1943,11 @@ export class AppController {
         const start = Date.now();
         try {
           const u = url.startsWith("http") ? url : `http://${url}`;
-          const r = await this.fetchWithTimeout(u, { method: "GET" }, timeout);
+          const r = await this.governanceUpstreamService.fetchWithTimeout(
+            u,
+            { method: "GET" },
+            timeout
+          );
           return { ok: r.ok, latencyMs: Date.now() - start };
         } catch (e: any) {
           return {
@@ -2989,7 +2175,11 @@ export class AppController {
       const start = Date.now();
       try {
         const u = url.startsWith("http") ? url : `http://${url}`;
-        const r = await this.fetchWithTimeout(u, { method: "GET" }, timeout);
+        const r = await this.governanceUpstreamService.fetchWithTimeout(
+          u,
+          { method: "GET" },
+          timeout
+        );
         return { ok: r.ok, latencyMs: Date.now() - start };
       } catch (e: any) {
         return {
@@ -3136,10 +2326,10 @@ export class AppController {
         note?: string;
       };
       try {
-        const targetUrls = this.governanceBaseCandidates().map(
+        const targetUrls = this.governanceUpstreamService.governanceBaseCandidates().map(
           (b) => `${b}/api/v1/metrics/topology/runtime-profile`
         );
-        await this.fetchWithFallback(
+        await this.governanceUpstreamService.fetchWithFallback(
           targetUrls,
           {
             method: "POST",
@@ -3200,90 +2390,19 @@ export class AppController {
   }
 
   @All("/api/forge/*path")
-  async proxyForge(@Req() req: Request, @Res() res: Response): Promise<void> {
-    const path = (req as any).path as string;
-    const method = (req.method || "GET").toUpperCase();
-
-    if (path === "/api/forge/health" && method === "GET") {
-      const targetUrls = this.forgeBaseCandidates().map((b) => `${b}/health`);
-
-      try {
-        const started = Date.now();
-        const response = await this.fetchWithFallback(
-          targetUrls,
-          {
-            method: "GET",
-            headers: { Accept: "application/json" },
-          },
-          3000
-        );
-        const body = await response.json();
-        const responseBytes = Buffer.byteLength(JSON.stringify(body), "utf8");
-        recordFrontendApiMetrics(
-          "forge",
-          method,
-          response.status,
-          responseBytes,
-          (Date.now() - started) / 1000
-        );
-        res.status(response.status).json(body);
-        return;
-      } catch (e) {
-        console.error("Error proxying to Forge API:", e);
-        recordFrontendApiMetrics("forge", method, 502, 0, 0);
-        res.status(502).json({
-          error: "forge_proxy_error",
-          message: "Unable to reach Cosmic Forge API",
-        });
-        return;
-      }
-    }
-
-    if (path === "/api/forge/graphql" && method === "POST") {
-      const targetUrls = this.forgeBaseCandidates().map((b) => `${b}/graphql`);
-
-      try {
-        const started = Date.now();
-        const response = await this.fetchWithFallback(
-          targetUrls,
-          {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(req.body ?? {}),
-          },
-          3000
-        );
-        const body = await response.json();
-        const responseBytes = Buffer.byteLength(JSON.stringify(body), "utf8");
-        recordFrontendApiMetrics(
-          "forge",
-          method,
-          response.status,
-          responseBytes,
-          (Date.now() - started) / 1000
-        );
-        res.status(response.status).json(body);
-        return;
-      } catch (e) {
-        console.error("Error proxying Forge GraphQL:", e);
-        recordFrontendApiMetrics("forge", method, 502, 0, 0);
-        res.status(502).json({
-          error: "forge_graphql_proxy_error",
-          message: "Unable to reach Cosmic Forge GraphQL endpoint",
-        });
-        return;
-      }
-    }
-
-    res.status(501).json({
-      error: "forge_not_implemented",
-      message: "Forge route reserved but not yet implemented",
-      path,
-      method,
-    });
+  proxyForge(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
+  ): Observable<unknown> {
+    return this.forgeProxyService.handle(req, res, (method, status, responseBytes, durationSeconds) =>
+      recordFrontendApiMetrics(
+        "forge",
+        method,
+        status,
+        responseBytes,
+        durationSeconds
+      )
+    );
   }
 
   @All("/api/v1/*path")
@@ -3291,495 +2410,14 @@ export class AppController {
     @Req() req: Request,
     @Res() res: Response
   ): Promise<void> {
-    const path = (req as any).path as string;
-    const method = (req.method || "GET").toUpperCase();
-    if (path !== "/api/v1/broker-events") {
-      const started = Date.now();
-      const apiGroup = classifyFrontendApiRoute(path);
-      res.on("finish", () => {
-        const lengthHeader = res.getHeader("content-length");
-        const responseBytes =
-          typeof lengthHeader === "string"
-            ? Number(lengthHeader)
-            : typeof lengthHeader === "number"
-            ? lengthHeader
-            : 0;
-        recordFrontendApiMetrics(
-          apiGroup,
-          method,
-          res.statusCode,
-          responseBytes,
-          (Date.now() - started) / 1000
-        );
-      });
-    }
-
-    if (this.tryHandleEmbeddedGovernance(req, res)) {
-      return;
-    }
-
-    // Dev-mode alert mocks — Java AlertController is not running locally.
-    // These must live here because @All("/api/v1/*path") is registered before
-    // the individual @Get/@Post alert methods and shadows them in NestJS routing.
-    if (path === "/api/v1/alerts/slo" && method === "GET") {
-      res.json({
-        alertIngestedTotal: 0,
-        alertLatencyMsP50: 0,
-        alertLatencyMsP95: 0,
-        alertLatencyMsP99: 0,
-        dlqDepth: 0,
-        replaysTotal: 0,
-        measuredAt: new Date().toISOString(),
-      });
-      return;
-    }
-    if (path === "/api/v1/alerts/dlq" && method === "GET") {
-      res.json([]);
-      return;
-    }
-    if (path === "/api/v1/alerts/ingest" && method === "POST") {
-      const body = (req as any).body ?? {};
-      res.status(201).json({
-        id: `dev-${Date.now()}`,
-        eventType: body["eventType"] ?? "UNKNOWN",
-        severity: body["severity"] ?? "INFO",
-        sourceSystem: body["sourceSystem"] ?? "dev",
-        correlationId: body["correlationId"] ?? `dev-corr-${Date.now()}`,
-        message: body["message"] ?? "",
-        issuedAt: new Date().toISOString(),
-        replayed: false,
-        tags: body["tags"] ?? [],
-      });
-      return;
-    }
-    if (path === "/api/v1/alerts/dlq/replay-all" && method === "POST") {
-      res.json(0);
-      return;
-    }
-    if (path.startsWith("/api/v1/alerts/dlq/replay/") && method === "POST") {
-      res.status(404).json({ error: "alert_not_found" });
-      return;
-    }
-    if (path === "/api/v1/alerts/dlq" && method === "POST") {
-      res.status(201).end();
-      return;
-    }
-    if (path === "/api/v1/broker-events" && method === "GET") {
-      const r = res as unknown as import("express").Response;
-      r.setHeader("Content-Type", "text/event-stream");
-      r.setHeader("Cache-Control", "no-cache");
-      r.setHeader("Connection", "keep-alive");
-      r.setHeader("X-Accel-Buffering", "no");
-      r.flushHeaders();
-      const sendEvent = (type: string, payload: Record<string, unknown>) => {
-        const data = JSON.stringify({ type, payload });
-        r.write(`data: ${data}\n\n`);
-      };
-      sendEvent("connected", { source: "dev-mock", ts: Date.now() });
-      const timer = setInterval(() => {
-        sendEvent("heartbeat", { ts: Date.now() });
-      }, 15000);
-      r.on("close", () => clearInterval(timer));
-      return;
-    }
-
-    // Dev-mode commissioning mocks (Java CommissioningController not running locally).
-    const COMMISSIONING_SCENARIOS = [
-      {
-        id: "antenna_calibration",
-        name: "Antenna Calibration",
-        type: "aiv",
-        description:
-          "Validates antenna calibration parameters including pointing model, noise temperature, and efficiency at target frequencies.",
-        requiredParameters: [
-          "antennaId",
-          "targetFrequencyMHz",
-          "pointingModelVersion",
-        ],
-      },
-      {
-        id: "timing_sync",
-        name: "Timing Synchronisation",
-        type: "aiv",
-        description:
-          "Validates that all array elements are synchronised to the timing reference within the accepted drift window.",
-        requiredParameters: [
-          "referenceElementId",
-          "maxDriftNs",
-          "syncProtocol",
-        ],
-      },
-      {
-        id: "rfi_baseline",
-        name: "RFI Baseline Survey",
-        type: "aiv",
-        description:
-          "Validates the RFI environment baseline against the expected spectral occupancy thresholds for science operations.",
-        requiredParameters: [
-          "siteId",
-          "frequencyRangeMHz",
-          "maxOccupancyPercent",
-        ],
-      },
-    ];
-    if (path === "/api/v1/commissioning/scenarios" && method === "GET") {
-      res.json(COMMISSIONING_SCENARIOS);
-      return;
-    }
-    if (path === "/api/v1/commissioning/validate" && method === "POST") {
-      const body = (req as any).body ?? {};
-      const scenarioId: string = body["scenarioId"] ?? "";
-      const scenario = COMMISSIONING_SCENARIOS.find((s) => s.id === scenarioId);
-      if (!scenario) {
-        res.status(404).json({
-          scenarioId,
-          scenarioName: null,
-          pass: false,
-          failures: [`scenario_not_found: ${scenarioId}`],
-          validatedAt: new Date().toISOString(),
-        });
-        return;
-      }
-      const params: Record<string, unknown> = body["parameters"] ?? {};
-      const failures = scenario.requiredParameters
-        .filter((p) => params[p] == null)
-        .map((p) => `missing_required_parameter: ${p}`);
-      res.json({
-        scenarioId: scenario.id,
-        scenarioName: scenario.name,
-        pass: failures.length === 0,
-        failures,
-        validatedAt: new Date().toISOString(),
-      });
-      return;
-    }
-    // ── Health / infra-status mocks ───────────────────────────────────────────
-    if (path === "/api/v1/health" && method === "GET") {
-      res.json({
-        status: "ok",
-        service: "java-governance",
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
-    if (path === "/api/v1/pulsar/status" && method === "GET") {
-      res.json({
-        brokers: 3,
-        topics: 12,
-        partitions: 24,
-        status: "healthy",
-        lastUpdated: new Date().toISOString(),
-      });
-      return;
-    }
-    if (path === "/api/v1/rabbitmq/status" && method === "GET") {
-      res.json({
-        status: "healthy",
-        connection: "established",
-        queues: {
-          audit: "cosmic.audit.queue",
-          control: "cosmic.control.queue",
-        },
-        exchanges: {
-          audit: "cosmic.audit.exchange",
-          control: "cosmic.control.exchange",
-        },
-        lastUpdated: new Date().toISOString(),
-      });
-      return;
-    }
-    if (path === "/api/v1/telemetry/infrastructure" && method === "GET") {
-      const targetUrls = this.governanceBaseCandidates().map(
-        (b) => `${b}/api/v1/telemetry/infrastructure`
-      );
-      try {
-        const started = Date.now();
-        const upstream = await this.fetchWithFallback(
-          targetUrls,
-          { method: "GET" },
-          7000
-        );
-        const text = await upstream.text();
-        const ct = upstream.headers.get("content-type");
-        if (ct) res.setHeader("content-type", ct);
-        recordGovernanceProxyMetrics(
-          "telemetry_infrastructure",
-          method,
-          upstream.status,
-          Buffer.byteLength(text ?? "", "utf8"),
-          (Date.now() - started) / 1000
-        );
-        res.status(upstream.status).send(text);
-      } catch (e) {
-        console.warn(
-          "Falling back to mock infrastructure telemetry:",
-          String(e)
-        );
-        res.json(this.mockInfrastructureTelemetry());
-      }
-      return;
-    }
-    // ── VO services mock ─────────────────────────────────────────────────────
-    if (path === "/api/v1/vo/services" && method === "GET") {
-      res.json({
-        tapUrl: "https://heasarc.gsfc.nasa.gov/xamin/tap/sync",
-        dataLinkUrl:
-          "https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/datalink",
-      });
-      return;
-    }
-    // Mock VOTable consumed by TelemetryComponent.fetchVoSamples() — returns
-    // sample HEASARC chanmaster rows for the 3C 273 field.
-    if (path.startsWith("/api/v1/vo/votable") && method === "GET") {
-      res.json({
-        fields: ["time", "source_name", "ra", "dec", "flux"],
-        rows: [
-          ["2026-01-15T06:12:00Z", "3C273", "187.2779", "2.0524", "42.3"],
-          ["2026-01-22T11:34:00Z", "3C273_b", "187.2960", "2.0714", "38.7"],
-          [
-            "2026-01-29T08:55:00Z",
-            "3C273_field_a",
-            "187.3101",
-            "2.0841",
-            "12.1",
-          ],
-          [
-            "2026-02-05T15:07:00Z",
-            "3C273_field_b",
-            "187.2601",
-            "2.0394",
-            "9.4",
-          ],
-          [
-            "2026-02-12T22:19:00Z",
-            "3C273_field_c",
-            "187.2515",
-            "2.0271",
-            "6.8",
-          ],
-          [
-            "2026-02-19T03:43:00Z",
-            "3C273_field_d",
-            "187.3021",
-            "2.0657",
-            "5.3",
-          ],
-          [
-            "2026-02-26T17:02:00Z",
-            "3C273_field_e",
-            "187.2990",
-            "2.0612",
-            "4.9",
-          ],
-          [
-            "2026-03-04T12:31:00Z",
-            "3C273_ngvla_ref",
-            "187.2779",
-            "2.0524",
-            "44.1",
-          ],
-        ],
-        links: [
-          {
-            accessUrl:
-              "https://heasarc.gsfc.nasa.gov/xamin/vo/cone?target=3C273&radius=0.1&format=votable",
-            semantics: "#this",
-            contentType: "application/x-votable+xml",
-          },
-        ],
-      });
-      return;
-    }
-    // ── Jobs mocks ───────────────────────────────────────────────────────────
-    if (path === "/api/v1/jobs" && method === "GET") {
-      const jobs = Array.from(embeddedJobStore.values())
-        .map((j) => advanceJobStatus(j))
-        .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
-      res.json(jobs);
-      return;
-    }
-    if (path === "/api/v1/jobs" && method === "POST") {
-      const payload =
-        (req as any).body && typeof (req as any).body === "object"
-          ? ((req as any).body as Record<string, unknown>)
-          : {};
-      const job = createEmbeddedJob(payload);
-      embeddedJobStore.set(job.jobId, job);
-      res.status(201).json({
-        jobId: job.jobId,
-        status: job.status,
-        queuedAt: job.createdAt,
-      });
-      return;
-    }
-    if (path === "/api/v1/jobs/types" && method === "GET") {
-      res.json(["import", "ingest", "export", "diagnostics", "cleanup"]);
-      return;
-    }
-    if (path === "/api/v1/jobs/validate" && method === "POST") {
-      res.json({ valid: true });
-      return;
-    }
-    if (path.match(/^\/api\/v1\/jobs\/[^/]+\/logs$/) && method === "GET") {
-      const jobId = path.split("/").slice(-2)[0];
-      const job = embeddedJobStore.get(jobId);
-      res.json(job ? job.logs : []);
-      return;
-    }
-    // Serve inline artifact content (registered by registerVoArtifact) keyed by URL path.
-    if (
-      path.match(/^\/api\/v1\/jobs\/[^/]+\/artifacts\/[^/]+$/) &&
-      method === "GET"
-    ) {
-      const content = artifactContentStore.get(path);
-      if (content === undefined) {
-        res.status(404).json({ error: "artifact_not_found", path });
-        return;
-      }
-      res.json(content);
-      return;
-    }
-    if (path.match(/^\/api\/v1\/jobs\/[^/]+\/artifacts$/) && method === "GET") {
-      const jobId = path.split("/").slice(-2)[0];
-      const job = embeddedJobStore.get(jobId);
-      res.json(job ? job.artifacts : []);
-      return;
-    }
-    if (path.match(/^\/api\/v1\/jobs\/[^/]+$/) && method === "GET") {
-      const jobId = path.split("/").pop() ?? "unknown";
-      const job = embeddedJobStore.get(jobId);
-      if (!job) {
-        res.status(404).json({ error: "not_found", jobId });
-        return;
-      }
-      res.json(advanceJobStatus(job));
-      return;
-    }
-    if (path.match(/^\/api\/v1\/jobs\/[^/]+$/) && method === "DELETE") {
-      const jobId = path.split("/").pop() ?? "unknown";
-      embeddedJobStore.delete(jobId);
-      res.status(204).send();
-      return;
-    }
-    if (
-      path.match(/^\/api\/v1\/jobs\/[^/]+\/transition$/) &&
-      method === "POST"
-    ) {
-      const jobId = path.split("/").slice(-2)[0];
-      const job = embeddedJobStore.get(jobId);
-      if (!job) {
-        res.status(404).json({ error: "not_found", jobId });
-        return;
-      }
-      const body = (req as any).body ?? {};
-      const nextStatus = String(
-        (body["targetStatus"] as string | undefined) ||
-          (body["state"] as string | undefined) ||
-          (body["newState"] as string | undefined) ||
-          "RUNNING"
-      );
-      job.status = nextStatus as EmbeddedJobRecord["status"];
-      job.updatedAt = new Date().toISOString();
-      job.logs.push(`${job.updatedAt} status=${nextStatus}`);
-      embeddedJobStore.set(jobId, job);
-      res.json(job);
-      return;
-    }
-    // ── Admin dispatch mock ──────────────────────────────────────────────────
-    if (path === "/api/v1/admin/dispatch" && method === "GET") {
-      res.json({
-        intervalSeconds: mockDispatchIntervalSeconds,
-        scannedCount: mockScanCount,
-        dispatchedCount: mockDispatchCount,
-      });
-      return;
-    }
-    if (path === "/api/v1/admin/dispatch" && method === "POST") {
-      const body = (req as any).body ?? {};
-      const newInterval = Number(
-        body["intervalSeconds"] ?? mockDispatchIntervalSeconds
-      );
-      if (newInterval > 0) mockDispatchIntervalSeconds = newInterval;
-      res.json({
-        intervalSeconds: mockDispatchIntervalSeconds,
-        scannedCount: mockScanCount,
-        dispatchedCount: mockDispatchCount,
-      });
-      return;
-    }
-    if (path === "/api/v1/admin/release-deferred" && method === "POST") {
-      let released = 0;
-      for (const job of embeddedJobStore.values()) {
-        if (job.parameters?.["deferred"] === true) {
-          job.parameters["deferred"] = false;
-          job.status = "COMPLETED";
-          job.updatedAt = new Date().toISOString();
-          job.logs.push(`${job.updatedAt} status=COMPLETED`);
-          released += 1;
-        }
-      }
-      res.json({ released });
-      return;
-    }
-    const targetUrls = this.governanceBaseCandidates().map(
-      (b) => `${b}${req.originalUrl}`
-    );
-    try {
-      const started = Date.now();
-
-      const headers = new globalThis.Headers();
-      Object.entries(req.headers || {}).forEach(([k, v]) => {
-        if (!v) return;
-        const key = k.toLowerCase();
-        if (key === "host" || key === "content-length" || key === "connection")
-          return;
-        if (Array.isArray(v)) {
-          v.forEach((x) => headers.append(k, String(x)));
-        } else {
-          headers.set(k, String(v));
-        }
-      });
-
-      const method = (req.method || "GET").toUpperCase();
-      let body: BodyInit | undefined;
-      if (method !== "GET" && method !== "HEAD") {
-        const hasBody =
-          (req as any).body !== undefined && (req as any).body !== null;
-        if (hasBody) {
-          if (typeof (req as any).body === "string") {
-            body = (req as any).body;
-          } else {
-            body = JSON.stringify((req as any).body);
-            if (!headers.has("content-type"))
-              headers.set("content-type", "application/json");
-          }
-        }
-      }
-
-      const upstream = await this.fetchWithFallback(
-        targetUrls,
-        { method, headers, body },
-        7000
-      );
-      const text = await upstream.text();
-      const ct = upstream.headers.get("content-type");
-      if (ct) res.setHeader("content-type", ct);
-      recordGovernanceProxyMetrics(
-        "governance_api",
-        method,
-        upstream.status,
-        Buffer.byteLength(text ?? "", "utf8"),
-        (Date.now() - started) / 1000
-      );
-      res.status(upstream.status).send(text);
-    } catch (e: any) {
-      console.error("Error proxying to governance API:", e);
-      res.status(502).json({
-        error: "governance_proxy_error",
-        message: String(e),
-        targetsTried: targetUrls,
-      });
-    }
+    await this.governanceProxyService.handle(req, res, {
+      tryHandleEmbeddedGovernance: (request, response) =>
+        this.embeddedMockBackendService.handleGovernance(request, response),
+      mockInfrastructureTelemetry: () => this.mockInfrastructureTelemetry(),
+      classifyFrontendApiRoute,
+      recordFrontendApiMetrics,
+      recordGovernanceProxyMetrics,
+    });
   }
 
   @Get("/api/v1/vo/cached-samples")
@@ -3850,7 +2488,14 @@ export class AppController {
 // -------------------------------------------------------------
 
 @Module({
-  providers: [SsrService, RuntimeLoadProfileService],
+  providers: [
+    SsrService,
+    RuntimeLoadProfileService,
+    ForgeProxyService,
+    GovernanceUpstreamService,
+    GovernanceProxyService,
+    EmbeddedMockBackendService,
+  ],
   controllers: [AppController, ExecutionPlansController],
 })
 class AppModule {}

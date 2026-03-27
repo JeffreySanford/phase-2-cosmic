@@ -43,6 +43,12 @@ describe("SystemStatusService", () => {
         { path: "diagnostics logs", files: [] },
         { status: 200, statusText: "OK" }
       );
+    httpMock
+      .expectOne("/api/topology")
+      .flush({ nodes: [], links: [] }, { status: 200, statusText: "OK" });
+    httpMock
+      .expectOne("/api/forge/health")
+      .flush({ status: "ok" }, { status: 200, statusText: "OK" });
 
     const status = await statusPromise;
     expect(status.health).toBe("healthy");
@@ -50,6 +56,8 @@ describe("SystemStatusService", () => {
       governance: "online",
       telemetry: "online",
       diagnostics: "online",
+      topology: "online",
+      forge: "online",
     });
   });
 

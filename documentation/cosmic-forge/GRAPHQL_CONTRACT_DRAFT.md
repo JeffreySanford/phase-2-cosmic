@@ -25,6 +25,7 @@ This document is a branch-scoped draft contract for Cosmic Forge. It is not curr
 - `createCompositeJob`
 - `cancelJob`
 - `retryJob`
+- `cacheImageArtifact`
 
 ## Subscription surface
 
@@ -78,28 +79,47 @@ type ImageProduct {
   id: ID!
   jobId: ID!
   surveyId: ID!
+  artifactMode: String!
   format: String!
-  artifactPath: String!
   previewPath: String
   authoritativeUrl: String
   accessedAt: String
+  cacheKey: String
+  cacheStatus: String!
   wcsSummary: String
   width: Int
   height: Int
   pixelScale: Float
+  provenance: ProvenanceRecord
 }
 
 type ProvenanceRecord {
   id: ID!
-  imageProductId: ID!
   sourceSurvey: String!
+  providerName: String!
+  citationUrl: String
   authoritativeUrl: String
   accessedAt: String
   transformChain: [String!]!
-  generatedByVersion: String
-  timestamp: String!
+  artifactMode: String!
 }
 ```
+
+## Current implementation note
+
+The current Forge branch uses external-source image products first:
+
+- `artifactMode` is currently `external`
+- `cacheStatus` is currently `external-only`
+- preview and FITS links point at the provider directly
+
+The next cache-retention slice adds:
+
+- `cacheImageArtifact(imageId: ID!)`
+- `artifactMode: cached`
+- `cacheStatus: cached`
+- retained preview and FITS artifacts served back through Forge routes
+- later object-store-backed retention replacing the local placeholder cache
 
 ## Inputs
 

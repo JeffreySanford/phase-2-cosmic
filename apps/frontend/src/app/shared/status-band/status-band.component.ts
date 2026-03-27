@@ -107,6 +107,8 @@ export class StatusBandComponent implements OnInit, OnDestroy {
       governance: "online",
       telemetry: "online",
       diagnostics: "online",
+      topology: "offline",
+      forge: "offline",
     },
   };
 

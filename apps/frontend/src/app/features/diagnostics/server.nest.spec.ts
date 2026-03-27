@@ -6,6 +6,10 @@ jest.mock("@angular/ssr", () => ({ CommonEngine: jest.fn() }));
 
 import { AppController } from "../../../../server.nest";
 import { Response, Request } from "express";
+import { ForgeProxyService } from "../../../server/forge/forge-proxy.service";
+import { GovernanceUpstreamService } from "../../../server/governance/governance-upstream.service";
+import { GovernanceProxyService } from "../../../server/governance/governance-proxy.service";
+import { EmbeddedMockBackendService } from "../../../server/mock/embedded-mock-backend.service";
 
 // Mock net.Socket behavior for TCP checks
 jest.mock("net", () => {
@@ -99,6 +103,39 @@ function createGovernanceRequest(path: string, method = "GET") {
   } as unknown as Request;
 }
 
+function makeController(options?: {
+  governanceUpstreamService?: GovernanceUpstreamService;
+  governanceProxyService?: GovernanceProxyService;
+  embeddedMockBackendService?: EmbeddedMockBackendService;
+}) {
+  const governanceUpstreamService =
+    options?.governanceUpstreamService ??
+    ({
+      governanceBaseCandidates: jest.fn(() => ["http://governance.test"]),
+      fetchWithFallback: jest.fn(),
+      fetchWithTimeout: jest.fn().mockResolvedValue({ ok: true }),
+    } as unknown as GovernanceUpstreamService);
+  const governanceProxyService =
+    options?.governanceProxyService ??
+    new GovernanceProxyService(governanceUpstreamService);
+  const embeddedMockBackendService =
+    options?.embeddedMockBackendService ?? new EmbeddedMockBackendService();
+
+  return {
+    ctrl: new AppController(
+      {} as ConstructorParameters<typeof AppController>[0],
+      {} as ConstructorParameters<typeof AppController>[1],
+      { handle: jest.fn() } as unknown as ForgeProxyService,
+      governanceUpstreamService,
+      governanceProxyService,
+      embeddedMockBackendService
+    ),
+    governanceUpstreamService,
+    governanceProxyService,
+    embeddedMockBackendService,
+  };
+}
+
 describe("AppController diagnostics endpoints", () => {
   it("returns a sanitized diagnostics index path", () => {
     const ctrl = new AppController(
@@ -123,15 +160,10 @@ describe("AppController diagnostics endpoints", () => {
   });
 
   it("returns docker services list with status, latency, and icons", async () => {
-    const ctrl = new AppController(
-      {} as ConstructorParameters<typeof AppController>[0],
-      {} as ConstructorParameters<typeof AppController>[1]
-    );
-
-    // stub fetchWithTimeout to simulate HTTP readiness checks
-    (ctrl as unknown as { fetchWithTimeout: jest.Mock }).fetchWithTimeout = jest
-      .fn()
-      .mockResolvedValue({ ok: true });
+    const { ctrl, governanceUpstreamService } = makeController();
+    (
+      governanceUpstreamService as unknown as { fetchWithTimeout: jest.Mock }
+    ).fetchWithTimeout = jest.fn().mockResolvedValue({ ok: true });
 
     const res = createMockResponse();
     await ctrl.getDockerServices(res);
@@ -154,13 +186,10 @@ describe("AppController diagnostics endpoints", () => {
   });
 
   it("returns single service detail by name with latency", async () => {
-    const ctrl = new AppController(
-      {} as ConstructorParameters<typeof AppController>[0],
-      {} as ConstructorParameters<typeof AppController>[1]
-    );
-    (ctrl as unknown as { fetchWithTimeout: jest.Mock }).fetchWithTimeout = jest
-      .fn()
-      .mockResolvedValue({ ok: true });
+    const { ctrl, governanceUpstreamService } = makeController();
+    (
+      governanceUpstreamService as unknown as { fetchWithTimeout: jest.Mock }
+    ).fetchWithTimeout = jest.fn().mockResolvedValue({ ok: true });
     const req = createMockRequest("Prometheus");
     const res = createMockResponse();
     await ctrl.getDockerServiceByName(res, req);
@@ -188,13 +217,10 @@ describe("AppController diagnostics endpoints", () => {
   });
 
   it("handles TCP service check for Pulsar", async () => {
-    const ctrl = new AppController(
-      {} as ConstructorParameters<typeof AppController>[0],
-      {} as ConstructorParameters<typeof AppController>[1]
-    );
-    (ctrl as unknown as { fetchWithTimeout: jest.Mock }).fetchWithTimeout = jest
-      .fn()
-      .mockResolvedValue({ ok: true });
+    const { ctrl, governanceUpstreamService } = makeController();
+    (
+      governanceUpstreamService as unknown as { fetchWithTimeout: jest.Mock }
+    ).fetchWithTimeout = jest.fn().mockResolvedValue({ ok: true });
     const req = createMockRequest("Pulsar");
     const res = createMockResponse();
     await ctrl.getDockerServiceByName(res, req);
@@ -246,10 +272,7 @@ describe("AppController diagnostics endpoints", () => {
   });
 
   it("proxies infrastructure telemetry to governance before using mock fallback", async () => {
-    const ctrl = new AppController(
-      {} as ConstructorParameters<typeof AppController>[0],
-      {} as ConstructorParameters<typeof AppController>[1]
-    );
+    const { ctrl, governanceUpstreamService } = makeController();
     const req = createGovernanceRequest("/api/v1/telemetry/infrastructure");
     const res = createMockResponse();
     const upstream = {
@@ -259,13 +282,18 @@ describe("AppController diagnostics endpoints", () => {
         .fn()
         .mockResolvedValue('{"source":"prometheus","services":{}}'),
     };
-    (ctrl as unknown as { fetchWithFallback: jest.Mock }).fetchWithFallback =
-      jest.fn().mockResolvedValue(upstream);
+    (
+      governanceUpstreamService as unknown as { fetchWithFallback: jest.Mock }
+    ).fetchWithFallback = jest.fn().mockResolvedValue(upstream);
 
     await ctrl.proxyGovernance(req, res);
 
     expect(
-      (ctrl as unknown as { fetchWithFallback: jest.Mock }).fetchWithFallback
+      (
+        governanceUpstreamService as unknown as {
+          fetchWithFallback: jest.Mock;
+        }
+      ).fetchWithFallback
     ).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith(
@@ -274,14 +302,12 @@ describe("AppController diagnostics endpoints", () => {
   });
 
   it("falls back to mock infrastructure telemetry when governance is unavailable", async () => {
-    const ctrl = new AppController(
-      {} as ConstructorParameters<typeof AppController>[0],
-      {} as ConstructorParameters<typeof AppController>[1]
-    );
+    const { ctrl, governanceUpstreamService } = makeController();
     const req = createGovernanceRequest("/api/v1/telemetry/infrastructure");
     const res = createMockResponse();
-    (ctrl as unknown as { fetchWithFallback: jest.Mock }).fetchWithFallback =
-      jest.fn().mockRejectedValue(new Error("connect failed"));
+    (
+      governanceUpstreamService as unknown as { fetchWithFallback: jest.Mock }
+    ).fetchWithFallback = jest.fn().mockRejectedValue(new Error("connect failed"));
 
     await ctrl.proxyGovernance(req, res);
 
@@ -388,10 +414,7 @@ describe.skip("AppController brokerEventsSse (S1-1)", () => {
 // ── Jobs API endpoints (via tryHandleEmbeddedGovernance) ──────────────────────
 
 function makeCtrl() {
-  return new AppController(
-    {} as ConstructorParameters<typeof AppController>[0],
-    {} as ConstructorParameters<typeof AppController>[1]
-  );
+  return makeController().ctrl;
 }
 
 function makeGovReq(path: string, method = "GET", body?: unknown) {

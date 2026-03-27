@@ -18,14 +18,27 @@ describe("SidebarComponent", () => {
     expect(component).toBeTruthy();
   });
 
-  it("renders all routes with icons and labels", () => {
+  it("renders only available routes with icons and labels", () => {
+    component.systemStatus = {
+      health: "healthy",
+      lastCheck: new Date(),
+      services: {
+        governance: "online",
+        telemetry: "online",
+        diagnostics: "online",
+        topology: "online",
+        forge: "online",
+      },
+    };
+    fixture.detectChanges();
+
     const items = fixture.nativeElement.querySelectorAll("li");
-    expect(items.length).toBe(component.routes.length);
+    expect(items.length).toBe(component.visibleRoutes.length);
     items.forEach((el: HTMLElement, idx: number) => {
       const icon = el.querySelector(".icon")?.textContent?.trim();
       const label = el.querySelector(".label")?.textContent?.trim();
-      expect(icon).toBe(component.routes[idx].icon);
-      expect(label).toBe(component.routes[idx].label);
+      expect(icon).toBe(component.visibleRoutes[idx].icon);
+      expect(label).toBe(component.visibleRoutes[idx].label);
     });
   });
 });

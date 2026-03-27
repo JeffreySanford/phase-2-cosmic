@@ -60,6 +60,22 @@ export class StartupWarmService {
         .subscribe();
 
       this.cache
+        .getOrCreate("topology:index", 5000, () =>
+          http
+            .get("/api/topology")
+            .pipe(catchError(() => of({ nodes: [], links: [] })))
+        )
+        .subscribe();
+
+      this.cache
+        .getOrCreate("forge:health", 5000, () =>
+          http
+            .get("/api/forge/health")
+            .pipe(catchError(() => of({ status: "offline" })))
+        )
+        .subscribe();
+
+      this.cache
         .getOrCreate("diagnostics:rabbit-status", 5000, () =>
           http
             .get("/api/v1/rabbitmq/status")
