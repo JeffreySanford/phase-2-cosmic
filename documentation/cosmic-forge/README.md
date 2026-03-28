@@ -7,7 +7,7 @@ Alignment anchors
 - Program guardrails: [../overview/PROGRAM_DIRECTION.md](../overview/PROGRAM_DIRECTION.md)
 - Current jobs/frontend reality: [../frontend/features/JOBS.md](../frontend/features/JOBS.md)
 
-Status: `planned`
+Status: `in_progress`
 
 Cosmic Forge is the proposed bounded-track image orchestration branch inside `phase-2-cosmic`.
 

@@ -176,6 +176,7 @@ Current normalized codes include:
 - `FORGE_IMAGE_NOT_FOUND`
 - `FORGE_UNSUPPORTED_SURVEY`
 - `FORGE_UPSTREAM_UNAVAILABLE`
+- `FORGE_UPSTREAM_TIMEOUT`
 - `FORGE_UPSTREAM_BAD_RESPONSE`
 - `FORGE_ARTIFACT_UNAVAILABLE`
 - `FORGE_INTERNAL_ERROR`
@@ -204,6 +205,7 @@ The current Forge branch now has two live adapter-backed paths:
 
 - `Legacy Surveys / NOIRLab`
 - `IRSA AllWISE`
+- `SkyView` as a derived-preview path
 
 Current behavior:
 
@@ -211,6 +213,7 @@ Current behavior:
 - preview and FITS artifacts can be served back through Forge artifact routes
 - `artifactMode` may be `external` or `cached`
 - `cacheStatus` may be `external-only` or `cached`
+- adapter-backed failures now preserve normalized upstream error codes so the UI can distinguish timeout, unavailability, and bad upstream responses
 - the API now serves queue state through a repository-backed persisted state file rather than process memory only
 - `ForgeServiceInfo.contractVersion` is now explicit so the UI can reject contract drift without mutating the read model shape
 - PostgreSQL remains the recommended next durable backing store without requiring GraphQL contract churn

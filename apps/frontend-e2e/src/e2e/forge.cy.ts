@@ -489,6 +489,20 @@ describe("forge workbench", () => {
       .should("contain.text", "QUEUED");
   });
 
+  it("shows adapter-specific upstream failure details for a failed AllWISE job", () => {
+    cy.visit("/forge");
+    cy.wait("@forgeGraphql");
+
+    cy.contains("Cygnus A · cutout")
+      .closest(".forge-queue__item")
+      .click();
+
+    cy.get('input[formcontrolname="target"]').should("have.value", "Cygnus A");
+    cy.contains("Status:").parent().contains("FAILED");
+    cy.contains("Error code:").parent().contains("FORGE_UPSTREAM_TIMEOUT");
+    cy.contains("Job error:").parent().contains("Provider request timed out.");
+  });
+
   it("renders a completed AllWISE result with cached preview and fits artifact links", () => {
     cy.visit("/forge");
     cy.wait("@forgeGraphql");

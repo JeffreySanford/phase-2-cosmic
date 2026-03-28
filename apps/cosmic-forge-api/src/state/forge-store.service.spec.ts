@@ -398,3 +398,84 @@ test("timeout-like provider failures are classified explicitly for retry handlin
     global.fetch = originalFetch;
   }
 });
+
+test("IRSA discovery 503 failures are classified as upstream unavailable and retryable", async () => {
+  const originalFetch = global.fetch;
+  global.fetch = (async () =>
+    ({
+      ok: false,
+      status: 503,
+      text: async () => "",
+    }) as Response) as typeof fetch;
+
+  const store = createStore("irsa-503");
+  const job = store.createCutoutJob({
+    requestedBy: "unavailable-user",
+    targetName: "M87",
+    ra: 187.70593,
+    dec: 12.39112,
+    radiusArcmin: 15,
+    surveyIds: ["allwise"],
+  });
+
+  try {
+    store.claimNextJob();
+    const failed = await store.executeClaimedJob(job.id);
+    assert.equal(failed?.status, "FAILED");
+    assert.equal(failed?.errorCode, "FORGE_UPSTREAM_UNAVAILABLE");
+    assert.match(failed?.errorMessage || "", /IRSA SIA discovery is currently unavailable/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test("IRSA retrieval 404 failures are classified as upstream bad response", async () => {
+  const originalFetch = global.fetch;
+  global.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes("/ibe/sia/wise/allwise/p3am_cdd")) {
+      return {
+        ok: true,
+        text: async () => `<?xml version="1.0" encoding="utf-8"?>
+<VOTABLE><RESOURCE><TABLE>
+<FIELD name="sia_title"/><FIELD name="sia_url"/><FIELD name="sia_fmt"/><FIELD name="sia_scale"/><FIELD name="sia_bp_id"/>
+<DATA><TABLEDATA><TR>
+<TD>W1 Coadd</TD>
+<TD>https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/example.fits</TD>
+<TD>image/fits</TD>
+<TD>-0.0003819444391411 0.0003819444391411</TD>
+<TD>W1</TD>
+</TR></TABLEDATA></DATA></TABLE></RESOURCE></VOTABLE>`,
+      } as Response;
+    }
+
+    if (init?.method === "HEAD") {
+      return {
+        ok: false,
+        status: 404,
+      } as Response;
+    }
+
+    throw new Error(`Unexpected fetch: ${url}`);
+  }) as typeof fetch;
+
+  const store = createStore("irsa-404");
+  const job = store.createCutoutJob({
+    requestedBy: "bad-response-user",
+    targetName: "M87",
+    ra: 187.70593,
+    dec: 12.39112,
+    radiusArcmin: 15,
+    surveyIds: ["allwise"],
+  });
+
+  try {
+    store.claimNextJob();
+    const failed = await store.executeClaimedJob(job.id);
+    assert.equal(failed?.status, "FAILED");
+    assert.equal(failed?.errorCode, "FORGE_UPSTREAM_BAD_RESPONSE");
+    assert.match(failed?.errorMessage || "", /IRSA IBE retrieval returned an unexpected status/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

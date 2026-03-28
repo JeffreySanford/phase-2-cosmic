@@ -8,7 +8,7 @@ Alignment anchors
 - GraphQL contract draft: [./GRAPHQL_CONTRACT_DRAFT.md](./GRAPHQL_CONTRACT_DRAFT.md)
 - NgRx state blueprint: [./NGRX_STATE_BLUEPRINT.md](./NGRX_STATE_BLUEPRINT.md)
 
-Status: `planned`
+Status: `implemented_for_first_adapter_slice`
 
 ## Purpose
 
@@ -23,6 +23,13 @@ The second adapter family remains:
 - `IRSA`
 
 Sprint 5 should therefore optimize for one complete Legacy Surveys-backed vertical slice without closing the door on IRSA.
+
+Current implementation reality:
+
+- `Legacy Surveys / NOIRLab` is live as the first archive-native adapter
+- `IRSA AllWISE` is live as the second archive-native adapter family
+- `SkyView` is live as a derived-preview comparison path
+- upstream failure handling is now adapter-specific for the current IRSA path so worker retry posture and operator diagnostics do not collapse into generic internal errors
 
 ## Sprint 5 objective
 

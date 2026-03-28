@@ -398,14 +398,16 @@ Working implementation reference:
 - [x] Implement one real public-data adapter for `Legacy Surveys / NOIRLab`.
 - [x] Capture authoritative source URL, access time, provider metadata, survey/layer selection, and cutout geometry in provenance.
 - [x] Prepare the adapter seam so `IRSA` can be added next without contract churn.
-- [ ] Add adapter-specific error handling for upstream outages, bad responses, and unsupported requests.
+- [x] Add adapter-specific error handling for upstream outages, bad responses, and unsupported requests.
 - [x] Produce one real preview artifact and one linked FITS/download path where applicable.
 - [x] Add tests for adapter translation and provenance population.
-- [ ] Update `PUBLIC_DATA_READINESS.md` if any provider assumptions changed.
+- [x] Update `PUBLIC_DATA_READINESS.md` if any provider assumptions changed.
 
 Sprint 5 done when:
 
 - [x] A real public-survey-backed preview artifact can be created through the Forge flow.
+- [x] Upstream adapter failures are classified explicitly enough for retry and operator diagnosis.
+- [x] Public-data readiness docs match the providers that are actually live in the branch.
 
 ## Sprint 6 - Workbench UX And Result Inspection
 

@@ -7,15 +7,21 @@ Alignment anchors
 - Public-source inventory: [../public-data/PUBLIC_DATA_RESOURCES.md](../public-data/PUBLIC_DATA_RESOURCES.md)
 - VO integration: [../data/VO_INTEGRATION.md](../data/VO_INTEGRATION.md)
 
-Status: `planned`
+Status: `implemented_for_v1_sources`
 
 ## Direct answer
 
-Do we have enough public data to assemble real images yet?
+Do we have enough public data to assemble real images and preview workflows yet?
 
 Qualified answer: yes.
 
-We already have enough public data to build a real image-oriented application around:
+The branch now proves that answer with live provider-backed Forge adapters for:
+
+- `Legacy Surveys / NOIRLab` archive-native optical cutouts
+- `IRSA AllWISE` archive-native infrared cutouts with cached FITS-backed previews
+- `SkyView` derived-preview comparison output
+
+We also have enough public data to keep building around:
 
 - public survey imagery
 - HiPS navigation layers
@@ -24,16 +30,17 @@ We already have enough public data to build a real image-oriented application ar
 - overlays and metadata panels
 - provenance and source attribution
 
-That answer is already supported by the repo's current viewer and public-data research, which explicitly identifies VLASS HiPS/basic products, NVAS, NRAO TAP metadata, and VO-linked product discovery as near-term usable sources.
+That answer is no longer just a research conclusion. It is now partially implemented in Cosmic Forge through real upstream archive usage and persisted provenance.
 
 ## What is realistic now
 
-The current repo evidence supports a public-data-first image platform now:
+The current repo evidence and implementation support a public-data-first image platform now:
 
-- `VLASS` public data pages expose basic products, enhanced products, weblogs, and interactive HiPS imagery
-- the current viewer strategy already treats `VLASS` HiPS/basic products as the best near-term public source for progressive zoom behavior
-- the public-data inventory already recommends VLASS HiPS and NVAS as low-friction viewer seed data
-- the VO integration docs already describe TAP/DataLink/VOTable flows for product discovery and FITS-oriented outputs
+- `Legacy Surveys / NOIRLab` is live in Forge for archive-native optical cutouts
+- `IRSA AllWISE` is live in Forge for archive-native infrared retrieval with IBE-backed FITS artifacts
+- `SkyView` is live in Forge as a derived-preview comparison path
+- `ESASky` and `Pan-STARRS` are documented and queued as later archive/discovery extensions
+- the broader repo still contains VLASS HiPS/basic product, NVAS, and VO-oriented groundwork for later expansion
 
 Practical v1 outcomes that are realistic now:
 
@@ -43,6 +50,7 @@ Practical v1 outcomes that are realistic now:
 - FITS download metadata
 - public-source-backed overlays
 - provenance capture for where an image came from and how it was transformed
+- adapter-specific upstream error classification and retry posture
 
 ## What is not realistic as v1
 
@@ -61,7 +69,8 @@ Those are later research tracks, not the sensible product entry point.
 
 ### Ready now
 
-- public HiPS imagery for sky browsing
+- public archive-native cutouts from implemented providers
+- public HiPS or derived-preview imagery for browsing and comparison
 - public basic/enhanced image products
 - public archive metadata via TAP/VO
 - historical public image sources for fallback and demos
@@ -76,8 +85,11 @@ Those are later research tracks, not the sensible product entry point.
 
 ## Current public-service reality
 
-The current repo documentation already references the main public-source classes Cosmic Forge would need:
+The current repo documentation and code now reference the main public-source classes Cosmic Forge needs:
 
+- NOIRLab Legacy Surveys cutout flows
+- IRSA SIA and IBE retrieval flows
+- SkyView quick-look image generation
 - NRAO/VLASS public landing and data pages
 - VLASS interactive HiPS imagery
 - NRAO archive and TAP/VO discovery surfaces
@@ -88,7 +100,7 @@ This repo also already assumes Aladin/HiPS integration in the viewer track and e
 Inference from those existing sources and docs:
 
 - public imagery and product metadata are sufficient to build a genuine image workbench
-- the missing piece is product orchestration and state management, not raw data existence
+- the implemented Forge branch confirms that the main risk is orchestration and provider hardening, not raw data existence
 
 ## Product consequence
 
@@ -98,6 +110,7 @@ That means:
 
 - use public survey products for v1
 - capture provenance and source metadata rigorously
+- classify upstream archive failures explicitly instead of collapsing them into generic internal errors
 - keep a clean seam for later heavier processing
 - do not anchor v1 success criteria to raw interferometric imaging
 
@@ -109,5 +122,9 @@ Public data is sufficient now for:
 - real image-oriented UX
 - real cutout/composite orchestration
 - real provenance-aware operator workflows
+
+Current caveat:
+
+- public data is sufficient for the current operator workbench, but each provider still needs its own availability, timeout, and bad-response handling because public archive behavior is not uniform
 
 Public data is not sufficient grounds for making raw radio full-pipeline imaging the v1 goal.

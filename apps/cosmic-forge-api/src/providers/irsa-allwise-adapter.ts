@@ -1,4 +1,4 @@
-import type { ForgeImageProduct, ForgeJob } from "../domain/forge.models";
+import { ForgeDomainError, type ForgeImageProduct, type ForgeJob } from "../domain/forge.models";
 import type { ForgeCutoutRequestSource, ForgeSurveyAdapter } from "./survey-adapter";
 
 export const IRSA_ALLWISE_SURVEY_ID = "allwise";
@@ -23,6 +23,59 @@ type AllwiseDiscoveryRecord = {
   coverageUrl: string | null;
   coaddId: string | null;
 };
+
+function classifyIrsaHttpError(status: number, stage: string, details: Record<string, unknown>) {
+  if (status === 408 || status === 429 || status === 502 || status === 503 || status === 504) {
+    return new ForgeDomainError(
+      "FORGE_UPSTREAM_UNAVAILABLE",
+      `IRSA ${stage} is currently unavailable (${status}).`,
+      true,
+      details
+    );
+  }
+
+  return new ForgeDomainError(
+    "FORGE_UPSTREAM_BAD_RESPONSE",
+    `IRSA ${stage} returned an unexpected status (${status}).`,
+    false,
+    details
+  );
+}
+
+function classifyIrsaTransportError(error: unknown, stage: string, details: Record<string, unknown>) {
+  if (error instanceof ForgeDomainError) {
+    return error;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  if (error instanceof Error && error.name === "AbortError") {
+    return new ForgeDomainError(
+      "FORGE_UPSTREAM_TIMEOUT",
+      `IRSA ${stage} timed out.`,
+      true,
+      details
+    );
+  }
+
+  if (/timeout|timed out/i.test(message)) {
+    return new ForgeDomainError(
+      "FORGE_UPSTREAM_TIMEOUT",
+      `IRSA ${stage} timed out.`,
+      true,
+      details
+    );
+  }
+
+  return new ForgeDomainError(
+    "FORGE_UPSTREAM_UNAVAILABLE",
+    `IRSA ${stage} could not be reached.`,
+    true,
+    {
+      ...details,
+      cause: message,
+    }
+  );
+}
 
 function normalizeNumber(value: unknown, fallback: number): number {
   const parsed = Number(value);
@@ -84,9 +137,23 @@ function parseVotableRows(xml: string): AllwiseDiscoveryRecord[] {
 async function discoverAllwiseImage(
   request: ReturnType<typeof buildIrsaAllwiseCutoutRequest>
 ): Promise<AllwiseDiscoveryRecord> {
-  const response = await fetch(request.discoveryUrl ?? "");
+  let response: Response;
+  try {
+    response = await fetch(request.discoveryUrl ?? "", {
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (error) {
+    throw classifyIrsaTransportError(error, "SIA discovery", {
+      stage: "sia-discovery",
+      discoveryUrl: request.discoveryUrl,
+    });
+  }
+
   if (!response.ok) {
-    throw new Error(`IRSA SIA discovery failed: ${response.status}`);
+    throw classifyIrsaHttpError(response.status, "SIA discovery", {
+      stage: "sia-discovery",
+      discoveryUrl: request.discoveryUrl,
+    });
   }
 
   const xml = await response.text();
@@ -96,7 +163,16 @@ async function discoverAllwiseImage(
     rows.find((row) => row.band.toUpperCase() === requestedBand.toUpperCase()) ?? rows[0];
 
   if (!match) {
-    throw new Error("IRSA SIA discovery returned no matching AllWISE image.");
+    throw new ForgeDomainError(
+      "FORGE_UPSTREAM_BAD_RESPONSE",
+      "IRSA SIA discovery returned no matching AllWISE image.",
+      false,
+      {
+        stage: "sia-discovery",
+        discoveryUrl: request.discoveryUrl,
+        requestedBand,
+      }
+    );
   }
 
   return match;
@@ -198,12 +274,28 @@ async function executeIrsaAllwiseJob(
   const center = `${request.ra.toFixed(5)},${request.dec.toFixed(5)}`;
   const fitsCutoutUrl = appendCutoutQuery(discoveryRecord.accessUrl, center, request.size);
 
-  const probeResponse = await fetch(fitsCutoutUrl, {
-    method: "HEAD",
-    headers: { Accept: "application/fits" },
-  });
+  let probeResponse: Response;
+  try {
+    probeResponse = await fetch(fitsCutoutUrl, {
+      method: "HEAD",
+      headers: { Accept: "application/fits" },
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (error) {
+    throw classifyIrsaTransportError(error, "IBE retrieval", {
+      stage: "ibe-retrieval",
+      fitsCutoutUrl,
+      discoveryUrl: request.discoveryUrl,
+    });
+  }
+
   if (!probeResponse.ok) {
-    throw new Error(`IRSA IBE retrieval failed: ${probeResponse.status}`);
+    throw classifyIrsaHttpError(probeResponse.status, "IBE retrieval", {
+      stage: "ibe-retrieval",
+      fitsCutoutUrl,
+      discoveryUrl: request.discoveryUrl,
+      band: discoveryRecord.band,
+    });
   }
 
   job.request = {
