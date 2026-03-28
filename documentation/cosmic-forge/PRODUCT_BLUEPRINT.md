@@ -6,7 +6,7 @@ Alignment anchors
 - Public-source inventory: [../public-data/PUBLIC_DATA_RESOURCES.md](../public-data/PUBLIC_DATA_RESOURCES.md)
 - Current jobs/frontend reality: [../frontend/features/JOBS.md](../frontend/features/JOBS.md)
 
-Status: `planned`
+Status: `implemented`
 
 ## Product definition
 
@@ -22,7 +22,7 @@ A queue-driven application for requesting, processing, visualizing, and tracking
 - queued/running/completed/failed lifecycle
 - preview assets plus FITS/download metadata
 - provenance capture
-- live progress updates
+- persisted progress updates through the GraphQL read model
 - operator-facing queue and diagnostics
 
 ## Primary users

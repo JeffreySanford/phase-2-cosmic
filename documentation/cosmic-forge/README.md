@@ -7,7 +7,7 @@ Alignment anchors
 - Program guardrails: [../overview/PROGRAM_DIRECTION.md](../overview/PROGRAM_DIRECTION.md)
 - Current jobs/frontend reality: [../frontend/features/JOBS.md](../frontend/features/JOBS.md)
 
-Status: `in_progress`
+Status: `implemented`
 
 Cosmic Forge is the proposed bounded-track image orchestration branch inside `phase-2-cosmic`.
 
@@ -22,7 +22,7 @@ The bounded-track assumptions are:
 - branch-first incubation inside `phase-2-cosmic`
 - Angular + NgRx for frontend state orchestration
 - GraphQL for Forge-specific orchestration and result delivery
-- .NET for worker orchestration and concurrency
+- NestJS + TypeScript for current API and worker orchestration
 - optional later C++ acceleration for image-processing hotspots
 - a Forge-specific Docker environment that can run alongside the existing `docker/dev-compose.yml`
 - local secret/config loading from the repository root `.env`
@@ -35,6 +35,10 @@ Why it belongs here:
 
 Reader guide:
 
+- [PI_EXECUTION_PLAN.md](./PI_EXECUTION_PLAN.md): sprint-by-sprint PI checklist with current completion state and explicitly deferred work
+- [RUNBOOK.md](./RUNBOOK.md): local startup, shutdown, debugging, and health verification steps for operating Forge without verbal reconstruction
+- [DEMO_CHECKLIST.md](./DEMO_CHECKLIST.md): operator/demo checklist for walking the implemented Forge path
+- [HANDOFF_NOTE.md](./HANDOFF_NOTE.md): post-PI handoff note covering remaining gaps, deliberate non-goals, and next recommended work
 - [OVERVIEW.md](./OVERVIEW.md): verbose rationale, risks, and branch fit
 - [PUBLIC_DATA_READINESS.md](./PUBLIC_DATA_READINESS.md): direct answer on whether public data is already enough
 - [DATA_SOURCE_COMPARISON_MATRIX.md](./DATA_SOURCE_COMPARISON_MATRIX.md): scored comparison of official archive and agency data sources for adapter prioritization
@@ -52,7 +56,6 @@ Reader guide:
 - [WORKER_EXECUTION_SPEC.md](./WORKER_EXECUTION_SPEC.md): bounded-concurrency worker contract, queue lifecycle semantics, progress phases, and health expectations
 - [NGRX_STATE_BLUEPRINT.md](./NGRX_STATE_BLUEPRINT.md): frontend state model
 - [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md): vertical slices, Docker environment, acceptance gates
-- [PI_EXECUTION_PLAN.md](./PI_EXECUTION_PLAN.md): sprint-by-sprint PI checklist with individual execution steps
 - [BRANCH_ENABLEMENT.md](./BRANCH_ENABLEMENT.md): execution checklist for making the branch implementation-ready
 - [DOCKER_ENVIRONMENT.md](./DOCKER_ENVIRONMENT.md): side-by-side local Docker environment and root `.env` rules
 - [SSR_PROXY_SPEC.md](./SSR_PROXY_SPEC.md): how Forge requests should be proxied through the SSR shim
@@ -60,3 +63,17 @@ Reader guide:
 - Current implemented workbench behavior:
   validated coordinate entry, live/planned survey states, cutout and composite job creation, queue diagnostics, artifact delivery labels, cache actions, and result/provenance inspection now exist on the single `/forge` route
 - [AI_BUILD_KIT.md](./AI_BUILD_KIT.md): Copilot/Codex prompts and guardrails
+
+PI execution state:
+
+- the Forge branch now ships a bounded `/forge` workbench with live `Legacy Surveys`, `AllWISE`, and `SkyView` adapter paths
+- bounded worker execution, persisted local state, diagnostics, retry/cancel, caching, and composite preview generation are implemented
+- the remaining items are explicitly post-PI and are tracked in [HANDOFF_NOTE.md](./HANDOFF_NOTE.md) and the deferred section of [PI_EXECUTION_PLAN.md](./PI_EXECUTION_PLAN.md)
+
+Normal verification workflows:
+
+- `pnpm run unit-test`
+- `pnpm run e2e`
+- `pnpm nx run frontend:build:development`
+- `pnpm nx run cosmic-forge-api:build`
+- `pnpm nx run cosmic-forge-worker:build`

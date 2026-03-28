@@ -6,7 +6,7 @@ Alignment anchors
 - Docker topology baseline: [../infra/INFRA_TOPOLOGY.md](../infra/INFRA_TOPOLOGY.md)
 - Implementation plan: [./IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
 
-Status: `planned`
+Status: `implemented`
 
 ## Decision
 
@@ -55,12 +55,12 @@ The initial Forge compose environment provides support services only:
 
 This is no longer storage-only.
 
-The compose environment now includes placeholder runtime services:
+The compose environment now includes the current runtime services:
 
 - `cosmic-forge-api`
 - `cosmic-forge-worker`
 
-These are intentionally minimal HTTP placeholders with health endpoints. They reserve the service boundaries, prove Docker wiring, and provide stable targets for SSR/proxy integration.
+These service boundaries are now implemented as the current typed Forge API and worker runtimes. The compose environment remains the bounded local runtime seam for operating the branch alongside the main stack.
 
 ## Port strategy
 
@@ -96,6 +96,6 @@ The noisy `Nx ... target serve ... failed` banner can appear when an old fronten
 
 ## Expected next step
 
-As the real Forge services are implemented, replace the placeholder containers in `docker/cosmic-forge-compose.yml` rather than adding Forge runtime to `docker/dev-compose.yml`.
+Continue evolving the Forge services inside `docker/cosmic-forge-compose.yml` rather than adding Forge runtime to `docker/dev-compose.yml`.
 
 That preserves the branch boundary and keeps Forge adoption explicit.

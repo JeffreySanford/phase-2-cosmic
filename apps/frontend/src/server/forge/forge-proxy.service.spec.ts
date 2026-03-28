@@ -114,10 +114,11 @@ describe("ForgeProxyService", () => {
         ),
     });
 
-    await firstValueFrom(
+    const payload = await firstValueFrom(
       svc.handle(req, res, recordMetrics).pipe(defaultIfEmpty(null))
     );
 
+    expect(payload).toBeNull();
     expect(res.statusCode).toBe(200);
     expect(res.getHeader("content-type")).toBe("image/jpeg");
     expect(res.getHeader("content-length")).toBe(String(artifactBytes.byteLength));
@@ -162,10 +163,11 @@ describe("ForgeProxyService", () => {
 
     fetchMock.mockRejectedValue(new Error("connect ECONNREFUSED"));
 
-    await firstValueFrom(
+    const payload = await firstValueFrom(
       svc.handle(req, res, recordMetrics).pipe(defaultIfEmpty(null))
     );
 
+    expect(payload).toBeNull();
     expect(res.statusCode).toBe(502);
     expect(res.body).toEqual({
       error: "forge_artifact_proxy_error",

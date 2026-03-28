@@ -6,7 +6,7 @@ Alignment anchors
 - Forge Docker environment: [./DOCKER_ENVIRONMENT.md](./DOCKER_ENVIRONMENT.md)
 - Current local dev baseline: [../overview/GETTING_STARTED.md](../overview/GETTING_STARTED.md)
 
-Status: `planned`
+Status: `implemented`
 
 ## Why this exists
 

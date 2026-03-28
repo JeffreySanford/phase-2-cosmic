@@ -8,7 +8,7 @@ Alignment anchors
 - SSR proxy: [./SSR_PROXY_SPEC.md](./SSR_PROXY_SPEC.md)
 - AI prompts: [./AI_BUILD_KIT.md](./AI_BUILD_KIT.md)
 
-Status: `planned`
+Status: `implemented`
 
 ## Purpose
 
@@ -16,7 +16,7 @@ This document converts the Cosmic Forge branch from "good idea with architecture
 
 It answers one practical question:
 
-What must exist before the `feature/cosmic-forge-image-orchestrator` branch can move from documentation into active implementation?
+What must exist before the `cosmic-forge` branch can move from documentation into active implementation?
 
 ## Branch contract
 
@@ -27,7 +27,7 @@ Cosmic Forge is enabled only if all of the following remain true:
 - it does not rewrite the current Java/OpenAPI governance truth
 - it uses the root `.env` for local development
 - it uses the Forge-specific Docker environment for Forge runtime work
-- it treats GraphQL, NgRx, and .NET as branch-scoped choices
+- it treats GraphQL, NgRx, and NestJS/TypeScript as branch-scoped choices
 
 ## Current bounded-track naming and scope
 
@@ -68,11 +68,11 @@ These are now present and should remain the baseline:
   - `apps/cosmic-forge-api`
   - `apps/cosmic-forge-worker`
 
-## Required next implementation gates
+## Historical enablement gates
 
 ### Gate 1: branch hygiene
 
-- create and use `feature/cosmic-forge-image-orchestrator`
+- create and use the bounded `cosmic-forge` branch
 - keep Forge changes isolated from unrelated repo cleanup
 - do not silently alter `docker/dev-compose.yml` semantics
 
@@ -94,6 +94,8 @@ These are now present and should remain the baseline:
 - keep contract aligned with `GRAPHQL_CONTRACT_DRAFT.md`
 
 ### Gate 5: worker replacement
+
+These gates are now materially complete in the current branch and remain here as an enablement record rather than an open plan.
 
 - replace placeholder worker with bounded-concurrency execution
 - keep provenance and source attribution mandatory

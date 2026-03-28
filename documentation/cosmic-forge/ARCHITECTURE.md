@@ -7,7 +7,7 @@ Alignment anchors
 - Public-source inventory: [../public-data/PUBLIC_DATA_RESOURCES.md](../public-data/PUBLIC_DATA_RESOURCES.md)
 - Docker/local-dev context: [../infra/INFRA_TOPOLOGY.md](../infra/INFRA_TOPOLOGY.md)
 
-Status: `planned`
+Status: `implemented`
 
 ## Architecture stance
 

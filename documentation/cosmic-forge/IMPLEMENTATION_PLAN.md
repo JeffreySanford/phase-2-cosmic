@@ -12,7 +12,7 @@ Status: `in_progress`
 
 ## Naming
 
-- branch: `feature/cosmic-forge-image-orchestrator`
+- branch: `cosmic-forge`
 - app family: `cosmic-forge-ui`, `cosmic-forge-api`
 - optional worker: `cosmic-forge-worker`
 - Docker environment: `docker/cosmic-forge-compose.yml`

@@ -382,6 +382,35 @@ describe("forge workbench", () => {
                     },
                   ]
                 : []),
+              ...(includeCompositeJobInBootstrap
+                ? [
+                    {
+                      id: "forge-job-150",
+                      type: "composite",
+                      status: "COMPLETED",
+                      progressPercent: 100,
+                      requestedBy: "jeffreysanford",
+                      targetName: "M87 composite",
+                      ra: 187.70593,
+                      dec: 12.39112,
+                      radiusArcmin: 15,
+                      requestedSurveyIds: ["legacy", "allwise"],
+                      resultImageIds: ["forge-image-150"],
+                      errorCode: null,
+                      errorMessage: null,
+                      compositeRequest: {
+                        operation: "survey-stack",
+                        inputs: [],
+                        parameters: {
+                          mode: "quicklook",
+                          sourceCount: 2,
+                        },
+                      },
+                      createdAt: "2026-03-28T07:08:00.000Z",
+                      updatedAt: "2026-03-28T07:08:30.000Z",
+                    },
+                  ]
+                : []),
               {
                 id: "forge-job-2",
                 type: "cutout",
@@ -659,6 +688,33 @@ describe("forge workbench", () => {
       .and("contain.text", "COMPOSITE_JOB_COMPLETED");
   });
 
+  it("walks the composite diagnostics path as a demo-ready workbench flow", () => {
+    cy.visit("/forge");
+    cy.wait("@forgeGraphql");
+
+    cy.contains("Forge runtime is available");
+    cy.contains("contract version: forge-workbench.v1");
+
+    cy.contains("button.forge-chip", "AllWISE").click({ force: true });
+    cy.contains("button", "Create composite job").click({ force: true });
+    cy.wait("@forgeCreateCompositeJob");
+    cy.contains("button", "Refresh workspace").click({ force: true });
+    cy.wait("@forgeGraphql");
+
+    cy.contains(".forge-queue__item", "M87 composite · composite").click();
+    cy.get('input[formcontrolname="target"]').should("have.value", "M87 composite");
+    cy.contains("Composite operation:").parent().contains("survey-stack");
+    cy.contains("Preview provider:").parent().contains("Cosmic Forge");
+    cy.contains("Transform chain:")
+      .parent()
+      .should("contain.text", "multi-input-preparation")
+      .and("contain.text", "composite-assembly:survey-stack");
+    cy.contains("h2", "Diagnostics")
+      .closest("article")
+      .should("contain.text", "queued")
+      .and("contain.text", "COMPOSITE_JOB_COMPLETED");
+  });
+
   it("allows a queued job to be cancelled from the Forge queue shell", () => {
     cy.visit("/forge");
     cy.wait("@forgeGraphql");
@@ -728,6 +784,12 @@ describe("forge workbench", () => {
     cy.contains("Provenance bands:").parent().contains("W1");
     cy.contains("Transform chain:").parent().contains("irsa-sia-discovery");
     cy.contains("Transform chain:").parent().contains("local-cache-retention");
+    cy.contains("Citation:")
+      .parent()
+      .contains("NASA/IPAC IRSA citation");
+    cy.contains("Authoritative source:")
+      .parent()
+      .contains("NASA/IPAC IRSA source asset");
 
     cy.contains("Preview URL:")
       .parent()
@@ -747,6 +809,128 @@ describe("forge workbench", () => {
     cy.contains("button.forge-chip", "SkyView")
       .should("not.be.disabled")
       .contains("derived");
+  });
+
+  it("shows provider-specific SkyView source handoff language when a SkyView result is selected", () => {
+    cy.intercept("POST", "/api/forge/graphql", (req) => {
+      req.reply({
+        statusCode: 200,
+        body: {
+          data: {
+            serviceInfo: {
+              name: "cosmic-forge-api",
+              status: "graphql-live",
+              operationName: "ForgeWorkbenchBootstrap",
+              graphReady: true,
+              contractVersion: "forge-workbench.v1",
+            },
+            surveys: [
+              {
+                id: "skyview",
+                name: "SkyView",
+                providerName: "NASA GSFC SkyView",
+                waveband: "mixed",
+                supportsFits: false,
+                supportsCutout: true,
+                supportsPreview: true,
+                previewReady: true,
+                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+              },
+            ],
+            jobs: [
+              {
+                id: "forge-job-sky",
+                type: "cutout",
+                status: "COMPLETED",
+                progressPercent: 100,
+                requestedBy: "archive-operator",
+                targetName: "Cygnus A",
+                ra: 299.86815,
+                dec: 40.73391,
+                radiusArcmin: 10,
+                requestedSurveyIds: ["skyview"],
+                resultImageIds: ["forge-image-sky"],
+                errorCode: null,
+                errorMessage: null,
+                createdAt: "2026-03-28T09:00:00.000Z",
+                updatedAt: "2026-03-28T09:01:00.000Z",
+              },
+            ],
+            imageProducts: [
+              {
+                id: "forge-image-sky",
+                jobId: "forge-job-sky",
+                surveyId: "skyview",
+                providerName: "NASA GSFC SkyView",
+                artifactMode: "external",
+                format: "jpeg",
+                previewUrl: "https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Position=299.86815,40.73391",
+                fitsUrl: null,
+                authoritativeUrl:
+                  "https://skyview.gsfc.nasa.gov/current/cgi/query.pl?Position=299.86815,40.73391",
+                accessedAt: "2026-03-28T09:01:00.000Z",
+                cacheKey: null,
+                cacheStatus: "external-only",
+                provenance: {
+                  sourceSurvey: "SkyView DSS",
+                  providerName: "NASA GSFC SkyView",
+                  citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+                  authoritativeUrl:
+                    "https://skyview.gsfc.nasa.gov/current/cgi/query.pl?Position=299.86815,40.73391",
+                  accessedAt: "2026-03-28T09:01:00.000Z",
+                  transformChain: ["skyview-query", "skyview-derived-image"],
+                  artifactMode: "external",
+                  missionFamily: "skyview",
+                  collection: "skyview/derived-preview",
+                  retrievalPathType: "skyview-query",
+                  outputFormat: "image/jpeg",
+                  citationReference: null,
+                  datasetDoi: null,
+                  layer: "skyview-dss",
+                  bandSet: ["DSS"],
+                  ra: 299.86815,
+                  dec: 40.73391,
+                  pixscale: null,
+                  size: 900,
+                  width: 900,
+                  height: 900,
+                },
+                createdAt: "2026-03-28T09:01:00.000Z",
+              },
+            ],
+            diagnostics: {
+              queueDepth: 0,
+              runningJobs: 0,
+              failedJobs: 0,
+              completedJobs: 1,
+              blockedJobs: 0,
+              delayedJobs: 0,
+              retryingJobs: 0,
+            },
+            metrics: {
+              totalJobs: 1,
+              avgRunTimeSec: 3.1,
+              successRate: 1,
+              queueDepth: 0,
+              successCount: 1,
+              failureCount: 0,
+              cachedArtifactCount: 0,
+            },
+            jobEvents: [],
+          },
+        },
+      });
+    }).as("forgeGraphqlSkyViewOnly");
+
+    cy.visit("/forge");
+    cy.wait("@forgeGraphqlSkyViewOnly");
+
+    cy.contains(".forge-queue__item", "Cygnus A · cutout").click();
+    cy.get('input[formcontrolname="target"]').should("have.value", "Cygnus A");
+    cy.contains("Citation:").parent().contains("NASA GSFC SkyView citation");
+    cy.contains("Authoritative source:")
+      .parent()
+      .contains("Open in NASA GSFC SkyView for this target");
   });
 
   it("renders ESASky as a planned disabled survey option", () => {

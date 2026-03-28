@@ -7,7 +7,7 @@ Alignment anchors
 - Program guardrails: [../overview/PROGRAM_DIRECTION.md](../overview/PROGRAM_DIRECTION.md)
 - Current jobs/frontend reality: [../frontend/features/JOBS.md](../frontend/features/JOBS.md)
 
-Status: `planned`
+Status: `implemented`
 
 ## What this is
 
@@ -67,7 +67,7 @@ It is the wrong move to:
 
 - force this into the current Java/OpenAPI path as if nothing changed
 - scatter it into a separate repo before it proves itself
-- pretend the whole repo is now Angular + NgRx + GraphQL + .NET
+- pretend the whole repo is now Angular + NgRx + GraphQL + NestJS
 
 The disciplined move is:
 
@@ -104,7 +104,7 @@ The current repo truth is Angular frontend plus Java/OpenAPI/governance-oriented
 
 ### Stack sprawl
 
-Adding NgRx, GraphQL, .NET, and optional C++ can become résumé theater if the interfaces are not tightly scoped. Forge must stay product-led, not tool-led.
+Adding NgRx, GraphQL, NestJS, Go rendering, and optional later C++ can become résumé theater if the interfaces are not tightly scoped. Forge must stay product-led, not tool-led.
 
 ### Public-source reliability and CORS
 
@@ -121,4 +121,4 @@ Cosmic Forge should proceed as:
 - a branch of `phase-2-cosmic`
 - a bounded new-stack incubator
 - a side-by-side Docker environment using the root `.env` for local development
-- a documentation-first deliverable before code implementation
+- an implemented bounded-track deliverable with explicit post-PI carryover

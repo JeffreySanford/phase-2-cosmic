@@ -6,11 +6,11 @@ Alignment anchors
 - GraphQL contract: [./GRAPHQL_CONTRACT_DRAFT.md](./GRAPHQL_CONTRACT_DRAFT.md)
 - PI tracker: [./PI_EXECUTION_PLAN.md](./PI_EXECUTION_PLAN.md)
 
-Status: `in_progress`
+Status: `implemented_baseline`
 
 ## Purpose
 
-This document defines the first durable persistence model for Cosmic Forge so the queue, results, and provenance can move beyond in-memory state.
+This document defines the current durable persistence baseline for Cosmic Forge and the next recommended persistence move beyond the local file-backed store.
 
 ## Immediate goal
 

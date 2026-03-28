@@ -15,7 +15,7 @@ Alignment anchors
 - IRSA implementation notes: [./IRSA_IMPLEMENTATION_NOTES.md](./IRSA_IMPLEMENTATION_NOTES.md)
 - Sprint 5 implementation notes: [./SPRINT_5_IMPLEMENTATION_NOTES.md](./SPRINT_5_IMPLEMENTATION_NOTES.md)
 
-Status: `in_progress`
+Status: `implemented`
 
 ## Purpose
 
@@ -471,18 +471,31 @@ Sprint 7 done when:
 
 Goal: finish the branch as an intentional PI deliverable instead of a promising prototype.
 
-- [ ] Review all Forge docs for implemented-versus-planned accuracy.
-- [ ] Update README links and reader guides to include the PI execution state.
-- [ ] Add explicit runbook steps for local startup, shutdown, debugging, and health verification.
-- [ ] Close or document all known exceptions for runtime gaps and deliberate non-goals.
-- [ ] Ensure tests are runnable from the repo’s normal Nx and package-manager workflows.
-- [ ] Add one demo checklist for the Forge path.
-- [ ] Add one handoff note describing what remains post-PI.
-- [ ] Mark completed items in this document and carry forward any deferred work explicitly.
+- [x] Review all Forge docs for implemented-versus-planned accuracy.
+- [x] Update README links and reader guides to include the PI execution state.
+- [x] Add explicit runbook steps for local startup, shutdown, debugging, and health verification.
+- [x] Close or document all known exceptions for runtime gaps and deliberate non-goals.
+- [x] Ensure tests are runnable from the repo’s normal Nx and package-manager workflows.
+- [x] Add one demo checklist for the Forge path.
+- [x] Add one handoff note describing what remains post-PI.
+- [x] Mark completed items in this document and carry forward any deferred work explicitly.
+
+Implemented Sprint 8 behaviors:
+
+- the Forge docs set is now aligned to the implemented branch rather than the earlier planned-only posture
+- README now points directly at the PI execution state, runbook, demo checklist, and handoff note
+- local operation steps now exist in [RUNBOOK.md](./RUNBOOK.md), including startup, shutdown, health, debugging, and normal test workflows
+- the demo path is now explicit in [DEMO_CHECKLIST.md](./DEMO_CHECKLIST.md)
+- remaining work and deliberate non-goals are now explicit in [HANDOFF_NOTE.md](./HANDOFF_NOTE.md) and the deferred section below
+- the branch now has a review path that does not require verbal reconstruction:
+  - README
+  - runbook
+  - demo checklist
+  - PI execution plan
 
 Sprint 8 done when:
 
-- [ ] The branch can be demonstrated, operated locally, and reviewed without verbal reconstruction.
+- [x] The branch can be demonstrated, operated locally, and reviewed without verbal reconstruction.
 
 ## Deferred after this PI
 

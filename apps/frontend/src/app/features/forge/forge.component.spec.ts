@@ -19,6 +19,17 @@ const surveys: readonly ForgeSurveyDto[] = [
     citationUrl: "https://www.legacysurvey.org/viewer",
   },
   {
+    id: "allwise",
+    name: "AllWISE",
+    providerName: "NASA/IPAC IRSA",
+    waveband: "infrared",
+    supportsFits: true,
+    supportsCutout: true,
+    supportsPreview: true,
+    previewReady: true,
+    citationUrl: "https://irsa.ipac.caltech.edu/Missions/wise.html",
+  },
+  {
     id: "esasky",
     name: "ESASky",
     providerName: "ESA ESASky",
@@ -310,5 +321,38 @@ describe("ForgeComponent", () => {
     expect(button).toBeTruthy();
     button?.click();
     expect(facade.cacheImageArtifact).toHaveBeenCalledWith("forge-image-legacy");
+  });
+
+  it("prepopulates the workbench form from the selected job", () => {
+    facade.vmSubject.next(
+      createVm({
+        selectedJob: {
+          ...selectedLegacyJob,
+          id: "forge-job-cygnus-a",
+          targetName: "Cygnus A",
+          ra: 299.86815,
+          dec: 40.73391,
+          radiusArcmin: 10,
+          requestedSurveyIds: ["allwise"],
+        },
+      })
+    );
+    fixture.detectChanges();
+
+    expect(component.workbenchForm.getRawValue()).toMatchObject({
+      target: "Cygnus A",
+      ra: "299.86815",
+      dec: "40.73391",
+      radiusArcmin: "10",
+      surveyIds: ["allwise"],
+    });
+  });
+
+  it("renders provider-specific citation and source labels for the selected image", () => {
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain("NOIRLab / Legacy Surveys citation");
+    expect(text).toContain("NOIRLab / Legacy Surveys source asset");
   });
 });

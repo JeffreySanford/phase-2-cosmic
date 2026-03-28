@@ -7,9 +7,9 @@ Alignment anchors
 - Persistence plan: [./PERSISTENCE_PLAN.md](./PERSISTENCE_PLAN.md)
 - Current jobs/frontend reality: [../frontend/features/JOBS.md](../frontend/features/JOBS.md)
 
-Status: `in_progress`
+Status: `implemented`
 
-This document is the branch-scoped GraphQL contract draft for Cosmic Forge. It is aligned to the implemented Forge API shape and calls out the remaining contract gaps explicitly.
+This document is the branch-scoped GraphQL contract for Cosmic Forge. It is aligned to the implemented Forge API shape and calls out only the deliberate post-PI gaps explicitly.
 
 ## Current query surface
 

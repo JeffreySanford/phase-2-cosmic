@@ -6,7 +6,7 @@ Alignment anchors
 - Architecture: [./ARCHITECTURE.md](./ARCHITECTURE.md)
 - Current jobs/frontend reality: [../frontend/features/JOBS.md](../frontend/features/JOBS.md)
 
-Status: `planned`
+Status: `implemented`
 
 ## Why NgRx is justified
 

@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Request, Response } from "express";
-import { EMPTY, Observable, defer, from, of } from "rxjs";
-import { catchError, ignoreElements, map, switchMap, tap } from "rxjs/operators";
+import { Observable, defer, from, of } from "rxjs";
+import { catchError, map, switchMap, tap } from "rxjs/operators";
 
 type ForgeMetricsRecorder = (
   method: string,
@@ -147,7 +147,7 @@ export class ForgeProxyService {
           res.setHeader("Content-Length", String(body.byteLength));
           res.send(body);
         }),
-        ignoreElements(),
+        map(() => null),
         catchError((error: unknown) => {
           console.error("Error proxying Forge artifact:", error);
           recordMetrics(method, 502, 0, 0);
@@ -155,7 +155,7 @@ export class ForgeProxyService {
             error: "forge_artifact_proxy_error",
             message: "Unable to reach cached Cosmic Forge artifact",
           });
-          return EMPTY;
+          return of(null);
         })
       );
     }
