@@ -83,6 +83,27 @@ export class ForgeEffects {
     )
   );
 
+  readonly createCompositeJob$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ForgeActions.createCompositeJobRequested),
+      mergeMap(({ input }) =>
+        this.forgeApi.createCompositeJob(input).pipe(
+          concatMap((payload) => [
+            ForgeActions.createCompositeJobSucceeded({ payload }),
+            ForgeActions.loadBootstrapRequested(),
+          ]),
+          catchError((error: unknown) =>
+            of(
+              ForgeActions.createCompositeJobFailed({
+                error: this.toMessage(error),
+              })
+            )
+          )
+        )
+      )
+    )
+  );
+
   readonly cancelJob$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ForgeActions.cancelJobRequested),

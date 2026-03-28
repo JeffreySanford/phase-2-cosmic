@@ -1,3 +1,50 @@
+test("composite job can be created and completes with stub logic", async () => {
+  const store = createStore("composite-job");
+  const compositeRequest = {
+    inputs: [
+      {
+        providerAdapter: "legacy-surveys",
+        sourceService: "viewer-cutout",
+        missionFamily: "legacy",
+        collection: "ls-dr10",
+        layer: "ls-dr10",
+        bands: ["g", "r", "z"],
+        ra: 187.70593,
+        dec: 12.39112,
+        radiusArcmin: 15,
+        pixscale: 0.262,
+        size: 256,
+        width: 256,
+        height: 256,
+        outputFormat: "jpeg",
+        retrievalPathType: "viewer-cutout",
+        discoveryUrl: null,
+        jpegCutoutUrl: null,
+        fitsCutoutUrl: null,
+      },
+    ],
+    operation: "overlay",
+    parameters: { alpha: 0.5 },
+  };
+  const job = store.createCompositeJob({
+    requestedBy: "test-user",
+    targetName: "Composite M87",
+    ra: 187.70593,
+    dec: 12.39112,
+    radiusArcmin: 15,
+    surveyIds: ["legacy"],
+    compositeRequest,
+  });
+  assert.equal(job.type, "composite");
+  assert.ok(job.compositeRequest);
+  assert.equal(job.compositeRequest.operation, "overlay");
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await store.advanceJobs();
+  }
+  const updated = store.getJobs().find((item) => item.id === job.id);
+  assert.equal(updated?.status, "COMPLETED");
+  assert.equal(updated?.errorCode, null);
+});
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";

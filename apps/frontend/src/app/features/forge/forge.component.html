@@ -109,15 +109,26 @@
           type="button"
           class="forge__refresh"
           (click)="submitCutoutJob()"
-          [disabled]="vm.createJobLoading"
+          [disabled]="!canSubmit(vm)"
         >
           {{ vm.createJobLoading ? 'Creating job...' : 'Create cutout job' }}
+        </button>
+        <button
+          type="button"
+          class="forge__refresh forge__refresh--secondary"
+          (click)="submitCompositeJob()"
+          [disabled]="!canSubmitComposite(vm)"
+        >
+          {{ vm.createJobLoading ? 'Creating job...' : 'Create composite job' }}
         </button>
       </div>
 
       <p class="forge-graphql__meta">
         This form currently accepts a target label plus decimal-degree coordinates and dispatches
-        one cutout job into the Forge queue.
+        one cutout job or one survey-stack composite into the Forge queue.
+      </p>
+      <p *ngIf="selectedSurveyCount() > 0 && !canSubmitComposite(vm)" class="forge-graphql__meta">
+        {{ compositeValidationMessage() }}
       </p>
 
       <p *ngIf="vm.createJobError" class="forge-health__error">
@@ -163,6 +174,32 @@
       <p *ngIf="!vm.graphqlState.loading && vm.graphqlState.error" class="forge-health__error">
         Forge GraphQL read model failed: {{ vm.graphqlState.error }}
       </p>
+    </article>
+
+    <article class="forge-card">
+      <h2>Diagnostics</h2>
+
+      <p class="forge-graphql__meta">{{ diagnosticsSummary(vm.diagnostics) }}</p>
+      <p class="forge-graphql__meta">{{ metricsSummary(vm.metrics) }}</p>
+
+      <div *ngIf="vm.diagnostics as diagnostics" class="forge-graphql">
+        <p>blocked jobs: {{ diagnostics.blockedJobs }}</p>
+        <p>delayed jobs: {{ diagnostics.delayedJobs }}</p>
+        <p>retrying jobs: {{ diagnostics.retryingJobs }}</p>
+      </div>
+
+      <div *ngIf="vm.metrics as metrics" class="forge-graphql">
+        <p>avg runtime: {{ metrics.avgRunTimeSec }} sec</p>
+        <p>success rate: {{ metrics.successRate }}</p>
+        <p>cached artifacts: {{ metrics.cachedArtifactCount }}</p>
+      </div>
+
+      <div class="forge-results__meta" *ngIf="vm.jobEvents.length > 0">
+        <p><strong>Recent events</strong></p>
+        <p *ngFor="let event of vm.jobEvents">
+          {{ event.createdAt }} · {{ event.eventType }} · {{ eventSummary(event) }}
+        </p>
+      </div>
     </article>
 
     <article class="forge-card forge-card--wide">
@@ -380,6 +417,10 @@
                   at {{ selectedPixscaleLabel(vm.selectedJob, vm.selectedImage) }} arcsec/pixel
                 </p>
               </ng-container>
+              <p *ngIf="vm.selectedJob?.compositeRequest">
+                <strong>Composite operation:</strong>
+                {{ vm.selectedJob?.compositeRequest?.operation }}
+              </p>
               <p *ngIf="vm.selectedImage">
                 <strong>Artifact mode:</strong> {{ vm.selectedImage.artifactMode }}
               </p>
@@ -408,6 +449,10 @@
               <p *ngIf="isDerivedPreview(vm.selectedImage)" class="forge-graphql__meta">
                 SkyView results are derived quick-look products and should not be treated as
                 archive-native cutouts from the upstream survey.
+              </p>
+              <p *ngIf="isCompositePreview(vm.selectedImage)" class="forge-graphql__meta">
+                Composite results are Forge-generated derived previews assembled from multiple
+                survey inputs and should be interpreted with their transform chain.
               </p>
               <p *ngIf="vm.selectedImage">
                 <strong>Accessed:</strong> {{ vm.selectedImage.accessedAt }}

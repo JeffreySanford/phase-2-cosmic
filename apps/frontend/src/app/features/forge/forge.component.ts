@@ -1,7 +1,11 @@
 import {
+  ForgeCreateCompositeJobInputDto,
   ForgeImageProductDto,
   ForgeJobDto,
   ForgeSurveyDto,
+  ForgeVmDiagnosticsDto,
+  ForgeVmJobEventDto,
+  ForgeVmMetricsDto,
 } from "./state/forge.models";
 import {
   ChangeDetectionStrategy,
@@ -138,6 +142,45 @@ export class ForgeComponent implements OnInit {
     });
   }
 
+  submitCompositeJob(): void {
+    this.submitAttempted.set(true);
+    if (
+      this.workbenchForm.invalid ||
+      !this.hasValidRa() ||
+      !this.hasValidDec() ||
+      !this.hasValidRadius()
+    ) {
+      this.workbenchForm.markAllAsTouched();
+      return;
+    }
+
+    const surveyIds = this.selectedLiveSurveyIds();
+    if (surveyIds.length < 2) {
+      this.workbenchForm.markAllAsTouched();
+      return;
+    }
+
+    const rawValue = this.workbenchForm.getRawValue();
+    const input: ForgeCreateCompositeJobInputDto = {
+      requestedBy: "jeffreysanford",
+      targetName: String(rawValue.target ?? ""),
+      ra: Number(rawValue.ra ?? 0),
+      dec: Number(rawValue.dec ?? 0),
+      radiusArcmin: Number(rawValue.radiusArcmin ?? 0),
+      surveyIds,
+      compositeRequest: {
+        operation: "survey-stack",
+        inputs: [],
+        parameters: {
+          mode: "quicklook",
+          sourceCount: surveyIds.length,
+        },
+      },
+    };
+
+    this.forgeFacade.createCompositeJob(input);
+  }
+
   toggleSurveySelection(surveyId: string): void {
     const selected = this.workbenchForm.controls.surveyIds.getRawValue() ?? [];
     const nextSelection = selected.includes(surveyId)
@@ -181,6 +224,12 @@ export class ForgeComponent implements OnInit {
 
   selectedSurveyCount(): number {
     return this.workbenchForm.controls.surveyIds.getRawValue()?.length ?? 0;
+  }
+
+  selectedLiveSurveyIds(): string[] {
+    return (this.workbenchForm.controls.surveyIds.getRawValue() ?? []).filter(
+      (value): value is string => typeof value === "string"
+    );
   }
 
   showTargetValidation(): boolean {
@@ -230,6 +279,28 @@ export class ForgeComponent implements OnInit {
     );
   }
 
+  canSubmitComposite(vm: {
+    createJobLoading: boolean;
+    surveys: readonly ForgeSurveyDto[];
+  }): boolean {
+    const selectedLiveCount = (this.workbenchForm.controls.surveyIds.getRawValue() ?? []).filter(
+      (surveyId): surveyId is string =>
+        typeof surveyId === "string" &&
+        vm.surveys.some(
+          (survey) => survey.id === surveyId && this.isSurveySelectable(survey)
+        )
+    ).length;
+
+    return (
+      !vm.createJobLoading &&
+      this.workbenchForm.valid &&
+      this.hasValidRa() &&
+      this.hasValidDec() &&
+      this.hasValidRadius() &&
+      selectedLiveCount >= 2
+    );
+  }
+
   targetValidationMessage(): string {
     return "Target/source is required so the queue and provenance remain readable.";
   }
@@ -248,6 +319,10 @@ export class ForgeComponent implements OnInit {
 
   surveyValidationMessage(): string {
     return "Select at least one live adapter to create a cutout job.";
+  }
+
+  compositeValidationMessage(): string {
+    return "Select at least two live adapters to create a composite job.";
   }
 
   cancelJob(jobId: string): void {
@@ -375,6 +450,34 @@ export class ForgeComponent implements OnInit {
 
   isDerivedPreview(selectedImage: ForgeImageProductDto | null): boolean {
     return selectedImage?.provenance.transformChain.includes("skyview-derived-image") ?? false;
+  }
+
+  isCompositePreview(selectedImage: ForgeImageProductDto | null): boolean {
+    return (
+      selectedImage?.provenance.transformChain.some((step) =>
+        step.startsWith("composite-assembly:")
+      ) ?? false
+    );
+  }
+
+  diagnosticsSummary(diagnostics: ForgeVmDiagnosticsDto | null): string {
+    if (!diagnostics) {
+      return "Diagnostics unavailable until GraphQL bootstrap succeeds.";
+    }
+
+    return `${diagnostics.queueDepth} queued · ${diagnostics.runningJobs} running · ${diagnostics.retryingJobs} retrying`;
+  }
+
+  metricsSummary(metrics: ForgeVmMetricsDto | null): string {
+    if (!metrics) {
+      return "Metrics unavailable until GraphQL bootstrap succeeds.";
+    }
+
+    return `${metrics.successCount} success · ${metrics.failureCount} failed · ${metrics.cachedArtifactCount} cached`;
+  }
+
+  eventSummary(event: ForgeVmJobEventDto): string {
+    return event.message || `${event.eventType} · ${event.jobId}`;
   }
 
   hasSupportedContract(vm: { serviceInfo: { contractVersion: string } | null }): boolean {

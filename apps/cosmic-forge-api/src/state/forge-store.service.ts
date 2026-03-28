@@ -1,12 +1,16 @@
+import type { CompositeJobSpec } from "../domain/forge.models";
 import { Inject, Injectable } from "@nestjs/common";
 import { ArtifactCacheService } from "../artifacts/artifact-cache.service";
 import type {
   ForgeApiHealth,
   ForgeCreateCutoutJobInput,
+  ForgeCutoutRequest,
+  ForgeDiagnostics,
   ForgeErrorCode,
   ForgeImageProduct,
   ForgeJob,
   ForgeJobEvent,
+  ForgeMetrics,
   ForgePersistedState,
   ForgeSurvey,
 } from "../domain/forge.models";
@@ -21,6 +25,7 @@ import { ForgeStateRepository } from "./forge-state.repository";
 
 @Injectable()
 export class ForgeStoreService {
+
   private readonly state: ForgePersistedState;
 
   constructor(
@@ -28,6 +33,161 @@ export class ForgeStoreService {
     @Inject(ForgeStateRepository) private readonly stateRepository: ForgeStateRepository
   ) {
     this.state = this.stateRepository.load(() => this.createInitialState());
+  }
+
+
+  /**
+   * Create a composite job (Sprint 7).
+   * Accepts a CompositeJobSpec and creates a queued composite job.
+   */
+  createCompositeJob(input: {
+    requestedBy: string;
+    targetName: string;
+    ra: number;
+    dec: number;
+    radiusArcmin: number;
+    surveyIds: string[];
+    compositeRequest: CompositeJobSpec;
+  }): ForgeJob {
+    this.state.jobCounter += 1;
+    const timestamp = this.isoNow();
+    const requestedSurveyIds = Array.isArray(input.surveyIds)
+      ? input.surveyIds.filter((value): value is string => typeof value === "string")
+      : [];
+    const normalizedInputs =
+      input.compositeRequest.inputs.length > 0
+        ? input.compositeRequest.inputs
+        : this.buildCompositeInputs({
+            ra: Number(input.ra || 0),
+            dec: Number(input.dec || 0),
+            radiusArcmin: Number(input.radiusArcmin || 0),
+            surveyIds: requestedSurveyIds,
+          });
+
+    const job: ForgeJob = {
+      id: `forge-job-${this.state.jobCounter}`,
+      type: "composite",
+      status: "QUEUED",
+      progressPercent: 0,
+      requestedBy: String(input.requestedBy || "anonymous-operator"),
+      targetName: String(input.targetName || "Unnamed target"),
+      ra: Number(input.ra || 0),
+      dec: Number(input.dec || 0),
+      radiusArcmin: Number(input.radiusArcmin || 0),
+      requestedSurveyIds,
+      request: null,
+      compositeRequest: {
+        ...input.compositeRequest,
+        inputs: normalizedInputs,
+      },
+      resultImageIds: [],
+      errorCode: null,
+      errorMessage: null,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    this.state.jobs.unshift(job);
+    this.appendJobEvent(job, "JOB_CREATED", null, "QUEUED", "Composite job created");
+    this.persistState();
+    return job;
+  }
+
+  private buildCompositeInputs(input: {
+    ra: number;
+    dec: number;
+    radiusArcmin: number;
+    surveyIds: string[];
+  }): ForgeCutoutRequest[] {
+    return input.surveyIds
+      .map((surveyId) =>
+        buildCutoutRequestForJob({
+          id: `composite-input-${surveyId}`,
+          type: "cutout",
+          status: "QUEUED",
+          progressPercent: 0,
+          requestedBy: "composite-builder",
+          targetName: "Composite input",
+          ra: input.ra,
+          dec: input.dec,
+          radiusArcmin: input.radiusArcmin,
+          requestedSurveyIds: [surveyId],
+          request: null,
+          resultImageIds: [],
+          errorCode: null,
+          errorMessage: null,
+          createdAt: this.isoNow(),
+          updatedAt: this.isoNow(),
+        })
+      )
+      .filter((request): request is ForgeCutoutRequest => !!request);
+  }
+
+  private createCompositePreviewUrl(job: ForgeJob): string {
+    const label = encodeURIComponent(
+      `${job.targetName}\n${job.requestedSurveyIds.join(" + ")}\n${job.compositeRequest?.operation ?? "composite"}`
+    );
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+      <defs>
+        <linearGradient id="forgeCompositeBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#15324f"/>
+          <stop offset="50%" stop-color="#2b5d87"/>
+          <stop offset="100%" stop-color="#0f2236"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="800" rx="36" fill="url(#forgeCompositeBg)"/>
+      <circle cx="400" cy="400" r="220" fill="rgba(255,255,255,0.08)"/>
+      <circle cx="340" cy="360" r="170" fill="rgba(255,196,109,0.22)"/>
+      <circle cx="465" cy="445" r="185" fill="rgba(120,227,255,0.18)"/>
+      <text x="60" y="96" fill="#f8fcff" font-size="34" font-family="Segoe UI, Arial, sans-serif">Cosmic Forge composite</text>
+      <text x="60" y="144" fill="#d2e9ff" font-size="26" font-family="Segoe UI, Arial, sans-serif">${label}</text>
+    </svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  }
+
+  private createCompositeImageProduct(job: ForgeJob): ForgeImageProduct {
+    const createdAt = this.isoNow();
+    const operation = job.compositeRequest?.operation ?? "survey-stack";
+    return {
+      id: this.nextImageId(),
+      jobId: job.id,
+      surveyId: "forge-composite",
+      providerName: "Cosmic Forge",
+      artifactMode: "cached",
+      format: "svg",
+      previewUrl: this.createCompositePreviewUrl(job),
+      fitsUrl: null,
+      authoritativeUrl: "/forge",
+      accessedAt: createdAt,
+      cacheKey: `forge-composite-${job.id}`,
+      cacheStatus: "cached",
+      provenance: {
+        sourceSurvey: `Composite of ${job.requestedSurveyIds.join(", ")}`,
+        providerName: "Cosmic Forge",
+        citationUrl: "/forge",
+        authoritativeUrl: "/forge",
+        accessedAt: createdAt,
+        transformChain: [
+          "input-normalization",
+          "multi-input-preparation",
+          `composite-assembly:${operation}`,
+        ],
+        artifactMode: "cached",
+        missionFamily: "forge",
+        collection: "forge/composite-preview",
+        retrievalPathType: "forge-composite",
+        outputFormat: "image/svg+xml",
+        layer: operation,
+        bandSet: job.requestedSurveyIds,
+        ra: job.ra,
+        dec: job.dec,
+        pixscale: null,
+        size: Math.max(256, Math.round(job.radiusArcmin * 80)),
+        width: 800,
+        height: 800,
+      },
+      createdAt,
+    };
   }
 
   private isoNow(): string {
@@ -309,6 +469,39 @@ export class ForgeStoreService {
   }
 
   private async executeJobWithAdapter(job: ForgeJob): Promise<void> {
+    if (job.type === "composite" && job.compositeRequest) {
+      this.setJobProgress(
+        job,
+        35,
+        "COMPOSITE_INPUT_PREPARATION",
+        `Preparing ${job.compositeRequest.inputs.length} composite inputs`
+      );
+      this.setJobProgress(
+        job,
+        70,
+        "COMPOSITE_ASSEMBLY",
+        `Assembling ${job.compositeRequest.operation} composite`
+      );
+      const imageProduct = this.createCompositeImageProduct(job);
+      this.state.imageProducts.unshift(imageProduct);
+      job.resultImageIds = [imageProduct.id];
+      job.status = "COMPLETED";
+      job.progressPercent = 100;
+      job.errorCode = null;
+      job.errorMessage = null;
+      job.updatedAt = this.isoNow();
+      this.appendJobEvent(
+        job,
+        "COMPOSITE_JOB_COMPLETED",
+        "RUNNING",
+        "COMPLETED",
+        "Composite job completed"
+      );
+      this.persistState();
+      return;
+    }
+
+    // Default: cutout/other job types
     const adapter = getSurveyAdapterForJob(job);
     if (!adapter) {
       job.status = "FAILED";
@@ -439,9 +632,80 @@ export class ForgeStoreService {
     return this.sortedImageProducts().filter((imageProduct) => imageProduct.jobId === jobId);
   }
 
+  getJobEvents(limit = 10): ForgeJobEvent[] {
+    return [...this.state.jobEvents]
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+      .slice(0, Math.max(1, limit));
+  }
+
   getProvenanceByImage(imageId: string) {
     const imageProduct = this.state.imageProducts.find((image) => image.id === imageId) ?? null;
     return imageProduct?.provenance ?? null;
+  }
+
+  getDiagnostics(): ForgeDiagnostics {
+    const jobs = this.getJobs();
+    const now = Date.now();
+    const delayedJobs = jobs.filter((job) => {
+      if (job.status !== "QUEUED" && job.status !== "RUNNING") {
+        return false;
+      }
+      return now - Date.parse(job.updatedAt) > 60_000;
+    }).length;
+    const retryingJobs = jobs.filter((job) => {
+      const events = this.state.jobEvents.filter((event) => event.jobId === job.id);
+      return (
+        events.some((event) => event.eventType === "JOB_RETRIED") &&
+        (job.status === "QUEUED" || job.status === "RUNNING")
+      );
+    }).length;
+    const queuedCount = jobs.filter((job) => job.status === "QUEUED").length;
+    const runningCount = jobs.filter((job) => job.status === "RUNNING").length;
+    return {
+      queueDepth: queuedCount,
+      runningJobs: runningCount,
+      failedJobs: jobs.filter((job) => job.status === "FAILED").length,
+      completedJobs: jobs.filter((job) => job.status === "COMPLETED").length,
+      blockedJobs: queuedCount > 0 && runningCount === 0 ? queuedCount : 0,
+      delayedJobs,
+      retryingJobs,
+    };
+  }
+
+  getMetrics(): ForgeMetrics {
+    const jobs = this.getJobs();
+    const completedJobs = jobs.filter((job) => job.status === "COMPLETED");
+    const completedDurations = completedJobs
+      .map((job) => {
+        const created = Date.parse(job.createdAt);
+        const updated = Date.parse(job.updatedAt);
+        return Number.isFinite(created) && Number.isFinite(updated) && updated >= created
+          ? (updated - created) / 1000
+          : 0;
+      })
+      .filter((duration) => duration >= 0);
+    const successCount = completedJobs.length;
+    const failureCount = jobs.filter((job) => job.status === "FAILED").length;
+    return {
+      totalJobs: jobs.length,
+      avgRunTimeSec:
+        completedDurations.length > 0
+          ? Number(
+              (
+                completedDurations.reduce((sum, value) => sum + value, 0) /
+                completedDurations.length
+              ).toFixed(2)
+            )
+          : 0,
+      successRate:
+        jobs.length > 0 ? Number((successCount / jobs.length).toFixed(3)) : 0,
+      queueDepth: jobs.filter((job) => job.status === "QUEUED").length,
+      successCount,
+      failureCount,
+      cachedArtifactCount: this.state.imageProducts.filter(
+        (image) => image.artifactMode === "cached"
+      ).length,
+    };
   }
 
   createCutoutJob(input: ForgeCreateCutoutJobInput): ForgeJob {
@@ -520,7 +784,24 @@ export class ForgeStoreService {
     job.progressPercent = 0;
     job.errorCode = null;
     job.errorMessage = null;
-    job.request = buildCutoutRequestForJob(job);
+    if (job.type === "composite") {
+      job.request = null;
+      job.compositeRequest = {
+        inputs:
+          job.compositeRequest?.inputs.length
+            ? job.compositeRequest.inputs
+            : this.buildCompositeInputs({
+                ra: job.ra,
+                dec: job.dec,
+                radiusArcmin: job.radiusArcmin,
+                surveyIds: job.requestedSurveyIds,
+              }),
+        operation: job.compositeRequest?.operation ?? "survey-stack",
+        parameters: job.compositeRequest?.parameters ?? {},
+      };
+    } else {
+      job.request = buildCutoutRequestForJob(job);
+    }
     job.updatedAt = this.isoNow();
     this.appendJobEvent(job, "JOB_RETRIED", previousStatus, "QUEUED", "Job retried");
     this.persistState();

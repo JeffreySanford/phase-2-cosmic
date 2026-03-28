@@ -129,6 +129,37 @@ function baseVm() {
     selectedImage: externalLegacyImage,
     createJobLoading: false,
     createJobError: null as string | null,
+    diagnostics: {
+      queueDepth: 0,
+      runningCount: 0,
+      runningJobs: 0,
+      failedJobs: 0,
+      completedJobs: 1,
+      blockedJobs: 0,
+      delayedJobs: 0,
+      retryingJobs: 0,
+    },
+    metrics: {
+      totalJobs: 1,
+      avgRunTimeSec: 5,
+      successRate: 1,
+      queueDepth: 0,
+      successCount: 1,
+      failureCount: 0,
+      cachedArtifactCount: 0,
+    },
+    jobEvents: [
+      {
+        id: "forge-event-1",
+        jobId: selectedLegacyJob.id,
+        eventType: "JOB_COMPLETED",
+        fromStatus: "RUNNING",
+        toStatus: "COMPLETED",
+        message: "Job completed",
+        errorCode: null,
+        createdAt: "2026-03-28T18:01:00.000Z",
+      },
+    ],
     cacheArtifactLoading: false,
     cacheArtifactError: null as string | null,
     queueSummary: {
@@ -145,6 +176,7 @@ class ForgeFacadeStub {
   readonly initialize = jest.fn();
   readonly refresh = jest.fn();
   readonly createCutoutJob = jest.fn();
+  readonly createCompositeJob = jest.fn();
   readonly selectJob = jest.fn();
   readonly cancelJob = jest.fn();
   readonly retryJob = jest.fn();
@@ -214,6 +246,45 @@ describe("ForgeComponent", () => {
       radiusArcmin: 15,
       surveyIds: ["legacy"],
     });
+  });
+
+  it("dispatches a composite create action when two live surveys are selected", () => {
+    facade.vmSubject.next(
+      createVm({
+        surveys: [
+          ...surveys,
+          {
+            id: "allwise",
+            name: "AllWISE",
+            providerName: "NASA/IPAC IRSA",
+            waveband: "infrared",
+            supportsFits: true,
+            supportsCutout: true,
+            supportsPreview: true,
+            previewReady: true,
+            citationUrl: "https://irsa.ipac.caltech.edu/Missions/wise.html",
+          },
+        ],
+      })
+    );
+    fixture.detectChanges();
+    component.workbenchForm.patchValue({
+      target: "NGC 1275",
+      ra: "49.9507",
+      dec: "41.5117",
+      radiusArcmin: "12",
+      surveyIds: ["legacy", "allwise"],
+    });
+
+    component.submitCompositeJob();
+
+    expect(facade.createCompositeJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestedBy: "jeffreysanford",
+        targetName: "NGC 1275",
+        surveyIds: ["legacy", "allwise"],
+      })
+    );
   });
 
   it("renders the external artifact mode and cache action clearly", () => {

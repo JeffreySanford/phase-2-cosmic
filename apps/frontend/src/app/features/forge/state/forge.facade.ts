@@ -1,7 +1,10 @@
 import { Injectable, inject } from "@angular/core";
 import { Store } from "@ngrx/store";
 import { ForgeActions } from "./forge.actions";
-import { ForgeCreateCutoutJobInputDto } from "./forge.models";
+import {
+  ForgeCreateCompositeJobInputDto,
+  ForgeCreateCutoutJobInputDto,
+} from "./forge.models";
 import { selectForgeVm } from "./forge.selectors";
 
 @Injectable({ providedIn: "root" })
@@ -20,6 +23,10 @@ export class ForgeFacade {
 
   createCutoutJob(input: ForgeCreateCutoutJobInputDto): void {
     this.store.dispatch(ForgeActions.createCutoutJobRequested({ input }));
+  }
+
+  createCompositeJob(input: ForgeCreateCompositeJobInputDto): void {
+    this.store.dispatch(ForgeActions.createCompositeJobRequested({ input }));
   }
 
   selectJob(jobId: string): void {

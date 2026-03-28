@@ -72,7 +72,7 @@ export interface ForgeImageProduct {
   surveyId: string;
   providerName: string;
   artifactMode: ForgeArtifactMode;
-  format: "jpeg" | "fits";
+  format: string;
   previewUrl: string;
   fitsUrl: string | null;
   authoritativeUrl: string;
@@ -81,6 +81,33 @@ export interface ForgeImageProduct {
   cacheStatus: "external-only" | "cached";
   provenance: ForgeImageProvenance;
   createdAt: string;
+}
+
+
+export interface CompositeJobSpec {
+  inputs: ForgeCutoutRequest[];
+  operation: string;
+  parameters?: Record<string, unknown>;
+}
+
+export interface ForgeDiagnostics {
+  queueDepth: number;
+  runningJobs: number;
+  failedJobs: number;
+  completedJobs: number;
+  blockedJobs: number;
+  delayedJobs: number;
+  retryingJobs: number;
+}
+
+export interface ForgeMetrics {
+  totalJobs: number;
+  avgRunTimeSec: number;
+  successRate: number;
+  queueDepth: number;
+  successCount: number;
+  failureCount: number;
+  cachedArtifactCount: number;
 }
 
 export interface ForgeJob {
@@ -95,6 +122,7 @@ export interface ForgeJob {
   radiusArcmin: number;
   requestedSurveyIds: string[];
   request: ForgeCutoutRequest | null;
+  compositeRequest?: CompositeJobSpec | null;
   resultImageIds: string[];
   errorCode: ForgeErrorCode | null;
   errorMessage: string | null;

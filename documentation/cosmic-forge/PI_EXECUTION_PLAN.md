@@ -441,18 +441,31 @@ Sprint 6 done when:
 
 Goal: complete the operator-facing story with richer workflows and supportability.
 
-- [ ] Define the first composite workflow scope and constraints.
-- [ ] Add composite job creation flow to the API and UI.
-- [ ] Add worker steps for multi-input preparation and composite assembly.
-- [ ] Record transform-chain provenance for composite outputs.
-- [ ] Add queue diagnostics for blocked, delayed, and retrying jobs.
-- [ ] Add observability metrics for Forge queue depth, run time, success/failure counts, and artifact caching.
-- [ ] Surface diagnostics in a Forge-appropriate UI panel or linked diagnostics surface.
-- [ ] Add tests for composite path and operator diagnostics.
+- [x] Define the first composite workflow scope and constraints.
+- [x] Add composite job creation flow to the API and UI.
+- [x] Add worker steps for multi-input preparation and composite assembly.
+- [x] Record transform-chain provenance for composite outputs.
+- [x] Add queue diagnostics for blocked, delayed, and retrying jobs.
+- [x] Add observability metrics for Forge queue depth, run time, success/failure counts, and artifact caching.
+- [x] Surface diagnostics in a Forge-appropriate UI panel or linked diagnostics surface.
+- [x] Add tests for composite path and operator diagnostics.
+
+Implemented Sprint 7 behaviors:
+
+- `createCompositeJob` now exists in the Forge GraphQL mutation surface and is exercised from the `/forge` workbench
+- composite jobs use the same persisted queue lifecycle as cutout jobs, but execute a distinct `multi-input-preparation` -> `composite-assembly` flow
+- composite outputs are explicitly marked as Forge-generated derived previews with transform-chain provenance rather than archive-native artifacts
+- GraphQL bootstrap now returns `diagnostics`, `metrics`, and recent `jobEvents` so the workbench can explain blocked, delayed, retrying, and completed work from the read model
+- the Forge UI now includes a diagnostics panel with queue-state summaries, cache metrics, and recent event history
+- automated coverage now includes:
+  - API/store tests for composite creation and completion
+  - GraphQL contract tests for composite mutation and diagnostics/metrics queries
+  - frontend unit coverage for the updated workbench shell
+  - Forge e2e coverage for composite creation plus diagnostics rendering
 
 Sprint 7 done when:
 
-- [ ] Forge supports more than a single basic cutout request and exposes why work is failing or delayed.
+- [x] Forge supports more than a single basic cutout request and exposes why work is failing or delayed.
 
 ## Sprint 8 - Hardening, Compliance, And Demo Closure
 

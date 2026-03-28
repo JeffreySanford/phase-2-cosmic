@@ -58,5 +58,5 @@ Reader guide:
 - [SSR_PROXY_SPEC.md](./SSR_PROXY_SPEC.md): how Forge requests should be proxied through the SSR shim
 - [UI_SURFACE_PLAN.md](./UI_SURFACE_PLAN.md): how the future `/forge` UI route should be introduced
 - Current implemented workbench behavior:
-  validated coordinate entry, live/planned survey states, queue inspection, artifact delivery labels, cache actions, and result/provenance inspection now exist on the single `/forge` route
+  validated coordinate entry, live/planned survey states, cutout and composite job creation, queue diagnostics, artifact delivery labels, cache actions, and result/provenance inspection now exist on the single `/forge` route
 - [AI_BUILD_KIT.md](./AI_BUILD_KIT.md): Copilot/Codex prompts and guardrails

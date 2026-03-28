@@ -20,17 +20,17 @@ This document is the branch-scoped GraphQL contract draft for Cosmic Forge. It i
 - `job(id: ID!)`
 - `imageProductsByJob(jobId: ID!)`
 - `provenanceByImage(imageId: ID!)`
+- `jobEvents(limit: Int)`
+- `diagnostics`
+- `metrics`
 
 ## Current mutation surface
 
 - `createCutoutJob`
+- `createCompositeJob`
 - `cancelJob`
 - `retryJob`
 - `cacheImageArtifact`
-
-## Planned next mutation surface
-
-- `createCompositeJob`
 
 ## Planned subscription surface
 
@@ -84,8 +84,15 @@ type Job {
   errorCode: String
   errorMessage: String
   request: CutoutRequest
+  compositeRequest: CompositeJobSpec
   createdAt: String!
   updatedAt: String!
+}
+
+type CompositeJobSpec {
+  inputs: [CutoutRequest!]!
+  operation: String!
+  parameters: JSON
 }
 
 type CutoutRequest {
@@ -124,6 +131,37 @@ type ImageProduct {
   cacheStatus: String!
   provenance: ProvenanceRecord!
   createdAt: String!
+}
+
+type ForgeJobEvent {
+  id: ID!
+  jobId: ID!
+  eventType: String!
+  fromStatus: String
+  toStatus: String
+  message: String
+  errorCode: String
+  createdAt: String!
+}
+
+type ForgeDiagnostics {
+  queueDepth: Int!
+  runningJobs: Int!
+  failedJobs: Int!
+  completedJobs: Int!
+  blockedJobs: Int!
+  delayedJobs: Int!
+  retryingJobs: Int!
+}
+
+type ForgeMetrics {
+  totalJobs: Int!
+  avgRunTimeSec: Float!
+  successRate: Float!
+  queueDepth: Int!
+  successCount: Int!
+  failureCount: Int!
+  cachedArtifactCount: Int!
 }
 
 type ProvenanceRecord {
@@ -194,8 +232,19 @@ input CreateCutoutJobInput {
 }
 
 input CreateCompositeJobInput {
-  imageProductIds: [ID!]!
-  compositeMode: String!
+  requestedBy: String!
+  targetName: String!
+  ra: Float!
+  dec: Float!
+  radiusArcmin: Float!
+  surveyIds: [ID!]!
+  compositeRequest: CompositeJobSpecInput!
+}
+
+input CompositeJobSpecInput {
+  inputs: [CutoutRequestInput!]!
+  operation: String!
+  parameters: JSON
 }
 ```
 
@@ -216,6 +265,8 @@ Current behavior:
 - adapter-backed failures now preserve normalized upstream error codes so the UI can distinguish timeout, unavailability, and bad upstream responses
 - the API now serves queue state through a repository-backed persisted state file rather than process memory only
 - `ForgeServiceInfo.contractVersion` is now explicit so the UI can reject contract drift without mutating the read model shape
+- the GraphQL bootstrap now carries `diagnostics`, `metrics`, and recent `jobEvents` so the UI can render queue supportability without a separate side-channel
+- composite jobs are now part of the explicit mutation/read model contract, including `ForgeJob.compositeRequest`
 - PostgreSQL remains the recommended next durable backing store without requiring GraphQL contract churn
 
 ## Adapter-facing contract assumptions
@@ -233,4 +284,4 @@ The API should not leak provider-specific wire formats directly into the UI.
 
 - define subscription payloads without changing the current bootstrap/mutation shapes
 - move the persistence backing store from file-backed state to PostgreSQL without contract churn
-- expose job-event audit history once the UI is ready to consume it
+- move diagnostics and metrics from bootstrap-only consumption to optional dedicated polling/subscription semantics if the workbench outgrows the current read model size

@@ -1,6 +1,8 @@
 import { Injectable, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import {
+  ForgeCreateCompositeJobInputDto,
+  ForgeCreateCompositeJobResponseDto,
   ForgeCreateCutoutJobInputDto,
   ForgeCreateCutoutJobResponseDto,
   ForgeImageMutationResponseDto,
@@ -24,6 +26,17 @@ export class ForgeApiService {
   ): Observable<ForgeCreateCutoutJobResponseDto> {
     return this.http.post<ForgeCreateCutoutJobResponseDto>("/api/forge/graphql", {
       operationName: "CreateCutoutJob",
+      variables: {
+        input,
+      },
+    });
+  }
+
+  createCompositeJob(
+    input: ForgeCreateCompositeJobInputDto
+  ): Observable<ForgeCreateCompositeJobResponseDto> {
+    return this.http.post<ForgeCreateCompositeJobResponseDto>("/api/forge/graphql", {
+      operationName: "CreateCompositeJob",
       variables: {
         input,
       },

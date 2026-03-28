@@ -1,3 +1,116 @@
+test("CreateCompositeJob mutation creates and completes a composite job", async () => {
+  const graphqlService = createGraphqlService();
+  const compositeRequest = {
+    inputs: [
+      {
+        providerAdapter: "legacy-surveys",
+        sourceService: "viewer-cutout",
+        missionFamily: "legacy",
+        collection: "ls-dr10",
+        layer: "ls-dr10",
+        bands: ["g", "r", "z"],
+        ra: 187.70593,
+        dec: 12.39112,
+        radiusArcmin: 15,
+        pixscale: 0.262,
+        size: 256,
+        width: 256,
+        height: 256,
+        outputFormat: "jpeg",
+        retrievalPathType: "viewer-cutout",
+        discoveryUrl: null,
+        jpegCutoutUrl: null,
+        fitsCutoutUrl: null,
+      },
+    ],
+    operation: "overlay",
+    parameters: { alpha: 0.5 },
+  };
+  const result = await graphqlService.execute({
+    operationName: "CreateCompositeJob",
+    variables: {
+      input: {
+        requestedBy: "test-user",
+        targetName: "Composite M87",
+        ra: 187.70593,
+        dec: 12.39112,
+        radiusArcmin: 15,
+        surveyIds: ["legacy"],
+        compositeRequest,
+      },
+    },
+  });
+  assert.equal(result.status, 200);
+  const payload = result.body as { data: { createCompositeJob: { type: string; compositeRequest: { operation: string } } } };
+  assert.equal(payload.data.createCompositeJob.type, "composite");
+  assert.ok(payload.data.createCompositeJob.compositeRequest);
+  assert.equal(payload.data.createCompositeJob.compositeRequest.operation, "overlay");
+});
+
+test("diagnostics and metrics queries return computed values", async () => {
+  const graphqlService = createGraphqlService();
+  // Add a job to ensure nonzero values
+  await graphqlService.execute({
+    operationName: "CreateCutoutJob",
+    variables: {
+      input: {
+        requestedBy: "test-user",
+        targetName: "M87",
+        ra: 187.70593,
+        dec: 12.39112,
+        radiusArcmin: 15,
+        surveyIds: ["legacy"],
+      },
+    },
+  });
+  const diagnosticsResult = await graphqlService.execute({
+    query: "query ForgeDiagnostics { diagnostics { queueDepth runningJobs failedJobs completedJobs blockedJobs delayedJobs retryingJobs } }",
+  });
+  assert.equal(diagnosticsResult.status, 200);
+  const diag = (
+    diagnosticsResult.body as {
+      data: {
+        diagnostics: {
+          queueDepth: number;
+          runningJobs: number;
+          failedJobs: number;
+          completedJobs: number;
+          blockedJobs: number;
+          delayedJobs: number;
+          retryingJobs: number;
+        };
+      };
+    }
+  ).data.diagnostics;
+  assert.ok(typeof diag.queueDepth === "number");
+  assert.ok(typeof diag.runningJobs === "number");
+  assert.ok(typeof diag.failedJobs === "number");
+  assert.ok(typeof diag.completedJobs === "number");
+
+  const metricsResult = await graphqlService.execute({
+    query: "query ForgeMetrics { metrics { totalJobs avgRunTimeSec successRate queueDepth successCount failureCount cachedArtifactCount } }",
+  });
+  assert.equal(metricsResult.status, 200);
+  const metrics = (
+    metricsResult.body as {
+      data: {
+        metrics: {
+          totalJobs: number;
+          avgRunTimeSec: number;
+          successRate: number;
+          queueDepth: number;
+          successCount: number;
+          failureCount: number;
+          cachedArtifactCount: number;
+        };
+      };
+    }
+  ).data.metrics;
+  assert.ok(typeof metrics.totalJobs === "number");
+  assert.ok(typeof metrics.avgRunTimeSec === "number");
+  assert.ok(typeof metrics.successRate === "number");
+  assert.ok(typeof metrics.cachedArtifactCount === "number");
+});
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";

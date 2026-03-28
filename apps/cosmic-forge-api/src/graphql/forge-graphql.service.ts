@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { GraphQLError, buildSchema, graphql } from "graphql";
 import type {
+  CompositeJobSpec,
   ForgeCreateCutoutJobInput,
   ForgeDomainError,
   ForgeErrorCode,
@@ -17,8 +18,21 @@ type GraphqlResolverArgs = Readonly<{
   operationName?: string;
 }>;
 
+
 type CreateCutoutJobArgs = Readonly<{
   input?: Partial<ForgeCreateCutoutJobInput>;
+}>;
+
+type CreateCompositeJobArgs = Readonly<{
+  input: {
+    requestedBy: string;
+    targetName: string;
+    ra: number;
+    dec: number;
+    radiusArcmin: number;
+    surveyIds: string[];
+    compositeRequest: CompositeJobSpec;
+  };
 }>;
 
 type JobIdArgs = Readonly<{
@@ -130,6 +144,34 @@ export const forgeGraphqlDocuments: Record<string, string> = {
           width
           height
         }
+      }
+      diagnostics {
+        queueDepth
+        runningJobs
+        failedJobs
+        completedJobs
+        blockedJobs
+        delayedJobs
+        retryingJobs
+      }
+      metrics {
+        totalJobs
+        avgRunTimeSec
+        successRate
+        queueDepth
+        successCount
+        failureCount
+        cachedArtifactCount
+      }
+      jobEvents(limit: 12) {
+        id
+        jobId
+        eventType
+        fromStatus
+        toStatus
+        message
+        errorCode
+        createdAt
       }
     }
   `,
@@ -284,6 +326,50 @@ export const forgeGraphqlDocuments: Record<string, string> = {
       }
     }
   `,
+  CreateCompositeJob: `
+    mutation CreateCompositeJob($input: ForgeCreateCompositeJobInput!) {
+      createCompositeJob(input: $input) {
+        id
+        type
+        status
+        progressPercent
+        requestedBy
+        targetName
+        ra
+        dec
+        radiusArcmin
+        requestedSurveyIds
+        resultImageIds
+        errorCode
+        errorMessage
+        compositeRequest {
+          operation
+          inputs {
+            providerAdapter
+            sourceService
+            missionFamily
+            collection
+            layer
+            bands
+            ra
+            dec
+            radiusArcmin
+            pixscale
+            size
+            width
+            height
+            outputFormat
+            retrievalPathType
+            discoveryUrl
+            jpegCutoutUrl
+            fitsCutoutUrl
+          }
+        }
+        createdAt
+        updatedAt
+      }
+    }
+  `,
   CancelJob: `
     mutation CancelJob($jobId: ID!) {
       job: cancelJob(jobId: $jobId) {
@@ -419,10 +505,14 @@ const forgeSchema = buildSchema(`
     imageProducts: [ForgeImageProduct!]!
     imageProductsByJob(jobId: ID!): [ForgeImageProduct!]!
     provenanceByImage(imageId: ID!): ForgeImageProvenance!
+    jobEvents(limit: Int): [ForgeJobEvent!]!
+    diagnostics: ForgeDiagnostics!
+    metrics: ForgeMetrics!
   }
 
   type Mutation {
     createCutoutJob(input: ForgeCreateCutoutJobInput!): ForgeJob!
+    createCompositeJob(input: ForgeCreateCompositeJobInput!): ForgeJob!
     cancelJob(jobId: ID!): ForgeJob!
     retryJob(jobId: ID!): ForgeJob!
     cacheImageArtifact(imageId: ID!): ForgeImageProduct!
@@ -435,6 +525,76 @@ const forgeSchema = buildSchema(`
     dec: Float!
     radiusArcmin: Float!
     surveyIds: [String!]!
+  }
+
+  input CompositeJobSpecInput {
+    inputs: [ForgeCutoutRequestInput!]!
+    operation: String!
+    parameters: JSON
+  }
+
+  input ForgeCutoutRequestInput {
+    providerAdapter: String!
+    sourceService: String!
+    missionFamily: String
+    collection: String
+    layer: String
+    bands: [String!]!
+    ra: Float!
+    dec: Float!
+    radiusArcmin: Float!
+    pixscale: Float
+    size: Int!
+    width: Int!
+    height: Int!
+    outputFormat: String
+    retrievalPathType: String
+    discoveryUrl: String
+    jpegCutoutUrl: String
+    fitsCutoutUrl: String
+  }
+
+  input ForgeCreateCompositeJobInput {
+    requestedBy: String!
+    targetName: String!
+    ra: Float!
+    dec: Float!
+    radiusArcmin: Float!
+    surveyIds: [String!]!
+    compositeRequest: CompositeJobSpecInput!
+  }
+
+  scalar JSON
+
+  type ForgeDiagnostics {
+    queueDepth: Int!
+    runningJobs: Int!
+    failedJobs: Int!
+    completedJobs: Int!
+    blockedJobs: Int!
+    delayedJobs: Int!
+    retryingJobs: Int!
+  }
+
+  type ForgeMetrics {
+    totalJobs: Int!
+    avgRunTimeSec: Float!
+    successRate: Float!
+    queueDepth: Int!
+    successCount: Int!
+    failureCount: Int!
+    cachedArtifactCount: Int!
+  }
+
+  type ForgeJobEvent {
+    id: ID!
+    jobId: ID!
+    eventType: String!
+    fromStatus: String
+    toStatus: String
+    message: String
+    errorCode: String
+    createdAt: String!
   }
 
   type ForgeServiceInfo {
@@ -457,6 +617,12 @@ const forgeSchema = buildSchema(`
     citationUrl: String!
   }
 
+  type CompositeJobSpec {
+    inputs: [ForgeCutoutRequest!]!
+    operation: String!
+    parameters: JSON
+  }
+
   type ForgeJob {
     id: ID!
     type: String!
@@ -472,6 +638,7 @@ const forgeSchema = buildSchema(`
     errorCode: String
     errorMessage: String
     request: ForgeCutoutRequest
+    compositeRequest: CompositeJobSpec
     createdAt: String!
     updatedAt: String!
   }
@@ -603,6 +770,34 @@ export class ForgeGraphqlService {
     return normalized;
   }
 
+  private normalizeCreateCompositeJobInput(input: CreateCompositeJobArgs["input"]) {
+    const normalizedCutout = this.normalizeCreateCutoutJobInput(input);
+    const operation = String(input?.compositeRequest?.operation ?? "").trim();
+    if (!operation) {
+      throw this.toGraphqlError(
+        "FORGE_VALIDATION_ERROR",
+        "Composite operation is required."
+      );
+    }
+
+    const rawInputs = Array.isArray(input?.compositeRequest?.inputs)
+      ? input.compositeRequest.inputs
+      : [];
+
+    return {
+      ...normalizedCutout,
+      compositeRequest: {
+        operation,
+        inputs: rawInputs,
+        parameters:
+          input?.compositeRequest?.parameters &&
+          typeof input.compositeRequest.parameters === "object"
+            ? input.compositeRequest.parameters
+            : {},
+      },
+    };
+  }
+
   private createServiceInfo(operationName: string | null) {
     return {
       name: "cosmic-forge-api",
@@ -720,8 +915,13 @@ export class ForgeGraphqlService {
         }
         return provenance;
       },
+      jobEvents: ({ limit }: { limit?: number }) => this.store.getJobEvents(limit ?? 10),
       createCutoutJob: ({ input: mutationInput }: CreateCutoutJobArgs) =>
         this.store.createCutoutJob(this.normalizeCreateCutoutJobInput(mutationInput)),
+      createCompositeJob: ({ input }: CreateCompositeJobArgs) =>
+        this.store.createCompositeJob(this.normalizeCreateCompositeJobInput(input)),
+      diagnostics: () => this.store.getDiagnostics(),
+      metrics: () => this.store.getMetrics(),
       cancelJob: ({ jobId }: JobIdArgs) => {
         const job = this.store.cancelJob(jobId);
         if (!job) {

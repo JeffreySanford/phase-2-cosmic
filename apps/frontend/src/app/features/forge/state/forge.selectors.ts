@@ -69,6 +69,21 @@ export const selectForgeSurveys = createSelector(
   (state) => state.surveys
 );
 
+export const selectForgeDiagnostics = createSelector(
+  selectForgeState,
+  (state) => state.diagnostics
+);
+
+export const selectForgeMetrics = createSelector(
+  selectForgeState,
+  (state) => state.metrics
+);
+
+export const selectForgeJobEvents = createSelector(
+  selectForgeState,
+  (state) => state.jobEvents
+);
+
 export const selectForgeBootstrapLoading = createSelector(
   selectForgeState,
   (state) => state.bootstrapLoading
@@ -156,6 +171,9 @@ export const selectForgeVm = createSelector(
   selectForgeBootstrapError,
   selectForgeCreateJobLoading,
   selectForgeCreateJobError,
+  selectForgeDiagnostics,
+  selectForgeMetrics,
+  selectForgeJobEvents,
   selectForgeLatestJob,
   selectForgeLatestMyJob,
   selectForgeLatestMyImage,
@@ -179,6 +197,9 @@ export const selectForgeVm = createSelector(
     bootstrapError,
     createJobLoading,
     createJobError,
+    diagnostics,
+    metrics,
+    jobEvents,
     latestJob,
     latestMyJob,
     latestMyImage,
@@ -199,6 +220,9 @@ export const selectForgeVm = createSelector(
               surveys,
               jobs,
               imageProducts,
+              diagnostics,
+              metrics,
+              jobEvents,
             },
           }
         : null,
@@ -219,6 +243,9 @@ export const selectForgeVm = createSelector(
     selectedImage,
     createJobLoading,
     createJobError,
+    diagnostics,
+    metrics,
+    jobEvents,
     cacheArtifactLoading,
     cacheArtifactError,
     queueSummary: {

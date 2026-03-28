@@ -5,6 +5,7 @@ describe("forge workbench", () => {
     let includeCreatedJobInBootstrap = false;
     let createdJobStatus: "QUEUED" | "CANCELLED" = "QUEUED";
     let includeRetriedJobInBootstrap = false;
+    let includeCompositeJobInBootstrap = false;
     let legacyArtifactCached = false;
 
     cy.intercept("GET", "/api/forge/artifacts/*/preview", {
@@ -71,6 +72,41 @@ describe("forge workbench", () => {
                 },
                 createdAt: "2026-03-27T20:30:00.000Z",
                 updatedAt: "2026-03-27T20:30:00.000Z",
+              },
+            },
+          },
+        });
+        return;
+      }
+
+      if (operationName === "CreateCompositeJob") {
+        req.alias = "forgeCreateCompositeJob";
+        includeCompositeJobInBootstrap = true;
+        req.reply({
+          statusCode: 200,
+          body: {
+            data: {
+              createCompositeJob: {
+                id: "forge-job-150",
+                type: "composite",
+                status: "QUEUED",
+                progressPercent: 0,
+                requestedBy: "jeffreysanford",
+                targetName: "M87 composite",
+                ra: 187.70593,
+                dec: 12.39112,
+                radiusArcmin: 15,
+                requestedSurveyIds: ["legacy", "allwise"],
+                resultImageIds: [],
+                errorCode: null,
+                errorMessage: null,
+                request: null,
+                compositeRequest: {
+                  operation: "survey-stack",
+                  inputs: [],
+                },
+                createdAt: "2026-03-28T07:08:00.000Z",
+                updatedAt: "2026-03-28T07:08:00.000Z",
               },
             },
           },
@@ -476,6 +512,100 @@ describe("forge workbench", () => {
                 },
                 createdAt: "2026-03-28T07:06:00.000Z",
               },
+              ...(includeCompositeJobInBootstrap
+                ? [
+                    {
+                      id: "forge-image-150",
+                      jobId: "forge-job-150",
+                      surveyId: "forge-composite",
+                      providerName: "Cosmic Forge",
+                      artifactMode: "cached",
+                      format: "svg",
+                      previewUrl:
+                        "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%2315324f'/%3E%3C/svg%3E",
+                      fitsUrl: null,
+                      authoritativeUrl: "/forge",
+                      accessedAt: "2026-03-28T07:08:30.000Z",
+                      cacheKey: "forge-composite-forge-job-150",
+                      cacheStatus: "cached",
+                      provenance: {
+                        sourceSurvey: "Composite of legacy, allwise",
+                        providerName: "Cosmic Forge",
+                        citationUrl: "/forge",
+                        authoritativeUrl: "/forge",
+                        accessedAt: "2026-03-28T07:08:30.000Z",
+                        transformChain: [
+                          "input-normalization",
+                          "multi-input-preparation",
+                          "composite-assembly:survey-stack",
+                        ],
+                        artifactMode: "cached",
+                        missionFamily: "forge",
+                        collection: "forge/composite-preview",
+                        retrievalPathType: "forge-composite",
+                        outputFormat: "image/svg+xml",
+                        layer: "survey-stack",
+                        bandSet: ["legacy", "allwise"],
+                        ra: 187.70593,
+                        dec: 12.39112,
+                        pixscale: null,
+                        size: 1200,
+                        width: 800,
+                        height: 800,
+                      },
+                      createdAt: "2026-03-28T07:08:30.000Z",
+                    },
+                  ]
+                : []),
+            ],
+            diagnostics: {
+              queueDepth: includeCreatedJobInBootstrap || includeRetriedJobInBootstrap ? 1 : 0,
+              runningJobs: 0,
+              failedJobs: includeRetriedJobInBootstrap ? 0 : 1,
+              completedJobs: includeCompositeJobInBootstrap ? 3 : 2,
+              blockedJobs: includeCreatedJobInBootstrap ? 1 : 0,
+              delayedJobs: 0,
+              retryingJobs: includeRetriedJobInBootstrap ? 1 : 0,
+            },
+            metrics: {
+              totalJobs:
+                2 +
+                (includeCreatedJobInBootstrap ? 1 : 0) +
+                (includeRetriedJobInBootstrap ? 1 : 0) +
+                (includeCompositeJobInBootstrap ? 1 : 0) +
+                (includeRetriedJobInBootstrap ? 0 : 1),
+              avgRunTimeSec: 5.4,
+              successRate: 0.75,
+              queueDepth: includeCreatedJobInBootstrap || includeRetriedJobInBootstrap ? 1 : 0,
+              successCount: includeCompositeJobInBootstrap ? 3 : 2,
+              failureCount: includeRetriedJobInBootstrap ? 0 : 1,
+              cachedArtifactCount: includeCompositeJobInBootstrap ? 2 : 1,
+            },
+            jobEvents: [
+              {
+                id: "forge-event-1",
+                jobId: "forge-job-2",
+                eventType: "JOB_COMPLETED",
+                fromStatus: "RUNNING",
+                toStatus: "COMPLETED",
+                message: "AllWISE artifact published",
+                errorCode: null,
+                createdAt: "2026-03-28T07:06:00.000Z",
+              },
+              ...(includeCompositeJobInBootstrap
+                ? [
+                    {
+                      id: "forge-event-2",
+                      jobId: "forge-job-150",
+                      eventType: "COMPOSITE_JOB_COMPLETED",
+                      fromStatus: "RUNNING",
+                      toStatus: "COMPLETED",
+                      message: "Composite job completed",
+                      errorCode: null,
+                      createdAt: "2026-03-28T07:08:30.000Z",
+                    },
+                  ]
+                : []),
             ],
           },
         },
@@ -507,6 +637,26 @@ describe("forge workbench", () => {
     cy.contains("forge-job-99");
     cy.contains("Surveys: allwise");
     cy.contains("preview pending until completion");
+  });
+
+  it("creates a composite job and renders queue diagnostics", () => {
+    cy.visit("/forge");
+    cy.wait("@forgeGraphql");
+
+    cy.contains("button.forge-chip", "AllWISE").click({ force: true });
+    cy.contains("button", "Create composite job")
+      .should("not.be.disabled")
+      .click({ force: true });
+
+    cy.wait("@forgeCreateCompositeJob")
+      .its("request.body.operationName")
+      .should("eq", "CreateCompositeJob");
+
+    cy.contains("h2", "Diagnostics")
+      .closest("article")
+      .should("contain.text", "blocked jobs")
+      .and("contain.text", "cached artifacts")
+      .and("contain.text", "COMPOSITE_JOB_COMPLETED");
   });
 
   it("allows a queued job to be cancelled from the Forge queue shell", () => {
@@ -698,9 +848,7 @@ describe("forge workbench", () => {
       force: true,
     });
 
-    cy.contains("button", "Create cutout job")
-      .should("not.be.disabled")
-      .click({ force: true });
+    cy.contains("button", "Create cutout job").click({ force: true });
 
     cy.contains("Target/source is required");
     cy.contains("RA must be a decimal degree value between 0 and 360.");

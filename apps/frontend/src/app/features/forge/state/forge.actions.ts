@@ -1,5 +1,7 @@
 import { createActionGroup, emptyProps, props } from "@ngrx/store";
 import {
+  ForgeCreateCompositeJobInputDto,
+  ForgeCreateCompositeJobResponseDto,
   ForgeCreateCutoutJobInputDto,
   ForgeCreateCutoutJobResponseDto,
   ForgeImageMutationResponseDto,
@@ -20,6 +22,9 @@ export const ForgeActions = createActionGroup({
     CreateCutoutJobRequested: props<{ input: ForgeCreateCutoutJobInputDto }>(),
     CreateCutoutJobSucceeded: props<{ payload: ForgeCreateCutoutJobResponseDto }>(),
     CreateCutoutJobFailed: props<{ error: string }>(),
+    CreateCompositeJobRequested: props<{ input: ForgeCreateCompositeJobInputDto }>(),
+    CreateCompositeJobSucceeded: props<{ payload: ForgeCreateCompositeJobResponseDto }>(),
+    CreateCompositeJobFailed: props<{ error: string }>(),
     CancelJobRequested: props<{ jobId: string }>(),
     CancelJobSucceeded: props<{ payload: ForgeJobMutationResponseDto }>(),
     CancelJobFailed: props<{ error: string }>(),

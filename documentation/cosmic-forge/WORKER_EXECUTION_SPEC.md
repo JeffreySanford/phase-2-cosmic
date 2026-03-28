@@ -59,6 +59,15 @@ Progress is now phase-oriented:
 - `100%`
   - terminal success
 
+Composite jobs extend those phases with:
+
+- `35%`
+  - multi-input preparation started
+- `70%`
+  - composite assembly started
+- `100%`
+  - composite preview artifact published
+
 This is intentionally coarse-grained. It gives the UI meaningful queue movement without pretending to expose sub-provider internals that Forge does not control.
 
 ## Failure classification
@@ -123,3 +132,5 @@ Current automated coverage includes:
 - API/store unit coverage for running-job cancellation preserving `CANCELLED`
 - worker unit coverage for bounded-concurrency health details
 - Forge e2e coverage for cancel and retry from the UI shell
+- API/store coverage for composite creation and completion
+- GraphQL contract coverage for diagnostics, metrics, and composite mutation behavior

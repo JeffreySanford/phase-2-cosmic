@@ -10,6 +10,9 @@ import {
   ForgeJobDto,
   ForgeServiceInfoDto,
   ForgeSurveyDto,
+  ForgeVmDiagnosticsDto,
+  ForgeVmJobEventDto,
+  ForgeVmMetricsDto,
 } from "./forge.models";
 
 export const FORGE_FEATURE_KEY = "forge";
@@ -21,6 +24,9 @@ export type ForgeState = EntityState<ForgeJobDto> & {
   imageEntities: Readonly<Record<string, ForgeImageProductDto>>;
   serviceInfo: ForgeServiceInfoDto | null;
   surveys: readonly ForgeSurveyDto[];
+  diagnostics: ForgeVmDiagnosticsDto | null;
+  metrics: ForgeVmMetricsDto | null;
+  jobEvents: readonly ForgeVmJobEventDto[];
   bootstrapLoading: boolean;
   bootstrapError: string | null;
   createJobLoading: boolean;
@@ -43,6 +49,9 @@ export const initialForgeState: ForgeState = forgeJobsAdapter.getInitialState({
   imageEntities: {},
   serviceInfo: null,
   surveys: [],
+  diagnostics: null,
+  metrics: null,
+  jobEvents: [],
   bootstrapLoading: false,
   bootstrapError: null,
   createJobLoading: false,
@@ -72,6 +81,9 @@ export const forgeReducer = createReducer(
       >((accumulator, image) => ({ ...accumulator, [image.id]: image }), {}),
       serviceInfo: payload.data.serviceInfo,
       surveys: payload.data.surveys,
+      diagnostics: payload.data.diagnostics,
+      metrics: payload.data.metrics,
+      jobEvents: payload.data.jobEvents,
       bootstrapLoading: false,
       bootstrapError: null,
     })
@@ -81,6 +93,9 @@ export const forgeReducer = createReducer(
     selectedJobId: null,
     serviceInfo: null,
     surveys: [],
+    diagnostics: null,
+    metrics: null,
+    jobEvents: [],
     bootstrapLoading: false,
     bootstrapError: error,
   })),
@@ -102,6 +117,24 @@ export const forgeReducer = createReducer(
     })
   ),
   on(ForgeActions.createCutoutJobFailed, (state, { error }) => ({
+    ...state,
+    createJobLoading: false,
+    createJobError: error,
+  })),
+  on(ForgeActions.createCompositeJobRequested, (state) => ({
+    ...state,
+    createJobLoading: true,
+    createJobError: null,
+  })),
+  on(ForgeActions.createCompositeJobSucceeded, (state, { payload }) =>
+    forgeJobsAdapter.upsertOne(payload.data.createCompositeJob, {
+      ...state,
+      selectedJobId: payload.data.createCompositeJob.id,
+      createJobLoading: false,
+      createJobError: null,
+    })
+  ),
+  on(ForgeActions.createCompositeJobFailed, (state, { error }) => ({
     ...state,
     createJobLoading: false,
     createJobError: error,

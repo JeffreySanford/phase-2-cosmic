@@ -8,7 +8,7 @@ Alignment anchors
 - Docker/local-dev context: [../infra/INFRA_TOPOLOGY.md](../infra/INFRA_TOPOLOGY.md)
 - Program guardrails: [../overview/PROGRAM_DIRECTION.md](../overview/PROGRAM_DIRECTION.md)
 
-Status: `planned`
+Status: `in_progress`
 
 ## Naming
 
@@ -127,6 +127,12 @@ Acceptance:
 Acceptance:
 
 - operator-facing queue and diagnostics are credible
+
+Current implementation note:
+
+- the current `/forge` workbench now supports both cutout and survey-stack composite job creation
+- composite execution publishes Forge-generated derived preview artifacts with transform-chain provenance
+- queue diagnostics and metrics are exposed through the GraphQL read model and surfaced in the workbench UI
 
 ## Missing things to watch
 
