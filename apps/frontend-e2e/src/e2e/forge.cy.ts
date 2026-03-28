@@ -5,6 +5,7 @@ describe("forge workbench", () => {
     let includeCreatedJobInBootstrap = false;
     let createdJobStatus: "QUEUED" | "CANCELLED" = "QUEUED";
     let includeRetriedJobInBootstrap = false;
+    let legacyArtifactCached = false;
 
     cy.intercept("GET", "/api/forge/artifacts/*/preview", {
       statusCode: 200,
@@ -130,6 +131,51 @@ describe("forge workbench", () => {
                 errorMessage: null,
                 createdAt: "2026-03-27T20:20:00.000Z",
                 updatedAt: "2026-03-27T20:32:00.000Z",
+              },
+            },
+          },
+        });
+        return;
+      }
+
+      if (operationName === "CacheImageArtifact") {
+        req.alias = "forgeCacheImageArtifact";
+        legacyArtifactCached = true;
+        req.reply({
+          statusCode: 200,
+          body: {
+            data: {
+              imageProduct: {
+                id: "forge-image-1",
+                jobId: "forge-job-1",
+                surveyId: "legacy",
+                providerName: "NOIRLab / Legacy Surveys",
+                artifactMode: "cached",
+                format: "jpeg",
+                previewUrl: "/api/forge/artifacts/forge-image-1/preview",
+                fitsUrl: "/api/forge/artifacts/forge-image-1/fits",
+                authoritativeUrl: "https://example.invalid/preview.jpg",
+                accessedAt: "2026-03-27T20:05:00.000Z",
+                cacheKey: "forge-image-1-legacy-cache",
+                cacheStatus: "cached",
+                provenance: {
+                  sourceSurvey: "Legacy Surveys DR10",
+                  providerName: "NOIRLab / Legacy Surveys",
+                  citationUrl: "https://www.legacysurvey.org/viewer",
+                  authoritativeUrl: "https://example.invalid/preview.jpg",
+                  accessedAt: "2026-03-27T20:05:00.000Z",
+                  transformChain: ["external-cutout-request", "local-cache-retention"],
+                  artifactMode: "cached",
+                  layer: "ls-dr10",
+                  bandSet: ["g", "r", "z"],
+                  ra: 187.70593,
+                  dec: 12.39112,
+                  pixscale: 0.262,
+                  size: 512,
+                  width: 512,
+                  height: 512,
+                },
+                createdAt: "2026-03-27T20:05:00.000Z",
               },
             },
           },
@@ -365,22 +411,28 @@ describe("forge workbench", () => {
                 jobId: "forge-job-1",
                 surveyId: "legacy",
                 providerName: "NOIRLab / Legacy Surveys",
-                artifactMode: "external",
+                artifactMode: legacyArtifactCached ? "cached" : "external",
                 format: "jpeg",
-                previewUrl: "https://example.invalid/preview.jpg",
-                fitsUrl: "https://example.invalid/image.fits",
+                previewUrl: legacyArtifactCached
+                  ? "/api/forge/artifacts/forge-image-1/preview"
+                  : "https://example.invalid/preview.jpg",
+                fitsUrl: legacyArtifactCached
+                  ? "/api/forge/artifacts/forge-image-1/fits"
+                  : "https://example.invalid/image.fits",
                 authoritativeUrl: "https://example.invalid/preview.jpg",
                 accessedAt: "2026-03-27T20:05:00.000Z",
-                cacheKey: null,
-                cacheStatus: "external-only",
+                cacheKey: legacyArtifactCached ? "forge-image-1-legacy-cache" : null,
+                cacheStatus: legacyArtifactCached ? "cached" : "external-only",
                 provenance: {
                   sourceSurvey: "Legacy Surveys DR10",
                   providerName: "NOIRLab / Legacy Surveys",
                   citationUrl: "https://www.legacysurvey.org/viewer",
                   authoritativeUrl: "https://example.invalid/preview.jpg",
                   accessedAt: "2026-03-27T20:05:00.000Z",
-                  transformChain: ["external-cutout-request"],
-                  artifactMode: "external",
+                  transformChain: legacyArtifactCached
+                    ? ["external-cutout-request", "local-cache-retention"]
+                    : ["external-cutout-request"],
+                  artifactMode: legacyArtifactCached ? "cached" : "external",
                 },
                 createdAt: "2026-03-27T20:05:00.000Z",
               },
@@ -507,10 +559,10 @@ describe("forge workbench", () => {
     cy.visit("/forge");
     cy.wait("@forgeGraphql");
 
-    cy.contains("M87 · cutout")
-      .closest(".forge-queue__item")
-      .contains("Surveys: allwise")
-      .closest(".forge-queue__item")
+    cy.get(".forge-queue__item")
+      .filter(':contains("M87 · cutout")')
+      .filter(':contains("Surveys: allwise")')
+      .first()
       .click();
 
     cy.get('input[formcontrolname="target"]').should("have.value", "M87");
@@ -519,7 +571,7 @@ describe("forge workbench", () => {
     cy.get('input[formcontrolname="radiusArcmin"]').should("have.value", "15");
 
     cy.contains("Artifact mode:").parent().contains("cached");
-    cy.contains("Cache status:").parent().contains("cached");
+    cy.contains("Cache status:").parent().contains("Cached and served by Forge");
     cy.contains("Preview provider:").parent().contains("NASA/IPAC IRSA");
     cy.contains("Survey:").parent().contains("allwise");
     cy.contains("Provenance layer:").parent().contains("allwise/p3am_cdd");
@@ -631,5 +683,43 @@ describe("forge workbench", () => {
     cy.contains(
       "Create cutout job failed: At least one survey must be selected for a Forge cutout job."
     );
+  });
+
+  it("shows client-side validation guidance for invalid coordinate input", () => {
+    cy.visit("/forge");
+    cy.wait("@forgeGraphql");
+
+    cy.get('input[formcontrolname="target"]').clear();
+    cy.get('input[formcontrolname="ra"]').clear().type("361");
+    cy.get('input[formcontrolname="dec"]').clear().type("-91");
+    cy.get('input[formcontrolname="radiusArcmin"]').clear().type("0");
+
+    cy.contains("button.forge-chip.forge-chip--selected", "Legacy Surveys").click({
+      force: true,
+    });
+
+    cy.contains("button", "Create cutout job")
+      .should("not.be.disabled")
+      .click({ force: true });
+
+    cy.contains("Target/source is required");
+    cy.contains("RA must be a decimal degree value between 0 and 360.");
+    cy.contains("Dec must be a decimal degree value between -90 and 90.");
+    cy.contains("Radius must be a positive value up to 60 arcmin.");
+    cy.contains("Select at least one live adapter to create a cutout job.");
+  });
+
+  it("allows an external Legacy artifact to be cached from the result shell", () => {
+    cy.visit("/forge");
+    cy.wait("@forgeGraphql");
+
+    cy.contains(".forge-queue__item", "Surveys: legacy").click();
+
+    cy.contains("Artifact delivery:").parent().contains("External provider asset");
+    cy.contains("button", "Cache artifact").click({ force: true });
+    cy.wait("@forgeCacheImageArtifact");
+
+    cy.contains("Artifact delivery:").parent().contains("Cached locally through Forge");
+    cy.contains("Cache status:").parent().contains("Cached and served by Forge");
   });
 });

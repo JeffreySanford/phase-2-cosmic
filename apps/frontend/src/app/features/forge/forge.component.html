@@ -30,24 +30,49 @@
       <form class="forge-form" [formGroup]="workbenchForm">
         <label>
           <span>Target</span>
-          <input type="text" formControlName="target" />
+          <input
+            type="text"
+            formControlName="target"
+            placeholder='e.g. "M87" or "Cygnus A"'
+          />
+          <small class="forge-form__hint">
+            Human-readable target/source label kept with the job and provenance.
+          </small>
+          <small *ngIf="showTargetValidation()" class="forge-form__error">
+            {{ targetValidationMessage() }}
+          </small>
         </label>
         <label>
           <span>RA</span>
-          <input type="text" formControlName="ra" />
+          <input type="text" formControlName="ra" placeholder="0 - 360 decimal degrees" />
+          <small class="forge-form__hint">Decimal degrees only for this workbench slice.</small>
+          <small *ngIf="showRaValidation()" class="forge-form__error">
+            {{ raValidationMessage() }}
+          </small>
         </label>
         <label>
           <span>Dec</span>
-          <input type="text" formControlName="dec" />
+          <input type="text" formControlName="dec" placeholder="-90 to 90 decimal degrees" />
+          <small class="forge-form__hint">Negative values are valid south of the equator.</small>
+          <small *ngIf="showDecValidation()" class="forge-form__error">
+            {{ decValidationMessage() }}
+          </small>
         </label>
         <label>
           <span>Radius (arcmin)</span>
-          <input type="text" formControlName="radiusArcmin" />
+          <input type="text" formControlName="radiusArcmin" placeholder="0.5 - 60 arcmin" />
+          <small class="forge-form__hint">Current UI validation caps radius to 60 arcmin.</small>
+          <small *ngIf="showRadiusValidation()" class="forge-form__error">
+            {{ radiusValidationMessage() }}
+          </small>
         </label>
       </form>
 
       <div class="forge-surveys">
-        <h3>Survey selection</h3>
+        <div class="forge-panel__header">
+          <h3>Survey selection</h3>
+          <span class="forge-panel__badge">{{ selectedSurveyCount() }} selected</span>
+        </div>
         <p class="forge-graphql__meta">
           Live adapters are currently available for Legacy Surveys, AllWISE, and SkyView.
           SkyView remains explicitly derived-preview oriented. Other providers remain visible
@@ -74,6 +99,9 @@
             </span>
           </button>
         </div>
+        <p *ngIf="showSurveyValidation(vm.surveys)" class="forge-form__error">
+          {{ surveyValidationMessage() }}
+        </p>
       </div>
 
       <div class="forge-actions">
@@ -81,17 +109,15 @@
           type="button"
           class="forge__refresh"
           (click)="submitCutoutJob()"
-          [disabled]="vm.createJobLoading || !selectedSurveysIncludeLiveAdapter(vm.surveys)"
+          [disabled]="vm.createJobLoading"
         >
           {{ vm.createJobLoading ? 'Creating job...' : 'Create cutout job' }}
         </button>
       </div>
 
-      <p
-        *ngIf="!selectedSurveysIncludeLiveAdapter(vm.surveys)"
-        class="forge-graphql__meta"
-      >
-        Select at least one live adapter to create a cutout job.
+      <p class="forge-graphql__meta">
+        This form currently accepts a target label plus decimal-degree coordinates and dispatches
+        one cutout job into the Forge queue.
       </p>
 
       <p *ngIf="vm.createJobError" class="forge-health__error">
@@ -162,6 +188,9 @@
           </div>
 
           <div class="forge-queue">
+            <p *ngIf="vm.graphqlState.loading" class="forge-results__meta">
+              Loading owned Forge jobs from the GraphQL read model...
+            </p>
             <article
               *ngFor="let item of vm.myJobs"
               class="forge-queue__item"
@@ -184,8 +213,11 @@
                       ? 'preview available'
                       : item.status === 'COMPLETED'
                         ? 'no preview product'
-                        : 'preview pending until completion'
+                      : 'preview pending until completion'
                   }}
+                </p>
+                <p class="forge-results__meta">
+                  {{ queueStateDescription(item, vm.imageProducts) }}
                 </p>
               </div>
               <div class="forge-queue__actions">
@@ -210,7 +242,11 @@
             </article>
 
             <p *ngIf="vm.myJobs.length === 0" class="forge-results__meta">
-              No owned Forge jobs returned yet.
+              {{
+                vm.graphqlState.loading
+                  ? 'Waiting for GraphQL bootstrap...'
+                  : 'No owned Forge jobs returned yet.'
+              }}
             </p>
           </div>
         </section>
@@ -222,6 +258,9 @@
           </header>
 
           <div class="forge-queue">
+            <p *ngIf="vm.graphqlState.loading" class="forge-results__meta">
+              Loading global Forge queue state...
+            </p>
             <article
               *ngFor="let item of vm.globalJobs"
               class="forge-queue__item"
@@ -244,15 +283,22 @@
                       ? 'preview available'
                       : item.status === 'COMPLETED'
                         ? 'no preview product'
-                        : 'preview pending until completion'
+                      : 'preview pending until completion'
                   }}
+                </p>
+                <p class="forge-results__meta">
+                  {{ queueStateDescription(item, vm.imageProducts) }}
                 </p>
               </div>
               <span class="forge-status">{{ item.status }}</span>
             </article>
 
             <p *ngIf="vm.globalJobs.length === 0" class="forge-results__meta">
-              No Forge jobs returned yet.
+              {{
+                vm.graphqlState.loading
+                  ? 'Waiting for GraphQL bootstrap...'
+                  : 'No Forge jobs returned yet.'
+              }}
             </p>
           </div>
         </section>
@@ -260,10 +306,15 @@
         <section class="forge-panel">
           <header class="forge-panel__header">
             <h3>Results shell</h3>
-            <span class="forge-panel__badge">preview</span>
+            <span class="forge-panel__badge">
+              {{ vm.selectedImage ? vm.selectedImage.artifactMode : 'preview' }}
+            </span>
           </header>
 
           <div class="forge-results">
+            <p class="forge-results__summary">
+              {{ resultPanelTitle(vm.selectedJob) }}
+            </p>
           <div class="forge-results__preview">
               <img
                 *ngIf="vm.selectedImage && !previewUnavailableForSelectedImage(vm.selectedImage); else previewPlaceholder"
@@ -295,6 +346,9 @@
                 {{ selectedTargetLabel(vm.selectedJob, vm.formValue.target) }}
               </p>
               <p><strong>Artifacts:</strong> {{ selectedArtifactSummary(vm.selectedImage) }}</p>
+              <p *ngIf="vm.selectedImage">
+                <strong>Artifact delivery:</strong> {{ selectedArtifactModeLabel(vm.selectedImage) }}
+              </p>
               <p *ngIf="vm.selectedJob"><strong>Selected job:</strong> {{ vm.selectedJob.id }}</p>
               <p *ngIf="vm.selectedJob">
                 <strong>Status:</strong> {{ vm.selectedJob.status }} at
@@ -330,7 +384,7 @@
                 <strong>Artifact mode:</strong> {{ vm.selectedImage.artifactMode }}
               </p>
               <p *ngIf="vm.selectedImage">
-                <strong>Cache status:</strong> {{ vm.selectedImage.cacheStatus }}
+                <strong>Cache status:</strong> {{ selectedCacheStatusLabel(vm.selectedImage) }}
               </p>
               <p *ngIf="vm.selectedImage">
                 <strong>Preview provider:</strong> {{ vm.selectedImage.providerName }}

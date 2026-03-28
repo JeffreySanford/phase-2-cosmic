@@ -140,6 +140,22 @@
   font: inherit;
 }
 
+.forge-form__hint,
+.forge-form__error {
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.forge-form__hint {
+  color: #566a7e;
+  font-weight: 500;
+}
+
+.forge-form__error {
+  color: #9f1239;
+  font-weight: 600;
+}
+
 .forge-surveys {
   margin-top: 1rem;
 }
@@ -466,6 +482,13 @@
   margin: 0.35rem 0;
 }
 
+.forge-results__summary {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #183247;
+}
+
 .forge-results__artifact-actions {
   display: grid;
   gap: 0.5rem;
@@ -479,5 +502,27 @@
 
   .forge__hero h1 {
     font-size: 1.6rem;
+  }
+
+  .forge {
+    padding: 1rem;
+  }
+
+  .forge-card,
+  .forge-panel {
+    padding: 1rem;
+  }
+
+  .forge-queue__item {
+    flex-direction: column;
+  }
+
+  .forge-queue__actions {
+    width: 100%;
+    justify-items: start;
+  }
+
+  .forge-results__preview {
+    min-height: 10rem;
   }
 }

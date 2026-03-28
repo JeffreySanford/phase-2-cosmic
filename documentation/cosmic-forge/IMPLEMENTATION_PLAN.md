@@ -108,10 +108,14 @@ Acceptance:
 - survey selection
 - queue view
 - image preview/result detail
+- cache-versus-external artifact clarity
+- degraded/offline runtime shell states
+- user-facing validation for invalid coordinates and empty live-survey selection
 
 Acceptance:
 
 - user can submit a real image job and inspect results
+- user can retry, cancel, and cache from the same `/forge` workbench
 
 ### Slice 6: composite and hardening
 

@@ -413,19 +413,29 @@ Sprint 5 done when:
 
 Goal: make `/forge` a usable operator/scientist workbench instead of a scaffold.
 
-- [ ] Finalize target input and coordinate entry UX.
-- [ ] Finalize survey selection UX.
-- [ ] Show my jobs and global jobs with clear state labels.
-- [ ] Show selected result preview, metadata, and provenance details.
-- [ ] Show cached versus external artifact mode clearly.
-- [ ] Add empty, loading, degraded, and failed UX states.
-- [ ] Ensure the workbench remains usable on desktop and mobile widths.
-- [ ] Add user-facing validation for invalid coordinates, empty survey selection, and unsupported requests.
-- [ ] Add e2e coverage for create job, inspect result, retry, and cache artifact flows.
+- [x] Finalize target input and coordinate entry UX.
+- [x] Finalize survey selection UX.
+- [x] Show my jobs and global jobs with clear state labels.
+- [x] Show selected result preview, metadata, and provenance details.
+- [x] Show cached versus external artifact mode clearly.
+- [x] Add empty, loading, degraded, and failed UX states.
+- [x] Ensure the workbench remains usable on desktop and mobile widths.
+- [x] Add user-facing validation for invalid coordinates, empty survey selection, and unsupported requests.
+- [x] Add e2e coverage for create job, inspect result, retry, and cache artifact flows.
+
+Implemented workbench behaviors:
+
+- validated target, coordinate, and radius entry with user-facing guidance
+- survey chips that distinguish live, derived, planned, and registered sources
+- queue panels for owned jobs and global queue state with clearer lifecycle copy
+- selected-result shell showing preview, artifact delivery mode, cache status, metadata, and provenance
+- cache-artifact action for external provider assets
+- degraded and offline runtime messaging through the GraphQL read-model shell
+- responsive layout behavior validated through the frontend build and e2e suite
 
 Sprint 6 done when:
 
-- [ ] A user can work through the main cutout flow entirely from the `/forge` screen.
+- [x] A user can work through the main cutout flow entirely from the `/forge` screen.
 
 ## Sprint 7 - Composite Workflow And Diagnostics
 

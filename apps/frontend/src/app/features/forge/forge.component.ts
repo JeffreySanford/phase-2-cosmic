@@ -11,12 +11,13 @@ import {
   inject,
   signal,
 } from "@angular/core";
-import { FormBuilder } from "@angular/forms";
+import { FormBuilder, Validators } from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { combineLatest, distinctUntilChanged, map, shareReplay, startWith } from "rxjs";
 import { ForgeFacade } from "./state/forge.facade";
 
 const EXPECTED_FORGE_CONTRACT_VERSION = "forge-workbench.v1";
+const MAX_RADIUS_ARCMIN = 60;
 
 @Component({
   selector: "app-forge",
@@ -30,12 +31,22 @@ export class ForgeComponent implements OnInit {
   private readonly forgeFacade = inject(ForgeFacade);
   private readonly destroyRef = inject(DestroyRef);
   private readonly previewLoadErrorImageId = signal<string | null>(null);
+  private readonly submitAttempted = signal(false);
 
   readonly workbenchForm = this.fb.group({
-    target: ["M87"],
-    ra: ["187.70593"],
-    dec: ["12.39112"],
-    radiusArcmin: ["15"],
+    target: ["M87", [Validators.required]],
+    ra: [
+      "187.70593",
+      [Validators.required, Validators.pattern(/^-?(?:\d+\.?\d*|\.\d+)$/)],
+    ],
+    dec: [
+      "12.39112",
+      [Validators.required, Validators.pattern(/^-?(?:\d+\.?\d*|\.\d+)$/)],
+    ],
+    radiusArcmin: [
+      "15",
+      [Validators.required, Validators.pattern(/^(?:\d+\.?\d*|\.\d+)$/)],
+    ],
     surveyIds: [["legacy"]],
   });
 
@@ -88,17 +99,41 @@ export class ForgeComponent implements OnInit {
   }
 
   submitCutoutJob(): void {
+    this.submitAttempted.set(true);
+    if (this.workbenchForm.invalid) {
+      this.workbenchForm.markAllAsTouched();
+      return;
+    }
+
     const rawValue = this.workbenchForm.getRawValue();
     const surveyIds = Array.isArray(rawValue.surveyIds)
       ? rawValue.surveyIds.filter((value): value is string => typeof value === "string")
       : [];
 
+    const ra = Number(rawValue.ra ?? 0);
+    const dec = Number(rawValue.dec ?? 0);
+    const radiusArcmin = Number(rawValue.radiusArcmin ?? 0);
+    if (
+      !Number.isFinite(ra) ||
+      ra < 0 ||
+      ra > 360 ||
+      !Number.isFinite(dec) ||
+      dec < -90 ||
+      dec > 90 ||
+      !Number.isFinite(radiusArcmin) ||
+      radiusArcmin <= 0 ||
+      radiusArcmin > MAX_RADIUS_ARCMIN
+    ) {
+      this.workbenchForm.markAllAsTouched();
+      return;
+    }
+
     this.forgeFacade.createCutoutJob({
       requestedBy: "jeffreysanford",
       targetName: String(rawValue.target ?? ""),
-      ra: Number(rawValue.ra ?? 0),
-      dec: Number(rawValue.dec ?? 0),
-      radiusArcmin: Number(rawValue.radiusArcmin ?? 0),
+      ra,
+      dec,
+      radiusArcmin,
       surveyIds,
     });
   }
@@ -109,6 +144,7 @@ export class ForgeComponent implements OnInit {
       ? selected.filter((id) => id !== surveyId)
       : [...selected, surveyId];
     this.workbenchForm.controls.surveyIds.setValue(nextSelection);
+    this.workbenchForm.controls.surveyIds.markAsDirty();
   }
 
   isSurveySelected(surveyId: string): boolean {
@@ -141,6 +177,77 @@ export class ForgeComponent implements OnInit {
       (survey) =>
         selectedSurveyIds.includes(survey.id) && this.isSurveySelectable(survey)
     );
+  }
+
+  selectedSurveyCount(): number {
+    return this.workbenchForm.controls.surveyIds.getRawValue()?.length ?? 0;
+  }
+
+  showTargetValidation(): boolean {
+    const control = this.workbenchForm.controls.target;
+    return (control.touched || this.submitAttempted()) && control.invalid;
+  }
+
+  showRaValidation(): boolean {
+    const control = this.workbenchForm.controls.ra;
+    return (
+      (control.touched || this.submitAttempted()) &&
+      (control.invalid || !this.hasValidRa())
+    );
+  }
+
+  showDecValidation(): boolean {
+    const control = this.workbenchForm.controls.dec;
+    return (
+      (control.touched || this.submitAttempted()) &&
+      (control.invalid || !this.hasValidDec())
+    );
+  }
+
+  showRadiusValidation(): boolean {
+    const control = this.workbenchForm.controls.radiusArcmin;
+    return (
+      (control.touched || this.submitAttempted()) &&
+      (control.invalid || !this.hasValidRadius())
+    );
+  }
+
+  showSurveyValidation(surveys: readonly ForgeSurveyDto[]): boolean {
+    return this.submitAttempted() && !this.selectedSurveysIncludeLiveAdapter(surveys);
+  }
+
+  canSubmit(vm: {
+    createJobLoading: boolean;
+    surveys: readonly ForgeSurveyDto[];
+  }): boolean {
+    return (
+      !vm.createJobLoading &&
+      this.workbenchForm.valid &&
+      this.hasValidRa() &&
+      this.hasValidDec() &&
+      this.hasValidRadius() &&
+      this.selectedSurveysIncludeLiveAdapter(vm.surveys)
+    );
+  }
+
+  targetValidationMessage(): string {
+    return "Target/source is required so the queue and provenance remain readable.";
+  }
+
+  raValidationMessage(): string {
+    return "RA must be a decimal degree value between 0 and 360.";
+  }
+
+  decValidationMessage(): string {
+    return "Dec must be a decimal degree value between -90 and 90.";
+  }
+
+  radiusValidationMessage(): string {
+    return `Radius must be a positive value up to ${MAX_RADIUS_ARCMIN} arcmin.`;
+  }
+
+  surveyValidationMessage(): string {
+    return "Select at least one live adapter to create a cutout job.";
   }
 
   cancelJob(jobId: string): void {
@@ -200,6 +307,56 @@ export class ForgeComponent implements OnInit {
     return selectedImage.fitsUrl
       ? "preview image, FITS cutout URL, provenance"
       : "derived preview image, provenance";
+  }
+
+  selectedArtifactModeLabel(selectedImage: ForgeImageProductDto | null): string {
+    if (!selectedImage) {
+      return "No artifact selected yet";
+    }
+
+    return selectedImage.artifactMode === "cached"
+      ? "Cached locally through Forge"
+      : "External provider asset";
+  }
+
+  selectedCacheStatusLabel(selectedImage: ForgeImageProductDto | null): string {
+    if (!selectedImage) {
+      return "No cache state yet";
+    }
+
+    return selectedImage.cacheStatus === "cached"
+      ? "Cached and served by Forge"
+      : "External-only until cached";
+  }
+
+  queueStateDescription(
+    job: ForgeJobDto,
+    imageProducts: readonly ForgeImageProductDto[]
+  ): string {
+    switch (job.status) {
+      case "QUEUED":
+        return "Waiting for worker claim";
+      case "RUNNING":
+        return "Worker is executing this request";
+      case "COMPLETED":
+        return this.jobHasPreview(job, imageProducts)
+          ? "Result published"
+          : "Completed without preview";
+      case "FAILED":
+        return job.errorCode ? `Failed with ${job.errorCode}` : "Failed";
+      case "CANCELLED":
+        return "Cancelled by operator";
+      default:
+        return job.status;
+    }
+  }
+
+  resultPanelTitle(selectedJob: ForgeJobDto | null): string {
+    if (!selectedJob) {
+      return "Select a job to inspect its result";
+    }
+
+    return `${selectedJob.targetName} · ${selectedJob.status.toLowerCase()}`;
   }
 
   selectedPixscaleLabel(
@@ -324,5 +481,20 @@ export class ForgeComponent implements OnInit {
     }
 
     return `${selectedImage.provenance.providerName} source asset`;
+  }
+
+  private hasValidRa(): boolean {
+    const ra = Number(this.workbenchForm.controls.ra.getRawValue());
+    return Number.isFinite(ra) && ra >= 0 && ra <= 360;
+  }
+
+  private hasValidDec(): boolean {
+    const dec = Number(this.workbenchForm.controls.dec.getRawValue());
+    return Number.isFinite(dec) && dec >= -90 && dec <= 90;
+  }
+
+  private hasValidRadius(): boolean {
+    const radius = Number(this.workbenchForm.controls.radiusArcmin.getRawValue());
+    return Number.isFinite(radius) && radius > 0 && radius <= MAX_RADIUS_ARCMIN;
   }
 }

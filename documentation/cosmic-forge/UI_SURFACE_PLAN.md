@@ -7,7 +7,7 @@ Alignment anchors
 - SSR routing: [./SSR_PROXY_SPEC.md](./SSR_PROXY_SPEC.md)
 - Current frontend reality: [../frontend/FRONTEND_UI.md](../frontend/FRONTEND_UI.md)
 
-Status: `planned`
+Status: `implemented_for_single_route_workbench`
 
 ## Purpose
 
@@ -51,6 +51,15 @@ It should contain:
 - submit button
 - recent jobs panel
 - result preview panel
+
+Current implemented shape on `/forge`:
+
+- validated target, RA, Dec, and radius inputs
+- survey chips with live, derived, planned, and registered states
+- owned-job and global-queue panels
+- selected-result shell with preview, artifact delivery labels, cache state, metadata, and provenance
+- degraded and offline runtime messaging through the GraphQL read-model surface
+- cache-artifact action for external provider assets
 
 ## Later route evolution
 
