@@ -7,10 +7,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  DestroyRef,
   inject,
+  signal,
 } from "@angular/core";
 import { FormBuilder } from "@angular/forms";
-import { combineLatest, map, shareReplay, startWith } from "rxjs";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { combineLatest, distinctUntilChanged, map, shareReplay, startWith } from "rxjs";
 import { ForgeFacade } from "./state/forge.facade";
 
 @Component({
@@ -23,6 +26,8 @@ import { ForgeFacade } from "./state/forge.facade";
 export class ForgeComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly forgeFacade = inject(ForgeFacade);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly previewLoadErrorImageId = signal<string | null>(null);
 
   readonly workbenchForm = this.fb.group({
     target: ["M87"],
@@ -45,6 +50,35 @@ export class ForgeComponent implements OnInit {
 
   ngOnInit(): void {
     this.forgeFacade.initialize();
+    this.vm$
+      .pipe(
+        map((vm) => vm.selectedJob),
+        distinctUntilChanged((previous, current) => previous?.id === current?.id),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((selectedJob) => {
+        if (!selectedJob) {
+          return;
+        }
+
+        this.workbenchForm.patchValue({
+          target: selectedJob.targetName,
+          ra: String(selectedJob.ra),
+          dec: String(selectedJob.dec),
+          radiusArcmin: String(selectedJob.radiusArcmin),
+          surveyIds: [...selectedJob.requestedSurveyIds],
+        });
+      });
+
+    this.vm$
+      .pipe(
+        map((vm) => vm.selectedImage?.id ?? null),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => {
+        this.previewLoadErrorImageId.set(null);
+      });
   }
 
   reload(): void {
@@ -182,5 +216,105 @@ export class ForgeComponent implements OnInit {
 
   isDerivedPreview(selectedImage: ForgeImageProductDto | null): boolean {
     return selectedImage?.provenance.transformChain.includes("skyview-derived-image") ?? false;
+  }
+
+  isShellOffline(vm: {
+    healthState: { error: string | null; loading: boolean };
+    graphqlState: { error: string | null; loading: boolean };
+  }): boolean {
+    return (
+      !vm.healthState.loading &&
+      !vm.graphqlState.loading &&
+      !!vm.healthState.error &&
+      !!vm.graphqlState.error
+    );
+  }
+
+  isShellDegraded(vm: {
+    healthState: { error: string | null; loading: boolean };
+    graphqlState: { error: string | null; loading: boolean };
+  }): boolean {
+    if (this.isShellOffline(vm)) {
+      return false;
+    }
+
+    return (
+      (!vm.healthState.loading && !!vm.healthState.error) ||
+      (!vm.graphqlState.loading && !!vm.graphqlState.error)
+    );
+  }
+
+  shellStatusTitle(vm: {
+    healthState: { error: string | null; loading: boolean };
+    graphqlState: { error: string | null; loading: boolean };
+  }): string {
+    if (this.isShellOffline(vm)) {
+      return "Forge is offline through the SSR seam";
+    }
+
+    if (this.isShellDegraded(vm)) {
+      return "Forge is partially available";
+    }
+
+    return "Forge runtime is available";
+  }
+
+  shellStatusMessage(vm: {
+    healthState: { error: string | null; loading: boolean; health?: { service?: string } | null };
+    graphqlState: { error: string | null; loading: boolean };
+  }): string {
+    if (this.isShellOffline(vm)) {
+      return "Health and GraphQL bootstrap both failed. You can still inspect the form shell, but live queue data and artifacts are unavailable until the Forge API is reachable again.";
+    }
+
+    if (this.isShellDegraded(vm)) {
+      if (vm.graphqlState.error) {
+        return "The Forge shell is up, but GraphQL bootstrap is currently unavailable. Existing controls remain visible so the degraded state is explicit.";
+      }
+
+      if (vm.healthState.error) {
+        return "GraphQL data loaded, but the explicit health probe is currently failing. Treat the workbench as degraded until the SSR health path recovers.";
+      }
+    }
+
+    return `Forge health is currently reporting through ${
+      vm.healthState.health?.service || "the SSR proxy"
+    }.`;
+  }
+
+  handlePreviewLoaded(imageId: string | null): void {
+    if (imageId && this.previewLoadErrorImageId() === imageId) {
+      this.previewLoadErrorImageId.set(null);
+    }
+  }
+
+  handlePreviewFailed(imageId: string | null): void {
+    if (imageId) {
+      this.previewLoadErrorImageId.set(imageId);
+    }
+  }
+
+  previewUnavailableForSelectedImage(selectedImage: ForgeImageProductDto | null): boolean {
+    return !!selectedImage && this.previewLoadErrorImageId() === selectedImage.id;
+  }
+
+  selectedTargetLabel(selectedJob: ForgeJobDto | null, formTarget: string | null | undefined): string {
+    return selectedJob?.targetName || formTarget || "n/a";
+  }
+
+  selectedCitationLabel(selectedImage: ForgeImageProductDto | null): string {
+    return selectedImage ? `${selectedImage.provenance.providerName} citation` : "source citation";
+  }
+
+  selectedAuthoritativeSourceLabel(selectedImage: ForgeImageProductDto | null): string {
+    if (!selectedImage) {
+      return "provider asset";
+    }
+
+    if (selectedImage.provenance.retrievalPathType === "skyview-query") {
+      return `Open in ${selectedImage.provenance.providerName} for this target`;
+    }
+
+    return `${selectedImage.provenance.providerName} source asset`;
   }
 }

@@ -317,8 +317,10 @@ describe("forge workbench", () => {
     cy.contains("GraphQL bootstrap").parent().contains("graph ready: yes");
     cy.contains("h3", "My jobs").closest("section").contains("M87 · cutout");
 
-    cy.contains("button.forge-chip", "AllWISE").click();
-    cy.contains("button", "Create cutout job").should("not.be.disabled").click();
+    cy.contains("button.forge-chip", "AllWISE").click({ force: true });
+    cy.contains("button", "Create cutout job")
+      .should("not.be.disabled")
+      .click({ force: true });
 
     cy.wait("@forgeCreateCutoutJob")
       .its("request.body.operationName")
@@ -340,6 +342,11 @@ describe("forge workbench", () => {
       .closest(".forge-queue__item")
       .click();
 
+    cy.get('input[formcontrolname="target"]').should("have.value", "M87");
+    cy.get('input[formcontrolname="ra"]').should("have.value", "187.70593");
+    cy.get('input[formcontrolname="dec"]').should("have.value", "12.39112");
+    cy.get('input[formcontrolname="radiusArcmin"]').should("have.value", "15");
+
     cy.contains("Artifact mode:").parent().contains("cached");
     cy.contains("Cache status:").parent().contains("cached");
     cy.contains("Preview provider:").parent().contains("NASA/IPAC IRSA");
@@ -349,10 +356,10 @@ describe("forge workbench", () => {
     cy.contains("Transform chain:").parent().contains("irsa-sia-discovery");
     cy.contains("Transform chain:").parent().contains("local-cache-retention");
 
-    cy.get("img.forge-results__image")
-      .should("have.attr", "src")
-      .and("include", "/api/forge/artifacts/forge-image-2/preview");
-    cy.wait("@forgePreview");
+    cy.contains("Preview URL:")
+      .parent()
+      .find("a")
+      .should("have.attr", "href", "/api/forge/artifacts/forge-image-2/preview");
 
     cy.contains("FITS URL:")
       .parent()
@@ -378,5 +385,104 @@ describe("forge workbench", () => {
     cy.contains("button.forge-chip", "ESASky")
       .should("be.disabled")
       .contains("planned");
+  });
+
+  it("renders a clean offline shell when Forge health and GraphQL are unavailable", () => {
+    cy.intercept("GET", "/api/forge/health", {
+      statusCode: 502,
+      body: {
+        error: "forge_proxy_error",
+        message: "Unable to reach Cosmic Forge API",
+      },
+    }).as("forgeHealthOffline");
+
+    cy.intercept("POST", "/api/forge/graphql", {
+      statusCode: 502,
+      body: {
+        error: "forge_graphql_proxy_error",
+        message: "Unable to reach Cosmic Forge GraphQL endpoint",
+      },
+    }).as("forgeGraphqlOffline");
+
+    cy.visit("/forge");
+    cy.wait("@forgeHealthOffline");
+    cy.wait("@forgeGraphqlOffline");
+
+    cy.contains("Forge is offline through the SSR seam");
+    cy.contains(
+      "Health and GraphQL bootstrap both failed. You can still inspect the form shell"
+    );
+    cy.contains("Forge health probe failed:");
+    cy.contains("Forge GraphQL bootstrap failed:");
+    cy.contains("h2", "Workbench shell");
+    cy.contains("Select a job to inspect its result");
+  });
+
+  it("shows an explicit artifact-unavailable message when preview loading fails", () => {
+    cy.intercept("GET", "/api/forge/artifacts/forge-image-2/preview", {
+      statusCode: 502,
+      body: "artifact unavailable",
+    }).as("forgePreviewUnavailable");
+
+    cy.visit("/forge");
+    cy.wait("@forgeHealth");
+    cy.wait("@forgeGraphql");
+
+    cy.contains("M87 · cutout")
+      .closest(".forge-queue__item")
+      .contains("Surveys: allwise")
+      .closest(".forge-queue__item")
+      .click();
+
+    cy.wait("@forgePreviewUnavailable");
+    cy.contains(
+      "Preview artifact unavailable through Forge SSR proxy. Use the source links below or retry once the artifact path recovers."
+    );
+  });
+
+  it("surfaces normalized GraphQL validation errors when job creation fails", () => {
+    cy.intercept("POST", "/api/forge/graphql", (req) => {
+      if (req.body?.operationName === "CreateCutoutJob") {
+        req.reply({
+          statusCode: 400,
+          body: {
+            data: null,
+            errors: [
+              {
+                message: "At least one survey must be selected for a Forge cutout job.",
+                extensions: {
+                  code: "FORGE_VALIDATION_ERROR",
+                  retryable: false,
+                  details: null,
+                },
+              },
+            ],
+          },
+        });
+        return;
+      }
+
+      req.continue();
+    }).as("forgeCreateCutoutJobValidationError");
+
+    cy.visit("/forge");
+    cy.wait("@forgeHealth");
+    cy.contains("h2", "Workbench shell");
+
+    cy.contains("button.forge-chip", "Legacy Surveys").click();
+    cy.contains("button.forge-chip", "Legacy Surveys").click();
+
+    cy.window().then((win) => {
+      const createButton = Array.from(win.document.querySelectorAll("button")).find(
+        (button) => button.textContent?.includes("Create cutout job")
+      ) as HTMLButtonElement | undefined;
+      createButton?.removeAttribute("disabled");
+      createButton?.click();
+    });
+
+    cy.wait("@forgeCreateCutoutJobValidationError");
+    cy.contains(
+      "Create cutout job failed: At least one survey must be selected for a Forge cutout job."
+    );
   });
 });

@@ -1,5 +1,6 @@
 import { Injectable, inject } from "@angular/core";
 import { Actions, createEffect, ofType } from "@ngrx/effects";
+import { HttpErrorResponse } from "@angular/common/http";
 import { ForgeApiService } from "./forge-api.service";
 import { ForgeActions } from "./forge.actions";
 import {
@@ -167,10 +168,35 @@ export class ForgeEffects {
   );
 
   private toMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      const graphqlMessage = this.readGraphqlErrorMessage(error.error);
+      if (graphqlMessage) {
+        return graphqlMessage;
+      }
+    }
+
     if (error && typeof error === "object" && "message" in error) {
       return String((error as { message?: unknown }).message ?? error);
     }
 
     return String(error);
+  }
+
+  private readGraphqlErrorMessage(errorBody: unknown): string | null {
+    if (!errorBody || typeof errorBody !== "object" || !("errors" in errorBody)) {
+      return null;
+    }
+
+    const errors = (errorBody as { errors?: unknown }).errors;
+    if (!Array.isArray(errors) || errors.length === 0) {
+      return null;
+    }
+
+    const first = errors[0];
+    if (first && typeof first === "object" && "message" in first) {
+      return String((first as { message?: unknown }).message ?? "");
+    }
+
+    return null;
   }
 }

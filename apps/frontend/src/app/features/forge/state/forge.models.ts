@@ -45,6 +45,7 @@ export type ForgeJobDto = Readonly<{
   radiusArcmin: number;
   requestedSurveyIds: readonly string[];
   resultImageIds: readonly string[];
+  errorCode: string | null;
   errorMessage: string | null;
   request: Readonly<{
     providerAdapter: string;
@@ -86,6 +87,7 @@ export type ForgeImageProductDto = Readonly<{
     accessedAt: string;
     transformChain: readonly string[];
     artifactMode: ForgeArtifactMode;
+    retrievalPathType?: string;
     layer: string | null;
     bandSet: readonly string[];
     ra: number;

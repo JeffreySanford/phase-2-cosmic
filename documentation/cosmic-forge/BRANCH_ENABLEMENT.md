@@ -29,6 +29,17 @@ Cosmic Forge is enabled only if all of the following remain true:
 - it uses the Forge-specific Docker environment for Forge runtime work
 - it treats GraphQL, NgRx, and .NET as branch-scoped choices
 
+## Current bounded-track naming and scope
+
+The current working track is the `cosmic-forge` branch inside `phase-2-cosmic`.
+
+For execution and review purposes, the bounded-track scope is now explicit:
+
+- keep Forge work under the branch-scoped `/forge` and `/api/forge/*` surface
+- keep the Forge runtime isolated from `docker/dev-compose.yml`
+- do not merge Forge semantics into the repo-wide governance API surface
+- treat the Forge API, worker, and adapter stack as branch-incubated components rather than a repo-wide platform rewrite
+
 ## Required docs present
 
 The following docs must exist and remain current:

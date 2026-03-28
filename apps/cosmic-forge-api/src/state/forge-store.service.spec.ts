@@ -1,21 +1,22 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { ArtifactCacheService } from "../artifacts/artifact-cache.service";
+import { ForgeStateRepository } from "./forge-state.repository";
 import { ForgeStoreService } from "./forge-store.service";
 
-function createStore(): ForgeStoreService {
-  process.env["FORGE_ARTIFACT_CACHE_DIR"] = path.join(
-    process.cwd(),
-    "tmp",
-    "cosmic-forge-artifacts-test"
-  );
+function createStore(testName = "default"): ForgeStoreService {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), `forge-store-${testName}-`));
+  process.env["FORGE_ARTIFACT_CACHE_DIR"] = path.join(root, "artifacts");
+  process.env["FORGE_STATE_FILE"] = path.join(root, "state", "forge-state.json");
   process.env["FORGE_DISABLE_FITS_PRERENDER"] = "true";
-  return new ForgeStoreService(new ArtifactCacheService());
+  return new ForgeStoreService(new ArtifactCacheService(), new ForgeStateRepository());
 }
 
 test("unsupported non-legacy cutout jobs fail with an explicit adapter error", async () => {
-  const store = createStore();
+  const store = createStore("unsupported");
   const job = store.createCutoutJob({
     requestedBy: "test-user",
     targetName: "Cygnus A",
@@ -31,11 +32,12 @@ test("unsupported non-legacy cutout jobs fail with an explicit adapter error", a
 
   const updated = store.getJobs().find((item) => item.id === job.id);
   assert.equal(updated?.status, "FAILED");
+  assert.equal(updated?.errorCode, "FORGE_UNSUPPORTED_SURVEY");
   assert.match(updated?.errorMessage || "", /No production cutout adapter is available yet/);
 });
 
 test("allwise jobs get a normalized IRSA request before retrieval is wired", () => {
-  const store = createStore();
+  const store = createStore("allwise-request");
   const job = store.createCutoutJob({
     requestedBy: "test-user",
     targetName: "M87",
@@ -56,7 +58,7 @@ test("allwise jobs get a normalized IRSA request before retrieval is wired", () 
 });
 
 test("skyview jobs get a normalized derived-preview request scaffold", () => {
-  const store = createStore();
+  const store = createStore("skyview-request");
   const job = store.createCutoutJob({
     requestedBy: "test-user",
     targetName: "M87",
@@ -112,7 +114,7 @@ test("allwise cutout jobs complete through live SIA discovery and IBE retrieval"
     throw new Error(`Unexpected fetch: ${url}`);
   }) as typeof fetch;
 
-  const store = createStore();
+  const store = createStore("allwise-live");
   const job = store.createCutoutJob({
     requestedBy: "test-user",
     targetName: "M87",
@@ -146,7 +148,7 @@ test("allwise cutout jobs complete through live SIA discovery and IBE retrieval"
 });
 
 test("legacy job retry clears failure state and rebuilds the normalized request", () => {
-  const store = createStore();
+  const store = createStore("legacy-retry");
   const job = store.createCutoutJob({
     requestedBy: "test-user",
     targetName: "M87",
@@ -171,7 +173,7 @@ test("legacy job retry clears failure state and rebuilds the normalized request"
 });
 
 test("allwise retry rebuilds the normalized request scaffold", () => {
-  const store = createStore();
+  const store = createStore("allwise-retry");
   const job = store.createCutoutJob({
     requestedBy: "test-user",
     targetName: "M87",
@@ -195,7 +197,7 @@ test("allwise retry rebuilds the normalized request scaffold", () => {
 });
 
 test("skyview retry rebuilds the normalized derived-preview request scaffold", () => {
-  const store = createStore();
+  const store = createStore("skyview-retry");
   const job = store.createCutoutJob({
     requestedBy: "test-user",
     targetName: "M87",
@@ -219,7 +221,7 @@ test("skyview retry rebuilds the normalized derived-preview request scaffold", (
 });
 
 test("legacy cutout jobs complete with normalized request and provenance fields", async () => {
-  const store = createStore();
+  const store = createStore("legacy-complete");
   const job = store.createCutoutJob({
     requestedBy: "test-user",
     targetName: "M87",
@@ -254,7 +256,7 @@ test("legacy cutout jobs complete with normalized request and provenance fields"
 });
 
 test("skyview cutout jobs complete as derived preview products with SkyView provenance", async () => {
-  const store = createStore();
+  const store = createStore("skyview-complete");
   const job = store.createCutoutJob({
     requestedBy: "test-user",
     targetName: "Cygnus A",
@@ -291,4 +293,31 @@ test("skyview cutout jobs complete as derived preview products with SkyView prov
   ]);
   assert.equal(imageProduct?.provenance.collection, "skyview/derived-preview");
   assert.equal(imageProduct?.provenance.layer, "DSS2 Red");
+});
+
+test("jobs persist across store instances instead of relying on process memory", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "forge-store-persist-"));
+  process.env["FORGE_ARTIFACT_CACHE_DIR"] = path.join(root, "artifacts");
+  process.env["FORGE_STATE_FILE"] = path.join(root, "state", "forge-state.json");
+  process.env["FORGE_DISABLE_FITS_PRERENDER"] = "true";
+
+  const repository = new ForgeStateRepository();
+  const firstStore = new ForgeStoreService(new ArtifactCacheService(), repository);
+  const created = firstStore.createCutoutJob({
+    requestedBy: "persist-user",
+    targetName: "M87",
+    ra: 187.70593,
+    dec: 12.39112,
+    radiusArcmin: 15,
+    surveyIds: ["legacy"],
+  });
+
+  const secondStore = new ForgeStoreService(new ArtifactCacheService(), repository);
+  const reloaded = secondStore.getJob(created.id);
+
+  assert.ok(reloaded);
+  assert.equal(reloaded?.targetName, "M87");
+  assert.equal(reloaded?.requestedBy, "persist-user");
+  assert.equal(reloaded?.status, "QUEUED");
+  assert.ok(reloaded?.request);
 });

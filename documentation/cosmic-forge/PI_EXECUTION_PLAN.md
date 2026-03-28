@@ -213,6 +213,7 @@ Recommended implementation posture:
 - treat SkyView as a comparison and fallback adapter after Legacy and IRSA
 - use it for quick-look preview generation and cross-survey comparison
 - keep its provenance distinct from archive-native provider adapters
+- when a provider UI supports query-string target parameters, Forge should prefer authoritative links that open prepopulated with the current target coordinates or source input rather than dropping the operator onto a blank external form
 
 ### Priority 4 - ESA ESASky
 
@@ -268,22 +269,31 @@ Recommended implementation posture:
 - implement ESASky as a preview/discovery adapter after the current Legacy, IRSA, and SkyView slices
 - use EDDIE-generated images for first-wave ESASky output
 - preserve a later separate seam for mission-native downloadable products where needed
+- when ESASky or another provider offers query-string prepopulation for target, FOV, or survey parameters, Forge should use those links so external handoff preserves the operator’s current context where possible
 
 ### Priority 5 - MAST / STScI Pan-STARRS
 
-- [ ] Evaluate Pan-STARRS through MAST/STScI as an optional additional optical adapter after Legacy Surveys is stable.
+- [x] Evaluate Pan-STARRS through MAST/STScI as an optional additional optical adapter after Legacy Surveys is stable.
   Official service references:
   [Pan-STARRS archive overview](https://outerspace.stsci.edu/display/PANSTARRS/)
   [How to retrieve and use PS1 data](https://outerspace.stsci.edu/display/PANSTARRS/How%2Bto%2Bretrieve%2Band%2Buse%2BPS1%2Bdata)
   [PS1 Image Cutout Service](https://outerspace.stsci.edu/display/PANSTARRS/PS1%2BImage%2BCutout%2BService)
-- [ ] Confirm whether Pan-STARRS should be a first-PI adapter or a post-PI extension.
-- [ ] Compare Pan-STARRS cutout ergonomics and output quality against Legacy Surveys for the same targets.
-- [ ] Define Pan-STARRS provenance fields and citation requirements if adopted.
+- [x] Confirm whether Pan-STARRS should be a first-PI adapter or a post-PI extension.
+- [x] Compare Pan-STARRS cutout ergonomics and output quality against Legacy Surveys for the same targets.
+- [x] Define Pan-STARRS provenance fields and citation requirements if adopted.
 
 Why this is useful:
 
 - strong public optical image cutout path
 - good follow-on comparison against Legacy Surveys
+
+Recommended implementation posture:
+
+- treat `Pan-STARRS / STScI` as a `post-PI extension`, not as a first-PI replacement for `Legacy Surveys / NOIRLab`
+- use it as an `archive-native optical comparison` source once the current Legacy and IRSA slices are stable
+- compare the same targets, geometry, and operator workflows already used for the Legacy adapter
+- preserve STScI/MAST-specific provenance and acknowledgement rather than collapsing results into generic optical metadata
+- see [PANSTARRS_ADAPTER_DECISION.md](./PANSTARRS_ADAPTER_DECISION.md) for the detailed rationale and provenance expectations
 
 ### Source selection gate
 
@@ -301,7 +311,7 @@ Why this is useful:
 
 Goal: make the branch implementation-ready and locally runnable without colliding with the main Phase 2 stack.
 
-- [ ] Confirm branch naming and bounded-track scope in docs and working notes.
+- [x] Confirm branch naming and bounded-track scope in docs and working notes.
 - [x] Finalize `docker/cosmic-forge-compose.yml` as the canonical Forge runtime.
 - [x] Finalize `scripts/cosmic-forge-up.sh` and `scripts/cosmic-forge-down.sh`.
 - [x] Ensure Forge compose uses the root `.env` with `.env.sample` fallback semantics.
@@ -309,7 +319,7 @@ Goal: make the branch implementation-ready and locally runnable without collidin
 - [x] Add placeholder-but-real health endpoints for `cosmic-forge-api` and `cosmic-forge-worker`.
 - [x] Verify direct health endpoints on `4101` and `4102`.
 - [x] Verify the SSR-proxied health path on `/api/forge/health`.
-- [ ] Record any remaining local port or startup collisions in docs.
+- [x] Record any remaining local port or startup collisions in docs.
 
 Sprint 1 done when:
 
@@ -324,8 +334,8 @@ Goal: make Forge a first-class but isolated UI route in the existing frontend sh
 - [x] Keep sidebar, status-band, and service-availability gating consistent with Forge route behavior.
 - [x] Ensure `/api/forge/*` handlers are separated from `/api/v1/*`.
 - [x] Ensure Forge proxy metrics are recorded separately from governance proxy metrics.
-- [ ] Add clear error handling for Forge API unavailable, GraphQL unavailable, and artifact unavailable states.
-- [ ] Make the Forge shell render cleanly when the API is offline.
+- [x] Add clear error handling for Forge API unavailable, GraphQL unavailable, and artifact unavailable states.
+- [x] Make the Forge shell render cleanly when the API is offline.
 - [x] Add or update unit tests for Forge route/module loading and SSR proxy behavior.
 - [x] Add one e2e smoke path for opening `/forge` successfully.
 
@@ -338,15 +348,15 @@ Sprint 2 done when:
 
 Goal: replace placeholder health-only behavior with a stable Forge read/write contract.
 
-- [ ] Align implementation with `GRAPHQL_CONTRACT_DRAFT.md`.
+- [x] Align implementation with `GRAPHQL_CONTRACT_DRAFT.md`.
 - [x] Finalize bootstrap query shape for service info, surveys, jobs, and image products.
 - [x] Implement create job mutation.
 - [x] Implement cancel job mutation.
 - [x] Implement retry job mutation.
 - [x] Implement cache artifact mutation.
-- [ ] Normalize API error payloads for queue, provider, and artifact failures.
-- [ ] Define the minimal persistence/read model for jobs, results, and provenance.
-- [ ] Add contract tests around the GraphQL document set.
+- [x] Normalize API error payloads for queue, provider, and artifact failures.
+- [x] Define the minimal persistence/read model for jobs, results, and provenance.
+- [x] Add contract tests around the GraphQL document set.
 - [x] Update docs if any field names or semantics changed during implementation.
 
 Sprint 3 done when:

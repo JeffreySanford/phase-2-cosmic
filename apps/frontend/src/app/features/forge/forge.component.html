@@ -12,6 +12,19 @@
     <button type="button" class="forge__refresh" (click)="reload()">Refresh workspace</button>
   </header>
 
+  <section
+    class="forge-runtime-banner"
+    [attr.data-state]="
+      isShellOffline(vm) ? 'offline' : isShellDegraded(vm) ? 'degraded' : 'ready'
+    "
+  >
+    <div>
+      <p class="forge-runtime-banner__eyebrow">Runtime state</p>
+      <h2>{{ shellStatusTitle(vm) }}</h2>
+      <p>{{ shellStatusMessage(vm) }}</p>
+    </div>
+  </section>
+
   <section class="forge__grid">
     <article class="forge-card forge-card--wide">
       <h2>Workbench shell</h2>
@@ -269,15 +282,20 @@
           </header>
 
           <div class="forge-results">
-            <div class="forge-results__preview">
+          <div class="forge-results__preview">
               <img
-                *ngIf="vm.selectedImage; else previewPlaceholder"
+                *ngIf="vm.selectedImage && !previewUnavailableForSelectedImage(vm.selectedImage); else previewPlaceholder"
                 class="forge-results__image"
                 [src]="vm.selectedImage.previewUrl"
                 [alt]="'Preview for ' + (vm.selectedJob?.targetName || vm.formValue.target)"
+                (load)="handlePreviewLoaded(vm.selectedImage.id)"
+                (error)="handlePreviewFailed(vm.selectedImage.id)"
               />
               <ng-template #previewPlaceholder>
-                <span *ngIf="vm.selectedJob; else noSelection">
+                <span *ngIf="previewUnavailableForSelectedImage(vm.selectedImage)" class="forge-health__error">
+                  Preview artifact unavailable through Forge SSR proxy. Use the source links below or retry once the artifact path recovers.
+                </span>
+                <span *ngIf="!previewUnavailableForSelectedImage(vm.selectedImage) && vm.selectedJob; else noSelection">
                   {{
                     vm.selectedJob.status === 'COMPLETED'
                       ? 'No preview available for this provider/job'
@@ -290,7 +308,10 @@
               </ng-template>
             </div>
             <div class="forge-results__meta">
-              <p><strong>Target:</strong> {{ vm.formValue.target }}</p>
+              <p>
+                <strong>Target:</strong>
+                {{ selectedTargetLabel(vm.selectedJob, vm.formValue.target) }}
+              </p>
               <p><strong>Artifacts:</strong> {{ selectedArtifactSummary(vm.selectedImage) }}</p>
               <p *ngIf="vm.selectedJob"><strong>Selected job:</strong> {{ vm.selectedJob.id }}</p>
               <p *ngIf="vm.selectedJob">
@@ -299,6 +320,9 @@
               </p>
               <p *ngIf="vm.selectedJob?.errorMessage" class="forge-health__error">
                 <strong>Job error:</strong> {{ vm.selectedJob?.errorMessage }}
+              </p>
+              <p *ngIf="vm.selectedJob?.errorCode" class="forge-graphql__meta">
+                <strong>Error code:</strong> {{ vm.selectedJob?.errorCode }}
               </p>
               <p *ngIf="vm.selectedJob">
                 <strong>Owner:</strong> {{ vm.selectedJob.requestedBy }}
@@ -371,7 +395,7 @@
                   target="_blank"
                   rel="noreferrer"
                 >
-                  source citation
+                  {{ selectedCitationLabel(vm.selectedImage) }}
                 </a>
               </p>
               <p *ngIf="vm.selectedImage">
@@ -381,7 +405,7 @@
                   target="_blank"
                   rel="noreferrer"
                 >
-                  provider asset
+                  {{ selectedAuthoritativeSourceLabel(vm.selectedImage) }}
                 </a>
               </p>
               <p *ngIf="vm.selectedImage">

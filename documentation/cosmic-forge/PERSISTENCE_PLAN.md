@@ -21,6 +21,18 @@ The first persistence slice should support:
 - retry and cancel auditability
 - cached artifact lookup and provenance retention
 
+## Current implementation state
+
+The Forge branch no longer relies on process-memory-only queue reads.
+
+Current posture:
+
+- the API uses a repository-backed persisted state file for jobs, image products, and queue events
+- the GraphQL contract remains stable while the backing store is abstracted behind the store/repository seam
+- this is a transitional durability layer for Sprint 3, not the final persistence posture
+
+That means the branch now has restart-survivable local state, while still preserving a clean upgrade path to PostgreSQL.
+
 ## First implementation posture
 
 - keep the runtime contract stable
@@ -28,7 +40,7 @@ The first persistence slice should support:
 - use one write path owned by the Forge API and worker
 - treat artifact payloads as file/object storage, not large database blobs
 
-## Recommended first backing store
+## Recommended next backing store
 
 - `PostgreSQL`
 
@@ -37,6 +49,7 @@ Rationale:
 - already present in the local Forge Docker stack
 - good fit for queue rows, provenance records, and relational joins
 - keeps the first durable slice simple without introducing broker complexity
+- replaces the Sprint 3 file-backed repository with a stronger multi-process store
 
 ## Minimal durable entities
 
@@ -180,8 +193,8 @@ The worker should:
 
 ## Suggested implementation order
 
-- introduce repository interfaces under the Forge API
-- back those repositories with in-memory implementations first-class enough to swap cleanly
+- keep the current repository interfaces under the Forge API
+- preserve the file-backed implementation as the local fallback and contract test baseline
 - add PostgreSQL-backed implementations
 - switch the worker and GraphQL services to repository-backed reads and writes
 - add migration files for the durable schema

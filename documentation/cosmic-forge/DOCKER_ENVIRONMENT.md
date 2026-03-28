@@ -75,6 +75,25 @@ Forge ports deliberately avoid the current stack defaults:
 
 All of these can be overridden through the root `.env`.
 
+## Known local startup collisions
+
+The current local dev/runtime shape still has a few known collision points that should be treated as expected housekeeping rather than mysterious runtime failures:
+
+- SSR uses `4000`, so any stale Nest or worker process on that port must be cleared before startup
+- the Forge API uses `4101`
+- the Forge worker uses `4102`
+- the Angular frontend dev server uses `4200`
+- Vite HMR may hold `24678`
+
+The current [`scripts/start-all.sh`](/c:/repos/phase-2-cosmic/scripts/start-all.sh) handles these collisions by:
+
+- logging each startup stage explicitly
+- clearing stale listeners before launch
+- waiting for ports to become free
+- appending to a cumulative startup log instead of truncating history
+
+The noisy `Nx ... target serve ... failed` banner can appear when an old frontend dev server is intentionally terminated during cleanup. In that case, the message is from the stale process being stopped, not from the new startup sequence failing.
+
 ## Expected next step
 
 As the real Forge services are implemented, replace the placeholder containers in `docker/cosmic-forge-compose.yml` rather than adding Forge runtime to `docker/dev-compose.yml`.

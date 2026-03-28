@@ -42,6 +42,7 @@ Reader guide:
 - [IRSA_ADAPTER_DECISION.md](./IRSA_ADAPTER_DECISION.md): recommended IRSA sequencing, starting with AllWISE and preserving a clean seam for 2MASS
 - [SKYVIEW_ADAPTER_DECISION.md](./SKYVIEW_ADAPTER_DECISION.md): recommended SkyView role as a fallback/comparison and derived-preview adapter rather than an archive-native first-wave source
 - [ESASKY_ADAPTER_DECISION.md](./ESASKY_ADAPTER_DECISION.md): recommended ESASky role as a HiPS/discovery preview source rather than a first-wave archive-native science-cutout adapter
+- [PANSTARRS_ADAPTER_DECISION.md](./PANSTARRS_ADAPTER_DECISION.md): recommended Pan-STARRS role as a post-PI optical comparison/archive adapter rather than a first-PI replacement for Legacy Surveys
 - [IRSA_IMPLEMENTATION_NOTES.md](./IRSA_IMPLEMENTATION_NOTES.md): concrete engineering notes for the first IRSA-backed adapter slice using AllWISE discovery and IBE cutout retrieval
 - [SPRINT_5_IMPLEMENTATION_NOTES.md](./SPRINT_5_IMPLEMENTATION_NOTES.md): concrete engineering notes for the first real Legacy Surveys-backed adapter slice
 - [PRODUCT_BLUEPRINT.md](./PRODUCT_BLUEPRINT.md): product scope, users, MVP, non-goals

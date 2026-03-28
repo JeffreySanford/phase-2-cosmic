@@ -130,6 +130,50 @@ describe("ForgeProxyService", () => {
     );
   });
 
+  it("returns a 502 payload when Forge health cannot be reached", async () => {
+    const svc = new ForgeProxyService();
+    const req = {
+      path: "/api/forge/health",
+      method: "GET",
+    } as Request;
+    const res = createResponse();
+    const recordMetrics = jest.fn();
+
+    fetchMock.mockRejectedValue(new Error("connect ECONNREFUSED"));
+
+    const payload = await firstValueFrom(svc.handle(req, res, recordMetrics));
+
+    expect(res.statusCode).toBe(502);
+    expect(payload).toEqual({
+      error: "forge_proxy_error",
+      message: "Unable to reach Cosmic Forge API",
+    });
+    expect(recordMetrics).toHaveBeenCalledWith("GET", 502, 0, 0);
+  });
+
+  it("returns a 502 payload when Forge artifacts cannot be reached", async () => {
+    const svc = new ForgeProxyService();
+    const req = {
+      path: "/api/forge/artifacts/forge-image-1/preview",
+      method: "GET",
+    } as Request;
+    const res = createResponse();
+    const recordMetrics = jest.fn();
+
+    fetchMock.mockRejectedValue(new Error("connect ECONNREFUSED"));
+
+    await firstValueFrom(
+      svc.handle(req, res, recordMetrics).pipe(defaultIfEmpty(null))
+    );
+
+    expect(res.statusCode).toBe(502);
+    expect(res.body).toEqual({
+      error: "forge_artifact_proxy_error",
+      message: "Unable to reach cached Cosmic Forge artifact",
+    });
+    expect(recordMetrics).toHaveBeenCalledWith("GET", 502, 0, 0);
+  });
+
   it("returns 501 for reserved Forge routes without a handler", async () => {
     const svc = new ForgeProxyService();
     const req = {

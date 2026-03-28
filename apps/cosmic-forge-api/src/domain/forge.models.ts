@@ -9,6 +9,17 @@ export type ForgeJobStatus =
 
 export type ForgeArtifactMode = "external" | "cached";
 
+export type ForgeErrorCode =
+  | "FORGE_VALIDATION_ERROR"
+  | "FORGE_BAD_REQUEST"
+  | "FORGE_JOB_NOT_FOUND"
+  | "FORGE_IMAGE_NOT_FOUND"
+  | "FORGE_UNSUPPORTED_SURVEY"
+  | "FORGE_UPSTREAM_UNAVAILABLE"
+  | "FORGE_UPSTREAM_BAD_RESPONSE"
+  | "FORGE_ARTIFACT_UNAVAILABLE"
+  | "FORGE_INTERNAL_ERROR";
+
 export interface ForgeCutoutRequest {
   providerAdapter: string;
   sourceService: string;
@@ -84,6 +95,7 @@ export interface ForgeJob {
   requestedSurveyIds: string[];
   request: ForgeCutoutRequest | null;
   resultImageIds: string[];
+  errorCode: ForgeErrorCode | null;
   errorMessage: string | null;
   createdAt: string;
   updatedAt: string;
@@ -115,4 +127,36 @@ export interface ForgeApiHealth {
   service: string;
   mode: string;
   timestamp: string;
+}
+
+export interface ForgeJobEvent {
+  id: string;
+  jobId: string;
+  eventType: string;
+  fromStatus: ForgeJobStatus | null;
+  toStatus: ForgeJobStatus | null;
+  message: string | null;
+  errorCode: ForgeErrorCode | null;
+  createdAt: string;
+}
+
+export interface ForgePersistedState {
+  jobCounter: number;
+  imageCounter: number;
+  eventCounter: number;
+  jobs: ForgeJob[];
+  imageProducts: ForgeImageProduct[];
+  jobEvents: ForgeJobEvent[];
+}
+
+export class ForgeDomainError extends Error {
+  constructor(
+    readonly code: ForgeErrorCode,
+    message: string,
+    readonly retryable = false,
+    readonly details: Record<string, unknown> | null = null
+  ) {
+    super(message);
+    this.name = "ForgeDomainError";
+  }
 }

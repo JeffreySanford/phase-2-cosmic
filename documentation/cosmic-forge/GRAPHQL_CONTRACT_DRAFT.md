@@ -17,6 +17,9 @@ This document is the branch-scoped GraphQL contract draft for Cosmic Forge. It i
 - `surveys`
 - `jobs`
 - `imageProducts`
+- `job(id: ID!)`
+- `imageProductsByJob(jobId: ID!)`
+- `provenanceByImage(imageId: ID!)`
 
 ## Current mutation surface
 
@@ -24,12 +27,6 @@ This document is the branch-scoped GraphQL contract draft for Cosmic Forge. It i
 - `cancelJob`
 - `retryJob`
 - `cacheImageArtifact`
-
-## Planned next query surface
-
-- `job(id: ID!)`
-- `imageProductsByJob(jobId: ID!)`
-- `provenanceByImage(imageId: ID!)`
 
 ## Planned next mutation surface
 
@@ -83,6 +80,7 @@ type Job {
   radiusArcmin: Float!
   requestedSurveyIds: [ID!]!
   resultImageIds: [ID!]!
+  errorCode: String
   errorMessage: String
   request: CutoutRequest
   createdAt: String!
@@ -152,6 +150,35 @@ type ProvenanceRecord {
 }
 ```
 
+## Error envelope
+
+Forge mutation and targeted-query failures now use a normalized GraphQL error envelope:
+
+```graphql
+errors: [
+  {
+    message: String!
+    extensions: {
+      code: String!
+      retryable: Boolean!
+      details: JSON
+    }
+  }
+]
+```
+
+Current normalized codes include:
+
+- `FORGE_BAD_REQUEST`
+- `FORGE_VALIDATION_ERROR`
+- `FORGE_JOB_NOT_FOUND`
+- `FORGE_IMAGE_NOT_FOUND`
+- `FORGE_UNSUPPORTED_SURVEY`
+- `FORGE_UPSTREAM_UNAVAILABLE`
+- `FORGE_UPSTREAM_BAD_RESPONSE`
+- `FORGE_ARTIFACT_UNAVAILABLE`
+- `FORGE_INTERNAL_ERROR`
+
 ## Inputs
 
 ```graphql
@@ -182,8 +209,8 @@ Current behavior:
 - preview and FITS artifacts can be served back through Forge artifact routes
 - `artifactMode` may be `external` or `cached`
 - `cacheStatus` may be `external-only` or `cached`
-- the API currently serves queue state from an in-memory store
-- durable persistence is the next contract-preserving implementation step
+- the API now serves queue state through a repository-backed persisted state file rather than process memory only
+- PostgreSQL remains the recommended next durable backing store without requiring GraphQL contract churn
 
 ## Adapter-facing contract assumptions
 
@@ -198,7 +225,6 @@ The API should not leak provider-specific wire formats directly into the UI.
 
 ## Remaining gaps to close
 
-- align error payloads so GraphQL failures include normalized Forge error codes
-- add targeted queries by `jobId` and `imageId`
-- define the subscription payloads without changing the current bootstrap/mutation shapes
-- move the backing store from in-memory state to durable persistence without contract churn
+- define subscription payloads without changing the current bootstrap/mutation shapes
+- move the persistence backing store from file-backed state to PostgreSQL without contract churn
+- expose job-event audit history once the UI is ready to consume it

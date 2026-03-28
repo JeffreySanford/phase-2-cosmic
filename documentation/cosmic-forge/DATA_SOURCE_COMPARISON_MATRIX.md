@@ -136,12 +136,19 @@ Recommended posture:
 - follow-on optical source
 - validation/comparison path versus Legacy Surveys
 - additional archive-backed cutout coverage
+- post-PI optical extension rather than a first-wave replacement for Legacy
 
 Official references:
 
 - [Pan-STARRS archive overview](https://outerspace.stsci.edu/display/PANSTARRS/)
 - [How to retrieve and use PS1 data](https://outerspace.stsci.edu/display/PANSTARRS/How%2Bto%2Bretrieve%2Band%2Buse%2BPS1%2Bdata)
 - [PS1 Image Cutout Service](https://outerspace.stsci.edu/display/PANSTARRS/PS1%2BImage%2BCutout%2BService)
+
+Recommended posture:
+
+- treat Pan-STARRS as an archive-native optical comparison adapter after Legacy is stable
+- use it for same-target cutout comparison against Legacy Surveys
+- keep its STScI/MAST acknowledgement and provenance separate from Legacy results
 
 ## Recommended decision checkpoint
 
