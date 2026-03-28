@@ -255,7 +255,7 @@ describe("forge workbench", () => {
               },
               {
                 id: "skyview",
-                name: "SkyView",
+                name: "SkyView Explorer",
                 providerName: "NASA GSFC SkyView",
                 waveband: "mixed",
                 supportsFits: false,
@@ -263,6 +263,73 @@ describe("forge workbench", () => {
                 supportsPreview: true,
                 previewReady: true,
                 citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+              },
+              {
+                id: "dss2",
+                name: "DSS2 Preview",
+                providerName: "NASA GSFC SkyView",
+                waveband: "optical",
+                supportsFits: false,
+                supportsCutout: true,
+                supportsPreview: true,
+                previewReady: true,
+                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+              },
+              {
+                id: "first",
+                name: "FIRST Preview",
+                providerName: "NASA GSFC SkyView",
+                waveband: "radio",
+                supportsFits: false,
+                supportsCutout: true,
+                supportsPreview: true,
+                previewReady: true,
+                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+              },
+              {
+                id: "2mass-j-preview",
+                name: "2MASS J Preview",
+                providerName: "NASA GSFC SkyView",
+                waveband: "infrared",
+                supportsFits: false,
+                supportsCutout: true,
+                supportsPreview: true,
+                previewReady: true,
+                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+              },
+              {
+                id: "2mass-h-preview",
+                name: "2MASS H Preview",
+                providerName: "NASA GSFC SkyView",
+                waveband: "infrared",
+                supportsFits: false,
+                supportsCutout: true,
+                supportsPreview: true,
+                previewReady: true,
+                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+              },
+              {
+                id: "2mass-k-preview",
+                name: "2MASS K Preview",
+                providerName: "NASA GSFC SkyView",
+                waveband: "infrared",
+                supportsFits: false,
+                supportsCutout: true,
+                supportsPreview: true,
+                previewReady: true,
+                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+              },
+              {
+                id: "panstarrs",
+                name: "Pan-STARRS",
+                providerName: "MAST / STScI",
+                waveband: "optical",
+                supportsFits: true,
+                supportsCutout: true,
+                supportsPreview: true,
+                previewReady: true,
+                citationUrl:
+                  "https://outerspace.stsci.edu/display/PANSTARRS/PS1+Image+Cutout+Service",
               },
               {
                 id: "esasky",
@@ -651,7 +718,10 @@ describe("forge workbench", () => {
     cy.contains("h2", "GraphQL read model")
       .closest("article")
       .should("contain.text", "graph ready: yes")
-      .and("contain.text", "contract version: forge-workbench.v1");
+      .and("contain.text", "contract version: forge-workbench.v1")
+      .and("contain.text", "refresh mode: GraphQL bootstrap + 10s auto-refresh")
+      .and("contain.text", "subscriptions: Deferred for this PI")
+      .and("contain.text", "Available now: queue diagnostics, metrics, recent job events");
     cy.contains("h3", "My jobs").closest("section").contains("M87 · cutout");
 
     cy.contains("button.forge-chip", "AllWISE").click({ force: true });
@@ -791,6 +861,17 @@ describe("forge workbench", () => {
       .parent()
       .contains("NASA/IPAC IRSA source asset");
 
+    cy.contains("Viewer handoff:")
+      .parent()
+      .find("a")
+      .should("have.attr", "href")
+      .and("include", "/view?")
+      .and("include", "target=M87")
+      .and("include", "ra=187.70593")
+      .and("include", "dec=12.39112")
+      .and("include", "fov=0.5")
+      .and("include", "survey=P%2FallWISE%2Fcolor");
+
     cy.contains("Preview URL:")
       .parent()
       .find("a")
@@ -802,13 +883,25 @@ describe("forge workbench", () => {
       .should("have.attr", "href", "/api/forge/artifacts/forge-image-2/fits");
   });
 
-  it("renders SkyView as a live derived-preview survey option", () => {
+  it("renders SkyView-derived survey presets as live derived options", () => {
     cy.visit("/forge");
     cy.wait("@forgeGraphql");
 
-    cy.contains("button.forge-chip", "SkyView")
+    cy.contains("button.forge-chip", "SkyView Explorer")
       .should("not.be.disabled")
       .contains("derived");
+    cy.contains("button.forge-chip", "DSS2 Preview")
+      .should("not.be.disabled")
+      .contains("derived");
+    cy.contains("button.forge-chip", "FIRST Preview")
+      .should("not.be.disabled")
+      .contains("derived");
+    cy.contains("button.forge-chip", "2MASS J Preview")
+      .should("not.be.disabled")
+      .contains("derived");
+    cy.contains("button.forge-chip", "Pan-STARRS")
+      .should("not.be.disabled")
+      .contains("live");
   });
 
   it("shows provider-specific SkyView source handoff language when a SkyView result is selected", () => {

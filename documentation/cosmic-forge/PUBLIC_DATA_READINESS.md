@@ -19,7 +19,14 @@ The branch now proves that answer with live provider-backed Forge adapters for:
 
 - `Legacy Surveys / NOIRLab` archive-native optical cutouts
 - `IRSA AllWISE` archive-native infrared cutouts with cached FITS-backed previews
-- `SkyView` derived-preview comparison output
+- `Pan-STARRS / STScI` archive-native optical cutouts as a second optical comparison path
+- `SkyView Explorer` derived-preview comparison output
+- additional `SkyView`-derived named presets:
+  - `DSS2 Preview`
+  - `FIRST Preview`
+  - `2MASS J Preview`
+  - `2MASS H Preview`
+  - `2MASS K Preview`
 
 We also have enough public data to keep building around:
 
@@ -38,8 +45,9 @@ The current repo evidence and implementation support a public-data-first image p
 
 - `Legacy Surveys / NOIRLab` is live in Forge for archive-native optical cutouts
 - `IRSA AllWISE` is live in Forge for archive-native infrared retrieval with IBE-backed FITS artifacts
-- `SkyView` is live in Forge as a derived-preview comparison path
-- `ESASky` and `Pan-STARRS` are documented and queued as later archive/discovery extensions
+- `Pan-STARRS / STScI` is live in Forge for archive-native optical comparison cutouts
+- `SkyView` is live in Forge as a derived-preview comparison path, with additional named quick-look presets for optical, radio, and infrared browsing
+- `ESASky` remains documented and queued as the next discovery/HiPS-focused extension
 - the broader repo still contains VLASS HiPS/basic product, NVAS, and VO-oriented groundwork for later expansion
 
 Practical v1 outcomes that are realistic now:
@@ -47,6 +55,7 @@ Practical v1 outcomes that are realistic now:
 - target-centered sky navigation
 - survey cutout requests
 - preview image generation
+- FITS-to-preview prerendering through the Go renderer seam
 - FITS download metadata
 - public-source-backed overlays
 - provenance capture for where an image came from and how it was transformed

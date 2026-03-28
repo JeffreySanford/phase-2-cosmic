@@ -35,7 +35,7 @@ It gives the broader Phase 2 story a product that feels concrete:
 - request a target or coordinate region
 - choose surveys
 - submit a cutout or composite job
-- stream progress
+- observe refresh-driven progress and queue state
 - inspect previews and FITS metadata
 - retain provenance and source attribution
 
@@ -53,7 +53,7 @@ A generic queue app would show technical competence but no domain seriousness. C
 That means the project can justify:
 
 - NgRx entity/state discipline
-- GraphQL subscriptions for progress and results
+- GraphQL bootstrap/read-refresh now, with subscriptions preserved as a later seam
 - bounded-concurrency workers
 - a later native compute seam for real image operations
 

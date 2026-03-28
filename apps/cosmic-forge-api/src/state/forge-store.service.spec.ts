@@ -128,6 +128,145 @@ test("skyview jobs get a normalized derived-preview request scaffold", () => {
   assert.equal(job.request?.fitsCutoutUrl, null);
 });
 
+test("DSS2 preview jobs get a SkyView-derived optical request scaffold", () => {
+  const store = createStore("dss2-request");
+  const job = store.createCutoutJob({
+    requestedBy: "test-user",
+    targetName: "Horsehead",
+    ra: 85.18975,
+    dec: -2.42859,
+    radiusArcmin: 12,
+    surveyIds: ["dss2"],
+  });
+
+  assert.ok(job.request);
+  assert.equal(job.request?.providerAdapter, "skyview-derived-preview");
+  assert.equal(job.request?.missionFamily, "dss2");
+  assert.equal(job.request?.collection, "skyview/dss2/derived-preview");
+  assert.equal(job.request?.layer, "DSS2 Red");
+  assert.deepEqual(job.request?.bands, ["DSS2 Red"]);
+  assert.match(job.request?.jpegCutoutUrl || "", /Survey=DSS2\+Red/);
+});
+
+test("FIRST preview jobs complete as SkyView-derived radio products", async () => {
+  const store = createStore("first-complete");
+  const job = store.createCutoutJob({
+    requestedBy: "test-user",
+    targetName: "3C 273",
+    ra: 187.27792,
+    dec: 2.05239,
+    radiusArcmin: 8,
+    surveyIds: ["first"],
+  });
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await store.advanceJobs();
+  }
+
+  const completedJob = store.getJobs().find((item) => item.id === job.id);
+  const imageProduct = store.getImageProducts().find((item) => item.jobId === job.id);
+
+  assert.equal(completedJob?.status, "COMPLETED");
+  assert.equal(completedJob?.request?.missionFamily, "first");
+  assert.equal(completedJob?.request?.layer, "FIRST");
+  assert.ok(imageProduct);
+  assert.equal(imageProduct?.surveyId, "first");
+  assert.equal(imageProduct?.providerName, "NASA GSFC SkyView");
+  assert.equal(imageProduct?.provenance.sourceSurvey, "SkyView FIRST");
+  assert.equal(imageProduct?.provenance.collection, "skyview/first/derived-preview");
+  assert.deepEqual(imageProduct?.provenance.bandSet, ["FIRST"]);
+});
+
+test("2MASS J preview jobs retain SkyView-derived provenance without implying archive-native IRSA delivery", async () => {
+  const store = createStore("2mass-j-preview");
+  const job = store.createCutoutJob({
+    requestedBy: "test-user",
+    targetName: "3C 273",
+    ra: 187.27792,
+    dec: 2.05239,
+    radiusArcmin: 8,
+    surveyIds: ["2mass-j-preview"],
+  });
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await store.advanceJobs();
+  }
+
+  const imageProduct = store.getImageProducts().find((item) => item.jobId === job.id);
+
+  assert.ok(imageProduct);
+  assert.equal(imageProduct?.surveyId, "2mass-j-preview");
+  assert.equal(imageProduct?.provenance.providerName, "NASA GSFC SkyView");
+  assert.equal(imageProduct?.provenance.missionFamily, "2mass");
+  assert.equal(imageProduct?.provenance.sourceSurvey, "SkyView 2MASS J");
+  assert.deepEqual(imageProduct?.provenance.bandSet, ["J"]);
+  assert.equal(imageProduct?.fitsUrl, null);
+});
+
+test("Pan-STARRS cutout jobs complete as archive-native optical products", async () => {
+  const originalFetch = global.fetch;
+  global.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes("ps1filenames.py")) {
+      return {
+        ok: true,
+        text: async () =>
+          [
+            "projcell,subcell,ra,dec,filter,mjd,type,filename,shortname",
+            '1405,053,332.600451657,2.19980905757,g,0.0,stack,/rings.v3.skycell/1405/053/rings.v3.skycell.1405.053.stk.g.unconv.fits,rings.v3.skycell.1405.053.stk.g.unconv.fits',
+            '1405,053,332.600451657,2.19980905757,r,0.0,stack,/rings.v3.skycell/1405/053/rings.v3.skycell.1405.053.stk.r.unconv.fits,rings.v3.skycell.1405.053.stk.r.unconv.fits',
+            '1405,053,332.600451657,2.19980905757,i,0.0,stack,/rings.v3.skycell/1405/053/rings.v3.skycell.1405.053.stk.i.unconv.fits,rings.v3.skycell.1405.053.stk.i.unconv.fits',
+          ].join("\n"),
+      } as Response;
+    }
+
+    if (url.includes("fitscut.cgi") && init?.method === "HEAD") {
+      return {
+        ok: true,
+        status: 200,
+      } as Response;
+    }
+
+    throw new Error(`Unexpected fetch: ${url}`);
+  }) as typeof fetch;
+
+  const store = createStore("panstarrs-complete");
+  const job = store.createCutoutJob({
+    requestedBy: "test-user",
+    targetName: "NGC 1275",
+    ra: 49.95067,
+    dec: 41.5117,
+    radiusArcmin: 12,
+    surveyIds: ["panstarrs"],
+  });
+
+  try {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await store.advanceJobs();
+    }
+
+    const completedJob = store.getJobs().find((item) => item.id === job.id);
+    const imageProduct = store.getImageProducts().find((item) => item.jobId === job.id);
+
+    assert.equal(completedJob?.status, "COMPLETED");
+    assert.equal(completedJob?.request?.providerAdapter, "panstarrs-ps1");
+    assert.equal(completedJob?.request?.sourceService, "ps1filenames+fitscut");
+    assert.equal(completedJob?.request?.collection, "ps1/stack");
+    assert.deepEqual(completedJob?.request?.bands, ["i", "r", "g"]);
+
+    assert.ok(imageProduct);
+    assert.equal(imageProduct?.surveyId, "panstarrs");
+    assert.equal(imageProduct?.providerName, "MAST / STScI");
+    assert.match(imageProduct?.previewUrl || "", /fitscut\.cgi/);
+    assert.match(imageProduct?.fitsUrl || "", /format=fits/);
+    assert.equal(imageProduct?.provenance.collection, "ps1/stack");
+    assert.equal(imageProduct?.provenance.retrievalPathType, "fitscut");
+    assert.deepEqual(imageProduct?.provenance.bandSet, ["i", "r", "g"]);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test("allwise cutout jobs complete through live SIA discovery and IBE retrieval", async () => {
   const originalFetch = global.fetch;
   global.fetch = (async (input: string | URL | Request, init?: RequestInit) => {

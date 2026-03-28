@@ -44,6 +44,7 @@ const isJsdom = /jsdom/.test(window?.navigator?.userAgent ?? "");
 import { TestBed, ComponentFixture, waitForAsync } from "@angular/core/testing";
 import { ViewerComponent } from "./viewer.component";
 import { NO_ERRORS_SCHEMA } from "@angular/core";
+import { ActivatedRoute, convertToParamMap } from "@angular/router";
 import { firstValueFrom, timer } from "rxjs";
 
 describe("ViewerComponent", () => {
@@ -56,6 +57,16 @@ describe("ViewerComponent", () => {
     return TestBed.configureTestingModule({
       declarations: [ViewerComponent],
       schemas: [NO_ERRORS_SCHEMA],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              queryParamMap: convertToParamMap({}),
+            },
+          },
+        },
+      ],
     })
       .compileComponents()
       .then(() => {
@@ -196,5 +207,43 @@ describe("ViewerComponent", () => {
       const destroyed = destroySpy && destroySpy.mock.calls.length > 0;
       expect(removed || destroyed).toBe(true);
     });
+  });
+
+  it("applies route query overrides for target, coordinates, survey, and fov", () => {
+    TestBed.resetTestingModule();
+    debugSpy.mockRestore();
+    debugSpy = jest.spyOn(console, "debug").mockImplementation(() => undefined);
+
+    return TestBed.configureTestingModule({
+      declarations: [ViewerComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              queryParamMap: convertToParamMap({
+                target: "Cygnus A",
+                ra: "299.86815",
+                dec: "40.73391",
+                survey: "P/allWISE/color",
+                fov: "0.333",
+              }),
+            },
+          },
+        },
+      ],
+    })
+      .compileComponents()
+      .then(() => {
+        const routeFixture = TestBed.createComponent(ViewerComponent);
+        const routeComponent = routeFixture.componentInstance;
+
+        routeFixture.detectChanges();
+
+        expect(routeComponent.target).toBe("299.86815, 40.73391");
+        expect(routeComponent.survey).toBe("P/allWISE/color");
+        expect(routeComponent.fov).toBe(0.333);
+      });
   });
 });

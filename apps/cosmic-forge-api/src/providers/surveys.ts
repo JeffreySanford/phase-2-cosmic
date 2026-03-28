@@ -14,11 +14,17 @@ import {
   legacySurveyAdapter,
 } from "./legacy-surveys-adapter";
 import {
+  PANSTARRS_CITATION_URL,
+  PANSTARRS_PROVIDER_NAME,
+  PANSTARRS_SURVEY_ID,
+  panstarrsSurveyAdapter,
+} from "./panstarrs-adapter";
+import {
   SKYVIEW_CITATION_URL,
   SKYVIEW_PROVIDER_NAME,
   SKYVIEW_SURVEY_ID,
   buildSkyViewCutoutRequest,
-  skyViewSurveyAdapter,
+  skyViewSurveyAdapters,
 } from "./skyview-adapter";
 import type { ForgeSurveyAdapter } from "./survey-adapter";
 
@@ -69,9 +75,64 @@ export const forgeSurveys: ForgeSurvey[] = [
   },
   {
     id: SKYVIEW_SURVEY_ID,
-    name: "SkyView",
+    name: "SkyView Explorer",
     providerName: SKYVIEW_PROVIDER_NAME,
     waveband: "mixed",
+    supportsFits: false,
+    supportsCutout: true,
+    supportsPreview: true,
+    previewReady: true,
+    citationUrl: SKYVIEW_CITATION_URL,
+  },
+  {
+    id: "dss2",
+    name: "DSS2 Preview",
+    providerName: SKYVIEW_PROVIDER_NAME,
+    waveband: "optical",
+    supportsFits: false,
+    supportsCutout: true,
+    supportsPreview: true,
+    previewReady: true,
+    citationUrl: SKYVIEW_CITATION_URL,
+  },
+  {
+    id: "first",
+    name: "FIRST Preview",
+    providerName: SKYVIEW_PROVIDER_NAME,
+    waveband: "radio",
+    supportsFits: false,
+    supportsCutout: true,
+    supportsPreview: true,
+    previewReady: true,
+    citationUrl: SKYVIEW_CITATION_URL,
+  },
+  {
+    id: "2mass-j-preview",
+    name: "2MASS J Preview",
+    providerName: SKYVIEW_PROVIDER_NAME,
+    waveband: "infrared",
+    supportsFits: false,
+    supportsCutout: true,
+    supportsPreview: true,
+    previewReady: true,
+    citationUrl: SKYVIEW_CITATION_URL,
+  },
+  {
+    id: "2mass-h-preview",
+    name: "2MASS H Preview",
+    providerName: SKYVIEW_PROVIDER_NAME,
+    waveband: "infrared",
+    supportsFits: false,
+    supportsCutout: true,
+    supportsPreview: true,
+    previewReady: true,
+    citationUrl: SKYVIEW_CITATION_URL,
+  },
+  {
+    id: "2mass-k-preview",
+    name: "2MASS K Preview",
+    providerName: SKYVIEW_PROVIDER_NAME,
+    waveband: "infrared",
     supportsFits: false,
     supportsCutout: true,
     supportsPreview: true,
@@ -90,36 +151,36 @@ export const forgeSurveys: ForgeSurvey[] = [
     citationUrl: "https://open.esa.int/esasky/",
   },
   {
-    id: "panstarrs",
+    id: PANSTARRS_SURVEY_ID,
     name: "Pan-STARRS",
-    providerName: "MAST / STScI",
+    providerName: PANSTARRS_PROVIDER_NAME,
     waveband: "optical",
     supportsFits: true,
     supportsCutout: true,
     supportsPreview: true,
-    previewReady: false,
-    citationUrl: "https://outerspace.stsci.edu/display/PANSTARRS",
-  },
-  {
-    id: "dss2",
-    name: "DSS2 Preview",
-    providerName: "CDS",
-    waveband: "optical",
-    supportsFits: false,
-    supportsCutout: false,
-    supportsPreview: true,
-    previewReady: false,
-    citationUrl: "https://aladin.cds.unistra.fr/hips/list",
+    previewReady: true,
+    citationUrl: PANSTARRS_CITATION_URL,
   },
 ];
 
 export const forgeSurveyAdapters: Record<string, ForgeSurveyAdapter> = {
   [LEGACY_SURVEYS_ID]: legacySurveyAdapter,
   [IRSA_ALLWISE_SURVEY_ID]: irsaAllwiseSurveyAdapter,
-  [SKYVIEW_SURVEY_ID]: skyViewSurveyAdapter,
+  [PANSTARRS_SURVEY_ID]: panstarrsSurveyAdapter,
+  ...skyViewSurveyAdapters,
 };
 
-const previewProviderPriority = [LEGACY_SURVEYS_ID, IRSA_ALLWISE_SURVEY_ID];
+const previewProviderPriority = [
+  LEGACY_SURVEYS_ID,
+  IRSA_ALLWISE_SURVEY_ID,
+  SKYVIEW_SURVEY_ID,
+  "dss2",
+  "first",
+  "2mass-j-preview",
+  "2mass-h-preview",
+  "2mass-k-preview",
+  PANSTARRS_SURVEY_ID,
+];
 
 function getPreviewSurveyId(job: ForgeJob): string | null {
   for (const surveyId of previewProviderPriority) {

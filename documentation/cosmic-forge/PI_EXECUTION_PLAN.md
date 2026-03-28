@@ -57,7 +57,7 @@ By the end of this PI, Cosmic Forge should be a credible bounded-track product b
 - [x] Do not merge Forge semantics into the repo-wide governance API surface.
 - [x] Do not require Kafka, RabbitMQ, or Pulsar for Forge v1 unless a later sprint explicitly proves that dependency is necessary.
 - [x] Keep provenance mandatory, not optional polish.
-- [ ] Prefer one complete vertical slice over multiple half-finished subsystems.
+- [x] Prefer one complete vertical slice over multiple half-finished subsystems.
 - [x] Keep the frontend queue model NgRx-first: Entity-backed collection state, effect-owned orchestration, and explicit job lifecycle transitions.
 
 ## External Agency And Archive Inputs
@@ -499,11 +499,28 @@ Sprint 8 done when:
 
 ## Deferred after this PI
 
-- [ ] Additional survey adapters beyond the first one or two.
+- [x] Additional survey adapters beyond the first one or two.
+  Implemented in the current branch as additional `SkyView`-derived quick-look presets:
+  - `DSS2 Preview`
+  - `FIRST Preview`
+  - `2MASS J Preview`
+  - `2MASS H Preview`
+  - `2MASS K Preview`
+  Remaining follow-on work is additional archive-native families, not just more preview presets.
+- [x] Further archive-native survey adapters beyond the current Legacy/AllWISE/SkyView family.
+  Implemented in the current branch as a live `Pan-STARRS / STScI` archive-native optical adapter beside the existing `Legacy Surveys`, `AllWISE`, and `SkyView` family.
 - [ ] GraphQL subscriptions if polling is sufficient for the first PI.
-- [ ] Native acceleration seam for image-processing hotspots.
-- [ ] Advanced viewer-layer integration beyond the initial result inspection workflow.
+  Deferred explicitly. The current PI stays on GraphQL bootstrap plus refresh semantics because that path is stable, tested, and sufficient for the bounded workbench.
+  The `/forge` UI now surfaces the current transport posture directly:
+  - refresh mode: `GraphQL bootstrap + 10s auto-refresh`
+  - subscriptions: `Deferred for this PI`
+  - currently available read-model detail such as queue diagnostics, metrics, and recent job events
+- [x] Native acceleration seam for image-processing hotspots.
+  Implemented via the live `cosmic-forge-fits-renderer-go` prerenderer used to turn FITS-backed artifacts into cached browser-ready previews without coupling the API to a heavier native runtime.
+- [x] Advanced viewer-layer integration beyond the initial result inspection workflow.
+  Implemented as a tested `/forge` -> `/view` handoff that carries target, coordinates, FOV, and survey context into the viewer route for follow-on inspection.
 - [ ] Any broker-backed scaling model beyond the bounded v1 worker runtime.
+  Deferred explicitly. The current PI keeps Forge on the bounded worker runtime rather than introducing Kafka, RabbitMQ, or Pulsar dependencies into the branch execution path.
 
 ## Suggested tracking use
 

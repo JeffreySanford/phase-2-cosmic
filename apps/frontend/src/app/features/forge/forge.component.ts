@@ -16,6 +16,7 @@ import {
   signal,
 } from "@angular/core";
 import { FormBuilder, Validators } from "@angular/forms";
+import { Params } from "@angular/router";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { combineLatest, distinctUntilChanged, map, shareReplay, startWith } from "rxjs";
 import { ForgeFacade } from "./state/forge.facade";
@@ -36,6 +37,7 @@ export class ForgeComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly previewLoadErrorImageId = signal<string | null>(null);
   private readonly submitAttempted = signal(false);
+  private readonly lastSuccessfulBootstrapAt = signal<string | null>(null);
 
   readonly workbenchForm = this.fb.group({
     target: ["M87", [Validators.required]],
@@ -67,6 +69,18 @@ export class ForgeComponent implements OnInit {
 
   ngOnInit(): void {
     this.forgeFacade.initialize();
+    this.vm$
+      .pipe(
+        map((vm) => vm.graphqlState.payload),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((payload) => {
+        if (payload) {
+          this.lastSuccessfulBootstrapAt.set(new Date().toISOString());
+        }
+      });
+
     this.vm$
       .pipe(
         map((vm) => vm.selectedJob),
@@ -199,7 +213,7 @@ export class ForgeComponent implements OnInit {
   }
 
   surveyAvailabilityLabel(survey: ForgeSurveyDto): string {
-    if (survey.id === "skyview" && this.isSurveySelectable(survey)) {
+    if (survey.providerName === "NASA GSFC SkyView" && this.isSurveySelectable(survey)) {
       return "derived";
     }
 
@@ -480,6 +494,46 @@ export class ForgeComponent implements OnInit {
     return event.message || `${event.eventType} · ${event.jobId}`;
   }
 
+  refreshModeLabel(): string {
+    return "GraphQL bootstrap + 10s auto-refresh";
+  }
+
+  subscriptionModeLabel(): string {
+    return "Deferred for this PI";
+  }
+
+  lastSuccessfulBootstrapLabel(): string {
+    return this.lastSuccessfulBootstrapAt() || "Awaiting first successful bootstrap";
+  }
+
+  freshestEventLabel(jobEvents: readonly ForgeVmJobEventDto[]): string {
+    if (jobEvents.length === 0) {
+      return "No recent queue events returned yet";
+    }
+
+    const newestTimestamp = [...jobEvents]
+      .map((event) => event.createdAt)
+      .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
+
+    return newestTimestamp || "No recent queue events returned yet";
+  }
+
+  availableDataSummary(vm: {
+    diagnostics: ForgeVmDiagnosticsDto | null;
+    metrics: ForgeVmMetricsDto | null;
+    jobEvents: readonly ForgeVmJobEventDto[];
+  }): string {
+    const sections = [
+      vm.diagnostics ? "queue diagnostics" : null,
+      vm.metrics ? "metrics" : null,
+      vm.jobEvents.length > 0 ? "recent job events" : null,
+    ].filter((value): value is string => typeof value === "string");
+
+    return sections.length > 0
+      ? `Available now: ${sections.join(", ")}`
+      : "Available now: service info and bootstrap payload only";
+  }
+
   hasSupportedContract(vm: { serviceInfo: { contractVersion: string } | null }): boolean {
     return vm.serviceInfo?.contractVersion === EXPECTED_FORGE_CONTRACT_VERSION;
   }
@@ -586,6 +640,23 @@ export class ForgeComponent implements OnInit {
     return `${selectedImage.provenance.providerName} source asset`;
   }
 
+  selectedViewerQueryParams(
+    selectedJob: ForgeJobDto | null,
+    selectedImage: ForgeImageProductDto | null
+  ): Params | null {
+    if (!selectedJob) {
+      return null;
+    }
+
+    return {
+      target: selectedJob.targetName,
+      ra: selectedJob.ra,
+      dec: selectedJob.dec,
+      fov: Number(((selectedJob.radiusArcmin * 2) / 60).toFixed(3)),
+      survey: this.viewerSurveyPreset(selectedImage?.surveyId ?? null),
+    };
+  }
+
   private hasValidRa(): boolean {
     const ra = Number(this.workbenchForm.controls.ra.getRawValue());
     return Number.isFinite(ra) && ra >= 0 && ra <= 360;
@@ -599,5 +670,16 @@ export class ForgeComponent implements OnInit {
   private hasValidRadius(): boolean {
     const radius = Number(this.workbenchForm.controls.radiusArcmin.getRawValue());
     return Number.isFinite(radius) && radius > 0 && radius <= MAX_RADIUS_ARCMIN;
+  }
+
+  private viewerSurveyPreset(surveyId: string | null): string {
+    switch (surveyId) {
+      case "allwise":
+        return "P/allWISE/color";
+      case "panstarrs":
+        return "P/PanSTARRS/DR1/color-z-zg-g";
+      default:
+        return "P/DSS2/color";
+    }
   }
 }

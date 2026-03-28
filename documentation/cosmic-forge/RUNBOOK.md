@@ -69,6 +69,7 @@ Expected current contract:
   - `legacy`
   - `allwise`
   - `skyview`
+  - `panstarrs`
 - planned survey examples include:
   - `esasky`
 
@@ -79,8 +80,9 @@ Expected current contract:
 3. Create a cutout job against `Legacy Surveys` or `AllWISE`.
 4. Confirm the job progresses to a visible result.
 5. Inspect provenance and external source links.
-6. Create a composite job with `Legacy Surveys` + `AllWISE`.
-7. Confirm diagnostics and recent job events update.
+6. Use `open in viewer` from a selected result and confirm the viewer route opens with target, coordinates, FOV, and survey context preserved.
+7. Create a composite job with `Legacy Surveys` + `AllWISE`.
+8. Confirm diagnostics and recent job events update.
 
 Detailed demo steps live in [DEMO_CHECKLIST.md](./DEMO_CHECKLIST.md).
 
@@ -149,5 +151,6 @@ Useful Nx-target workflows:
 
 - PostgreSQL-backed persistence remains post-PI; current authoritative local state is repository-backed and file-persisted
 - GraphQL subscriptions remain deferred; the current branch uses bootstrap/read refresh semantics
-- ESASky and Pan-STARRS remain planned, not live adapters
+- ESASky remains planned, not live
+- Pan-STARRS is now live as an archive-native comparison adapter, but it is not the primary optical path
 - SkyView is intentionally a derived-preview path, not an archive-native science-cutout source

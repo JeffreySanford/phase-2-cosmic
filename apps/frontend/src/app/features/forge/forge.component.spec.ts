@@ -1,6 +1,7 @@
 import { CommonModule } from "@angular/common";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { ReactiveFormsModule } from "@angular/forms";
+import { RouterTestingModule } from "@angular/router/testing";
 import { BehaviorSubject } from "rxjs";
 import { ForgeComponent } from "./forge.component";
 import { ForgeFacade } from "./state/forge.facade";
@@ -39,6 +40,17 @@ const surveys: readonly ForgeSurveyDto[] = [
     supportsPreview: true,
     previewReady: false,
     citationUrl: "https://open.esa.int/esasky/",
+  },
+  {
+    id: "dss2",
+    name: "DSS2 Preview",
+    providerName: "NASA GSFC SkyView",
+    waveband: "optical",
+    supportsFits: false,
+    supportsCutout: true,
+    supportsPreview: true,
+    previewReady: true,
+    citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
   },
 ];
 
@@ -204,7 +216,7 @@ describe("ForgeComponent", () => {
 
     await TestBed.configureTestingModule({
       declarations: [ForgeComponent],
-      imports: [CommonModule, ReactiveFormsModule],
+      imports: [CommonModule, ReactiveFormsModule, RouterTestingModule],
       providers: [{ provide: ForgeFacade, useValue: facade }],
     }).compileComponents();
 
@@ -354,5 +366,34 @@ describe("ForgeComponent", () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain("NOIRLab / Legacy Surveys citation");
     expect(text).toContain("NOIRLab / Legacy Surveys source asset");
+  });
+
+  it("labels SkyView-backed presets as derived instead of planned", () => {
+    const dss2Survey = surveys.find((survey) => survey.id === "dss2") as ForgeSurveyDto;
+
+    expect(component.surveyAvailabilityLabel(dss2Survey)).toBe("derived");
+    expect(component.isSurveySelectable(dss2Survey)).toBe(true);
+  });
+
+  it("builds a viewer handoff query from the selected job", () => {
+    const params = component.selectedViewerQueryParams(selectedLegacyJob, externalLegacyImage);
+
+    expect(params).toEqual({
+      target: "M87",
+      ra: 187.70593,
+      dec: 12.39112,
+      fov: 0.5,
+      survey: "P/DSS2/color",
+    });
+  });
+
+  it("surfaces bootstrap refresh semantics when subscriptions are deferred", () => {
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain("refresh mode: GraphQL bootstrap + 10s auto-refresh");
+    expect(text).toContain("subscriptions: Deferred for this PI");
+    expect(text).toContain("Available now: queue diagnostics, metrics, recent job events");
+    expect(text).toContain("freshest event timestamp: 2026-03-28T18:01:00.000Z");
   });
 });

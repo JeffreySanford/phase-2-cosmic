@@ -5,7 +5,7 @@
       <h1>Public survey image orchestration workbench</h1>
       <p class="forge__lede">
         This branch-scoped surface now runs through the Forge SSR/API seam, typed worker
-        execution, and live Legacy Surveys, AllWISE, and SkyView-derived adapter paths.
+        execution, and live Legacy Surveys, AllWISE, plus multiple SkyView-derived adapter paths.
       </p>
     </div>
 
@@ -74,9 +74,9 @@
           <span class="forge-panel__badge">{{ selectedSurveyCount() }} selected</span>
         </div>
         <p class="forge-graphql__meta">
-          Live adapters are currently available for Legacy Surveys, AllWISE, and SkyView.
-          SkyView remains explicitly derived-preview oriented. Other providers remain visible
-          here as planned seams.
+          Live adapters are currently available for Legacy Surveys, AllWISE, and a growing set
+          of SkyView-derived presets. SkyView-backed surveys remain explicitly derived-preview
+          oriented. Other providers remain visible here as planned seams.
         </p>
         <div class="forge-chip-row">
           <button
@@ -146,6 +146,21 @@
         <p>status: {{ vm.serviceInfo?.status }}</p>
         <p class="forge-graphql__meta">
           operation: {{ vm.serviceInfo?.operationName || 'none' }}
+        </p>
+        <p>
+          refresh mode: {{ refreshModeLabel() }}
+        </p>
+        <p>
+          subscriptions: {{ subscriptionModeLabel() }}
+        </p>
+        <p class="forge-graphql__meta">
+          last successful bootstrap: {{ lastSuccessfulBootstrapLabel() }}
+        </p>
+        <p class="forge-graphql__meta">
+          freshest event timestamp: {{ freshestEventLabel(vm.jobEvents) }}
+        </p>
+        <p class="forge-graphql__meta">
+          {{ availableDataSummary(vm) }}
         </p>
         <p>
           surveys returned: {{ vm.surveys.length }}
@@ -487,6 +502,12 @@
                   rel="noreferrer"
                 >
                   {{ selectedAuthoritativeSourceLabel(vm.selectedImage) }}
+                </a>
+              </p>
+              <p *ngIf="selectedViewerQueryParams(vm.selectedJob, vm.selectedImage) as viewerQueryParams">
+                <strong>Viewer handoff:</strong>
+                <a [routerLink]="['/view']" [queryParams]="viewerQueryParams">
+                  open in viewer
                 </a>
               </p>
               <p *ngIf="vm.selectedImage">

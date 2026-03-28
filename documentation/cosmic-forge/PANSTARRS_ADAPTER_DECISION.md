@@ -6,11 +6,16 @@ Alignment anchors
 - Data source comparison matrix: [./DATA_SOURCE_COMPARISON_MATRIX.md](./DATA_SOURCE_COMPARISON_MATRIX.md)
 - First adapter decision: [./FIRST_ADAPTER_DECISION.md](./FIRST_ADAPTER_DECISION.md)
 
-Status: `planned`
+Status: `implemented_as_follow_on`
 
 ## Decision
 
-`Pan-STARRS / STScI` should be treated as a post-PI optical adapter and comparison source, not as a first-PI adapter that displaces `Legacy Surveys / NOIRLab`.
+`Pan-STARRS / STScI` should be treated as a follow-on optical adapter and comparison source, not as the first-wave adapter that displaces `Legacy Surveys / NOIRLab`.
+
+Current branch note:
+
+- the recommendation to keep `Legacy` as the primary optical adapter remains intact
+- the branch has since gone further and now includes a live `Pan-STARRS` archive-native comparison adapter without changing that primary decision
 
 ## Why this is the right role
 
@@ -48,7 +53,7 @@ Pan-STARRS is weaker as an immediate PI-priority adapter because:
 - Legacy is the simpler first-wave operational path already chosen for the PI
 - Pan-STARRS overlaps enough with Legacy that adding it now would broaden the optical surface more than it would unblock a missing capability
 
-The implementation recommendation follows from that overlap: keep `Legacy` as the primary optical adapter in the PI and add `Pan-STARRS` afterward as an optical comparison/archive extension.
+The implementation recommendation follows from that overlap: keep `Legacy` as the primary optical adapter in the PI and add `Pan-STARRS` afterward as an optical comparison/archive extension. That is now the implemented branch posture.
 
 ## Product posture for Forge
 
@@ -85,7 +90,7 @@ Forge should also preserve the official STScI acknowledgement path in result met
 
 ## Recommended implementation posture
 
-- keep Pan-STARRS out of the first PI adapter set
+- keep Pan-STARRS out of the first-wave primary adapter decision
 - add it after Legacy and IRSA are stable
 - implement it as an archive-native optical adapter, not a derived preview adapter
 - use it for comparison testing on the same targets and geometry that Forge already uses for Legacy

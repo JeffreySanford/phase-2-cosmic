@@ -20,21 +20,20 @@ describe("Stress replay", () => {
   });
 
   it("allows replaying the stress profile history", () => {
-    cy.visit("/dashboard");
+    cy.visit("/dashboard", {
+      onBeforeLoad(win) {
+        win.localStorage.setItem("cosmic.stressMode", "true");
+        win.localStorage.setItem("cosmic.loadProfilePct", "10");
+      },
+    });
 
     // Ensure initial profile loaded before interactions
     cy.wait("@getLoadProfile");
-
-    // Enable stress mode by toggling the footer control
-    cy.get('.stress-toggle button[role="switch"], .stress-toggle input', {
-      timeout: 10000,
-    })
-      .first()
-      .click({ force: true });
+    cy.get(".profile-trigger", { timeout: 10000 }).should("be.visible");
 
     // Set the profile to 100% (to create history entries)
     cy.get(".profile-trigger").click();
-    cy.contains("button", "100%").click();
+    cy.contains(".profile-menu-item", "100%", { timeout: 10000 }).click();
     cy.wait("@setLoadProfile");
 
     // Click the replay button and ensure it triggers additional profile sets

@@ -301,6 +301,30 @@ start_bg() {
 	LABELS+=("$label")
 }
 
+service_port_for_label() {
+	local label="$1"
+	case "$label" in
+		ssr)
+			printf '%s' "$FRONTEND_PORT"
+			;;
+		frontend)
+			printf '%s' "4200"
+			;;
+		forge-api)
+			printf '%s' "$FORGE_API_HOST_PORT"
+			;;
+		forge-worker)
+			printf '%s' "$FORGE_WORKER_HOST_PORT"
+			;;
+		allocator)
+			printf '%s' "$ALLOCATOR_PORT"
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
 stop_bg_jobs() {
 	local pid
 	for pid in "${PIDS[@]:-}"; do
@@ -321,15 +345,32 @@ start_bg "frontend" sanitize_windows_env env NX_DAEMON="false" powershell.exe -N
 
 log "[start-all] Background services launched: allocator, forge-api, forge-worker, ssr, frontend"
 log "[start-all] Expected endpoints: SSR=$FRONTEND_PORT forge-api=$FORGE_API_HOST_PORT forge-worker=$FORGE_WORKER_HOST_PORT frontend-dev=4200 allocator=$ALLOCATOR_PORT"
+wait_for_tcp_listener "127.0.0.1" "$ALLOCATOR_PORT" "allocator" 30 || true
+wait_for_tcp_listener "127.0.0.1" "$FORGE_API_HOST_PORT" "forge-api" 30 || true
+wait_for_tcp_listener "127.0.0.1" "$FORGE_WORKER_HOST_PORT" "forge-worker" 30 || true
+wait_for_tcp_listener "127.0.0.1" "$FRONTEND_PORT" "SSR" 30 || true
+wait_for_tcp_listener "127.0.0.1" "4200" "frontend-dev" 60 || true
 
 while true; do
 	for i in "${!PIDS[@]}"; do
 		pid="${PIDS[$i]}"
 		if ! kill -0 "$pid" 2>/dev/null; then
+			label="${LABELS[$i]}"
 			wait "$pid"
 			exit_code=$?
+			if port="$(service_port_for_label "$label" 2>/dev/null)"; then
+				if wait_for_tcp_listener "127.0.0.1" "$port" "$label replacement" 3 >/dev/null 2>&1; then
+					stage "Process Handoff"
+					log "[start-all] ${label} watcher process exited with code ${exit_code}, but port ${port} is still serving. Keeping stack running."
+					unset 'PIDS[$i]'
+					unset 'LABELS[$i]'
+					PIDS=("${PIDS[@]}")
+					LABELS=("${LABELS[@]}")
+					continue
+				fi
+			fi
 			stage "Process Exit"
-			log "[start-all] ${LABELS[$i]} exited with code ${exit_code}"
+			log "[start-all] ${label} exited with code ${exit_code}"
 			stop_bg_jobs
 			exit "$exit_code"
 		fi

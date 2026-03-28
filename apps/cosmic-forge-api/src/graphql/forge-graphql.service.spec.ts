@@ -224,6 +224,74 @@ test("ForgeWorkbenchBootstrap includes ESASky as a planned survey source", async
   assert.equal(esasky.previewReady, false);
 });
 
+test("ForgeWorkbenchBootstrap includes additional live SkyView-derived survey presets", async () => {
+  const graphqlService = createGraphqlService();
+  const result = await graphqlService.execute({
+    operationName: "ForgeWorkbenchBootstrap",
+    variables: {},
+  });
+
+  assert.equal(result.status, 200);
+  const payload = result.body as {
+    data: {
+      surveys: Array<{
+        id: string;
+        name: string;
+        providerName: string;
+        waveband: string;
+        previewReady: boolean;
+      }>;
+    };
+  };
+
+  const dss2 = payload.data.surveys.find((survey) => survey.id === "dss2");
+  const first = payload.data.surveys.find((survey) => survey.id === "first");
+  const twoMassJ = payload.data.surveys.find((survey) => survey.id === "2mass-j-preview");
+
+  assert.ok(dss2);
+  assert.equal(dss2.providerName, "NASA GSFC SkyView");
+  assert.equal(dss2.previewReady, true);
+  assert.equal(dss2.waveband, "optical");
+
+  assert.ok(first);
+  assert.equal(first.providerName, "NASA GSFC SkyView");
+  assert.equal(first.previewReady, true);
+  assert.equal(first.waveband, "radio");
+
+  assert.ok(twoMassJ);
+  assert.equal(twoMassJ.providerName, "NASA GSFC SkyView");
+  assert.equal(twoMassJ.previewReady, true);
+  assert.equal(twoMassJ.waveband, "infrared");
+});
+
+test("ForgeWorkbenchBootstrap includes Pan-STARRS as a live archive-native adapter", async () => {
+  const graphqlService = createGraphqlService();
+  const result = await graphqlService.execute({
+    operationName: "ForgeWorkbenchBootstrap",
+    variables: {},
+  });
+
+  assert.equal(result.status, 200);
+  const payload = result.body as {
+    data: {
+      surveys: Array<{
+        id: string;
+        name: string;
+        providerName: string;
+        supportsFits: boolean;
+        previewReady: boolean;
+      }>;
+    };
+  };
+
+  const panstarrs = payload.data.surveys.find((survey) => survey.id === "panstarrs");
+  assert.ok(panstarrs);
+  assert.equal(panstarrs.name, "Pan-STARRS");
+  assert.equal(panstarrs.providerName, "MAST / STScI");
+  assert.equal(panstarrs.supportsFits, true);
+  assert.equal(panstarrs.previewReady, true);
+});
+
 test("CreateCutoutJob returns a normalized AllWISE request scaffold", async () => {
   const graphqlService = createGraphqlService();
   const result = await graphqlService.execute({
@@ -310,6 +378,48 @@ test("CreateCutoutJob returns a normalized SkyView derived-preview request scaff
   assert.deepEqual(request.bands, ["DSS2 Red"]);
   assert.match(request.discoveryUrl || "", /skyview\.gsfc\.nasa\.gov/);
   assert.equal(request.fitsCutoutUrl, null);
+});
+
+test("CreateCutoutJob returns a normalized DSS2 SkyView request scaffold", async () => {
+  const graphqlService = createGraphqlService();
+  const result = await graphqlService.execute({
+    operationName: "CreateCutoutJob",
+    variables: {
+      input: {
+        requestedBy: "test-user",
+        targetName: "Horsehead",
+        ra: 85.18975,
+        dec: -2.42859,
+        radiusArcmin: 12,
+        surveyIds: ["dss2"],
+      },
+    },
+  });
+
+  assert.equal(result.status, 200);
+  const payload = result.body as {
+    data: {
+      createCutoutJob: {
+        request: {
+          providerAdapter: string;
+          missionFamily: string | null;
+          collection: string | null;
+          layer: string | null;
+          bands: string[];
+          discoveryUrl: string | null;
+        } | null;
+      };
+    };
+  };
+
+  const request = payload.data.createCutoutJob.request;
+  assert.ok(request);
+  assert.equal(request.providerAdapter, "skyview-derived-preview");
+  assert.equal(request.missionFamily, "dss2");
+  assert.equal(request.collection, "skyview/dss2/derived-preview");
+  assert.equal(request.layer, "DSS2 Red");
+  assert.deepEqual(request.bands, ["DSS2 Red"]);
+  assert.match(request.discoveryUrl || "", /Survey=DSS2\+Red/);
 });
 
 test("ForgeJobById resolves a single job through the contract document set", async () => {

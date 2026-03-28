@@ -23,7 +23,7 @@ The bounded-track assumptions are:
 - Angular + NgRx for frontend state orchestration
 - GraphQL for Forge-specific orchestration and result delivery
 - NestJS + TypeScript for current API and worker orchestration
-- optional later C++ acceleration for image-processing hotspots
+- a live Go FITS prerenderer for image-processing hotspots, with room for later heavier native acceleration only if justified
 - a Forge-specific Docker environment that can run alongside the existing `docker/dev-compose.yml`
 - local secret/config loading from the repository root `.env`
 
@@ -66,9 +66,10 @@ Reader guide:
 
 PI execution state:
 
-- the Forge branch now ships a bounded `/forge` workbench with live `Legacy Surveys`, `AllWISE`, and `SkyView` adapter paths
-- bounded worker execution, persisted local state, diagnostics, retry/cancel, caching, and composite preview generation are implemented
-- the remaining items are explicitly post-PI and are tracked in [HANDOFF_NOTE.md](./HANDOFF_NOTE.md) and the deferred section of [PI_EXECUTION_PLAN.md](./PI_EXECUTION_PLAN.md)
+- the Forge branch now ships a bounded `/forge` workbench with live `Legacy Surveys`, `AllWISE`, `Pan-STARRS`, and multiple `SkyView`-derived adapter paths
+- additional live SkyView-derived presets now include `DSS2 Preview`, `FIRST Preview`, and `2MASS J/H/K Preview`
+- bounded worker execution, persisted local state, diagnostics, retry/cancel, caching, composite preview generation, FITS prerendering, and viewer handoff are implemented
+- the remaining post-PI items are explicitly limited to GraphQL subscription transport and broker-backed scaling, and are tracked in [HANDOFF_NOTE.md](./HANDOFF_NOTE.md) and the deferred section of [PI_EXECUTION_PLAN.md](./PI_EXECUTION_PLAN.md)
 
 Normal verification workflows:
 

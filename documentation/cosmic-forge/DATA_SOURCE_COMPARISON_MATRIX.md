@@ -6,7 +6,7 @@ Alignment anchors
 - Product scope: [./PRODUCT_BLUEPRINT.md](./PRODUCT_BLUEPRINT.md)
 - Public-data readiness: [./PUBLIC_DATA_READINESS.md](./PUBLIC_DATA_READINESS.md)
 
-Status: `planned`
+Status: `implemented_and_curated`
 
 ## Purpose
 
@@ -64,11 +64,16 @@ This gives Forge one optical-forward source and one broader archive/API-oriented
 
 These are useful for preview/discovery/comparison workflows, but they should not displace a stronger archive-native first adapter.
 
+Current branch note:
+
+- `SkyView` is now live not only as a generic comparison path, but also as a small family of named derived-preview presets in Forge, including `DSS2 Preview`, `FIRST Preview`, and `2MASS J/H/K Preview`
+- those live additions improve operator coverage, but they should still be interpreted as `SkyView-generated quick-look products`, not archive-native cutouts from the underlying surveys
+
 ### Follow-on optical source
 
 - `Pan-STARRS / STScI`
 
-This is a good follow-on source after the first optical adapter is stable.
+This is a good follow-on source after the first optical adapter is stable. The current branch now includes that source as a live archive-native comparison adapter.
 
 ## Recommended source roles in Cosmic Forge
 
@@ -136,7 +141,7 @@ Recommended posture:
 - follow-on optical source
 - validation/comparison path versus Legacy Surveys
 - additional archive-backed cutout coverage
-- post-PI optical extension rather than a first-wave replacement for Legacy
+- now live in the current branch as a comparison adapter rather than a Legacy replacement
 
 Official references:
 

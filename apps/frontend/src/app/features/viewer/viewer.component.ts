@@ -13,6 +13,7 @@ import {
   NgZone,
   inject,
 } from "@angular/core";
+import { ActivatedRoute } from "@angular/router";
 import { SidebarService } from "../../base/sidebar/sidebar.service";
 import { BrowserPlatformService } from "../../services/browser-platform.service";
 import {
@@ -75,6 +76,7 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
   private sidebarService = inject(SidebarService);
+  private route = inject(ActivatedRoute);
 
   @ViewChild("aladinContainer", { static: true })
   containerRef!: ElementRef<HTMLElement>;
@@ -121,6 +123,7 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    this.applyRouteOverrides();
     this.initViewer()
       .pipe(
         catchError((err) => {
@@ -175,6 +178,32 @@ export class ViewerComponent implements AfterViewInit, OnDestroy {
           }
         );
       });
+  }
+
+  private applyRouteOverrides(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const target = params.get("target");
+    const survey = params.get("survey");
+    const fov = params.get("fov");
+    const ra = params.get("ra");
+    const dec = params.get("dec");
+
+    if (target) {
+      this.target = target;
+    }
+
+    if (survey) {
+      this.survey = survey;
+    }
+
+    const parsedFov = Number(fov);
+    if (Number.isFinite(parsedFov) && parsedFov > 0) {
+      this.fov = parsedFov;
+    }
+
+    if (ra && dec) {
+      this.target = `${ra}, ${dec}`;
+    }
   }
 
   ngOnDestroy(): void {

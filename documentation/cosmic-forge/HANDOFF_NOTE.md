@@ -17,16 +17,17 @@ The Forge branch is now a bounded, demonstrable PI deliverable with:
 - SSR-scoped `/api/forge/*` routing
 - a typed Forge API and worker
 - persisted local queue state
-- live adapter paths for `Legacy Surveys`, `AllWISE`, and `SkyView`
-- composite previews, diagnostics, retry/cancel, caching, and provenance
+- live adapter paths for `Legacy Surveys`, `AllWISE`, `Pan-STARRS`, and multiple `SkyView`-derived presets
+- composite previews, diagnostics, retry/cancel, caching, provenance, FITS prerendering, and viewer handoff
 
 ## What remains post-PI
 
 - move persistence from the current file-backed repository to PostgreSQL
 - add GraphQL subscriptions if polling/read-refresh becomes insufficient
-- add live ESASky and Pan-STARRS adapters if the PI expands
+- add a live ESASky preview/discovery adapter if the PI expands
+- add archive-native `IRSA / 2MASS` if the product needs a non-derived 2MASS path beyond the current SkyView quick-look presets
 - add stronger artifact/rendering refinement for more advanced visualization workflows
-- consider native acceleration only for proven rendering/processing hotspots
+- add broker-backed scaling only if the bounded worker runtime demonstrably becomes the bottleneck
 
 ## Deliberate non-goals of this PI
 
@@ -40,7 +41,7 @@ The Forge branch is now a bounded, demonstrable PI deliverable with:
 1. PostgreSQL-backed repository implementation behind the current state seam.
 2. Subscription-capable GraphQL updates without contract churn.
 3. ESASky preview adapter if discovery breadth is the next product priority.
-4. Pan-STARRS archive-native comparison adapter after Legacy/IRSA stability remains strong.
+4. Archive-native `IRSA / 2MASS` or broker-backed scaling, depending on whether product breadth or runtime pressure is the next constraint.
 
 ## Review guidance
 

@@ -14,7 +14,7 @@ Cosmic Forge has the characteristics that justify NgRx rather than ad hoc compon
 
 - long-running async job lifecycles
 - multiple related entity collections
-- subscription-driven updates
+- refresh-driven updates now, with subscription-ready seams preserved
 - retry and cancel flows
 - image/result provenance relationships
 - viewer/layer state that must stay coherent while data changes

@@ -64,6 +64,8 @@ test-results/
 
 # Ignore Nx workspace runtime data (local, not for VCS)
 .nx/workspace-data/
+tmp/cosmic-forge-state/
+tmp/cosmic-forge-artifacts/
 
 .claude/worktrees
 .claude/settings.local.json

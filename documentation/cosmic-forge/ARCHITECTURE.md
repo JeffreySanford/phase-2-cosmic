@@ -80,8 +80,8 @@ flowchart LR
   Adapters --> Proc[Preview/composite processing]
   Proc --> Store[Artifact and metadata storage]
   Store --> GQL
-  Queue --> Subs[GraphQL subscriptions]
-  Subs --> UI
+  Queue --> ReadModel[GraphQL bootstrap and refresh read model]
+  ReadModel --> UI
 ```
 
 ## Domain model
@@ -155,7 +155,7 @@ The current implementation uses an explicit internal worker seam:
 
 GraphQL subscriptions remain the intended long-term model for progress and result updates.
 
-For the first PI, polling is acceptable if it helps complete the first end-to-end vertical slice faster.
+For the current PI, the implemented runtime stays on GraphQL bootstrap plus timed refresh because that path is stable, tested, and sufficient for the bounded workbench.
 
 But the architecture should preserve a subscription-ready shape:
 
