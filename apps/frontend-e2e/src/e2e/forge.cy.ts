@@ -111,7 +111,7 @@ describe("forge workbench", () => {
                 supportsFits: true,
                 supportsCutout: true,
                 supportsPreview: true,
-                previewReady: false,
+                previewReady: true,
                 citationUrl: "https://irsa.ipac.caltech.edu/Missions/wise.html",
               },
             ],
@@ -294,7 +294,8 @@ describe("forge workbench", () => {
     cy.contains("GraphQL bootstrap").parent().contains("graph ready: yes");
     cy.contains("h3", "My jobs").closest("section").contains("M87 · cutout");
 
-    cy.contains("button", "Create cutout job").click();
+    cy.contains("button.forge-chip", "AllWISE").click();
+    cy.contains("button", "Create cutout job").should("not.be.disabled").click();
 
     cy.wait("@forgeGraphql")
       .its("request.body.operationName")

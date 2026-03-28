@@ -57,7 +57,7 @@ export const forgeSurveys: ForgeSurvey[] = [
     supportsFits: true,
     supportsCutout: true,
     supportsPreview: true,
-    previewReady: false,
+    previewReady: true,
     citationUrl: IRSA_CITATION_URL,
   },
   {
@@ -100,7 +100,7 @@ export const forgeSurveyAdapters: Record<string, ForgeSurveyAdapter> = {
   [IRSA_ALLWISE_SURVEY_ID]: irsaAllwiseSurveyAdapter,
 };
 
-const previewProviderPriority = [LEGACY_SURVEYS_ID];
+const previewProviderPriority = [LEGACY_SURVEYS_ID, IRSA_ALLWISE_SURVEY_ID];
 
 function getPreviewSurveyId(job: ForgeJob): string | null {
   for (const surveyId of previewProviderPriority) {

@@ -1,0 +1,398 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.forge {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding-bottom: calc(var(--app-footer-height, 48px) + 1rem);
+}
+
+.forge__hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(11, 26, 44, 0.95), rgba(26, 59, 87, 0.9));
+  color: #f3f8fd;
+}
+
+.forge__eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+.forge__hero h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.forge__lede {
+  max-width: 48rem;
+  margin: 0.75rem 0 0;
+  color: rgba(243, 248, 253, 0.88);
+}
+
+.forge__refresh {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.8rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #0b1a2c;
+  background: #ffd16e;
+  cursor: pointer;
+}
+
+.forge__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+
+.forge-card--wide {
+  grid-column: 1 / -1;
+}
+
+.forge-card {
+  padding: 1.25rem;
+  border: 1px solid rgba(16, 42, 67, 0.12);
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.forge-card h2 {
+  margin-top: 0;
+}
+
+.forge-card ul {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.forge-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.9rem;
+}
+
+.forge-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.forge-form input {
+  border: 1px solid rgba(16, 42, 67, 0.18);
+  border-radius: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  font: inherit;
+}
+
+.forge-surveys {
+  margin-top: 1rem;
+}
+
+.forge-surveys h3,
+.forge-panel__header h3 {
+  margin: 0 0 0.75rem;
+}
+
+.forge-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.forge-chip-row--summary {
+  margin: 0.75rem 0 1rem;
+}
+
+.forge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 42, 67, 0.16);
+  background: #f4f7fb;
+  color: #27415a;
+  font-weight: 600;
+  font: inherit;
+  cursor: pointer;
+}
+
+.forge-chip--selected {
+  background: #dff3ff;
+  border-color: #78c0e0;
+  color: #0d4f6b;
+}
+
+.forge-chip--planned {
+  background: #f8f5ee;
+  color: #7c6945;
+  border-color: rgba(124, 105, 69, 0.2);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.forge-chip:disabled {
+  pointer-events: none;
+}
+
+.forge-chip__meta {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.78;
+}
+
+.forge-health {
+  display: inline-block;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  background: #e7f8ef;
+  color: #165b33;
+}
+
+.forge-health[data-state="ok"] {
+  background: #e7f8ef;
+  color: #165b33;
+}
+
+.forge-health__value {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.forge-health__meta,
+.forge-health__error {
+  margin: 0.5rem 0 0;
+}
+
+.forge-health__error {
+  color: #9f1239;
+}
+
+.forge-graphql {
+  padding: 0.9rem 1rem;
+  border-radius: 0.85rem;
+  background: #f8f3e8;
+  color: #6b4e16;
+}
+
+.forge-graphql__title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.forge-graphql__meta {
+  opacity: 0.8;
+}
+
+.forge-shell-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 1rem;
+}
+
+.forge-panel {
+  border: 1px solid rgba(16, 42, 67, 0.1);
+  border-radius: 0.9rem;
+  padding: 1rem;
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.96), #ffffff);
+}
+
+.forge-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.forge-panel__badge,
+.forge-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: #e7eef5;
+  color: #27415a;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.forge-queue {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.forge-queue__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 0.9rem 1rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(16, 42, 67, 0.12);
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.forge-queue__item:hover {
+  border-color: rgba(13, 79, 107, 0.35);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.forge-queue__item--selected {
+  border-color: #0d4f6b;
+  box-shadow: 0 0 0 2px rgba(13, 79, 107, 0.14);
+  transform: translateY(-1px);
+}
+
+.forge-queue__item h4,
+.forge-queue__item p {
+  margin: 0;
+}
+
+.forge-queue__item p {
+  margin-top: 0.35rem;
+  color: #516579;
+}
+
+.forge-queue__availability {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.forge-queue__actions {
+  display: grid;
+  justify-items: end;
+  gap: 0.45rem;
+}
+
+.forge-queue__item[data-state="ready"] .forge-status {
+  background: #e7f8ef;
+  color: #165b33;
+}
+
+.forge-queue__item[data-state="queued"] .forge-status {
+  background: #fff3d6;
+  color: #8a5b00;
+}
+
+.forge-queue__item[data-state="running"] .forge-status {
+  background: #dff3ff;
+  color: #0d4f6b;
+}
+
+.forge-queue__item[data-state="completed"] .forge-status {
+  background: #e7f8ef;
+  color: #165b33;
+}
+
+.forge-queue__item[data-state="cancelled"] .forge-status,
+.forge-queue__item[data-state="failed"] .forge-status {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.forge-link-button {
+  border: 0;
+  background: transparent;
+  color: #0d4f6b;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.forge-link-button:hover {
+  text-decoration: underline;
+}
+
+.forge-queue__item[data-state="waiting"] .forge-status {
+  background: #fff3d6;
+  color: #8a5b00;
+}
+
+.forge-results {
+  display: grid;
+  gap: 1rem;
+}
+
+.forge-results__preview {
+  min-height: 12rem;
+  border-radius: 1rem;
+  border: 1px dashed rgba(16, 42, 67, 0.24);
+  background:
+    radial-gradient(circle at top left, rgba(120, 192, 224, 0.22), transparent 40%),
+    linear-gradient(135deg, #09131d, #13283b 60%, #214b63);
+  color: #f4fbff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.9rem;
+}
+
+.forge-results__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 12rem;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+
+.forge-results__preview span {
+  display: block;
+  max-width: 20rem;
+  text-align: center;
+}
+
+.forge-results__meta p {
+  margin: 0.35rem 0;
+}
+
+.forge-results__artifact-actions {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+@media (max-width: 720px) {
+  .forge__hero {
+    flex-direction: column;
+  }
+
+  .forge__hero h1 {
+    font-size: 1.6rem;
+  }
+}

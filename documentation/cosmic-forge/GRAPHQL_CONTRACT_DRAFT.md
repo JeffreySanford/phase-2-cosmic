@@ -4,30 +4,38 @@ Alignment anchors
 
 - Product scope: [./PRODUCT_BLUEPRINT.md](./PRODUCT_BLUEPRINT.md)
 - Architecture: [./ARCHITECTURE.md](./ARCHITECTURE.md)
+- Persistence plan: [./PERSISTENCE_PLAN.md](./PERSISTENCE_PLAN.md)
 - Current jobs/frontend reality: [../frontend/features/JOBS.md](../frontend/features/JOBS.md)
 
-Status: `planned`
+Status: `in_progress`
 
-This document is a branch-scoped draft contract for Cosmic Forge. It is not current production API truth for the repository.
+This document is the branch-scoped GraphQL contract draft for Cosmic Forge. It is aligned to the implemented Forge API shape and calls out the remaining contract gaps explicitly.
 
-## Query surface
+## Current query surface
 
+- `serviceInfo(operationName: String)`
 - `surveys`
 - `jobs`
-- `job(id: ID!)`
-- `imageProductsByJob(jobId: ID!)`
-- `targetResolution(input: TargetResolutionInput!)`
-- `provenanceByImage(imageId: ID!)`
+- `imageProducts`
 
-## Mutation surface
+## Current mutation surface
 
 - `createCutoutJob`
-- `createCompositeJob`
 - `cancelJob`
 - `retryJob`
 - `cacheImageArtifact`
 
-## Subscription surface
+## Planned next query surface
+
+- `job(id: ID!)`
+- `imageProductsByJob(jobId: ID!)`
+- `provenanceByImage(imageId: ID!)`
+
+## Planned next mutation surface
+
+- `createCompositeJob`
+
+## Planned subscription surface
 
 - `jobUpdated`
 - `jobProgressed`
@@ -44,98 +52,115 @@ enum JobStatus {
   CANCELLED
 }
 
+type ForgeServiceInfo {
+  name: String!
+  status: String!
+  operationName: String
+  graphReady: Boolean!
+}
+
 type Survey {
   id: ID!
   name: String!
+  providerName: String!
   waveband: String
   supportsFits: Boolean!
   supportsCutout: Boolean!
   supportsPreview: Boolean!
+  previewReady: Boolean!
   citationUrl: String
-}
-
-type Target {
-  id: ID!
-  displayName: String!
-  ra: Float!
-  dec: Float!
-  radiusArcmin: Float
 }
 
 type Job {
   id: ID!
   type: String!
   status: JobStatus!
-  progressPercent: Float
-  targetId: ID
+  progressPercent: Int!
+  requestedBy: String!
+  targetName: String!
+  ra: Float!
+  dec: Float!
+  radiusArcmin: Float!
   requestedSurveyIds: [ID!]!
   resultImageIds: [ID!]!
   errorMessage: String
+  request: CutoutRequest
   createdAt: String!
   updatedAt: String!
+}
+
+type CutoutRequest {
+  providerAdapter: String!
+  sourceService: String!
+  missionFamily: String
+  collection: String
+  layer: String
+  bands: [String!]!
+  ra: Float!
+  dec: Float!
+  radiusArcmin: Float!
+  pixscale: Float
+  size: Int!
+  width: Int!
+  height: Int!
+  outputFormat: String
+  retrievalPathType: String
+  discoveryUrl: String
+  jpegCutoutUrl: String
+  fitsCutoutUrl: String
 }
 
 type ImageProduct {
   id: ID!
   jobId: ID!
   surveyId: ID!
+  providerName: String!
   artifactMode: String!
   format: String!
-  previewPath: String
-  authoritativeUrl: String
-  accessedAt: String
+  previewUrl: String!
+  fitsUrl: String
+  authoritativeUrl: String!
+  accessedAt: String!
   cacheKey: String
   cacheStatus: String!
-  wcsSummary: String
-  width: Int
-  height: Int
-  pixelScale: Float
-  provenance: ProvenanceRecord
+  provenance: ProvenanceRecord!
+  createdAt: String!
 }
 
 type ProvenanceRecord {
-  id: ID!
   sourceSurvey: String!
   providerName: String!
-  citationUrl: String
-  authoritativeUrl: String
-  accessedAt: String
+  citationUrl: String!
+  authoritativeUrl: String!
+  accessedAt: String!
   transformChain: [String!]!
   artifactMode: String!
+  missionFamily: String
+  collection: String
+  retrievalPathType: String
+  outputFormat: String
+  citationReference: String
+  datasetDoi: String
+  layer: String
+  bandSet: [String!]!
+  ra: Float!
+  dec: Float!
+  pixscale: Float
+  size: Int!
+  width: Int!
+  height: Int!
 }
 ```
-
-## Current implementation note
-
-The current Forge branch uses external-source image products first:
-
-- `artifactMode` is currently `external`
-- `cacheStatus` is currently `external-only`
-- preview and FITS links point at the provider directly
-
-The next cache-retention slice adds:
-
-- `cacheImageArtifact(imageId: ID!)`
-- `artifactMode: cached`
-- `cacheStatus: cached`
-- retained preview and FITS artifacts served back through Forge routes
-- later object-store-backed retention replacing the local placeholder cache
 
 ## Inputs
 
 ```graphql
-input TargetResolutionInput {
-  targetName: String
-  ra: Float
-  dec: Float
-  radiusArcmin: Float
-}
-
 input CreateCutoutJobInput {
-  targetName: String
-  ra: Float
-  dec: Float
-  radiusArcmin: Float
+  requestedBy: String!
+  targetName: String!
+  ra: Float!
+  dec: Float!
+  radiusArcmin: Float!
   surveyIds: [ID!]!
 }
 
@@ -144,6 +169,21 @@ input CreateCompositeJobInput {
   compositeMode: String!
 }
 ```
+
+## Current implementation note
+
+The current Forge branch now has two live adapter-backed paths:
+
+- `Legacy Surveys / NOIRLab`
+- `IRSA AllWISE`
+
+Current behavior:
+
+- preview and FITS artifacts can be served back through Forge artifact routes
+- `artifactMode` may be `external` or `cached`
+- `cacheStatus` may be `external-only` or `cached`
+- the API currently serves queue state from an in-memory store
+- durable persistence is the next contract-preserving implementation step
 
 ## Adapter-facing contract assumptions
 
@@ -155,3 +195,10 @@ The GraphQL layer assumes worker-side adapter functions can provide:
 - `buildPreview`
 
 The API should not leak provider-specific wire formats directly into the UI.
+
+## Remaining gaps to close
+
+- align error payloads so GraphQL failures include normalized Forge error codes
+- add targeted queries by `jobId` and `imageId`
+- define the subscription payloads without changing the current bootstrap/mutation shapes
+- move the backing store from in-memory state to durable persistence without contract churn

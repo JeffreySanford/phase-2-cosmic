@@ -13,7 +13,7 @@ Alignment anchors
 - IRSA implementation notes: [./IRSA_IMPLEMENTATION_NOTES.md](./IRSA_IMPLEMENTATION_NOTES.md)
 - Sprint 5 implementation notes: [./SPRINT_5_IMPLEMENTATION_NOTES.md](./SPRINT_5_IMPLEMENTATION_NOTES.md)
 
-Status: `planned`
+Status: `in_progress`
 
 ## Purpose
 
@@ -42,21 +42,21 @@ By the end of this PI, Cosmic Forge should be a credible bounded-track product b
 
 - [x] Forge runtime starts via its own side-by-side Docker environment.
 - [x] `/api/forge/health` and `/api/forge/graphql` work through the SSR shim.
-- [ ] A user can submit a real cutout job and watch it progress to completion.
-- [ ] At least one real survey-backed preview artifact is produced and viewable in `/forge`.
-- [ ] Provenance and source attribution are retained with each result.
-- [ ] Retry and cancel flows work for the operator-facing queue.
-- [ ] Core unit/integration/e2e tests exist for the main Forge path.
-- [ ] The Forge docs set reflects the implemented runtime rather than a future-only design.
+- [x] A user can submit a real cutout job and watch it progress to completion.
+- [x] At least one real survey-backed preview artifact is produced and viewable in `/forge`.
+- [x] Provenance and source attribution are retained with each result.
+- [x] Retry and cancel flows work for the operator-facing queue.
+- [x] Core unit/integration/e2e tests exist for the main Forge path.
+- [x] The Forge docs set reflects the implemented runtime rather than a future-only design.
 
 ## Working rules
 
 - [x] Keep Forge bounded to the branch-scoped `/forge` and `/api/forge/*` surface.
 - [x] Do not merge Forge semantics into the repo-wide governance API surface.
 - [x] Do not require Kafka, RabbitMQ, or Pulsar for Forge v1 unless a later sprint explicitly proves that dependency is necessary.
-- [ ] Keep provenance mandatory, not optional polish.
+- [x] Keep provenance mandatory, not optional polish.
 - [ ] Prefer one complete vertical slice over multiple half-finished subsystems.
-- [ ] Keep the frontend queue model NgRx-first: Entity-backed collection state, effect-owned orchestration, and explicit job lifecycle transitions.
+- [x] Keep the frontend queue model NgRx-first: Entity-backed collection state, effect-owned orchestration, and explicit job lifecycle transitions.
 
 ## External Agency And Archive Inputs
 
@@ -269,7 +269,7 @@ Goal: make Forge a first-class but isolated UI route in the existing frontend sh
 - [ ] Add clear error handling for Forge API unavailable, GraphQL unavailable, and artifact unavailable states.
 - [ ] Make the Forge shell render cleanly when the API is offline.
 - [x] Add or update unit tests for Forge route/module loading and SSR proxy behavior.
-- [ ] Add one e2e smoke path for opening `/forge` successfully.
+- [x] Add one e2e smoke path for opening `/forge` successfully.
 
 Sprint 2 done when:
 
@@ -281,15 +281,15 @@ Sprint 2 done when:
 Goal: replace placeholder health-only behavior with a stable Forge read/write contract.
 
 - [ ] Align implementation with `GRAPHQL_CONTRACT_DRAFT.md`.
-- [ ] Finalize bootstrap query shape for service info, surveys, jobs, and image products.
-- [ ] Implement create job mutation.
-- [ ] Implement cancel job mutation.
-- [ ] Implement retry job mutation.
-- [ ] Implement cache artifact mutation.
+- [x] Finalize bootstrap query shape for service info, surveys, jobs, and image products.
+- [x] Implement create job mutation.
+- [x] Implement cancel job mutation.
+- [x] Implement retry job mutation.
+- [x] Implement cache artifact mutation.
 - [ ] Normalize API error payloads for queue, provider, and artifact failures.
 - [ ] Define the minimal persistence/read model for jobs, results, and provenance.
 - [ ] Add contract tests around the GraphQL document set.
-- [ ] Update docs if any field names or semantics changed during implementation.
+- [x] Update docs if any field names or semantics changed during implementation.
 
 Sprint 3 done when:
 
@@ -324,20 +324,20 @@ Working implementation reference:
 
 - [x] Choose the first real public survey adapter from the source-selection gate above and lock that choice in docs.
   Decision locked: `Legacy Surveys / NOIRLab`
-- [ ] Record the first-adapter rationale and second-adapter sequence in sprint tracking and implementation notes.
-- [ ] Implement adapter abstraction boundaries for availability, retrieval, metadata, and preview generation.
-- [ ] Implement one mock adapter for deterministic testing.
-- [ ] Implement one real public-data adapter for `Legacy Surveys / NOIRLab`.
-- [ ] Capture authoritative source URL, access time, provider metadata, survey/layer selection, and cutout geometry in provenance.
-- [ ] Prepare the adapter seam so `IRSA` can be added next without contract churn.
+- [x] Record the first-adapter rationale and second-adapter sequence in sprint tracking and implementation notes.
+- [x] Implement adapter abstraction boundaries for availability, retrieval, metadata, and preview generation.
+- [x] Implement one mock adapter for deterministic testing.
+- [x] Implement one real public-data adapter for `Legacy Surveys / NOIRLab`.
+- [x] Capture authoritative source URL, access time, provider metadata, survey/layer selection, and cutout geometry in provenance.
+- [x] Prepare the adapter seam so `IRSA` can be added next without contract churn.
 - [ ] Add adapter-specific error handling for upstream outages, bad responses, and unsupported requests.
-- [ ] Produce one real preview artifact and one linked FITS/download path where applicable.
-- [ ] Add tests for adapter translation and provenance population.
+- [x] Produce one real preview artifact and one linked FITS/download path where applicable.
+- [x] Add tests for adapter translation and provenance population.
 - [ ] Update `PUBLIC_DATA_READINESS.md` if any provider assumptions changed.
 
 Sprint 5 done when:
 
-- [ ] A real public-survey-backed preview artifact can be created through the Forge flow.
+- [x] A real public-survey-backed preview artifact can be created through the Forge flow.
 
 ## Sprint 6 - Workbench UX And Result Inspection
 

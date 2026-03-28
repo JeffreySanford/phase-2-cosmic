@@ -44,7 +44,8 @@ Reader guide:
 - [SPRINT_5_IMPLEMENTATION_NOTES.md](./SPRINT_5_IMPLEMENTATION_NOTES.md): concrete engineering notes for the first real Legacy Surveys-backed adapter slice
 - [PRODUCT_BLUEPRINT.md](./PRODUCT_BLUEPRINT.md): product scope, users, MVP, non-goals
 - [ARCHITECTURE.md](./ARCHITECTURE.md): system shape and Mermaid diagrams
-- [GRAPHQL_CONTRACT_DRAFT.md](./GRAPHQL_CONTRACT_DRAFT.md): branch-scoped GraphQL draft
+- [GRAPHQL_CONTRACT_DRAFT.md](./GRAPHQL_CONTRACT_DRAFT.md): branch-scoped GraphQL contract aligned to the current Forge API shape
+- [PERSISTENCE_PLAN.md](./PERSISTENCE_PLAN.md): first durable storage model for jobs, requests, results, provenance, and queue events
 - [NGRX_STATE_BLUEPRINT.md](./NGRX_STATE_BLUEPRINT.md): frontend state model
 - [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md): vertical slices, Docker environment, acceptance gates
 - [PI_EXECUTION_PLAN.md](./PI_EXECUTION_PLAN.md): sprint-by-sprint PI checklist with individual execution steps
