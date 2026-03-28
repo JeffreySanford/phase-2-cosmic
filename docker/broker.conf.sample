@@ -1,0 +1,11 @@
+# Pulsar broker configuration sample
+# clusterName should match the value in your .env file.
+clusterName=pulsar-cluster
+# ...other broker settings can be added here...
+metadataStoreUrl=zk:zookeeper:2181
+configurationStoreUrl=zookeeper:2181
+advertisedAddress=pulsar
+bookkeeperMetadataServiceUri=zk+hierarchical://zookeeper:2181/ledgers
+managedLedgerDefaultEnsembleSize=1
+managedLedgerDefaultWriteQuorum=1
+managedLedgerDefaultAckQuorum=1

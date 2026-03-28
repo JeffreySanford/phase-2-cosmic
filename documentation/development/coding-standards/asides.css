@@ -1,0 +1,14 @@
+/* Styles for <aside> callouts in coding-standards documents */
+
+aside {
+  border-left: 4px solid #007acc;
+  padding: 0.75em 1em;
+  background-color: #f6f8fa;
+  margin: 1em 0;
+  color: #333;
+  font-size: 0.95em;
+}
+
+aside > strong {
+  font-weight: 600;
+}

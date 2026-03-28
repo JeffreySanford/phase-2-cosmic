@@ -1,0 +1,20 @@
+{
+  "name": "telemetry-sidebar",
+  "version": "0.1.0",
+  "description": "A generic sidecar that emits real-time message emit/receive events for RabbitMQ/Kafka/Pulsar.",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
+  },
+  "dependencies": {
+    "ws": "^8.13.0",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
+  }
+}

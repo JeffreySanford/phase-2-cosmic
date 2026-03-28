@@ -1,0 +1,99 @@
+/* styles for infra-tabs component, migrated from telemetry.component.scss */
+.infra-telemetry {
+  margin-top: 16px;
+}
+
+.infra-card__metric {
+  color: var(--tele-text);
+  font-size: 0.86rem;
+  margin-bottom: 6px;
+}
+
+.infra-telemetry__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.infra-tabs {
+  margin-top: 4px;
+}
+
+.infra-tab-copy {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 0 14px;
+}
+
+.infra-tab-copy h4 {
+  margin: 0;
+  color: var(--tele-accent-2);
+  font-size: 0.98rem;
+}
+
+.infra-tab-copy p {
+  margin: 4px 0 0;
+  color: var(--tele-muted);
+}
+
+.infra-tab-copy--governance {
+  padding: 2px 2px 0;
+}
+
+.infra-telemetry__header h3 {
+  margin: 0;
+  color: var(--tele-accent-2);
+}
+
+.infra-telemetry__header p {
+  margin: 4px 0 0;
+}
+
+.infra-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.runtime-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.infra-card {
+  background: linear-gradient(
+    180deg,
+    rgba(15, 30, 60, 0.88),
+    rgba(9, 20, 43, 0.96)
+  );
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 22px rgba(2, 8, 23, 0.28);
+}
+
+.runtime-card {
+  min-height: 0;
+}
+
+.executor-card {
+  border-color: rgba(129, 140, 248, 0.28);
+}
+
+.infra-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.infra-card__title {
+  color: var(--tele-accent-2);
+  font-weight: 700;
+}
