@@ -3,6 +3,8 @@ describe("forge workbench", () => {
     const transparentPngBase64 =
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aF9sAAAAASUVORK5CYII=";
     let includeCreatedJobInBootstrap = false;
+    let createdJobStatus: "QUEUED" | "CANCELLED" = "QUEUED";
+    let includeRetriedJobInBootstrap = false;
 
     cy.intercept("GET", "/api/forge/artifacts/*/preview", {
       statusCode: 200,
@@ -26,6 +28,7 @@ describe("forge workbench", () => {
       if (operationName === "CreateCutoutJob") {
         req.alias = "forgeCreateCutoutJob";
         includeCreatedJobInBootstrap = true;
+        createdJobStatus = "QUEUED";
         req.reply({
           statusCode: 200,
           body: {
@@ -67,6 +70,66 @@ describe("forge workbench", () => {
                 },
                 createdAt: "2026-03-27T20:30:00.000Z",
                 updatedAt: "2026-03-27T20:30:00.000Z",
+              },
+            },
+          },
+        });
+        return;
+      }
+
+      if (operationName === "CancelJob") {
+        req.alias = "forgeCancelJob";
+        createdJobStatus = "CANCELLED";
+        req.reply({
+          statusCode: 200,
+          body: {
+            data: {
+              job: {
+                id: "forge-job-99",
+                type: "cutout",
+                status: "CANCELLED",
+                progressPercent: 0,
+                requestedBy: "jeffreysanford",
+                targetName: "M87",
+                ra: 187.70593,
+                dec: 12.39112,
+                radiusArcmin: 15,
+                requestedSurveyIds: ["allwise"],
+                resultImageIds: [],
+                errorCode: null,
+                errorMessage: "Cancellation requested by operator. Worker will not publish completion artifacts.",
+                createdAt: "2026-03-27T20:30:00.000Z",
+                updatedAt: "2026-03-27T20:31:00.000Z",
+              },
+            },
+          },
+        });
+        return;
+      }
+
+      if (operationName === "RetryJob") {
+        req.alias = "forgeRetryJob";
+        includeRetriedJobInBootstrap = true;
+        req.reply({
+          statusCode: 200,
+          body: {
+            data: {
+              job: {
+                id: "forge-job-77",
+                type: "cutout",
+                status: "QUEUED",
+                progressPercent: 0,
+                requestedBy: "jeffreysanford",
+                targetName: "Cygnus A",
+                ra: 299.86815,
+                dec: 40.73391,
+                radiusArcmin: 10,
+                requestedSurveyIds: ["allwise"],
+                resultImageIds: [],
+                errorCode: null,
+                errorMessage: null,
+                createdAt: "2026-03-27T20:20:00.000Z",
+                updatedAt: "2026-03-27T20:32:00.000Z",
               },
             },
           },
@@ -150,10 +213,10 @@ describe("forge workbench", () => {
               },
               ...(includeCreatedJobInBootstrap
                 ? [
-                    {
+                      {
                       id: "forge-job-99",
                       type: "cutout",
-                      status: "QUEUED",
+                      status: createdJobStatus,
                       progressPercent: 0,
                       requestedBy: "jeffreysanford",
                       targetName: "M87",
@@ -162,7 +225,11 @@ describe("forge workbench", () => {
                       radiusArcmin: 15,
                       requestedSurveyIds: ["allwise"],
                       resultImageIds: [],
-                      errorMessage: null,
+                      errorCode: null,
+                      errorMessage:
+                        createdJobStatus === "CANCELLED"
+                          ? "Cancellation requested by operator. Worker will not publish completion artifacts."
+                          : null,
                       request: {
                         providerAdapter: "irsa-allwise",
                         sourceService: "sia-v2",
@@ -187,6 +254,49 @@ describe("forge workbench", () => {
                       },
                       createdAt: "2026-03-27T20:30:00.000Z",
                       updatedAt: "2026-03-27T20:30:00.000Z",
+                    },
+                  ]
+                : []),
+              ...(includeRetriedJobInBootstrap
+                ? [
+                    {
+                      id: "forge-job-77",
+                      type: "cutout",
+                      status: "QUEUED",
+                      progressPercent: 0,
+                      requestedBy: "jeffreysanford",
+                      targetName: "Cygnus A",
+                      ra: 299.86815,
+                      dec: 40.73391,
+                      radiusArcmin: 10,
+                      requestedSurveyIds: ["allwise"],
+                      resultImageIds: [],
+                      errorCode: null,
+                      errorMessage: null,
+                      request: {
+                        providerAdapter: "irsa-allwise",
+                        sourceService: "sia-v2",
+                        missionFamily: "allwise",
+                        collection: "allwise/p3am_cdd",
+                        layer: "allwise/p3am_cdd",
+                        bands: ["W1"],
+                        ra: 299.86815,
+                        dec: 40.73391,
+                        radiusArcmin: 10,
+                        pixscale: null,
+                        size: 1200,
+                        width: 1200,
+                        height: 1200,
+                        outputFormat: "fits",
+                        retrievalPathType: "ibe-cutout",
+                        discoveryUrl:
+                          "https://irsa.ipac.caltech.edu/ibe/sia/wise/allwise/p3am_cdd?POS=299.86815,40.73391&SIZE=0.16667&INTERSECT=OVERLAPS",
+                        jpegCutoutUrl: null,
+                        fitsCutoutUrl:
+                          "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/example-cygnus-a.fits?center=299.86815,40.73391&size=1200arcsec&gzip=false",
+                      },
+                      createdAt: "2026-03-27T20:20:00.000Z",
+                      updatedAt: "2026-03-27T20:32:00.000Z",
                     },
                   ]
                 : []),
@@ -227,6 +337,27 @@ describe("forge workbench", () => {
                 createdAt: "2026-03-28T07:05:00.000Z",
                 updatedAt: "2026-03-28T07:06:00.000Z",
               },
+              ...(!includeRetriedJobInBootstrap
+                ? [
+                    {
+                      id: "forge-job-77",
+                      type: "cutout",
+                      status: "FAILED",
+                      progressPercent: 100,
+                      requestedBy: "jeffreysanford",
+                      targetName: "Cygnus A",
+                      ra: 299.86815,
+                      dec: 40.73391,
+                      radiusArcmin: 10,
+                      requestedSurveyIds: ["allwise"],
+                      resultImageIds: [],
+                      errorCode: "FORGE_UPSTREAM_TIMEOUT",
+                      errorMessage: "Provider request timed out.",
+                      createdAt: "2026-03-27T20:20:00.000Z",
+                      updatedAt: "2026-03-27T20:25:00.000Z",
+                    },
+                  ]
+                : []),
             ],
             imageProducts: [
               {
@@ -324,6 +455,38 @@ describe("forge workbench", () => {
     cy.contains("forge-job-99");
     cy.contains("Surveys: allwise");
     cy.contains("preview pending until completion");
+  });
+
+  it("allows a queued job to be cancelled from the Forge queue shell", () => {
+    cy.visit("/forge");
+    cy.wait("@forgeGraphql");
+
+    cy.contains("button.forge-chip", "AllWISE").click({ force: true });
+    cy.contains("button", "Create cutout job").click({ force: true });
+    cy.wait("@forgeCreateCutoutJob");
+
+    cy.contains(".forge-queue__item", "preview pending until completion")
+      .contains("button", "Cancel")
+      .click({ force: true });
+
+    cy.wait("@forgeCancelJob");
+    cy.contains(".forge-queue__item", "preview pending until completion")
+      .should("contain.text", "CANCELLED");
+  });
+
+  it("allows a failed job to be retried from the Forge queue shell", () => {
+    cy.visit("/forge");
+    cy.wait("@forgeGraphql");
+
+    cy.contains("Cygnus A · cutout")
+      .closest(".forge-queue__item")
+      .contains("button", "Retry")
+      .click({ force: true });
+
+    cy.wait("@forgeRetryJob");
+    cy.contains("Cygnus A · cutout")
+      .closest(".forge-queue__item")
+      .should("contain.text", "QUEUED");
   });
 
   it("renders a completed AllWISE result with cached preview and fits artifact links", () => {

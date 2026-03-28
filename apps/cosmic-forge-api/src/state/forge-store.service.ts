@@ -51,6 +51,13 @@ export class ForgeStoreService {
     );
   }
 
+  private nextQueuedJob(): ForgeJob | null {
+    const queuedJobs = this.state.jobs
+      .filter((job) => job.status === "QUEUED")
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+    return queuedJobs[0] ?? null;
+  }
+
   private attachPreviewImage(job: ForgeJob | undefined): void {
     if (!job || job.resultImageIds.length > 0) {
       return;
@@ -67,6 +74,51 @@ export class ForgeStoreService {
 
   private persistState(): void {
     this.stateRepository.save(this.state);
+  }
+
+  private setJobProgress(job: ForgeJob, progressPercent: number, eventType: string, message: string) {
+    const normalizedProgress = Math.max(job.progressPercent, Math.min(progressPercent, 99));
+    job.progressPercent = normalizedProgress;
+    job.updatedAt = this.isoNow();
+    this.appendJobEvent(job, eventType, job.status, job.status, message);
+    this.persistState();
+  }
+
+  private classifyExecutionError(error: unknown): ForgeDomainError {
+    if (error instanceof ForgeDomainError) {
+      return error;
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    if (error instanceof Error && error.name === "AbortError") {
+      return new ForgeDomainError(
+        "FORGE_UPSTREAM_TIMEOUT",
+        message || "Forge provider request timed out.",
+        true
+      );
+    }
+
+    if (/timeout|timed out/i.test(message)) {
+      return new ForgeDomainError(
+        "FORGE_UPSTREAM_TIMEOUT",
+        message,
+        true
+      );
+    }
+
+    if (/fetch failed|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|unavailable/i.test(message)) {
+      return new ForgeDomainError(
+        "FORGE_UPSTREAM_UNAVAILABLE",
+        message,
+        true
+      );
+    }
+
+    if (/bad response|retrieval failed|discovery failed|returned no matching|status/i.test(message)) {
+      return new ForgeDomainError("FORGE_UPSTREAM_BAD_RESPONSE", message, false);
+    }
+
+    return new ForgeDomainError("FORGE_INTERNAL_ERROR", message || "Forge worker execution failed.");
   }
 
   private nextEventId(): string {
@@ -274,7 +326,20 @@ export class ForgeStoreService {
     }
 
     if (adapter.executeJob) {
+      this.setJobProgress(job, 45, "JOB_PROVIDER_EXECUTION", "Provider execution started");
       const imageProduct = await adapter.executeJob(job, this.nextImageId(), this.isoNow());
+      if (this.findJob(job.id)?.status === "CANCELLED") {
+        this.appendJobEvent(
+          job,
+          "JOB_CANCELLATION_CONFIRMED",
+          "CANCELLED",
+          "CANCELLED",
+          "Worker honored cancellation before completion"
+        );
+        this.persistState();
+        return;
+      }
+      this.setJobProgress(job, 85, "JOB_ARTIFACT_PERSIST", "Persisting artifact metadata");
       const persistedImageProduct =
         imageProduct.format === "fits"
           ? ((await this.artifactCache.cacheImageArtifact(
@@ -284,23 +349,50 @@ export class ForgeStoreService {
             )) ??
             imageProduct)
           : imageProduct;
+      if (this.findJob(job.id)?.status === "CANCELLED") {
+        this.appendJobEvent(
+          job,
+          "JOB_CANCELLATION_CONFIRMED",
+          "CANCELLED",
+          "CANCELLED",
+          "Worker honored cancellation before artifact publication"
+        );
+        this.persistState();
+        return;
+      }
       this.state.imageProducts.unshift(persistedImageProduct);
       job.resultImageIds = [persistedImageProduct.id];
       job.status = "COMPLETED";
+      job.progressPercent = 100;
       job.errorCode = null;
       job.errorMessage = null;
       this.appendJobEvent(job, "JOB_COMPLETED", "RUNNING", "COMPLETED", null);
+      this.persistState();
       return;
     }
 
     if (adapter.createImageProduct) {
+      this.setJobProgress(job, 70, "JOB_PREVIEW_BUILD", "Building derived preview artifact");
       const imageProduct = adapter.createImageProduct(job, this.nextImageId(), this.isoNow());
+      if (this.findJob(job.id)?.status === "CANCELLED") {
+        this.appendJobEvent(
+          job,
+          "JOB_CANCELLATION_CONFIRMED",
+          "CANCELLED",
+          "CANCELLED",
+          "Worker honored cancellation before preview publication"
+        );
+        this.persistState();
+        return;
+      }
       this.state.imageProducts.unshift(imageProduct);
       job.resultImageIds = [imageProduct.id];
       job.status = "COMPLETED";
+      job.progressPercent = 100;
       job.errorCode = null;
       job.errorMessage = null;
       this.appendJobEvent(job, "JOB_COMPLETED", "RUNNING", "COMPLETED", null);
+      this.persistState();
       return;
     }
 
@@ -315,6 +407,7 @@ export class ForgeStoreService {
       job.errorMessage,
       job.errorCode
     );
+    this.persistState();
   }
 
   getHealth(): ForgeApiHealth {
@@ -394,13 +487,18 @@ export class ForgeStoreService {
       return null;
     }
 
-    if (job.status === "COMPLETED") {
+    if (job.status === "COMPLETED" || job.status === "FAILED") {
       return job;
     }
 
     const previousStatus = job.status;
     job.status = "CANCELLED";
+    job.progressPercent = previousStatus === "QUEUED" ? 0 : job.progressPercent;
     job.errorCode = null;
+    job.errorMessage =
+      previousStatus === "RUNNING"
+        ? "Cancellation requested by operator. Worker will not publish completion artifacts."
+        : null;
     job.updatedAt = this.isoNow();
     this.appendJobEvent(job, "JOB_CANCELLED", previousStatus, "CANCELLED", "Job cancelled");
     this.persistState();
@@ -430,59 +528,75 @@ export class ForgeStoreService {
   }
 
   async advanceJobs(): Promise<void> {
-    for (const job of this.state.jobs) {
-      if (job.status === "QUEUED") {
-        if (!job.request) {
-          job.request = buildCutoutRequestForJob(job);
-        }
-        const previousStatus = job.status;
-        job.status = "RUNNING";
-        job.progressPercent = Math.max(job.progressPercent, 15);
-        job.errorCode = null;
-        job.errorMessage = null;
-        job.updatedAt = this.isoNow();
-        this.appendJobEvent(job, "JOB_STARTED", previousStatus, "RUNNING", "Worker claimed job");
-        this.persistState();
-        return;
-      }
-
-      if (job.status === "RUNNING") {
-        const nextProgress = Math.min(job.progressPercent + 25, 100);
-        job.progressPercent = nextProgress;
-        job.updatedAt = this.isoNow();
-
-        if (nextProgress >= 100) {
-          try {
-            await this.executeJobWithAdapter(job);
-          } catch (error) {
-            job.status = "FAILED";
-            job.errorCode =
-              error instanceof ForgeDomainError ? error.code : "FORGE_INTERNAL_ERROR";
-            job.errorMessage =
-              error instanceof Error ? error.message : "Forge worker execution failed.";
-            this.appendJobEvent(
-              job,
-              "JOB_FAILED",
-              "RUNNING",
-              "FAILED",
-              job.errorMessage,
-              job.errorCode
-            );
-          }
-          job.updatedAt = this.isoNow();
-        }
-        this.persistState();
-        return;
-      }
+    const claimed = this.claimNextJob();
+    if (!claimed) {
+      return;
     }
+
+    await this.executeClaimedJob(claimed.id);
   }
 
   async executeNextJob(): Promise<ForgeJob | null> {
-    await this.advanceJobs();
-    return (
-      this.sortedJobs().find((job) => job.status === "RUNNING" || job.status === "QUEUED") ??
-      null
-    );
+    const claimed = this.claimNextJob();
+    if (!claimed) {
+      return null;
+    }
+
+    await this.executeClaimedJob(claimed.id);
+    return this.getJob(claimed.id);
+  }
+
+  claimNextJob(): ForgeJob | null {
+    const job = this.nextQueuedJob();
+    if (!job) {
+      return null;
+    }
+
+    if (!job.request) {
+      job.request = buildCutoutRequestForJob(job);
+    }
+
+    const previousStatus = job.status;
+    job.status = "RUNNING";
+    job.progressPercent = Math.max(job.progressPercent, 10);
+    job.errorCode = null;
+    job.errorMessage = null;
+    job.updatedAt = this.isoNow();
+    this.appendJobEvent(job, "JOB_STARTED", previousStatus, "RUNNING", "Worker claimed job");
+    this.persistState();
+    return job;
+  }
+
+  async executeClaimedJob(jobId: string): Promise<ForgeJob | null> {
+    const job = this.findJob(jobId);
+    if (!job) {
+      return null;
+    }
+
+    if (job.status !== "RUNNING") {
+      return job;
+    }
+
+    try {
+      await this.executeJobWithAdapter(job);
+    } catch (error) {
+      const classified = this.classifyExecutionError(error);
+      job.status = "FAILED";
+      job.errorCode = classified.code;
+      job.errorMessage = classified.message;
+      job.updatedAt = this.isoNow();
+      this.appendJobEvent(
+        job,
+        "JOB_FAILED",
+        "RUNNING",
+        "FAILED",
+        job.errorMessage,
+        job.errorCode
+      );
+      this.persistState();
+    }
+
+    return job;
   }
 
   async cacheImageArtifactById(imageId: string): Promise<ForgeImageProduct | null> {

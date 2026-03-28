@@ -321,3 +321,80 @@ test("jobs persist across store instances instead of relying on process memory",
   assert.equal(reloaded?.status, "QUEUED");
   assert.ok(reloaded?.request);
 });
+
+test("claimed jobs execute through a real queue lifecycle without placeholder progress ticks", async () => {
+  const store = createStore("queue-lifecycle");
+  const job = store.createCutoutJob({
+    requestedBy: "queue-user",
+    targetName: "M87",
+    ra: 187.70593,
+    dec: 12.39112,
+    radiusArcmin: 15,
+    surveyIds: ["legacy"],
+  });
+
+  const claimed = store.claimNextJob();
+  assert.equal(claimed?.id, job.id);
+  assert.equal(claimed?.status, "RUNNING");
+  assert.equal(claimed?.progressPercent, 10);
+
+  const completed = await store.executeClaimedJob(job.id);
+  assert.equal(completed?.status, "COMPLETED");
+  assert.equal(completed?.progressPercent, 100);
+
+  const persisted = store.getJob(job.id);
+  assert.equal(persisted?.status, "COMPLETED");
+  assert.ok(persisted?.resultImageIds.length);
+});
+
+test("running job cancellation prevents worker completion from publishing artifacts", async () => {
+  const store = createStore("cancel-running");
+  const job = store.createCutoutJob({
+    requestedBy: "cancel-user",
+    targetName: "Cygnus A",
+    ra: 299.86815,
+    dec: 40.73391,
+    radiusArcmin: 10,
+    surveyIds: ["skyview"],
+  });
+
+  store.claimNextJob();
+  const cancelled = store.cancelJob(job.id);
+  assert.equal(cancelled?.status, "CANCELLED");
+
+  const executed = await store.executeClaimedJob(job.id);
+  assert.equal(executed?.status, "CANCELLED");
+  assert.equal(store.getImageProductsByJob(job.id).length, 0);
+});
+
+test("timeout-like provider failures are classified explicitly for retry handling", async () => {
+  const originalFetch = global.fetch;
+  global.fetch = (async () => {
+    const error = new Error("provider request timed out");
+    error.name = "AbortError";
+    throw error;
+  }) as typeof fetch;
+
+  const store = createStore("timeout-classification");
+  const job = store.createCutoutJob({
+    requestedBy: "timeout-user",
+    targetName: "M87",
+    ra: 187.70593,
+    dec: 12.39112,
+    radiusArcmin: 15,
+    surveyIds: ["allwise"],
+  });
+
+  try {
+    store.claimNextJob();
+    const failed = await store.executeClaimedJob(job.id);
+    assert.equal(failed?.status, "FAILED");
+    assert.equal(failed?.errorCode, "FORGE_UPSTREAM_TIMEOUT");
+
+    const retried = store.retryJob(job.id);
+    assert.equal(retried?.status, "QUEUED");
+    assert.equal(retried?.errorCode, null);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

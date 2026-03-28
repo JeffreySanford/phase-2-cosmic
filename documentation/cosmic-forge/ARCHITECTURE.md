@@ -143,6 +143,14 @@ Its job is to model:
 
 The backend worker owns bounded concurrency and actual execution scheduling.
 
+The current implementation uses an explicit internal worker seam:
+
+- `claim-next`
+- `execute claimed job`
+- persisted queue state transitions
+- coarse progress phases instead of timer-only increments
+- worker health with concurrency and execution diagnostics
+
 ## Subscription posture
 
 GraphQL subscriptions remain the intended long-term model for progress and result updates.

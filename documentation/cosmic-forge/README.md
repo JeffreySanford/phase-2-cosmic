@@ -49,6 +49,7 @@ Reader guide:
 - [ARCHITECTURE.md](./ARCHITECTURE.md): system shape and Mermaid diagrams
 - [GRAPHQL_CONTRACT_DRAFT.md](./GRAPHQL_CONTRACT_DRAFT.md): branch-scoped GraphQL contract aligned to the current Forge API shape
 - [PERSISTENCE_PLAN.md](./PERSISTENCE_PLAN.md): first durable storage model for jobs, requests, results, provenance, and queue events
+- [WORKER_EXECUTION_SPEC.md](./WORKER_EXECUTION_SPEC.md): bounded-concurrency worker contract, queue lifecycle semantics, progress phases, and health expectations
 - [NGRX_STATE_BLUEPRINT.md](./NGRX_STATE_BLUEPRINT.md): frontend state model
 - [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md): vertical slices, Docker environment, acceptance gates
 - [PI_EXECUTION_PLAN.md](./PI_EXECUTION_PLAN.md): sprint-by-sprint PI checklist with individual execution steps

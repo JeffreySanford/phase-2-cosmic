@@ -368,19 +368,19 @@ Sprint 3 done when:
 
 Goal: turn Forge into a real orchestration branch with bounded background work.
 
-- [ ] Replace the worker placeholder with a bounded-concurrency execution loop.
-- [ ] Define queue states clearly: queued, running, completed, failed, cancelled.
-- [ ] Persist job state transitions instead of keeping them only in memory.
-- [ ] Add progress reporting semantics for the UI.
-- [ ] Add retry handling that preserves auditability.
-- [ ] Add cancel handling for queued and in-flight jobs where feasible.
-- [ ] Add failure classification for provider, validation, timeout, and internal errors.
-- [ ] Add worker health details beyond a bare `ok` response.
-- [ ] Add integration tests for create -> run -> complete and create -> fail -> retry.
+- [x] Replace the worker placeholder with a bounded-concurrency execution loop.
+- [x] Define queue states clearly: queued, running, completed, failed, cancelled.
+- [x] Persist job state transitions instead of keeping them only in memory.
+- [x] Add progress reporting semantics for the UI.
+- [x] Add retry handling that preserves auditability.
+- [x] Add cancel handling for queued and in-flight jobs where feasible.
+- [x] Add failure classification for provider, validation, timeout, and internal errors.
+- [x] Add worker health details beyond a bare `ok` response.
+- [x] Add integration tests for create -> run -> complete and create -> fail -> retry.
 
 Sprint 4 done when:
 
-- [ ] One end-to-end queue lifecycle exists beyond placeholder timers.
+- [x] One end-to-end queue lifecycle exists beyond placeholder timers.
 
 ## Sprint 5 - First Real Survey Adapter
 

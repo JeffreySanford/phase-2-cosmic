@@ -198,4 +198,9 @@ The worker should:
 - add PostgreSQL-backed implementations
 - switch the worker and GraphQL services to repository-backed reads and writes
 - add migration files for the durable schema
+
+Current local implementation note:
+
+- Sprint 4 now uses the file-backed repository as the authoritative queue-state seam for worker claim/execute/cancel/retry flows
+- worker execution no longer relies on placeholder progress timers to move jobs through the queue
 - add integration tests for create, run, fail, retry, cancel, and artifact retention
