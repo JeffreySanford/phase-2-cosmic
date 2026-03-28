@@ -55,6 +55,30 @@ test("allwise jobs get a normalized IRSA request before retrieval is wired", () 
   assert.match(job.request?.fitsCutoutUrl || "", /pending=ibe-cutout/);
 });
 
+test("skyview jobs get a normalized derived-preview request scaffold", () => {
+  const store = createStore();
+  const job = store.createCutoutJob({
+    requestedBy: "test-user",
+    targetName: "M87",
+    ra: 187.70593,
+    dec: 12.39112,
+    radiusArcmin: 15,
+    surveyIds: ["skyview"],
+  });
+
+  assert.ok(job.request);
+  assert.equal(job.request?.providerAdapter, "skyview-derived-preview");
+  assert.equal(job.request?.sourceService, "skyview-query");
+  assert.equal(job.request?.missionFamily, "skyview");
+  assert.equal(job.request?.collection, "skyview/derived-preview");
+  assert.equal(job.request?.layer, "DSS2 Red");
+  assert.deepEqual(job.request?.bands, ["DSS2 Red"]);
+  assert.equal(job.request?.outputFormat, "jpeg");
+  assert.equal(job.request?.retrievalPathType, "skyview-query");
+  assert.match(job.request?.jpegCutoutUrl || "", /skyview\.gsfc\.nasa\.gov/);
+  assert.equal(job.request?.fitsCutoutUrl, null);
+});
+
 test("allwise cutout jobs complete through live SIA discovery and IBE retrieval", async () => {
   const originalFetch = global.fetch;
   global.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
@@ -170,6 +194,30 @@ test("allwise retry rebuilds the normalized request scaffold", () => {
   assert.deepEqual(retried?.request?.bands, ["W1"]);
 });
 
+test("skyview retry rebuilds the normalized derived-preview request scaffold", () => {
+  const store = createStore();
+  const job = store.createCutoutJob({
+    requestedBy: "test-user",
+    targetName: "M87",
+    ra: 187.70593,
+    dec: 12.39112,
+    radiusArcmin: 15,
+    surveyIds: ["skyview"],
+  });
+
+  job.status = "FAILED";
+  job.errorMessage = "SkyView upstream unavailable";
+  job.request = null;
+
+  const retried = store.retryJob(job.id);
+
+  assert.equal(retried?.status, "QUEUED");
+  assert.equal(retried?.errorMessage, null);
+  assert.equal(retried?.request?.providerAdapter, "skyview-derived-preview");
+  assert.equal(retried?.request?.collection, "skyview/derived-preview");
+  assert.deepEqual(retried?.request?.bands, ["DSS2 Red"]);
+});
+
 test("legacy cutout jobs complete with normalized request and provenance fields", async () => {
   const store = createStore();
   const job = store.createCutoutJob({
@@ -203,4 +251,44 @@ test("legacy cutout jobs complete with normalized request and provenance fields"
   assert.equal(imageProduct?.provenance.dec, 12.39112);
   assert.match(imageProduct?.previewUrl || "", /jpeg-cutout/);
   assert.match(imageProduct?.fitsUrl || "", /fits-cutout/);
+});
+
+test("skyview cutout jobs complete as derived preview products with SkyView provenance", async () => {
+  const store = createStore();
+  const job = store.createCutoutJob({
+    requestedBy: "test-user",
+    targetName: "Cygnus A",
+    ra: 299.86815,
+    dec: 40.73391,
+    radiusArcmin: 10,
+    surveyIds: ["skyview"],
+  });
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await store.advanceJobs();
+  }
+
+  const completedJob = store.getJobs().find((item) => item.id === job.id);
+  const imageProduct = store.getImageProducts().find((item) => item.jobId === job.id);
+
+  assert.equal(completedJob?.status, "COMPLETED");
+  assert.ok(completedJob?.request);
+  assert.equal(completedJob?.request?.providerAdapter, "skyview-derived-preview");
+  assert.equal(completedJob?.request?.sourceService, "skyview-query");
+  assert.equal(completedJob?.request?.fitsCutoutUrl, null);
+
+  assert.ok(imageProduct);
+  assert.equal(imageProduct?.surveyId, "skyview");
+  assert.equal(imageProduct?.format, "jpeg");
+  assert.equal(imageProduct?.providerName, "NASA GSFC SkyView");
+  assert.equal(imageProduct?.fitsUrl, null);
+  assert.equal(imageProduct?.provenance.providerName, "NASA GSFC SkyView");
+  assert.equal(imageProduct?.provenance.retrievalPathType, "skyview-query");
+  assert.equal(imageProduct?.provenance.outputFormat, "image/jpeg");
+  assert.deepEqual(imageProduct?.provenance.transformChain, [
+    "skyview-query",
+    "skyview-derived-image",
+  ]);
+  assert.equal(imageProduct?.provenance.collection, "skyview/derived-preview");
+  assert.equal(imageProduct?.provenance.layer, "DSS2 Red");
 });

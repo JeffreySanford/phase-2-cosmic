@@ -66,6 +66,36 @@ test("ForgeWorkbenchBootstrap resolves via operationName and returns request/pro
   assert.match(legacyImage.provenance.authoritativeUrl, /legacysurvey\.org/);
 });
 
+test("ForgeWorkbenchBootstrap includes ESASky as a planned survey source", async () => {
+  const graphqlService = createGraphqlService();
+  const result = await graphqlService.execute({
+    operationName: "ForgeWorkbenchBootstrap",
+    variables: {},
+  });
+
+  assert.equal(result.status, 200);
+  const payload = result.body as {
+    data: {
+      surveys: Array<{
+        id: string;
+        name: string;
+        providerName: string;
+        supportsCutout: boolean;
+        supportsPreview: boolean;
+        previewReady: boolean;
+      }>;
+    };
+  };
+
+  const esasky = payload.data.surveys.find((survey) => survey.id === "esasky");
+  assert.ok(esasky);
+  assert.equal(esasky.name, "ESASky");
+  assert.equal(esasky.providerName, "ESA ESASky");
+  assert.equal(esasky.supportsCutout, true);
+  assert.equal(esasky.supportsPreview, true);
+  assert.equal(esasky.previewReady, false);
+});
+
 test("CreateCutoutJob returns a normalized AllWISE request scaffold", async () => {
   const graphqlService = createGraphqlService();
   const result = await graphqlService.execute({
@@ -108,4 +138,48 @@ test("CreateCutoutJob returns a normalized AllWISE request scaffold", async () =
   assert.deepEqual(request.bands, ["W1"]);
   assert.match(request.discoveryUrl || "", /irsa\.ipac\.caltech\.edu\/ibe\/sia/);
   assert.match(request.fitsCutoutUrl || "", /pending=ibe-cutout/);
+});
+
+test("CreateCutoutJob returns a normalized SkyView derived-preview request scaffold", async () => {
+  const graphqlService = createGraphqlService();
+  const result = await graphqlService.execute({
+    operationName: "CreateCutoutJob",
+    variables: {
+      input: {
+        requestedBy: "test-user",
+        targetName: "Cygnus A",
+        ra: 299.86815,
+        dec: 40.73391,
+        radiusArcmin: 10,
+        surveyIds: ["skyview"],
+      },
+    },
+  });
+
+  assert.equal(result.status, 200);
+  const payload = result.body as {
+    data: {
+      createCutoutJob: {
+        request: {
+          providerAdapter: string;
+          sourceService: string;
+          missionFamily: string | null;
+          collection: string | null;
+          bands: string[];
+          discoveryUrl: string | null;
+          fitsCutoutUrl: string | null;
+        } | null;
+      };
+    };
+  };
+
+  const request = payload.data.createCutoutJob.request;
+  assert.ok(request);
+  assert.equal(request.providerAdapter, "skyview-derived-preview");
+  assert.equal(request.sourceService, "skyview-query");
+  assert.equal(request.missionFamily, "skyview");
+  assert.equal(request.collection, "skyview/derived-preview");
+  assert.deepEqual(request.bands, ["DSS2 Red"]);
+  assert.match(request.discoveryUrl || "", /skyview\.gsfc\.nasa\.gov/);
+  assert.equal(request.fitsCutoutUrl, null);
 });

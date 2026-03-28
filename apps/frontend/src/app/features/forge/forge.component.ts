@@ -84,6 +84,10 @@ export class ForgeComponent implements OnInit {
   }
 
   surveyAvailabilityLabel(survey: ForgeSurveyDto): string {
+    if (survey.id === "skyview" && this.isSurveySelectable(survey)) {
+      return "derived";
+    }
+
     if (this.isSurveySelectable(survey)) {
       return "live";
     }
@@ -150,5 +154,33 @@ export class ForgeComponent implements OnInit {
 
   selectedBandSet(selectedImage: ForgeImageProductDto | null): string {
     return selectedImage?.provenance.bandSet.join(", ") || "n/a";
+  }
+
+  selectedArtifactSummary(selectedImage: ForgeImageProductDto | null): string {
+    if (!selectedImage) {
+      return "preview image, provenance";
+    }
+
+    return selectedImage.fitsUrl
+      ? "preview image, FITS cutout URL, provenance"
+      : "derived preview image, provenance";
+  }
+
+  selectedPixscaleLabel(
+    selectedJob: ForgeJobDto | null,
+    selectedImage: ForgeImageProductDto | null
+  ): string {
+    const pixscale = selectedJob?.request?.pixscale ?? selectedImage?.provenance.pixscale ?? null;
+    return pixscale === null ? "derived / not reported" : String(pixscale);
+  }
+
+  selectedProvenancePixscaleLabel(selectedImage: ForgeImageProductDto | null): string {
+    return selectedImage?.provenance.pixscale === null || !selectedImage
+      ? "derived / not reported"
+      : String(selectedImage.provenance.pixscale);
+  }
+
+  isDerivedPreview(selectedImage: ForgeImageProductDto | null): boolean {
+    return selectedImage?.provenance.transformChain.includes("skyview-derived-image") ?? false;
   }
 }

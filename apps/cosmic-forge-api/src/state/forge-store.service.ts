@@ -189,9 +189,11 @@ export class ForgeStoreService {
     }
 
     if (adapter.createImageProduct) {
+      const imageProduct = adapter.createImageProduct(job, this.nextImageId(), this.isoNow());
+      this.forgeImageProducts.unshift(imageProduct);
+      job.resultImageIds = [imageProduct.id];
       job.status = "COMPLETED";
       job.errorMessage = null;
-      this.attachPreviewImage(job);
       return;
     }
 

@@ -10,6 +10,8 @@ Alignment anchors
 - UI route plan: [./UI_SURFACE_PLAN.md](./UI_SURFACE_PLAN.md)
 - First adapter decision: [./FIRST_ADAPTER_DECISION.md](./FIRST_ADAPTER_DECISION.md)
 - IRSA adapter decision: [./IRSA_ADAPTER_DECISION.md](./IRSA_ADAPTER_DECISION.md)
+- SkyView adapter decision: [./SKYVIEW_ADAPTER_DECISION.md](./SKYVIEW_ADAPTER_DECISION.md)
+- ESASky adapter decision: [./ESASKY_ADAPTER_DECISION.md](./ESASKY_ADAPTER_DECISION.md)
 - IRSA implementation notes: [./IRSA_IMPLEMENTATION_NOTES.md](./IRSA_IMPLEMENTATION_NOTES.md)
 - Sprint 5 implementation notes: [./SPRINT_5_IMPLEMENTATION_NOTES.md](./SPRINT_5_IMPLEMENTATION_NOTES.md)
 
@@ -181,35 +183,91 @@ Why this is a strong fit:
 
 ### Priority 3 - NASA GSFC SkyView
 
-- [ ] Evaluate SkyView as a fallback or comparison adapter rather than the first production adapter.
+- [x] Evaluate SkyView as a fallback or comparison adapter rather than the first production adapter.
+  Decision: validated for fallback / comparison / derived-preview use, not as a first-wave archive-native production adapter.
   Official service references:
   [SkyView survey availability](https://skyview.gsfc.nasa.gov/current/docs/availability.html)
   [SkyView in a Jar / SIA notes](https://skyview.gsfc.nasa.gov/jar/skyviewinajar.html)
-- [ ] Confirm whether SkyView should be used for quick-look composites and cross-survey discovery rather than authoritative science-ready products.
-- [ ] Document reliability tradeoffs when SkyView depends on remote upstream transfers.
-- [ ] If adopted, mark SkyView outputs clearly as SkyView-generated products in provenance rather than archive-native cutouts.
+- [x] Confirm whether SkyView should be used for quick-look composites and cross-survey discovery rather than authoritative science-ready products.
+  Decision: yes. SkyView should be used for quick-look composites, cross-survey discovery, and comparison output rather than as the authoritative source of science-ready archive-native cutouts.
+- [x] Document reliability tradeoffs when SkyView depends on remote upstream transfers.
+  Confirmed from the official SkyView availability page:
+  - most SkyView data are local, but some survey data are transferred from remote servers
+  - SkyView explicitly notes that interrupted upstream connections can cause requested image queries to fail
+  - Forge should therefore classify SkyView failures as potential upstream-availability issues rather than only internal adapter failures
+- [x] If adopted, mark SkyView outputs clearly as SkyView-generated products in provenance rather than archive-native cutouts.
+  Required provenance posture:
+  - provider name should remain `NASA GSFC SkyView`
+  - requested survey should be retained as the source survey identifier
+  - output should be labeled as a `SkyView-generated` derivative
+  - transform chain should explicitly show `skyview-derived-image`
+  - SkyView output must not be presented as an archive-native cutout from the underlying upstream survey
 
 Why this is useful:
 
 - multi-survey discovery and quick-look image generation
 - useful comparison path when direct survey-native cutouts are inconsistent
 
+Recommended implementation posture:
+
+- treat SkyView as a comparison and fallback adapter after Legacy and IRSA
+- use it for quick-look preview generation and cross-survey comparison
+- keep its provenance distinct from archive-native provider adapters
+
 ### Priority 4 - ESA ESASky
 
-- [ ] Evaluate ESASky for discovery, HiPS-based previewing, and mission-breadth enrichment rather than first-wave science-ready cutout output.
+- [x] Evaluate ESASky for discovery, HiPS-based previewing, and mission-breadth enrichment rather than first-wave science-ready cutout output.
+  Decision: validated for discovery, HiPS-backed previewing, and mission-breadth enrichment rather than first-wave archive-native science-cutout delivery.
   Official service references:
   [ESASky overview](https://open.esa.int/esasky/)
   [ESASky HiPS information](https://www.cosmos.esa.int/web/esdc/esasky-skies)
   [ESASky EDDIE cutout service help](https://sky.esa.int/esasky/hipsCutout/help.html)
-- [ ] Confirm where ESASky cutout output is appropriate for visualization and where mission-native science products are still required.
-- [ ] Define separate handling for HiPS visualization outputs versus mission-grade downloadable products.
-- [ ] Capture ESASky-specific provenance fields: surveyId, HiPS source, projection, FOV, output format, and any science-readiness caveat.
+- [x] Confirm where ESASky cutout output is appropriate for visualization and where mission-native science products are still required.
+  Decision:
+  - ESASky HiPS and EDDIE-generated images are appropriate for visualization, quick-look previewing, and broad mission discovery
+  - mission-native science products are still required when Forge needs authoritative science-ready downloadable artifacts rather than a generated preview image
+  Basis:
+  - the ESASky overview describes the portal as providing access to science-ready mission images and catalogues
+  - the ESASky HiPS documentation explicitly states that HiPS layers are intended for visualization only and are not science-ready products
+- [x] Define separate handling for HiPS visualization outputs versus mission-grade downloadable products.
+  Required handling split:
+  - `HiPS visualization output`
+    - derived preview artifact
+    - sourced through ESASky HiPS / EDDIE
+    - labeled visualization-only in provenance and UI
+  - `mission-grade downloadable product`
+    - underlying mission data product when available
+    - must not share the same provenance semantics as a HiPS-generated image
+    - should remain a separate adapter mode or artifact class in Forge
+- [x] Capture ESASky-specific provenance fields: surveyId, HiPS source, projection, FOV, output format, and any science-readiness caveat.
+  Required ESASky provenance fields:
+  - provider name
+  - output class: `esasky-derived-preview` or `esasky-mission-download`
+  - `surveyId` / HiPS source identifier
+  - HiPS source URL when available
+  - requested target name if provided
+  - resolved `ra` / `dec` when target coordinates are used
+  - requested `fov`
+  - requested projection
+  - requested image `size`
+  - requested or returned `norder`
+  - output format such as `png` or `jpg`
+  - retrieval endpoint type such as `esasky-eddie`
+  - science-readiness caveat such as `visualization-only`
+  - access timestamp
+  - transform chain used by Forge
 
 Why this is useful:
 
 - broad ESA mission coverage
 - strong sky-discovery and HiPS preview story
 - good fit for viewer-facing exploration workflows
+
+Recommended implementation posture:
+
+- implement ESASky as a preview/discovery adapter after the current Legacy, IRSA, and SkyView slices
+- use EDDIE-generated images for first-wave ESASky output
+- preserve a later separate seam for mission-native downloadable products where needed
 
 ### Priority 5 - MAST / STScI Pan-STARRS
 

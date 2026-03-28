@@ -5,7 +5,7 @@
       <h1>Public survey image orchestration workbench</h1>
       <p class="forge__lede">
         This branch-scoped surface now runs through the Forge SSR/API seam, typed worker
-        execution, and live Legacy Surveys plus AllWISE adapter paths.
+        execution, and live Legacy Surveys, AllWISE, and SkyView-derived adapter paths.
       </p>
     </div>
 
@@ -38,8 +38,9 @@
       <div class="forge-surveys">
         <h3>Survey selection</h3>
         <p class="forge-graphql__meta">
-          Live adapters are currently available for Legacy Surveys and AllWISE. Other
-          providers remain visible here as planned seams.
+          Live adapters are currently available for Legacy Surveys, AllWISE, and SkyView.
+          SkyView remains explicitly derived-preview oriented. Other providers remain visible
+          here as planned seams.
         </p>
         <div class="forge-chip-row">
           <button
@@ -290,7 +291,7 @@
             </div>
             <div class="forge-results__meta">
               <p><strong>Target:</strong> {{ vm.formValue.target }}</p>
-              <p><strong>Artifacts:</strong> preview JPEG, FITS cutout URL, provenance</p>
+              <p><strong>Artifacts:</strong> {{ selectedArtifactSummary(vm.selectedImage) }}</p>
               <p *ngIf="vm.selectedJob"><strong>Selected job:</strong> {{ vm.selectedJob.id }}</p>
               <p *ngIf="vm.selectedJob">
                 <strong>Status:</strong> {{ vm.selectedJob.status }} at
@@ -316,7 +317,7 @@
                 <p>
                   <strong>Request geometry:</strong>
                   {{ request.width }} x {{ request.height }}
-                  at {{ request.pixscale }} arcsec/pixel
+                  at {{ selectedPixscaleLabel(vm.selectedJob, vm.selectedImage) }} arcsec/pixel
                 </p>
               </ng-container>
               <p *ngIf="vm.selectedImage">
@@ -342,7 +343,11 @@
                 {{ vm.selectedImage.provenance.ra }}, {{ vm.selectedImage.provenance.dec }}
               </p>
               <p *ngIf="vm.selectedImage">
-                <strong>Pixscale:</strong> {{ vm.selectedImage.provenance.pixscale }}
+                <strong>Pixscale:</strong> {{ selectedProvenancePixscaleLabel(vm.selectedImage) }}
+              </p>
+              <p *ngIf="isDerivedPreview(vm.selectedImage)" class="forge-graphql__meta">
+                SkyView results are derived quick-look products and should not be treated as
+                archive-native cutouts from the upstream survey.
               </p>
               <p *ngIf="vm.selectedImage">
                 <strong>Accessed:</strong> {{ vm.selectedImage.accessedAt }}

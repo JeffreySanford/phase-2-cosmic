@@ -49,17 +49,17 @@ export type ForgeJobDto = Readonly<{
   request: Readonly<{
     providerAdapter: string;
     sourceService: string;
-    layer: string;
+    layer: string | null;
     bands: readonly string[];
     ra: number;
     dec: number;
     radiusArcmin: number;
-    pixscale: number;
+    pixscale: number | null;
     size: number;
     width: number;
     height: number;
-    jpegCutoutUrl: string;
-    fitsCutoutUrl: string;
+    jpegCutoutUrl: string | null;
+    fitsCutoutUrl: string | null;
   }> | null;
   createdAt: string;
   updatedAt: string;
@@ -86,11 +86,11 @@ export type ForgeImageProductDto = Readonly<{
     accessedAt: string;
     transformChain: readonly string[];
     artifactMode: ForgeArtifactMode;
-    layer: string;
+    layer: string | null;
     bandSet: readonly string[];
     ra: number;
     dec: number;
-    pixscale: number;
+    pixscale: number | null;
     size: number;
     width: number;
     height: number;

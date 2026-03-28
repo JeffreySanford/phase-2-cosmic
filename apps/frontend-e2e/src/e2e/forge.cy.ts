@@ -32,6 +32,7 @@ describe("forge workbench", () => {
       const operationName = req.body?.operationName;
 
       if (operationName === "CreateCutoutJob") {
+        req.alias = "forgeCreateCutoutJob";
         includeCreatedJobInBootstrap = true;
         req.reply({
           statusCode: 200,
@@ -113,6 +114,28 @@ describe("forge workbench", () => {
                 supportsPreview: true,
                 previewReady: true,
                 citationUrl: "https://irsa.ipac.caltech.edu/Missions/wise.html",
+              },
+              {
+                id: "skyview",
+                name: "SkyView",
+                providerName: "NASA GSFC SkyView",
+                waveband: "mixed",
+                supportsFits: false,
+                supportsCutout: true,
+                supportsPreview: true,
+                previewReady: true,
+                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+              },
+              {
+                id: "esasky",
+                name: "ESASky",
+                providerName: "ESA ESASky",
+                waveband: "mixed",
+                supportsFits: false,
+                supportsCutout: true,
+                supportsPreview: true,
+                previewReady: false,
+                citationUrl: "https://open.esa.int/esasky/",
               },
             ],
             jobs: [
@@ -297,7 +320,7 @@ describe("forge workbench", () => {
     cy.contains("button.forge-chip", "AllWISE").click();
     cy.contains("button", "Create cutout job").should("not.be.disabled").click();
 
-    cy.wait("@forgeGraphql")
+    cy.wait("@forgeCreateCutoutJob")
       .its("request.body.operationName")
       .should("eq", "CreateCutoutJob");
 
@@ -335,5 +358,25 @@ describe("forge workbench", () => {
       .parent()
       .find("a")
       .should("have.attr", "href", "/api/forge/artifacts/forge-image-2/fits");
+  });
+
+  it("renders SkyView as a live derived-preview survey option", () => {
+    cy.visit("/forge");
+    cy.wait("@forgeHealth");
+    cy.wait("@forgeGraphql");
+
+    cy.contains("button.forge-chip", "SkyView")
+      .should("not.be.disabled")
+      .contains("derived");
+  });
+
+  it("renders ESASky as a planned disabled survey option", () => {
+    cy.visit("/forge");
+    cy.wait("@forgeHealth");
+    cy.wait("@forgeGraphql");
+
+    cy.contains("button.forge-chip", "ESASky")
+      .should("be.disabled")
+      .contains("planned");
   });
 });

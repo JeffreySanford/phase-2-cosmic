@@ -101,23 +101,35 @@ Official references:
 - quick-look discovery
 - cross-survey comparison
 - optional derived preview generation
+- fallback imagery when archive-native cutouts are unavailable or unsuitable
 
 Official references:
 
 - [SkyView survey availability](https://skyview.gsfc.nasa.gov/current/docs/availability.html)
 - [SkyView in a Jar](https://skyview.gsfc.nasa.gov/jar/skyviewinajar.html)
 
+Recommended posture:
+
+- treat SkyView as a derived-image and comparison source, not as the first archive-native production adapter
+
 ### ESASky
 
 - sky discovery
 - HiPS-driven exploration
 - mission-breadth enrichment for viewer-facing flows
+- EDDIE-generated preview images for viewer workflows
 
 Official references:
 
 - [ESASky overview](https://open.esa.int/esasky/)
 - [ESASky skies and HiPS information](https://www.cosmos.esa.int/web/esdc/esasky-skies)
 - [ESASky cutout help](https://sky.esa.int/esasky/hipsCutout/help.html)
+
+Recommended posture:
+
+- treat ESASky as a HiPS/discovery and preview adapter
+- label HiPS/EDDIE outputs as visualization-oriented derived products
+- keep mission-native science downloads separate from HiPS-generated preview artifacts
 
 ### Pan-STARRS / STScI
 

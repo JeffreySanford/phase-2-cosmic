@@ -1,21 +1,42 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Simple method-level logging: writes timestamped lines to logs/ and prints to console
+# Append-only logging: keep one cumulative log and one per-run session log.
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOG_DIR="$REPO_ROOT/logs"
 mkdir -p "$LOG_DIR"
-LOG_FILE="$LOG_DIR/start-all-$(date +%Y%m%dT%H%M%S).log"
-log() {
+RUN_ID="$(date +%Y%m%dT%H%M%S)"
+LOG_FILE="$LOG_DIR/start-all.log"
+SESSION_LOG_FILE="$LOG_DIR/start-all-${RUN_ID}.log"
+
+timestamp() {
 	if command -v date >/dev/null 2>&1; then
-		TS=$(date --rfc-3339=seconds 2>/dev/null || date)
+		date --rfc-3339=seconds 2>/dev/null || date
 	else
-		TS="$(date)"
+		printf '%s' "$(date)"
 	fi
-	printf '%s %s\n' "$TS" "$*" | tee -a "$LOG_FILE"
 }
 
-log "[start-all] script started, logging to ${LOG_FILE}"
+write_log_line() {
+	local line="$1"
+	printf '%s\n' "$line" | tee -a "$LOG_FILE" >> "$SESSION_LOG_FILE"
+}
+
+log() {
+	write_log_line "$(timestamp) $*"
+}
+
+stage() {
+	local title="$1"
+	write_log_line ""
+	write_log_line "============================================================"
+	write_log_line "$(timestamp) [start-all][stage] $title"
+	write_log_line "============================================================"
+}
+
+log "[start-all] script started"
+log "[start-all] cumulative log: ${LOG_FILE}"
+log "[start-all] session log: ${SESSION_LOG_FILE}"
 
 COMPOSE_FILE=docker/dev-compose.yml
 DEFAULT_BUILD_SERVICES="java-governance data-generator java-ingest"
@@ -23,6 +44,7 @@ DEFAULT_BUILD_SERVICES="java-governance data-generator java-ingest"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$REPO_ROOT/.env"
 ENV_SAMPLE="$REPO_ROOT/.env.sample"
+stage "Environment Setup"
 # Load environment variables from .env (private) or .env.sample (fallback)
 if [ -f "$ENV_FILE" ]; then
 	log "[start-all] Loading environment from $ENV_FILE"
@@ -38,6 +60,7 @@ elif [ -f "$ENV_SAMPLE" ]; then
  	set +a
 fi
 
+stage "Registry Authentication"
 # If a Docker personal access token is provided, attempt to login so builds won't hit unauthenticated pull limits.
 if [ -n "${DOCKER_PAT:-}" ]; then
 	DOCKER_USER=${DOCKER_USERNAME:-${USER:-}}
@@ -77,6 +100,7 @@ if [ -z "$BUILD_SERVICES_EFFECTIVE" ] && [ "$FAST_START" != "true" ] && [ "${BUI
 	BUILD_SERVICES_EFFECTIVE="$DEFAULT_BUILD_SERVICES"
 fi
 
+stage "Docker Build Strategy"
 log "[start-all] Build strategy: FAST_START=${FAST_START} SKIP_BUILD=${SKIP_BUILD_EFFECTIVE} NO_PULL=${NO_PULL_EFFECTIVE} BUILD_ALL=${BUILD_ALL:-false} BUILD_SERVICES=${BUILD_SERVICES_EFFECTIVE:-<none>}"
 log "[start-all] Ensuring docker images are up-to-date when requested..."
 # Behavior options (env vars):
@@ -110,9 +134,11 @@ else
 	fi
 fi
 
+stage "Compose Startup"
 log "[start-all] Bringing up compose stack (detached)..."
 docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 
+stage "Redis Precache"
 log "[start-all] Ensuring Redis is ready and precaching sample data..."
 if [ -x "$(command -v bash)" ]; then
 	# run precache (script handles locating/starting redis)
@@ -122,6 +148,7 @@ else
 	log "[start-all] bash not available; skipping redis precache"
 fi
 
+stage "Local Dev Runtime"
 log "[start-all] Compose started. Launching local dev servers (SSR + frontend dev server)."
 # Angular dev server remains on 4200 via the Nx target config.
 # FRONTEND_PORT is the Nest SSR/proxy target port used by this workspace.
@@ -161,16 +188,52 @@ kill_stale_port_listener() {
 			(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue).OwningProcess |
 			Where-Object { \$_ -match '^\d+$' } | Select-Object -First 1" 2>/dev/null | tr -d '[:space:]')
 		if [ -n "$pid" ]; then
-			log "[start-all] Killing stale PID $pid on $label port $port"
+			log "[start-all] Found existing listener on $label port $port (PID $pid); stopping it before launch"
 			powershell.exe -NoProfile -Command "Stop-Process -Id $pid -Force" 2>/dev/null || true
 		fi
 	else
 		pid=$(lsof -ti tcp:"$port" 2>/dev/null || fuser "$port/tcp" 2>/dev/null)
 		if [ -n "$pid" ]; then
-			log "[start-all] Killing stale PID $pid on $label port $port"
+			log "[start-all] Found existing listener on $label port $port (PID $pid); stopping it before launch"
 			kill -9 "$pid" 2>/dev/null || true
 		fi
 	fi
+
+	if [ -n "$pid" ]; then
+		wait_for_port_clear "$port" "$label" 15 || true
+	else
+		log "[start-all] $label port $port is already clear"
+	fi
+}
+
+wait_for_port_clear() {
+	local port="$1"
+	local label="$2"
+	local timeout_seconds="${3:-15}"
+	local attempt=0
+
+	while [ "$attempt" -lt "$timeout_seconds" ]; do
+		if command -v powershell.exe &>/dev/null; then
+			if powershell.exe -NoProfile -Command "
+				if (Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) {
+					exit 1
+				}
+				exit 0" >/dev/null 2>&1; then
+				log "[start-all] $label port $port is clear"
+				return 0
+			fi
+		elif command -v nc >/dev/null 2>&1; then
+			if ! nc -z 127.0.0.1 "$port" >/dev/null 2>&1; then
+				log "[start-all] $label port $port is clear"
+				return 0
+			fi
+		fi
+		attempt=$((attempt + 1))
+		sleep 1
+	done
+
+	log "[start-all] $label port $port did not clear within ${timeout_seconds}s; continuing"
+	return 1
 }
 
 wait_for_tcp_listener() {
@@ -220,7 +283,8 @@ kill_stale_port_listener "4200" "frontend-dev"
 kill_stale_port_listener "24678" "vite-hmr"
 wait_for_tcp_listener "$REDIS_HOST" "$REDIS_PORT" "Redis" 30 || true
 
-log "[start-all] launching dev servers"
+stage "Port Cleanup And Readiness"
+log "[start-all] Cleaning up stale listeners and checking local dependencies"
 sanitize_windows_env() {
 	env -u PWD -u MSYSTEM -u SHELL -u TERM -u TMPDIR "$@"
 }
@@ -248,11 +312,15 @@ stop_bg_jobs() {
 
 trap 'stop_bg_jobs' EXIT INT TERM
 
+stage "Launching Background Services"
 start_bg "allocator" node "$REPO_ROOT/tools/trident-allocator/server.js"
 start_bg "forge-api" env FORGE_API_HOST_PORT="$FORGE_API_HOST_PORT" PORT="$FORGE_API_HOST_PORT" node "$REPO_ROOT/node_modules/tsx/dist/cli.mjs" --tsconfig "$REPO_ROOT/apps/cosmic-forge-api/tsconfig.app.json" "$REPO_ROOT/apps/cosmic-forge-api/src/main.ts"
 start_bg "forge-worker" env PORT="$FORGE_WORKER_HOST_PORT" FORGE_WORKER_HOST_PORT="$FORGE_WORKER_HOST_PORT" FORGE_API_URL="http://127.0.0.1:$FORGE_API_HOST_PORT" node "$REPO_ROOT/node_modules/tsx/dist/cli.mjs" --tsconfig "$REPO_ROOT/apps/cosmic-forge-worker/tsconfig.app.json" "$REPO_ROOT/apps/cosmic-forge-worker/src/main.ts"
 start_bg "ssr" sanitize_windows_env env FRONTEND_PORT="$FRONTEND_PORT" PORT="$FRONTEND_PORT" FORGE_API_URL="http://127.0.0.1:$FORGE_API_HOST_PORT" powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; node '.\\node_modules\\tsx\\dist\\cli.mjs' --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts"
 start_bg "frontend" sanitize_windows_env env NX_DAEMON="false" powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; Set-Item Env:NX_DAEMON false; pnpm nx serve frontend --port=4200 --host=127.0.0.1"
+
+log "[start-all] Background services launched: allocator, forge-api, forge-worker, ssr, frontend"
+log "[start-all] Expected endpoints: SSR=$FRONTEND_PORT forge-api=$FORGE_API_HOST_PORT forge-worker=$FORGE_WORKER_HOST_PORT frontend-dev=4200 allocator=$ALLOCATOR_PORT"
 
 while true; do
 	for i in "${!PIDS[@]}"; do
@@ -260,6 +328,7 @@ while true; do
 		if ! kill -0 "$pid" 2>/dev/null; then
 			wait "$pid"
 			exit_code=$?
+			stage "Process Exit"
 			log "[start-all] ${LABELS[$i]} exited with code ${exit_code}"
 			stop_bg_jobs
 			exit "$exit_code"

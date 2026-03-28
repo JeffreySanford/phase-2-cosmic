@@ -13,6 +13,13 @@ import {
   buildLegacyCutoutRequest,
   legacySurveyAdapter,
 } from "./legacy-surveys-adapter";
+import {
+  SKYVIEW_CITATION_URL,
+  SKYVIEW_PROVIDER_NAME,
+  SKYVIEW_SURVEY_ID,
+  buildSkyViewCutoutRequest,
+  skyViewSurveyAdapter,
+} from "./skyview-adapter";
 import type { ForgeSurveyAdapter } from "./survey-adapter";
 
 export const forgeSurveys: ForgeSurvey[] = [
@@ -61,15 +68,26 @@ export const forgeSurveys: ForgeSurvey[] = [
     citationUrl: IRSA_CITATION_URL,
   },
   {
-    id: "skyview",
+    id: SKYVIEW_SURVEY_ID,
     name: "SkyView",
-    providerName: "NASA GSFC",
+    providerName: SKYVIEW_PROVIDER_NAME,
     waveband: "mixed",
-    supportsFits: true,
+    supportsFits: false,
+    supportsCutout: true,
+    supportsPreview: true,
+    previewReady: true,
+    citationUrl: SKYVIEW_CITATION_URL,
+  },
+  {
+    id: "esasky",
+    name: "ESASky",
+    providerName: "ESA ESASky",
+    waveband: "mixed",
+    supportsFits: false,
     supportsCutout: true,
     supportsPreview: true,
     previewReady: false,
-    citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+    citationUrl: "https://open.esa.int/esasky/",
   },
   {
     id: "panstarrs",
@@ -98,6 +116,7 @@ export const forgeSurveys: ForgeSurvey[] = [
 export const forgeSurveyAdapters: Record<string, ForgeSurveyAdapter> = {
   [LEGACY_SURVEYS_ID]: legacySurveyAdapter,
   [IRSA_ALLWISE_SURVEY_ID]: irsaAllwiseSurveyAdapter,
+  [SKYVIEW_SURVEY_ID]: skyViewSurveyAdapter,
 };
 
 const previewProviderPriority = [LEGACY_SURVEYS_ID, IRSA_ALLWISE_SURVEY_ID];
@@ -150,4 +169,4 @@ export function createPreviewImageProduct(
   return adapter.createImageProduct(job, imageId, accessedAt);
 }
 
-export { buildIrsaAllwiseCutoutRequest, buildLegacyCutoutRequest };
+export { buildIrsaAllwiseCutoutRequest, buildLegacyCutoutRequest, buildSkyViewCutoutRequest };
