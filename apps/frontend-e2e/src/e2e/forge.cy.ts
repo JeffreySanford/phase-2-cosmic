@@ -4,14 +4,6 @@ describe("forge workbench", () => {
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aF9sAAAAASUVORK5CYII=";
     let includeCreatedJobInBootstrap = false;
 
-    cy.intercept("GET", "/api/forge/health", {
-      statusCode: 200,
-      body: {
-        status: "ok",
-        service: "cosmic-forge-api",
-      },
-    }).as("forgeHealth");
-
     cy.intercept("GET", "/api/forge/artifacts/*/preview", {
       statusCode: 200,
       headers: {
@@ -88,9 +80,10 @@ describe("forge workbench", () => {
           data: {
             serviceInfo: {
               name: "cosmic-forge-api",
-              status: "test",
+              status: "graphql-live",
               operationName: "ForgeWorkbenchBootstrap",
               graphReady: true,
+              contractVersion: "forge-workbench.v1",
             },
             surveys: [
               {
@@ -309,12 +302,14 @@ describe("forge workbench", () => {
 
   it("loads bootstrap data and creates a queued cutout job", () => {
     cy.visit("/forge");
-    cy.wait("@forgeHealth");
     cy.wait("@forgeGraphql");
 
     cy.contains("Public survey image orchestration workbench");
-    cy.contains("Forge API health").parent().contains(/^ok$/);
-    cy.contains("GraphQL bootstrap").parent().contains("graph ready: yes");
+    cy.contains("Forge runtime is available");
+    cy.contains("h2", "GraphQL read model")
+      .closest("article")
+      .should("contain.text", "graph ready: yes")
+      .and("contain.text", "contract version: forge-workbench.v1");
     cy.contains("h3", "My jobs").closest("section").contains("M87 · cutout");
 
     cy.contains("button.forge-chip", "AllWISE").click({ force: true });
@@ -333,7 +328,6 @@ describe("forge workbench", () => {
 
   it("renders a completed AllWISE result with cached preview and fits artifact links", () => {
     cy.visit("/forge");
-    cy.wait("@forgeHealth");
     cy.wait("@forgeGraphql");
 
     cy.contains("M87 · cutout")
@@ -369,7 +363,6 @@ describe("forge workbench", () => {
 
   it("renders SkyView as a live derived-preview survey option", () => {
     cy.visit("/forge");
-    cy.wait("@forgeHealth");
     cy.wait("@forgeGraphql");
 
     cy.contains("button.forge-chip", "SkyView")
@@ -379,7 +372,6 @@ describe("forge workbench", () => {
 
   it("renders ESASky as a planned disabled survey option", () => {
     cy.visit("/forge");
-    cy.wait("@forgeHealth");
     cy.wait("@forgeGraphql");
 
     cy.contains("button.forge-chip", "ESASky")
@@ -387,15 +379,7 @@ describe("forge workbench", () => {
       .contains("planned");
   });
 
-  it("renders a clean offline shell when Forge health and GraphQL are unavailable", () => {
-    cy.intercept("GET", "/api/forge/health", {
-      statusCode: 502,
-      body: {
-        error: "forge_proxy_error",
-        message: "Unable to reach Cosmic Forge API",
-      },
-    }).as("forgeHealthOffline");
-
+  it("renders a clean offline shell when the GraphQL read model is unavailable", () => {
     cy.intercept("POST", "/api/forge/graphql", {
       statusCode: 502,
       body: {
@@ -405,15 +389,13 @@ describe("forge workbench", () => {
     }).as("forgeGraphqlOffline");
 
     cy.visit("/forge");
-    cy.wait("@forgeHealthOffline");
     cy.wait("@forgeGraphqlOffline");
 
-    cy.contains("Forge is offline through the SSR seam");
+    cy.contains("Forge read model is offline through the SSR seam");
     cy.contains(
-      "Health and GraphQL bootstrap both failed. You can still inspect the form shell"
+      "GraphQL bootstrap failed. You can still inspect the form shell"
     );
-    cy.contains("Forge health probe failed:");
-    cy.contains("Forge GraphQL bootstrap failed:");
+    cy.contains("Forge GraphQL read model failed:");
     cy.contains("h2", "Workbench shell");
     cy.contains("Select a job to inspect its result");
   });
@@ -425,7 +407,6 @@ describe("forge workbench", () => {
     }).as("forgePreviewUnavailable");
 
     cy.visit("/forge");
-    cy.wait("@forgeHealth");
     cy.wait("@forgeGraphql");
 
     cy.contains("M87 · cutout")
@@ -466,19 +447,8 @@ describe("forge workbench", () => {
     }).as("forgeCreateCutoutJobValidationError");
 
     cy.visit("/forge");
-    cy.wait("@forgeHealth");
     cy.contains("h2", "Workbench shell");
-
-    cy.contains("button.forge-chip", "Legacy Surveys").click();
-    cy.contains("button.forge-chip", "Legacy Surveys").click();
-
-    cy.window().then((win) => {
-      const createButton = Array.from(win.document.querySelectorAll("button")).find(
-        (button) => button.textContent?.includes("Create cutout job")
-      ) as HTMLButtonElement | undefined;
-      createButton?.removeAttribute("disabled");
-      createButton?.click();
-    });
+    cy.contains("button", "Create cutout job").click({ force: true });
 
     cy.wait("@forgeCreateCutoutJobValidationError");
     cy.contains(

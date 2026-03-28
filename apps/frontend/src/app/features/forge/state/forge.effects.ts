@@ -31,10 +31,7 @@ export class ForgeEffects {
   readonly refresh$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ForgeActions.refreshRequested),
-      concatMap(() => [
-        ForgeActions.loadHealthRequested(),
-        ForgeActions.loadBootstrapRequested(),
-      ])
+      map(() => ForgeActions.loadBootstrapRequested())
     )
   );
 
@@ -43,24 +40,6 @@ export class ForgeEffects {
       ofType(ForgeActions.startAutoRefreshRequested),
       exhaustMap(() =>
         timer(10000, 10000).pipe(map(() => ForgeActions.refreshRequested()))
-      )
-    )
-  );
-
-  readonly loadHealth$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(ForgeActions.loadHealthRequested),
-      mergeMap(() =>
-        this.forgeApi.getHealth().pipe(
-          map((health) => ForgeActions.loadHealthSucceeded({ health })),
-          catchError((error: unknown) =>
-            of(
-              ForgeActions.loadHealthFailed({
-                error: this.toMessage(error),
-              })
-            )
-          )
-        )
       )
     )
   );

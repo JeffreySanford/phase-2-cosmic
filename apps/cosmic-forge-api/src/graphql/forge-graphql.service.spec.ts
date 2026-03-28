@@ -10,6 +10,10 @@ import { ForgeGraphqlService, forgeGraphqlDocuments } from "./forge-graphql.serv
 
 type BootstrapPayload = {
   data: {
+    serviceInfo: {
+      contractVersion: string;
+      graphReady: boolean;
+    };
     jobs: Array<{
       requestedSurveyIds: string[];
       request: {
@@ -55,6 +59,8 @@ test("ForgeWorkbenchBootstrap resolves via operationName and returns request/pro
   assert.equal(result.status, 200);
   const payload = result.body as BootstrapPayload;
   assert.equal(payload.errors, undefined);
+  assert.equal(payload.data.serviceInfo.contractVersion, "forge-workbench.v1");
+  assert.equal(payload.data.serviceInfo.graphReady, true);
 
   const legacyJob = payload.data.jobs.find((job) => job.requestedSurveyIds.includes("legacy"));
   const legacyImage = payload.data.imageProducts.find(

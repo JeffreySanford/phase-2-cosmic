@@ -77,7 +77,7 @@ The first implementation does not need all of these as distinct routed pages. A 
 
 1. add Forge base URL env handling to `apps/frontend/server.nest.ts`
 2. add proxy handlers for `/api/forge/*`
-3. add minimal Forge health probe endpoint consumption in the UI
+3. keep the Forge health probe available for operations, but bootstrap the UI from the GraphQL read model
 4. reserve `/forge` route in the Angular shell
 5. later attach GraphQL client configuration to the Forge route/module
 

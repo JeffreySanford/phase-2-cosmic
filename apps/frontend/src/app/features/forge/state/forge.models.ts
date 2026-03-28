@@ -7,13 +7,6 @@ export type ForgeJobStatus =
 
 export type ForgeArtifactMode = "external" | "cached";
 
-export type ForgeHealthDto = Readonly<{
-  service: string;
-  status: string;
-  mode?: string;
-  timestamp?: string;
-}>;
-
 export type ForgeSurveyDto = Readonly<{
   id: string;
   name: string;
@@ -31,6 +24,7 @@ export type ForgeServiceInfoDto = Readonly<{
   status: string;
   operationName: string | null;
   graphReady: boolean;
+  contractVersion: string;
 }>;
 
 export type ForgeJobDto = Readonly<{

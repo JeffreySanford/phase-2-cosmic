@@ -15,7 +15,6 @@ describe("ForgeEffects", () => {
   beforeEach(() => {
     actions$ = new ReplaySubject(1);
     forgeApi = {
-      getHealth: jest.fn(),
       getWorkbenchBootstrap: jest.fn(),
       createCutoutJob: jest.fn(),
       cancelJob: jest.fn(),
@@ -80,5 +79,13 @@ describe("ForgeEffects", () => {
         error: "At least one survey must be selected for a Forge cutout job.",
       })
     );
+  });
+
+  it("refreshes the Forge shell from the GraphQL bootstrap read model only", async () => {
+    actions$.next(ForgeActions.refreshRequested());
+
+    const result = await firstValueFrom(effects.refresh$.pipe(take(1)));
+
+    expect(result).toEqual(ForgeActions.loadBootstrapRequested());
   });
 });

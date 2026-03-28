@@ -33,6 +33,8 @@ type JobArgs = Readonly<{
   id: string;
 }>;
 
+export const FORGE_GRAPHQL_CONTRACT_VERSION = "forge-workbench.v1";
+
 export const forgeGraphqlDocuments: Record<string, string> = {
   ForgeWorkbenchBootstrap: `
     query ForgeWorkbenchBootstrap($operationName: String) {
@@ -41,6 +43,7 @@ export const forgeGraphqlDocuments: Record<string, string> = {
         status
         operationName
         graphReady
+        contractVersion
       }
       surveys {
         id
@@ -439,6 +442,7 @@ const forgeSchema = buildSchema(`
     status: String!
     operationName: String
     graphReady: Boolean!
+    contractVersion: String!
   }
 
   type ForgeSurvey {
@@ -605,6 +609,7 @@ export class ForgeGraphqlService {
       status: "graphql-live",
       operationName,
       graphReady: true,
+      contractVersion: FORGE_GRAPHQL_CONTRACT_VERSION,
     };
   }
 

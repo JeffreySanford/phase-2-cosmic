@@ -361,8 +361,8 @@ Goal: replace placeholder health-only behavior with a stable Forge read/write co
 
 Sprint 3 done when:
 
-- [ ] The Forge UI can bootstrap entirely from the GraphQL read model.
-- [ ] The contract is explicit enough to lock the worker and UI against it.
+- [x] The Forge UI can bootstrap entirely from the GraphQL read model.
+- [x] The contract is explicit enough to lock the worker and UI against it.
 
 ## Sprint 4 - Queue Lifecycle And Worker Execution
 

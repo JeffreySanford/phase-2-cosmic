@@ -2,7 +2,6 @@ import { createActionGroup, emptyProps, props } from "@ngrx/store";
 import {
   ForgeCreateCutoutJobInputDto,
   ForgeCreateCutoutJobResponseDto,
-  ForgeHealthDto,
   ForgeImageMutationResponseDto,
   ForgeJobMutationResponseDto,
   ForgeWorkbenchBootstrapResponseDto,
@@ -14,9 +13,6 @@ export const ForgeActions = createActionGroup({
     InitializeRequested: emptyProps(),
     RefreshRequested: emptyProps(),
     StartAutoRefreshRequested: emptyProps(),
-    LoadHealthRequested: emptyProps(),
-    LoadHealthSucceeded: props<{ health: ForgeHealthDto }>(),
-    LoadHealthFailed: props<{ error: string }>(),
     LoadBootstrapRequested: emptyProps(),
     LoadBootstrapSucceeded: props<{ payload: ForgeWorkbenchBootstrapResponseDto }>(),
     LoadBootstrapFailed: props<{ error: string }>(),

@@ -59,21 +59,6 @@ export const selectForgeCompletedCount = createSelector(
   (jobs) => jobs.filter((job) => job.status === "COMPLETED").length
 );
 
-export const selectForgeHealth = createSelector(
-  selectForgeState,
-  (state) => state.health
-);
-
-export const selectForgeHealthLoading = createSelector(
-  selectForgeState,
-  (state) => state.healthLoading
-);
-
-export const selectForgeHealthError = createSelector(
-  selectForgeState,
-  (state) => state.healthError
-);
-
 export const selectForgeServiceInfo = createSelector(
   selectForgeState,
   (state) => state.serviceInfo
@@ -159,9 +144,6 @@ export const selectForgeSelectedImage = createSelector(
 );
 
 export const selectForgeVm = createSelector(
-  selectForgeHealth,
-  selectForgeHealthLoading,
-  selectForgeHealthError,
   selectForgeCurrentUserId,
   selectForgeSelectedJobId,
   selectForgeServiceInfo,
@@ -185,9 +167,6 @@ export const selectForgeVm = createSelector(
   selectForgeRunningCount,
   selectForgeCompletedCount,
   (
-    health,
-    healthLoading,
-    healthError,
     currentUserId,
     selectedJobId,
     serviceInfo,
@@ -211,11 +190,6 @@ export const selectForgeVm = createSelector(
     runningCount,
     completedCount
   ) => ({
-    healthState: {
-      loading: healthLoading,
-      health,
-      error: healthError,
-    },
     graphqlState: {
       loading: bootstrapLoading,
       payload: serviceInfo

@@ -3,7 +3,6 @@ import { HttpClient } from "@angular/common/http";
 import {
   ForgeCreateCutoutJobInputDto,
   ForgeCreateCutoutJobResponseDto,
-  ForgeHealthDto,
   ForgeImageMutationResponseDto,
   ForgeJobMutationResponseDto,
   ForgeWorkbenchBootstrapResponseDto,
@@ -13,10 +12,6 @@ import { Observable } from "rxjs";
 @Injectable({ providedIn: "root" })
 export class ForgeApiService {
   private readonly http = inject(HttpClient);
-
-  getHealth(): Observable<ForgeHealthDto> {
-    return this.http.get<ForgeHealthDto>("/api/forge/health");
-  }
 
   getWorkbenchBootstrap(): Observable<ForgeWorkbenchBootstrapResponseDto> {
     return this.http.post<ForgeWorkbenchBootstrapResponseDto>("/api/forge/graphql", {

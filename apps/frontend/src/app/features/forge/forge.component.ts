@@ -16,6 +16,8 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { combineLatest, distinctUntilChanged, map, shareReplay, startWith } from "rxjs";
 import { ForgeFacade } from "./state/forge.facade";
 
+const EXPECTED_FORGE_CONTRACT_VERSION = "forge-workbench.v1";
+
 @Component({
   selector: "app-forge",
   templateUrl: "./forge.component.html",
@@ -218,68 +220,74 @@ export class ForgeComponent implements OnInit {
     return selectedImage?.provenance.transformChain.includes("skyview-derived-image") ?? false;
   }
 
-  isShellOffline(vm: {
-    healthState: { error: string | null; loading: boolean };
-    graphqlState: { error: string | null; loading: boolean };
-  }): boolean {
-    return (
-      !vm.healthState.loading &&
-      !vm.graphqlState.loading &&
-      !!vm.healthState.error &&
-      !!vm.graphqlState.error
-    );
+  hasSupportedContract(vm: { serviceInfo: { contractVersion: string } | null }): boolean {
+    return vm.serviceInfo?.contractVersion === EXPECTED_FORGE_CONTRACT_VERSION;
   }
 
-  isShellDegraded(vm: {
-    healthState: { error: string | null; loading: boolean };
-    graphqlState: { error: string | null; loading: boolean };
-  }): boolean {
-    if (this.isShellOffline(vm)) {
-      return false;
-    }
-
-    return (
-      (!vm.healthState.loading && !!vm.healthState.error) ||
-      (!vm.graphqlState.loading && !!vm.graphqlState.error)
-    );
+  isShellOffline(vm: { graphqlState: { error: string | null; loading: boolean } }): boolean {
+    return !vm.graphqlState.loading && !!vm.graphqlState.error;
   }
 
   shellStatusTitle(vm: {
-    healthState: { error: string | null; loading: boolean };
     graphqlState: { error: string | null; loading: boolean };
+    serviceInfo: { graphReady: boolean; contractVersion: string } | null;
   }): string {
     if (this.isShellOffline(vm)) {
-      return "Forge is offline through the SSR seam";
+      return "Forge read model is offline through the SSR seam";
     }
 
-    if (this.isShellDegraded(vm)) {
-      return "Forge is partially available";
+    if (!vm.serviceInfo?.graphReady) {
+      return "Forge read model is not ready";
+    }
+
+    if (!this.hasSupportedContract(vm)) {
+      return "Forge contract version mismatch";
     }
 
     return "Forge runtime is available";
   }
 
   shellStatusMessage(vm: {
-    healthState: { error: string | null; loading: boolean; health?: { service?: string } | null };
     graphqlState: { error: string | null; loading: boolean };
+    serviceInfo: {
+      name?: string;
+      status: string;
+      graphReady: boolean;
+      contractVersion: string;
+    } | null;
   }): string {
     if (this.isShellOffline(vm)) {
-      return "Health and GraphQL bootstrap both failed. You can still inspect the form shell, but live queue data and artifacts are unavailable until the Forge API is reachable again.";
+      return "GraphQL bootstrap failed. You can still inspect the form shell, but live queue data and artifacts are unavailable until the Forge API read model is reachable again.";
     }
 
-    if (this.isShellDegraded(vm)) {
-      if (vm.graphqlState.error) {
-        return "The Forge shell is up, but GraphQL bootstrap is currently unavailable. Existing controls remain visible so the degraded state is explicit.";
-      }
-
-      if (vm.healthState.error) {
-        return "GraphQL data loaded, but the explicit health probe is currently failing. Treat the workbench as degraded until the SSR health path recovers.";
-      }
+    if (!vm.serviceInfo?.graphReady) {
+      return "The Forge API responded, but the read model is not marked graph-ready yet. Treat the shell as degraded until the contract stabilizes.";
     }
 
-    return `Forge health is currently reporting through ${
-      vm.healthState.health?.service || "the SSR proxy"
+    if (!this.hasSupportedContract(vm)) {
+      return `The Forge API responded with contract version ${
+        vm.serviceInfo?.contractVersion || "unknown"
+      }, but the UI expects ${EXPECTED_FORGE_CONTRACT_VERSION}. Treat the shell as degraded until the UI and API are aligned.`;
+    }
+
+    return `Forge is bootstrapping entirely from the GraphQL read model exposed by ${
+      vm.serviceInfo?.name || "the SSR proxy"
     }.`;
+  }
+
+  readModelStatus(vm: {
+    graphqlState: { error: string | null; loading: boolean };
+    serviceInfo: { graphReady: boolean; contractVersion: string } | null;
+  }): "offline" | "degraded" | "ready" {
+    if (this.isShellOffline(vm)) {
+      return "offline";
+    }
+
+    if (!vm.serviceInfo?.graphReady || !this.hasSupportedContract(vm)) {
+      return "degraded";
+    }
+
+    return "ready";
   }
 
   handlePreviewLoaded(imageId: string | null): void {

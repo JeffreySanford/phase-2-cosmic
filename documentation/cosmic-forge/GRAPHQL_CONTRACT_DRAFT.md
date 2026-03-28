@@ -54,6 +54,7 @@ type ForgeServiceInfo {
   status: String!
   operationName: String
   graphReady: Boolean!
+  contractVersion: String!
 }
 
 type Survey {
@@ -206,10 +207,12 @@ The current Forge branch now has two live adapter-backed paths:
 
 Current behavior:
 
+- the Forge UI can bootstrap entirely from the `ForgeWorkbenchBootstrap` GraphQL read model without a separate health read
 - preview and FITS artifacts can be served back through Forge artifact routes
 - `artifactMode` may be `external` or `cached`
 - `cacheStatus` may be `external-only` or `cached`
 - the API now serves queue state through a repository-backed persisted state file rather than process memory only
+- `ForgeServiceInfo.contractVersion` is now explicit so the UI can reject contract drift without mutating the read model shape
 - PostgreSQL remains the recommended next durable backing store without requiring GraphQL contract churn
 
 ## Adapter-facing contract assumptions

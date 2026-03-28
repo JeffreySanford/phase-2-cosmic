@@ -14,9 +14,7 @@
 
   <section
     class="forge-runtime-banner"
-    [attr.data-state]="
-      isShellOffline(vm) ? 'offline' : isShellDegraded(vm) ? 'degraded' : 'ready'
-    "
+    [attr.data-state]="readModelStatus(vm)"
   >
     <div>
       <p class="forge-runtime-banner__eyebrow">Runtime state</p>
@@ -101,27 +99,8 @@
       </p>
     </article>
 
-    <article class="forge-card forge-card--health">
-      <h2>Forge API health</h2>
-
-      <p *ngIf="vm.healthState.loading">Checking Forge health through SSR...</p>
-
-      <div
-        *ngIf="!vm.healthState.loading && vm.healthState.health"
-        class="forge-health"
-        [attr.data-state]="vm.healthState.health.status"
-      >
-        <p class="forge-health__value">{{ vm.healthState.health.status }}</p>
-        <p class="forge-health__meta">service: {{ vm.healthState.health.service }}</p>
-      </div>
-
-      <p *ngIf="!vm.healthState.loading && vm.healthState.error" class="forge-health__error">
-        Forge health probe failed: {{ vm.healthState.error }}
-      </p>
-    </article>
-
     <article class="forge-card">
-      <h2>GraphQL bootstrap</h2>
+      <h2>GraphQL read model</h2>
 
       <p *ngIf="vm.graphqlState.loading">Checking `/api/forge/graphql` through SSR...</p>
 
@@ -150,10 +129,13 @@
         <p>
           graph ready: {{ vm.serviceInfo?.graphReady ? 'yes' : 'not yet' }}
         </p>
+        <p>
+          contract version: {{ vm.serviceInfo?.contractVersion || 'unknown' }}
+        </p>
       </div>
 
       <p *ngIf="!vm.graphqlState.loading && vm.graphqlState.error" class="forge-health__error">
-        Forge GraphQL bootstrap failed: {{ vm.graphqlState.error }}
+        Forge GraphQL read model failed: {{ vm.graphqlState.error }}
       </p>
     </article>
 

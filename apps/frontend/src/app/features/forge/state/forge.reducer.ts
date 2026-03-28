@@ -6,7 +6,6 @@ import {
 import { createReducer, on } from "@ngrx/store";
 import { ForgeActions } from "./forge.actions";
 import {
-  ForgeHealthDto,
   ForgeImageProductDto,
   ForgeJobDto,
   ForgeServiceInfoDto,
@@ -20,9 +19,6 @@ export type ForgeState = EntityState<ForgeJobDto> & {
   selectedJobId: string | null;
   imageIds: readonly string[];
   imageEntities: Readonly<Record<string, ForgeImageProductDto>>;
-  health: ForgeHealthDto | null;
-  healthLoading: boolean;
-  healthError: string | null;
   serviceInfo: ForgeServiceInfoDto | null;
   surveys: readonly ForgeSurveyDto[];
   bootstrapLoading: boolean;
@@ -45,9 +41,6 @@ export const initialForgeState: ForgeState = forgeJobsAdapter.getInitialState({
   selectedJobId: null,
   imageIds: [],
   imageEntities: {},
-  health: null,
-  healthLoading: false,
-  healthError: null,
   serviceInfo: null,
   surveys: [],
   bootstrapLoading: false,
@@ -60,23 +53,6 @@ export const initialForgeState: ForgeState = forgeJobsAdapter.getInitialState({
 
 export const forgeReducer = createReducer(
   initialForgeState,
-  on(ForgeActions.loadHealthRequested, (state) => ({
-    ...state,
-    healthLoading: true,
-    healthError: null,
-  })),
-  on(ForgeActions.loadHealthSucceeded, (state, { health }) => ({
-    ...state,
-    health,
-    healthLoading: false,
-    healthError: null,
-  })),
-  on(ForgeActions.loadHealthFailed, (state, { error }) => ({
-    ...state,
-    health: null,
-    healthLoading: false,
-    healthError: error,
-  })),
   on(ForgeActions.loadBootstrapRequested, (state) => ({
     ...state,
     bootstrapLoading: true,
