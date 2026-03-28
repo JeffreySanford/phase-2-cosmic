@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2022",
+    "outDir": "../../dist/out-tsc/apps/cosmic-forge-worker",
+    "types": ["node"],
+    "esModuleInterop": true,
+    "strict": false
+  },
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ]
+}

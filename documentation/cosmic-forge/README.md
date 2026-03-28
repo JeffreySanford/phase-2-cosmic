@@ -37,11 +37,17 @@ Reader guide:
 
 - [OVERVIEW.md](./OVERVIEW.md): verbose rationale, risks, and branch fit
 - [PUBLIC_DATA_READINESS.md](./PUBLIC_DATA_READINESS.md): direct answer on whether public data is already enough
+- [DATA_SOURCE_COMPARISON_MATRIX.md](./DATA_SOURCE_COMPARISON_MATRIX.md): scored comparison of official archive and agency data sources for adapter prioritization
+- [FIRST_ADAPTER_DECISION.md](./FIRST_ADAPTER_DECISION.md): recommended first production adapter and follow-on source order
+- [IRSA_ADAPTER_DECISION.md](./IRSA_ADAPTER_DECISION.md): recommended IRSA sequencing, starting with AllWISE and preserving a clean seam for 2MASS
+- [IRSA_IMPLEMENTATION_NOTES.md](./IRSA_IMPLEMENTATION_NOTES.md): concrete engineering notes for the first IRSA-backed adapter slice using AllWISE discovery and IBE cutout retrieval
+- [SPRINT_5_IMPLEMENTATION_NOTES.md](./SPRINT_5_IMPLEMENTATION_NOTES.md): concrete engineering notes for the first real Legacy Surveys-backed adapter slice
 - [PRODUCT_BLUEPRINT.md](./PRODUCT_BLUEPRINT.md): product scope, users, MVP, non-goals
 - [ARCHITECTURE.md](./ARCHITECTURE.md): system shape and Mermaid diagrams
 - [GRAPHQL_CONTRACT_DRAFT.md](./GRAPHQL_CONTRACT_DRAFT.md): branch-scoped GraphQL draft
 - [NGRX_STATE_BLUEPRINT.md](./NGRX_STATE_BLUEPRINT.md): frontend state model
 - [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md): vertical slices, Docker environment, acceptance gates
+- [PI_EXECUTION_PLAN.md](./PI_EXECUTION_PLAN.md): sprint-by-sprint PI checklist with individual execution steps
 - [BRANCH_ENABLEMENT.md](./BRANCH_ENABLEMENT.md): execution checklist for making the branch implementation-ready
 - [DOCKER_ENVIRONMENT.md](./DOCKER_ENVIRONMENT.md): side-by-side local Docker environment and root `.env` rules
 - [SSR_PROXY_SPEC.md](./SSR_PROXY_SPEC.md): how Forge requests should be proxied through the SSR shim

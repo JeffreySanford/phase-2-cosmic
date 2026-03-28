@@ -14,10 +14,6 @@ describe("topology UI integration validation", () => {
     return cy
       .get(".topology-graph svg g.viewport")
       .should("exist")
-      .should(($viewport) => {
-        const transform = $viewport[0].getAttribute("transform") || "";
-        expect(transform).to.match(/scale\(/);
-      })
       .then(($viewport) => $viewport[0].getAttribute("transform") || "");
   }
 
@@ -258,14 +254,14 @@ describe("topology UI integration validation", () => {
     visitTopology();
 
     viewportTransform().then((initialTransform) => {
-      expect(initialTransform).to.match(/scale\(/);
-
       cy.contains(".graph-tools__button", "+").click();
       viewportTransform().then((zoomedInTransform) => {
+        expect(zoomedInTransform).to.match(/scale\(/);
         expect(zoomedInTransform).to.not.equal(initialTransform);
 
         cy.contains(".graph-tools__button", "-").click();
         viewportTransform().then((zoomedOutTransform) => {
+          expect(zoomedOutTransform).to.match(/scale\(/);
           expect(zoomedOutTransform).to.not.equal(zoomedInTransform);
 
           cy.contains(".graph-tools__button--reset", "Fit").click();

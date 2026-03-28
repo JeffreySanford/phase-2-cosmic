@@ -31,6 +31,23 @@ module.exports = [
     },
   },
   {
+    files: ["apps/cosmic-forge-api/src/**/*.ts"],
+    rules: {
+      // This backend app is a standalone Nest service under apps/.
+      // Nx module-boundary checks are useful for workspace imports, but in this
+      // project they incorrectly classify npm imports such as @nestjs/common.
+      "@nx/enforce-module-boundaries": "off",
+    },
+  },
+  {
+    files: ["apps/cosmic-forge-worker/src/**/*.ts"],
+    rules: {
+      // Same issue as the Forge API app: this standalone backend app imports npm
+      // packages directly and should not be blocked by the workspace boundary rule.
+      "@nx/enforce-module-boundaries": "off",
+    },
+  },
+  {
     files: ["**/*.js", "**/*.jsx"],
     rules: {},
   },
