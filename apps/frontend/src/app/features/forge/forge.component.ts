@@ -90,7 +90,8 @@ export class ForgeComponent implements OnInit {
   private readonly forgeFacade = inject(ForgeFacade);
   private readonly forgeApi = inject(ForgeApiService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly previewLoadErrorImageId = signal<string | null>(null);
+  private readonly previewLoadErrorKey = signal<string | null>(null);
+  private readonly previewCacheRetryCount = signal<Record<string, number>>({});
   private readonly submitAttempted = signal(false);
   private readonly lastSuccessfulBootstrapAt = signal<string | null>(null);
   private readonly resolvingTarget = signal(false);
@@ -167,7 +168,7 @@ export class ForgeComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => {
-        this.previewLoadErrorImageId.set(null);
+        this.previewLoadErrorKey.set(null);
       });
   }
 
@@ -756,20 +757,50 @@ export class ForgeComponent implements OnInit {
     return "ready";
   }
 
-  handlePreviewLoaded(imageId: string | null): void {
-    if (imageId && this.previewLoadErrorImageId() === imageId) {
-      this.previewLoadErrorImageId.set(null);
+  handlePreviewLoaded(imageId: string | null, previewUrl: string | null): void {
+    if (!imageId || !previewUrl) {
+      return;
+    }
+
+    const key = `${imageId}|${previewUrl}`;
+    if (this.previewLoadErrorKey() === key) {
+      this.previewLoadErrorKey.set(null);
+    }
+
+    if (this.previewCacheRetryCount()[imageId] != null) {
+      this.previewCacheRetryCount.update((state) => {
+        const next = { ...state };
+        delete next[imageId];
+        return next;
+      });
     }
   }
 
-  handlePreviewFailed(imageId: string | null): void {
-    if (imageId) {
-      this.previewLoadErrorImageId.set(imageId);
+  handlePreviewFailed(imageId: string | null, previewUrl: string | null): void {
+    if (!imageId || !previewUrl) {
+      return;
+    }
+
+    const key = `${imageId}|${previewUrl}`;
+    this.previewLoadErrorKey.set(key);
+
+    const currentRetry = this.previewCacheRetryCount()[imageId] ?? 0;
+    if (currentRetry === 0) {
+      this.previewCacheRetryCount.update((state) => ({
+        ...state,
+        [imageId]: currentRetry + 1,
+      }));
+      this.forgeFacade.cacheImageArtifact(imageId);
     }
   }
 
   previewUnavailableForSelectedImage(selectedImage: ForgeImageProductDto | null): boolean {
-    return !!selectedImage && this.previewLoadErrorImageId() === selectedImage.id;
+    if (!selectedImage) {
+      return false;
+    }
+
+    const key = `${selectedImage.id}|${selectedImage.previewUrl}`;
+    return this.previewLoadErrorKey() === key;
   }
 
   selectedTargetLabel(selectedJob: ForgeJobDto | null, formTarget: string | null | undefined): string {

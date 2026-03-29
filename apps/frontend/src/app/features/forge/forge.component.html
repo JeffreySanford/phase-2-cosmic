@@ -512,16 +512,18 @@
                   'Preview for ' +
                   (vm.selectedJob?.targetName || vm.formValue.target)
                 "
-                (load)="handlePreviewLoaded(vm.selectedImage.id)"
-                (error)="handlePreviewFailed(vm.selectedImage.id)"
+                (load)="handlePreviewLoaded(vm.selectedImage.id, vm.selectedImage.previewUrl)"
+                (error)="handlePreviewFailed(vm.selectedImage.id, vm.selectedImage.previewUrl)"
               />
               <ng-template #previewPlaceholder>
                 <span
                   *ngIf="previewUnavailableForSelectedImage(vm.selectedImage)"
                   class="forge-health__error"
                 >
-                  Preview artifact unavailable through Forge SSR proxy. Use the
-                  source links below or retry once the artifact path recovers.
+                  Preview artifact is not currently loading directly from the
+                  provider. Forge is attempting to cache a local copy so it can
+                  be served through the Forge proxy for reliable viewing.
+                  <br /><strong>Please wait a moment and refresh the preview.</strong>
                 </span>
                 <span
                   *ngIf="

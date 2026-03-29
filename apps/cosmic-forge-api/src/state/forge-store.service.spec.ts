@@ -83,6 +83,69 @@ test("unsupported non-legacy cutout jobs fail with an explicit adapter error", a
   assert.match(updated?.errorMessage || "", /No production cutout adapter is available yet/);
 });
 
+test("artifact cache retries on 429 and eventually succeeds", async () => {
+  const store = createStore("rate-limit");
+  const artifactCache = new ArtifactCacheService();
+
+  let callCount = 0;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    callCount += 1;
+    if (callCount < 3) {
+      return new Response(null, { status: 429, statusText: "Too Many Requests" });
+    }
+    const array = new Uint8Array([1, 2, 3]);
+    return new Response(array, { status: 200, headers: { "Content-Type": "image/jpeg" } });
+  };
+
+  try {
+    const imageProduct = {
+      id: "test-image-429",
+      jobId: "test-job",
+      surveyId: "legacy",
+      providerName: "NOIRLab / Legacy Surveys",
+      artifactMode: "external" as const,
+      format: "jpeg" as const,
+      previewUrl: "http://example.com/jpg",
+      fitsUrl: null,
+      authoritativeUrl: "http://example.com/jpg",
+      accessedAt: new Date().toISOString(),
+      cacheKey: null,
+      cacheStatus: "external-only" as const,
+      provenance: {
+        sourceSurvey: "Legacy Surveys DR10",
+        providerName: "NOIRLab / Legacy Surveys",
+        citationUrl: "https://www.legacysurvey.org/viewer",
+        authoritativeUrl: "http://example.com/jpg",
+        accessedAt: new Date().toISOString(),
+        transformChain: ["legacy-surveys-cutout-request", "jpeg-preview-link"],
+        artifactMode: "external",
+        layer: "ls-dr10",
+        bandSet: ["g", "r", "z"],
+        ra: 187.7,
+        dec: 12.3,
+        pixscale: 3,
+        size: 512,
+        width: 512,
+        height: 512,
+      },
+      createdAt: new Date().toISOString(),
+    };
+
+    const cached = await artifactCache.cacheImageArtifact(
+      imageProduct,
+      "cache-key-429",
+      (id, kind) => `/api/forge/artifacts/${id}/${kind}`
+    );
+
+    assert.ok(cached);
+    assert.equal(cached?.artifactMode, "cached");
+    assert.equal(callCount, 3);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("allwise jobs get a normalized IRSA request before retrieval is wired", () => {
   const store = createStore("allwise-request");
   const job = store.createCutoutJob({

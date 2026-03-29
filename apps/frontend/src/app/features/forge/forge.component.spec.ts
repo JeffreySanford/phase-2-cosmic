@@ -357,6 +357,34 @@ describe("ForgeComponent", () => {
     expect(facade.cacheImageArtifact).toHaveBeenCalledWith("forge-image-legacy");
   });
 
+  it("triggers a cache request when preview fails for external image once", () => {
+    const previewUrl = "https://www.legacysurvey.org/jpeg-cutout?ra=49.95067&dec=41.5117";
+    component.handlePreviewFailed("forge-image-legacy", previewUrl);
+    expect(facade.cacheImageArtifact).toHaveBeenCalledTimes(1);
+    expect(facade.cacheImageArtifact).toHaveBeenCalledWith("forge-image-legacy");
+    expect(component.previewUnavailableForSelectedImage({
+      ...externalLegacyImage,
+      id: "forge-image-legacy",
+      previewUrl,
+    })).toBe(true);
+
+    // Subsequent failures should not re-trigger additional cache requests
+    component.handlePreviewFailed("forge-image-legacy", previewUrl);
+    expect(facade.cacheImageArtifact).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows cached preview URL updates after loading successfully", () => {
+    const legacyImage = { ...externalLegacyImage, id: "forge-image-legacy", previewUrl: "https://old.url/1.jpg" };
+    component.handlePreviewFailed("forge-image-legacy", legacyImage.previewUrl);
+    expect(component.previewUnavailableForSelectedImage(legacyImage)).toBe(true);
+
+    const cachedUrl = "http://localhost/api/forge/artifacts/forge-image-legacy/preview";
+    component.handlePreviewLoaded("forge-image-legacy", cachedUrl);
+
+    // old key should be cleared so new URL can show
+    expect(component.previewUnavailableForSelectedImage({ ...legacyImage, previewUrl: cachedUrl })).toBe(false);
+  });
+
   it("prepopulates the workbench form from the selected job", () => {
     facade.vmSubject.next(
       createVm({

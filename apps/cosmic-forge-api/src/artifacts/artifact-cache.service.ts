@@ -26,13 +26,53 @@ export class ArtifactCacheService {
     }
   }
 
+  private readonly artifactDownloadRetryCount = Number(
+    process.env["FORGE_ARTIFACT_CACHE_DOWNLOAD_RETRIES"] ?? "3"
+  );
+  private readonly artifactDownloadRetryBaseDelayMs = Number(
+    process.env["FORGE_ARTIFACT_CACHE_DOWNLOAD_RETRY_DELAY_MS"] ?? "500"
+  );
+
   private async downloadArtifact(url: string): Promise<Buffer> {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Artifact download failed: ${response.status} ${response.statusText}`);
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < this.artifactDownloadRetryCount; attempt += 1) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          const error = new Error(`Artifact download failed: ${response.status} ${response.statusText}`);
+          if ([429, 502, 503, 504].includes(response.status) && attempt < this.artifactDownloadRetryCount - 1) {
+            const delayMs =
+              this.artifactDownloadRetryBaseDelayMs * Math.pow(2, attempt);
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            lastError = error;
+            continue;
+          }
+          throw error;
+        }
+
+        return Buffer.from(await response.arrayBuffer());
+      } catch (error) {
+        const isRetryable =
+          error instanceof Error &&
+          (error.message.includes("429") ||
+            error.message.includes("502") ||
+            error.message.includes("503") ||
+            error.message.includes("504"));
+
+        if (isRetryable && attempt < this.artifactDownloadRetryCount - 1) {
+          const delayMs =
+            this.artifactDownloadRetryBaseDelayMs * Math.pow(2, attempt);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          lastError = error;
+          continue;
+        }
+
+        throw error;
+      }
     }
 
-    return Buffer.from(await response.arrayBuffer());
+    throw lastError ?? new Error("Artifact download failed: unknown error");
   }
 
   private resolveRendererCommand(): { command: string; argsPrefix: string[] } {
