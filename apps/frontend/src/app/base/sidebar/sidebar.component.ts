@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnDestroy, OnInit } from "@angular/core";
+import { Component, Input, Output, EventEmitter, OnDestroy, OnInit, ChangeDetectorRef } from "@angular/core";
 import { Subscription } from "rxjs";
 import { SystemStatus, SystemStatusService } from "../../services/system-status.service";
 
@@ -45,11 +45,18 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { path: "/diagnostics", label: "Diagnostics", icon: "🛠️", requiredService: "diagnostics" },
   ];
 
-  constructor(private systemStatusService: SystemStatusService) {}
+  constructor(
+    private systemStatusService: SystemStatusService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.statusSub = this.systemStatusService.status$.subscribe((status) => {
-      this.systemStatus = status;
+      // Avoid ExpressionChangedAfterItHasBeenCheckedError in dev mode
+      Promise.resolve().then(() => {
+        this.systemStatus = status;
+        this.cdr.markForCheck();
+      });
     });
   }
 

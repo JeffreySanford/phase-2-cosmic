@@ -4,18 +4,18 @@
       <p class="forge__eyebrow">Cosmic Forge</p>
       <h1>Public survey image orchestration workbench</h1>
       <p class="forge__lede">
-        This branch-scoped surface now runs through the Forge SSR/API seam, typed worker
-        execution, and live Legacy Surveys, AllWISE, plus multiple SkyView-derived adapter paths.
+        This branch-scoped surface now runs through the Forge SSR/API seam,
+        typed worker execution, and live Legacy Surveys, AllWISE, plus multiple
+        SkyView-derived adapter paths.
       </p>
     </div>
 
-    <button type="button" class="forge__refresh" (click)="reload()">Refresh workspace</button>
+    <button type="button" class="forge__refresh" (click)="reload()">
+      Refresh workspace
+    </button>
   </header>
 
-  <section
-    class="forge-runtime-banner"
-    [attr.data-state]="readModelStatus(vm)"
-  >
+  <section class="forge-runtime-banner" [attr.data-state]="readModelStatus(vm)">
     <div>
       <p class="forge-runtime-banner__eyebrow">Runtime state</p>
       <h2>{{ shellStatusTitle(vm) }}</h2>
@@ -28,7 +28,9 @@
       <div class="forge-card__header">
         <div>
           <h2>Workbench shell</h2>
-          <p class="forge-graphql__meta">current operator: {{ vm.currentUserId }}</p>
+          <p class="forge-graphql__meta">
+            current operator: {{ vm.currentUserId }}
+          </p>
         </div>
         <p class="forge-card__eyebrow">
           Presets, live lookup, and archive-targeted cutout dispatch
@@ -39,7 +41,7 @@
           <span>Preset target</span>
           <select
             data-testid="forge-preset-target"
-            (change)="applyPresetTarget(($any($event.target)).value)"
+            (change)="applyPresetTarget($any($event.target).value)"
           >
             <option value="">Choose a preset target...</option>
             <option *ngFor="let preset of targetPresets" [value]="preset.id">
@@ -64,7 +66,9 @@
             {{ targetValidationMessage() }}
           </small>
         </label>
-        <div class="forge-form__lookup-actions forge-form__field forge-form__field--lookup">
+        <div
+          class="forge-form__lookup-actions forge-form__field forge-form__field--lookup"
+        >
           <span class="forge-form__lookup-title">Name lookup</span>
           <button
             type="button"
@@ -84,26 +88,44 @@
             {{ targetLookupError() }}
           </small>
         </div>
-        <label class="forge-form__field">
+        <label class="forge-form__field forge-form__field--compact">
           <span>RA</span>
-          <input type="text" formControlName="ra" placeholder="0 - 360 decimal degrees" />
-          <small class="forge-form__hint">Decimal degrees only for this workbench slice.</small>
+          <input
+            type="text"
+            formControlName="ra"
+            placeholder="0 - 360 decimal degrees"
+          />
+          <small class="forge-form__hint"
+            >Decimal degrees only for this workbench slice.</small
+          >
           <small *ngIf="showRaValidation()" class="forge-form__error">
             {{ raValidationMessage() }}
           </small>
         </label>
-        <label class="forge-form__field">
+        <label class="forge-form__field forge-form__field--compact">
           <span>Dec</span>
-          <input type="text" formControlName="dec" placeholder="-90 to 90 decimal degrees" />
-          <small class="forge-form__hint">Negative values are valid south of the equator.</small>
+          <input
+            type="text"
+            formControlName="dec"
+            placeholder="-90 to 90 decimal degrees"
+          />
+          <small class="forge-form__hint">
+            Negative values are valid south of the equator.
+          </small>
           <small *ngIf="showDecValidation()" class="forge-form__error">
             {{ decValidationMessage() }}
           </small>
         </label>
-        <label class="forge-form__field">
+        <label class="forge-form__field forge-form__field--compact">
           <span>Radius (arcmin)</span>
-          <input type="text" formControlName="radiusArcmin" placeholder="0.5 - 60 arcmin" />
-          <small class="forge-form__hint">Current UI validation caps radius to 60 arcmin.</small>
+          <input
+            type="text"
+            formControlName="radiusArcmin"
+            placeholder="0.5 - 60 arcmin"
+          />
+          <small class="forge-form__hint"
+            >Current UI validation caps radius to 60 arcmin.</small
+          >
           <small *ngIf="showRadiusValidation()" class="forge-form__error">
             {{ radiusValidationMessage() }}
           </small>
@@ -113,12 +135,22 @@
       <div class="forge-surveys">
         <div class="forge-panel__header">
           <h3>Survey selection</h3>
-          <span class="forge-panel__badge">{{ selectedSurveyCount() }} selected</span>
+          <span class="forge-panel__badge"
+            >{{ selectedSurveyCount() }} selected</span
+          >
         </div>
-        <p class="forge-graphql__meta">
-          Live adapters are currently available for Legacy Surveys, AllWISE, and a growing set
-          of SkyView-derived presets. SkyView-backed surveys remain explicitly derived-preview
-          oriented. Other providers remain visible here as planned seams.
+        <p class="forge-graphql__meta" i18n>
+          Live adapters are currently available for Legacy Surveys, AllWISE, and
+          a growing set of SkyView-derived presets. SkyView-backed surveys
+          remain explicitly derived-preview oriented. Other providers remain
+          visible here as planned seams.
+        </p>
+        <p
+          class="forge-graphql__meta forge-survey-guidance"
+          *ngIf="hasMultipleSelectedSurveys()"
+          i18n
+        >
+          {{ selectedSurveyPriorityMessage() }}
         </p>
         <div class="forge-chip-row">
           <button
@@ -132,7 +164,9 @@
             [attr.title]="
               survey.providerName +
               ' · ' +
-              (isSurveySelectable(survey) ? 'live adapter' : surveyAvailabilityLabel(survey))
+              (isSurveySelectable(survey)
+                ? 'live adapter'
+                : surveyAvailabilityLabel(survey))
             "
           >
             {{ survey.name }}
@@ -140,6 +174,19 @@
               {{ surveyAvailabilityLabel(survey) }}
             </span>
           </button>
+        </div>
+        <div class="forge-jobs-sparkline-panel" *ngIf="vm.myJobs.length > 0">
+          <p class="forge-graphql__meta" i18n>
+            Job progress timeline (dated to most recent jobs):
+          </p>
+          <div class="forge-jobs-sparkline" aria-label="Job progress timeline">
+            <span
+              *ngFor="let value of jobTimelineValues(vm.myJobs)"
+              class="forge-jobs-sparkline__point"
+              [style.height]="(value || 0) + '%'"
+              [attr.title]="value + '%'"
+            ></span>
+          </div>
         </div>
         <p *ngIf="showSurveyValidation(vm.surveys)" class="forge-form__error">
           {{ surveyValidationMessage() }}
@@ -153,7 +200,7 @@
           (click)="submitCutoutJob()"
           [disabled]="!canSubmit(vm)"
         >
-          {{ vm.createJobLoading ? 'Creating job...' : 'Create cutout job' }}
+          {{ vm.createJobLoading ? "Creating job..." : "Create cutout job" }}
         </button>
         <button
           type="button"
@@ -161,15 +208,19 @@
           (click)="submitCompositeJob()"
           [disabled]="!canSubmitComposite(vm)"
         >
-          {{ vm.createJobLoading ? 'Creating job...' : 'Create composite job' }}
+          {{ vm.createJobLoading ? "Creating job..." : "Create composite job" }}
         </button>
       </div>
 
       <p class="forge-graphql__meta">
-        This form currently accepts a target label plus decimal-degree coordinates and dispatches
-        one cutout job or one survey-stack composite into the Forge queue.
+        This form currently accepts a target label plus decimal-degree
+        coordinates and dispatches one cutout job or one survey-stack composite
+        into the Forge queue.
       </p>
-      <p *ngIf="selectedSurveyCount() > 0 && !canSubmitComposite(vm)" class="forge-graphql__meta">
+      <p
+        *ngIf="selectedSurveyCount() > 0 && !canSubmitComposite(vm)"
+        class="forge-graphql__meta"
+      >
         {{ compositeValidationMessage() }}
       </p>
 
@@ -181,20 +232,21 @@
     <article class="forge-card">
       <h2>GraphQL read model</h2>
 
-      <p *ngIf="vm.graphqlState.loading">Checking `/api/forge/graphql` through SSR...</p>
+      <p *ngIf="vm.graphqlState.loading">
+        Checking `/api/forge/graphql` through SSR...
+      </p>
 
-      <div *ngIf="!vm.graphqlState.loading && vm.graphqlState.payload" class="forge-graphql">
+      <div
+        *ngIf="!vm.graphqlState.loading && vm.graphqlState.payload"
+        class="forge-graphql"
+      >
         <p class="forge-graphql__title">{{ vm.serviceInfo?.name }}</p>
         <p>status: {{ vm.serviceInfo?.status }}</p>
         <p class="forge-graphql__meta">
-          operation: {{ vm.serviceInfo?.operationName || 'none' }}
+          operation: {{ vm.serviceInfo?.operationName || "none" }}
         </p>
-        <p>
-          refresh mode: {{ refreshModeLabel() }}
-        </p>
-        <p>
-          subscriptions: {{ subscriptionModeLabel() }}
-        </p>
+        <p>refresh mode: {{ refreshModeLabel() }}</p>
+        <p>subscriptions: {{ subscriptionModeLabel() }}</p>
         <p class="forge-graphql__meta">
           last successful bootstrap: {{ lastSuccessfulBootstrapLabel() }}
         </p>
@@ -204,31 +256,28 @@
         <p class="forge-graphql__meta">
           {{ availableDataSummary(vm) }}
         </p>
+        <p>surveys returned: {{ vm.surveys.length }}</p>
+        <p>jobs returned: {{ vm.jobs.length }}</p>
+        <p>image products returned: {{ vm.imageProducts.length }}</p>
         <p>
-          surveys returned: {{ vm.surveys.length }}
+          my jobs: {{ vm.myJobs.length }} · global queue:
+          {{ vm.globalJobs.length }}
         </p>
         <p>
-          jobs returned: {{ vm.jobs.length }}
+          queue: {{ vm.queueSummary.queuedCount }} queued ·
+          {{ vm.queueSummary.runningCount }} running ·
+          {{ vm.queueSummary.completedCount }} completed
         </p>
+        <p>graph ready: {{ vm.serviceInfo?.graphReady ? "yes" : "not yet" }}</p>
         <p>
-          image products returned: {{ vm.imageProducts.length }}
-        </p>
-        <p>
-          my jobs: {{ vm.myJobs.length }} · global queue: {{ vm.globalJobs.length }}
-        </p>
-        <p>
-          queue: {{ vm.queueSummary.queuedCount }} queued · {{ vm.queueSummary.runningCount }}
-          running · {{ vm.queueSummary.completedCount }} completed
-        </p>
-        <p>
-          graph ready: {{ vm.serviceInfo?.graphReady ? 'yes' : 'not yet' }}
-        </p>
-        <p>
-          contract version: {{ vm.serviceInfo?.contractVersion || 'unknown' }}
+          contract version: {{ vm.serviceInfo?.contractVersion || "unknown" }}
         </p>
       </div>
 
-      <p *ngIf="!vm.graphqlState.loading && vm.graphqlState.error" class="forge-health__error">
+      <p
+        *ngIf="!vm.graphqlState.loading && vm.graphqlState.error"
+        class="forge-health__error"
+      >
         Forge GraphQL read model failed: {{ vm.graphqlState.error }}
       </p>
     </article>
@@ -236,7 +285,9 @@
     <article class="forge-card">
       <h2>Diagnostics</h2>
 
-      <p class="forge-graphql__meta">{{ diagnosticsSummary(vm.diagnostics) }}</p>
+      <p class="forge-graphql__meta">
+        {{ diagnosticsSummary(vm.diagnostics) }}
+      </p>
       <p class="forge-graphql__meta">{{ metricsSummary(vm.metrics) }}</p>
 
       <div *ngIf="vm.diagnostics as diagnostics" class="forge-graphql">
@@ -254,7 +305,8 @@
       <div class="forge-results__meta" *ngIf="vm.jobEvents.length > 0">
         <p><strong>Recent events</strong></p>
         <p *ngFor="let event of vm.jobEvents">
-          {{ event.createdAt }} · {{ event.eventType }} · {{ eventSummary(event) }}
+          {{ event.createdAt }} · {{ event.eventType }} ·
+          {{ eventSummary(event) }}
         </p>
       </div>
     </article>
@@ -288,7 +340,9 @@
             <article
               *ngFor="let item of vm.myJobs"
               class="forge-queue__item"
-              [class.forge-queue__item--selected]="isSelectedJob(vm.selectedJobId, item.id)"
+              [class.forge-queue__item--selected]="
+                isSelectedJob(vm.selectedJobId, item.id)
+              "
               [attr.data-state]="item.status.toLowerCase()"
               role="button"
               tabindex="0"
@@ -297,22 +351,40 @@
               <div>
                 <h4>{{ item.targetName }} · {{ item.type }}</h4>
                 <p>
-                  Owner: {{ item.requestedBy }} ·
-                  Surveys: {{ item.requestedSurveyIds.join(', ') }} · Progress:
+                  Owner: {{ item.requestedBy }} · Surveys:
+                  {{ item.requestedSurveyIds.join(", ") }} · Progress:
                   {{ item.progressPercent }}%
                 </p>
                 <p class="forge-queue__availability">
                   {{
                     jobHasPreview(item, vm.imageProducts)
-                      ? 'preview available'
-                      : item.status === 'COMPLETED'
-                        ? 'no preview product'
-                      : 'preview pending until completion'
+                      ? "preview available"
+                      : item.status === "COMPLETED"
+                      ? "no preview product"
+                      : "preview pending until completion"
                   }}
                 </p>
                 <p class="forge-results__meta">
                   {{ queueStateDescription(item, vm.imageProducts) }}
                 </p>
+                <p class="forge-results__meta">
+                  Preview: {{ jobPreviewMode(item, vm.imageProducts) }}
+                </p>
+                <details
+                  class="forge-queue__item-details"
+                  [open]="isSelectedJob(vm.selectedJobId, item.id)"
+                >
+                  <summary>Toggle card details</summary>
+                  <p>Surveys: {{ item.requestedSurveyIds.join(", ") }}</p>
+                  <p>Request type: {{ item.type }}</p>
+                  <p>Target: {{ item.targetName }}</p>
+                </details>
+                <div class="forge-queue__progress" aria-label="Job progress">
+                  <div
+                    class="forge-queue__progress-fill"
+                    [style.width]="item.progressPercent + '%'"
+                  ></div>
+                </div>
               </div>
               <div class="forge-queue__actions">
                 <span class="forge-status">{{ item.status }}</span>
@@ -325,7 +397,9 @@
                   Cancel
                 </button>
                 <button
-                  *ngIf="item.status === 'FAILED' || item.status === 'CANCELLED'"
+                  *ngIf="
+                    item.status === 'FAILED' || item.status === 'CANCELLED'
+                  "
                   type="button"
                   class="forge-link-button"
                   (click)="$event.stopPropagation(); retryJob(item.id)"
@@ -338,8 +412,8 @@
             <p *ngIf="vm.myJobs.length === 0" class="forge-results__meta">
               {{
                 vm.graphqlState.loading
-                  ? 'Waiting for GraphQL bootstrap...'
-                  : 'No owned Forge jobs returned yet.'
+                  ? "Waiting for GraphQL bootstrap..."
+                  : "No owned Forge jobs returned yet."
               }}
             </p>
           </div>
@@ -348,7 +422,9 @@
         <section class="forge-panel">
           <header class="forge-panel__header">
             <h3>Global queue</h3>
-            <span class="forge-panel__badge">{{ vm.globalJobs.length }} jobs</span>
+            <span class="forge-panel__badge"
+              >{{ vm.globalJobs.length }} jobs</span
+            >
           </header>
 
           <div class="forge-queue">
@@ -358,7 +434,9 @@
             <article
               *ngFor="let item of vm.globalJobs"
               class="forge-queue__item"
-              [class.forge-queue__item--selected]="isSelectedJob(vm.selectedJobId, item.id)"
+              [class.forge-queue__item--selected]="
+                isSelectedJob(vm.selectedJobId, item.id)
+              "
               [attr.data-state]="item.status.toLowerCase()"
               role="button"
               tabindex="0"
@@ -367,22 +445,34 @@
               <div>
                 <h4>{{ item.targetName }} · {{ item.type }}</h4>
                 <p>
-                  Owner: {{ item.requestedBy }} ·
-                  Surveys: {{ item.requestedSurveyIds.join(', ') }} · Progress:
+                  Owner: {{ item.requestedBy }} · Surveys:
+                  {{ item.requestedSurveyIds.join(", ") }} · Progress:
                   {{ item.progressPercent }}%
                 </p>
                 <p class="forge-queue__availability">
                   {{
                     jobHasPreview(item, vm.imageProducts)
-                      ? 'preview available'
-                      : item.status === 'COMPLETED'
-                        ? 'no preview product'
-                      : 'preview pending until completion'
+                      ? "preview available"
+                      : item.status === "COMPLETED"
+                      ? "no preview product"
+                      : "preview pending until completion"
                   }}
                 </p>
                 <p class="forge-results__meta">
                   {{ queueStateDescription(item, vm.imageProducts) }}
                 </p>
+                <p class="forge-results__meta">
+                  Preview: {{ jobPreviewMode(item, vm.imageProducts) }}
+                </p>
+                <details
+                  class="forge-queue__item-details"
+                  [open]="isSelectedJob(vm.selectedJobId, item.id)"
+                >
+                  <summary>Toggle card details</summary>
+                  <p>Surveys: {{ item.requestedSurveyIds.join(", ") }}</p>
+                  <p>Request type: {{ item.type }}</p>
+                  <p>Target: {{ item.targetName }}</p>
+                </details>
               </div>
               <span class="forge-status">{{ item.status }}</span>
             </article>
@@ -390,8 +480,8 @@
             <p *ngIf="vm.globalJobs.length === 0" class="forge-results__meta">
               {{
                 vm.graphqlState.loading
-                  ? 'Waiting for GraphQL bootstrap...'
-                  : 'No Forge jobs returned yet.'
+                  ? "Waiting for GraphQL bootstrap..."
+                  : "No Forge jobs returned yet."
               }}
             </p>
           </div>
@@ -401,7 +491,7 @@
           <header class="forge-panel__header">
             <h3>Results shell</h3>
             <span class="forge-panel__badge">
-              {{ vm.selectedImage ? vm.selectedImage.artifactMode : 'preview' }}
+              {{ vm.selectedImage ? vm.selectedImage.artifactMode : "preview" }}
             </span>
           </header>
 
@@ -409,24 +499,41 @@
             <p class="forge-results__summary">
               {{ resultPanelTitle(vm.selectedJob) }}
             </p>
-          <div class="forge-results__preview">
+            <div class="forge-results__preview">
               <img
-                *ngIf="vm.selectedImage && !previewUnavailableForSelectedImage(vm.selectedImage); else previewPlaceholder"
+                *ngIf="
+                  vm.selectedImage &&
+                    !previewUnavailableForSelectedImage(vm.selectedImage);
+                  else previewPlaceholder
+                "
                 class="forge-results__image"
                 [src]="vm.selectedImage.previewUrl"
-                [alt]="'Preview for ' + (vm.selectedJob?.targetName || vm.formValue.target)"
+                [alt]="
+                  'Preview for ' +
+                  (vm.selectedJob?.targetName || vm.formValue.target)
+                "
                 (load)="handlePreviewLoaded(vm.selectedImage.id)"
                 (error)="handlePreviewFailed(vm.selectedImage.id)"
               />
               <ng-template #previewPlaceholder>
-                <span *ngIf="previewUnavailableForSelectedImage(vm.selectedImage)" class="forge-health__error">
-                  Preview artifact unavailable through Forge SSR proxy. Use the source links below or retry once the artifact path recovers.
+                <span
+                  *ngIf="previewUnavailableForSelectedImage(vm.selectedImage)"
+                  class="forge-health__error"
+                >
+                  Preview artifact unavailable through Forge SSR proxy. Use the
+                  source links below or retry once the artifact path recovers.
                 </span>
-                <span *ngIf="!previewUnavailableForSelectedImage(vm.selectedImage) && vm.selectedJob; else noSelection">
+                <span
+                  *ngIf="
+                    !previewUnavailableForSelectedImage(vm.selectedImage) &&
+                      vm.selectedJob;
+                    else noSelection
+                  "
+                >
                   {{
-                    vm.selectedJob.status === 'COMPLETED'
-                      ? 'No preview available for this provider/job'
-                      : 'Preview will appear when this job completes'
+                    vm.selectedJob.status === "COMPLETED"
+                      ? "No preview available for this provider/job"
+                      : "Preview will appear when this job completes"
                   }}
                 </span>
                 <ng-template #noSelection>
@@ -439,151 +546,254 @@
                 <strong>Target:</strong>
                 {{ selectedTargetLabel(vm.selectedJob, vm.formValue.target) }}
               </p>
-              <p><strong>Artifacts:</strong> {{ selectedArtifactSummary(vm.selectedImage) }}</p>
+              <p>
+                <strong>Artifacts:</strong>
+                {{ selectedArtifactSummary(vm.selectedImage) }}
+              </p>
               <p *ngIf="vm.selectedImage">
-                <strong>Artifact delivery:</strong> {{ selectedArtifactModeLabel(vm.selectedImage) }}
-              </p>
-              <p *ngIf="vm.selectedJob"><strong>Selected job:</strong> {{ vm.selectedJob.id }}</p>
-              <p *ngIf="vm.selectedJob">
-                <strong>Status:</strong> {{ vm.selectedJob.status }} at
-                {{ vm.selectedJob.updatedAt }}
-              </p>
-              <p *ngIf="vm.selectedJob?.errorMessage" class="forge-health__error">
-                <strong>Job error:</strong> {{ vm.selectedJob?.errorMessage }}
-              </p>
-              <p *ngIf="vm.selectedJob?.errorCode" class="forge-graphql__meta">
-                <strong>Error code:</strong> {{ vm.selectedJob?.errorCode }}
+                <strong>Artifact delivery:</strong>
+                {{ selectedArtifactModeLabel(vm.selectedImage) }}
               </p>
               <p *ngIf="vm.selectedJob">
-                <strong>Owner:</strong> {{ vm.selectedJob.requestedBy }}
-              </p>
-              <ng-container *ngIf="vm.selectedJob?.request as request">
-                <p>
-                  <strong>Adapter:</strong> {{ request.providerAdapter }} /
-                  {{ request.sourceService }}
-                </p>
-                <p>
-                  <strong>Layer:</strong> {{ request.layer }}
-                </p>
-                <p>
-                  <strong>Bands:</strong> {{ selectedBands(vm.selectedJob) }}
-                </p>
-                <p>
-                  <strong>Request geometry:</strong>
-                  {{ request.width }} x {{ request.height }}
-                  at {{ selectedPixscaleLabel(vm.selectedJob, vm.selectedImage) }} arcsec/pixel
-                </p>
-              </ng-container>
-              <p *ngIf="vm.selectedJob?.compositeRequest">
-                <strong>Composite operation:</strong>
-                {{ vm.selectedJob?.compositeRequest?.operation }}
+                <strong>Selected job progress:</strong>
+                {{ vm.selectedJob.progressPercent }}%
               </p>
               <p *ngIf="vm.selectedImage">
-                <strong>Artifact mode:</strong> {{ vm.selectedImage.artifactMode }}
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Cache status:</strong> {{ selectedCacheStatusLabel(vm.selectedImage) }}
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Preview provider:</strong> {{ vm.selectedImage.providerName }}
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Survey:</strong> {{ vm.selectedImage.surveyId }}
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Provenance layer:</strong> {{ vm.selectedImage.provenance.layer }}
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Provenance bands:</strong> {{ selectedBandSet(vm.selectedImage) }}
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Resolved coordinates:</strong>
-                {{ vm.selectedImage.provenance.ra }}, {{ vm.selectedImage.provenance.dec }}
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Pixscale:</strong> {{ selectedProvenancePixscaleLabel(vm.selectedImage) }}
-              </p>
-              <p *ngIf="isDerivedPreview(vm.selectedImage)" class="forge-graphql__meta">
-                SkyView results are derived quick-look products and should not be treated as
-                archive-native cutouts from the upstream survey.
-              </p>
-              <p *ngIf="isCompositePreview(vm.selectedImage)" class="forge-graphql__meta">
-                Composite results are Forge-generated derived previews assembled from multiple
-                survey inputs and should be interpreted with their transform chain.
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Accessed:</strong> {{ vm.selectedImage.accessedAt }}
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Preview URL:</strong>
-                <a [href]="vm.selectedImage.previewUrl" target="_blank" rel="noreferrer">
-                  open preview
-                </a>
-              </p>
-              <p *ngIf="vm.selectedImage && vm.selectedImage.fitsUrl">
-                <strong>FITS URL:</strong>
-                <a [href]="vm.selectedImage.fitsUrl" target="_blank" rel="noreferrer">
-                  open FITS cutout
-                </a>
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Citation:</strong>
+                <strong>Preview source:</strong>
                 <a
-                  [href]="vm.selectedImage.provenance.citationUrl"
+                  [href]="vm.selectedImage.previewUrl"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {{ selectedCitationLabel(vm.selectedImage) }}
+                  external preview
                 </a>
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Authoritative source:</strong>
-                <a
-                  [href]="vm.selectedImage.provenance.authoritativeUrl"
-                  target="_blank"
-                  rel="noreferrer"
+                <span *ngIf="vm.selectedImage.artifactMode === 'cached'"
+                  >(cached by Forge)</span
                 >
-                  {{ selectedAuthoritativeSourceLabel(vm.selectedImage) }}
-                </a>
               </p>
-              <p *ngIf="selectedViewerQueryParams(vm.selectedJob, vm.selectedImage) as viewerQueryParams">
-                <strong>Viewer handoff:</strong>
-                <a [routerLink]="['/view']" [queryParams]="viewerQueryParams">
-                  open in viewer
-                </a>
-              </p>
-              <p *ngIf="vm.selectedImage">
-                <strong>Transform chain:</strong>
-                {{ vm.selectedImage.provenance.transformChain.join(' → ') }}
-              </p>
-              <div *ngIf="vm.selectedImage" class="forge-results__artifact-actions">
+              <div class="forge-results__actions">
                 <button
-                  *ngIf="canCacheSelectedImage(vm.selectedJob, vm.selectedImage)"
+                  *ngIf="
+                    canCacheSelectedImage(vm.selectedJob, vm.selectedImage)
+                  "
                   type="button"
-                  class="forge__refresh"
-                  (click)="cacheImageArtifact(vm.selectedImage.id)"
-                  [disabled]="vm.cacheArtifactLoading"
+                  class="forge-link-button"
+                  (click)="
+                    vm.selectedImage && cacheImageArtifact(vm.selectedImage.id)
+                  "
                 >
-                  {{ vm.cacheArtifactLoading ? 'Caching artifact...' : 'Cache artifact' }}
+                  Cache selected image for local serving
                 </button>
-                <p
-                  *ngIf="!canCacheSelectedImage(vm.selectedJob, vm.selectedImage)"
-                  class="forge-graphql__meta"
+                <button
+                  *ngIf="vm.selectedJob?.status === 'FAILED'"
+                  type="button"
+                  class="forge-link-button"
+                  (click)="vm.selectedJob && retryJob(vm.selectedJob.id)"
                 >
-                  {{
-                    vm.selectedImage.artifactMode === 'cached'
-                      ? 'Artifact retained locally and served through Forge.'
-                      : vm.selectedJob?.status === 'COMPLETED'
-                        ? 'This artifact remains external until cached locally.'
-                        : 'Caching is available after the selected job completes.'
-                  }}
-                </p>
+                  Retry selected failed job
+                </button>
               </div>
-              <p *ngIf="vm.cacheArtifactError" class="forge-health__error">
-                Cache artifact failed: {{ vm.cacheArtifactError }}
-              </p>
-              <p *ngIf="!vm.selectedJob"><strong>State:</strong> select a job to inspect its result</p>
             </div>
+            <details class="forge-results__details" *ngIf="vm.selectedImage">
+              <summary>Toggle full provenance and request details</summary>
+              <p>
+                <strong>Provider:</strong> {{ vm.selectedImage.providerName }}
+              </p>
+              <p>
+                <strong>Collection:</strong>
+                {{ vm.selectedImage.provenance.sourceSurvey }}
+              </p>
+              <p>
+                <strong>Retrieval:</strong>
+                {{ vm.selectedImage.provenance.retrievalPathType }}
+              </p>
+              <p>
+                <strong>Coordinates:</strong>
+                {{ vm.selectedImage.provenance.ra }},
+                {{ vm.selectedImage.provenance.dec }}
+              </p>
+              <p>
+                <strong>Transform chain:</strong>
+                {{ vm.selectedImage.provenance.transformChain.join(" → ") }}
+              </p>
+            </details>
+            <p *ngIf="vm.selectedJob">
+              <strong>Selected job:</strong> {{ vm.selectedJob.id }}
+            </p>
+            <p *ngIf="vm.selectedJob">
+              <strong>Status:</strong> {{ vm.selectedJob.status }} at
+              {{ vm.selectedJob.updatedAt }}
+            </p>
+            <p *ngIf="vm.selectedJob?.errorMessage" class="forge-health__error">
+              <strong>Job error:</strong> {{ vm.selectedJob?.errorMessage }}
+            </p>
+            <p *ngIf="vm.selectedJob?.errorCode" class="forge-graphql__meta">
+              <strong>Error code:</strong> {{ vm.selectedJob?.errorCode }}
+            </p>
+            <p *ngIf="vm.selectedJob">
+              <strong>Owner:</strong> {{ vm.selectedJob.requestedBy }}
+            </p>
+            <ng-container *ngIf="vm.selectedJob?.request as request">
+              <p>
+                <strong>Adapter:</strong> {{ request.providerAdapter }} /
+                {{ request.sourceService }}
+              </p>
+              <p><strong>Layer:</strong> {{ request.layer }}</p>
+              <p><strong>Bands:</strong> {{ selectedBands(vm.selectedJob) }}</p>
+              <p>
+                <strong>Request geometry:</strong>
+                {{ request.width }} x {{ request.height }} at
+                {{ selectedPixscaleLabel(vm.selectedJob, vm.selectedImage) }}
+                arcsec/pixel
+              </p>
+            </ng-container>
+            <p *ngIf="vm.selectedJob?.compositeRequest">
+              <strong>Composite operation:</strong>
+              {{ vm.selectedJob?.compositeRequest?.operation }}
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Artifact mode:</strong>
+              {{ vm.selectedImage.artifactMode }}
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Cache status:</strong>
+              {{ selectedCacheStatusLabel(vm.selectedImage) }}
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Preview provider:</strong>
+              {{ vm.selectedImage.providerName }}
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Survey:</strong> {{ vm.selectedImage.surveyId }}
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Provenance layer:</strong>
+              {{ vm.selectedImage.provenance.layer }}
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Provenance bands:</strong>
+              {{ selectedBandSet(vm.selectedImage) }}
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Resolved coordinates:</strong>
+              {{ vm.selectedImage.provenance.ra }},
+              {{ vm.selectedImage.provenance.dec }}
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Pixscale:</strong>
+              {{ selectedProvenancePixscaleLabel(vm.selectedImage) }}
+            </p>
+            <p
+              *ngIf="isDerivedPreview(vm.selectedImage)"
+              class="forge-graphql__meta"
+            >
+              SkyView results are derived quick-look products and should not be
+              treated as archive-native cutouts from the upstream survey.
+            </p>
+            <p
+              *ngIf="isCompositePreview(vm.selectedImage)"
+              class="forge-graphql__meta"
+            >
+              Composite results are Forge-generated derived previews assembled
+              from multiple survey inputs and should be interpreted with their
+              transform chain.
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Accessed:</strong> {{ vm.selectedImage.accessedAt }}
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Preview URL:</strong>
+              <a
+                [href]="vm.selectedImage.previewUrl"
+                target="_blank"
+                rel="noreferrer"
+              >
+                open preview
+              </a>
+            </p>
+            <p *ngIf="vm.selectedImage && vm.selectedImage.fitsUrl">
+              <strong>FITS URL:</strong>
+              <a
+                [href]="vm.selectedImage.fitsUrl"
+                target="_blank"
+                rel="noreferrer"
+              >
+                open FITS cutout
+              </a>
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Citation:</strong>
+              <a
+                [href]="vm.selectedImage.provenance.citationUrl"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {{ selectedCitationLabel(vm.selectedImage) }}
+              </a>
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Authoritative source:</strong>
+              <a
+                [href]="vm.selectedImage.provenance.authoritativeUrl"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {{ selectedAuthoritativeSourceLabel(vm.selectedImage) }}
+              </a>
+            </p>
+            <p
+              *ngIf="
+                selectedViewerQueryParams(
+                  vm.selectedJob,
+                  vm.selectedImage
+                ) as viewerQueryParams
+              "
+            >
+              <strong>Viewer handoff:</strong>
+              <a [routerLink]="['/view']" [queryParams]="viewerQueryParams">
+                open in viewer
+              </a>
+            </p>
+            <p *ngIf="vm.selectedImage">
+              <strong>Transform chain:</strong>
+              {{ vm.selectedImage.provenance.transformChain.join(" → ") }}
+            </p>
+            <div
+              *ngIf="vm.selectedImage"
+              class="forge-results__artifact-actions"
+            >
+              <button
+                *ngIf="canCacheSelectedImage(vm.selectedJob, vm.selectedImage)"
+                type="button"
+                class="forge__refresh"
+                (click)="cacheImageArtifact(vm.selectedImage.id)"
+                [disabled]="vm.cacheArtifactLoading"
+              >
+                {{
+                  vm.cacheArtifactLoading
+                    ? "Caching artifact..."
+                    : "Cache artifact"
+                }}
+              </button>
+              <p
+                *ngIf="!canCacheSelectedImage(vm.selectedJob, vm.selectedImage)"
+                class="forge-graphql__meta"
+              >
+                {{
+                  vm.selectedImage.artifactMode === "cached"
+                    ? "Artifact retained locally and served through Forge."
+                    : vm.selectedJob?.status === "COMPLETED"
+                    ? "This artifact remains external until cached locally."
+                    : "Caching is available after the selected job completes."
+                }}
+              </p>
+            </div>
+            <p *ngIf="vm.cacheArtifactError" class="forge-health__error">
+              Cache artifact failed: {{ vm.cacheArtifactError }}
+            </p>
+            <p *ngIf="!vm.selectedJob">
+              <strong>State:</strong> select a job to inspect its result
+            </p>
           </div>
         </section>
       </div>

@@ -4,6 +4,7 @@ import type { ForgeCutoutRequestSource, ForgeSurveyAdapter } from "./survey-adap
 export const SKYVIEW_SURVEY_ID = "skyview";
 export const SKYVIEW_PROVIDER_NAME = "NASA GSFC SkyView";
 export const SKYVIEW_CITATION_URL = "https://skyview.gsfc.nasa.gov/current/cgi/query.pl";
+export const SKYVIEW_RUNQUERY_URL = "https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl";
 export const SKYVIEW_DEFAULT_SURVEY = "DSS2 Red";
 
 const SKYVIEW_DEFAULT_PIXELS = 900;
@@ -84,13 +85,13 @@ function normalizeSizeDegrees(radiusArcmin: number): number {
   return Math.max(0.05, Number(((Math.max(0.5, radiusArcmin) * 2) / 60).toFixed(4)));
 }
 
-function encodeSkyViewQuery(params: Record<string, string | number>): string {
+function encodeSkyViewQuery(baseUrl: string, params: Record<string, string | number>): string {
   const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     searchParams.set(key, String(value));
   }
 
-  return `${SKYVIEW_CITATION_URL}?${searchParams.toString()}`;
+  return `${baseUrl}?${searchParams.toString()}`;
 }
 
 function skyViewCollection(definition: SkyViewSurveyDefinition): string {
@@ -107,7 +108,17 @@ function buildSkyViewCutoutRequestForSurvey(
   const ra = Number(normalizeNumber(job.ra, 0).toFixed(5));
   const dec = Number(normalizeNumber(job.dec, 0).toFixed(5));
   const sizeDegrees = normalizeSizeDegrees(radiusArcmin);
-  const previewUrl = encodeSkyViewQuery({
+  const discoveryUrl = encodeSkyViewQuery(SKYVIEW_CITATION_URL, {
+    Position: `${ra.toFixed(5)},${dec.toFixed(5)}`,
+    Survey: definition.skyViewSurvey,
+    Size: sizeDegrees.toFixed(4),
+    Pixels: SKYVIEW_DEFAULT_PIXELS,
+    Return: "JPEG",
+    Sampler: "Clip",
+    scaling: "Log",
+  });
+
+  const previewUrl = encodeSkyViewQuery(SKYVIEW_RUNQUERY_URL, {
     Position: `${ra.toFixed(5)},${dec.toFixed(5)}`,
     Survey: definition.skyViewSurvey,
     Size: sizeDegrees.toFixed(4),
@@ -133,7 +144,7 @@ function buildSkyViewCutoutRequestForSurvey(
     height: SKYVIEW_DEFAULT_PIXELS,
     outputFormat: "jpeg",
     retrievalPathType: "skyview-query",
-    discoveryUrl: previewUrl,
+    discoveryUrl,
     jpegCutoutUrl: previewUrl,
     fitsCutoutUrl: null,
   };

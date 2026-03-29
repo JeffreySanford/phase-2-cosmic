@@ -50,6 +50,8 @@ By the end of this PI, Cosmic Forge should be a credible bounded-track product b
 - [x] Retry and cancel flows work for the operator-facing queue.
 - [x] Core unit/integration/e2e tests exist for the main Forge path.
 - [x] The Forge docs set reflects the implemented runtime rather than a future-only design.
+- [x] Angular i18n runtime initialization is configured via the polyfills path (`@angular/localize/init`) and not direct `main.ts` import.
+- [x] Forge UI form inputs render in a compact two-column layout (RA/Dec/Radius fields 50% width on desktop breakpoint).
 
 ## Working rules
 
@@ -496,6 +498,9 @@ Implemented Sprint 8 behaviors:
 Sprint 8 done when:
 
 - [x] The branch can be demonstrated, operated locally, and reviewed without verbal reconstruction.
+- [x] Forge workbench UI has a polished operator-focused view (selected job panel, concise status, primary preview, and sparkline progress/time series).
+- [x] Forge workbench job cards are decluttered with collapsed provenance and clear “preview source / external vs cached” labels.
+- [x] Forge workbench includes in-UI guidance for “multiple surveys selected means priority-based preview”, plus a retry/local-cache fallback button.
 
 ## Deferred after this PI
 

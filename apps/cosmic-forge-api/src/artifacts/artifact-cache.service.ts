@@ -131,9 +131,11 @@ export class ArtifactCacheService {
 
   sendBinaryFile(res: Response, filePath: string | null, contentType: string): void {
     if (!filePath || !existsSync(filePath)) {
-      res.status(404).json({
-        error: "ARTIFACT_NOT_FOUND",
-      });
+      if (!res.headersSent) {
+        res.status(404).json({
+          error: "ARTIFACT_NOT_FOUND",
+        });
+      }
       return;
     }
 
@@ -145,6 +147,15 @@ export class ArtifactCacheService {
       "Content-Length": stat.size,
       "Access-Control-Allow-Origin": "*",
     });
-    createReadStream(filePath).pipe(res);
+    const stream = createReadStream(filePath);
+    stream.on("error", (err) => {
+      if (!res.headersSent) {
+        res.status(500).json({ error: "STREAM_ERROR", message: err.message });
+      } else {
+        // If headers already sent, just destroy the connection
+        res.destroy();
+      }
+    });
+    stream.pipe(res);
   }
 }

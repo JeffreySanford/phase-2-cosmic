@@ -500,6 +500,38 @@ export class ForgeComponent implements OnInit {
     );
   }
 
+  jobPreviewMode(job: ForgeJobDto, imageProducts: readonly ForgeImageProductDto[]): string {
+    const images = imageProducts.filter((image) => image.jobId === job.id);
+    if (images.length === 0) {
+      return "pending/no preview";
+    }
+
+    if (images.some((image) => image.artifactMode === "cached")) {
+      return "cached by Forge";
+    }
+
+    return "external provider only";
+  }
+
+  hasMultipleSelectedSurveys(): boolean {
+    return this.selectedSurveyCount() > 1;
+  }
+
+  readonly surveyPriorityGuidance =
+    "Multiple surveys selected. Forge will prioritize the first available live preview " +
+    "based on survey order and adapter readiness. Use the global queue to inspect " +
+    "the chosen preview source.";
+
+  selectedSurveyPriorityMessage(): string {
+    return this.hasMultipleSelectedSurveys() ? this.surveyPriorityGuidance : "";
+  }
+
+  jobTimelineValues(jobs: readonly ForgeJobDto[]): number[] {
+    return jobs
+      .slice(-30)
+      .map((job) => Math.min(100, Math.max(0, job.progressPercent ?? 0)));
+  }
+
   selectedBands(job: ForgeJobDto | null): string {
     return job?.request?.bands.join(", ") || "n/a";
   }

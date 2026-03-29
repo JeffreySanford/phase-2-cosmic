@@ -1,3 +1,22 @@
+// Provide Angular localize support for templates using i18n markers.
+// This is required because some components include i18n attributes and
+// the compiled output uses `$localize`.
+if (typeof (globalThis as any).$localize !== "function") {
+  (globalThis as any).$localize = (
+    messageParts: TemplateStringsArray,
+    ...substitutions: readonly unknown[]
+  ): string => {
+    let text = "";
+    for (let i = 0; i < messageParts.length; i++) {
+      text += messageParts[i];
+      if (i < substitutions.length) {
+        text += String(substitutions[i]);
+      }
+    }
+    return text;
+  };
+}
+
 // suppress jsdom stylesheet parse warnings that are benign and flood test output
 const originalConsoleError = console.error;
 type ConsoleErrorArg = string | { type?: string } | Error | unknown;
