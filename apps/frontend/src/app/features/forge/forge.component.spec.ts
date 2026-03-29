@@ -2,8 +2,9 @@ import { CommonModule } from "@angular/common";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { ReactiveFormsModule } from "@angular/forms";
 import { RouterTestingModule } from "@angular/router/testing";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, of, throwError } from "rxjs";
 import { ForgeComponent } from "./forge.component";
+import { ForgeApiService } from "./state/forge-api.service";
 import { ForgeFacade } from "./state/forge.facade";
 import { ForgeImageProductDto, ForgeJobDto, ForgeSurveyDto } from "./state/forge.models";
 
@@ -206,18 +207,39 @@ class ForgeFacadeStub {
   readonly cacheImageArtifact = jest.fn();
 }
 
+class ForgeApiServiceStub {
+  readonly resolveTarget = jest.fn(() =>
+    of({
+      data: {
+        query: "Cygnus A",
+        canonicalName: "Cygnus A",
+        providerName: "CDS Sesame / SIMBAD",
+        sourceUrl: "https://cds.unistra.fr/cgi-bin/nph-sesame/-oxp/SNV?Cygnus%20A",
+        ra: 299.86815,
+        dec: 40.73391,
+        suggestedRadiusArcmin: 12,
+      },
+    })
+  );
+}
+
 describe("ForgeComponent", () => {
   let component: ForgeComponent;
   let fixture: ComponentFixture<ForgeComponent>;
   let facade: ForgeFacadeStub;
+  let forgeApi: ForgeApiServiceStub;
 
   beforeEach(async () => {
     facade = new ForgeFacadeStub();
+    forgeApi = new ForgeApiServiceStub();
 
     await TestBed.configureTestingModule({
       declarations: [ForgeComponent],
       imports: [CommonModule, ReactiveFormsModule, RouterTestingModule],
-      providers: [{ provide: ForgeFacade, useValue: facade }],
+      providers: [
+        { provide: ForgeFacade, useValue: facade },
+        { provide: ForgeApiService, useValue: forgeApi },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ForgeComponent);
@@ -358,6 +380,67 @@ describe("ForgeComponent", () => {
       radiusArcmin: "10",
       surveyIds: ["allwise"],
     });
+  });
+
+  it("applies a preset target into the workbench form", () => {
+    component.workbenchForm.patchValue({
+      target: "M87",
+      ra: "0",
+      dec: "0",
+      radiusArcmin: "1",
+    });
+
+    component.applyPresetTarget("eta-carinae");
+
+    expect(component.workbenchForm.getRawValue()).toMatchObject({
+      target: "Eta Carinae",
+      ra: "161.265",
+      dec: "-59.6844",
+      radiusArcmin: "20",
+    });
+    expect(component.targetLookupSummary()).toBe("Preset applied: Eta Carinae");
+    expect(component.targetLookupError()).toBeNull();
+  });
+
+  it("resolves a typed target and populates coordinates and radius", () => {
+    component.workbenchForm.patchValue({
+      target: "Cygnus A",
+      ra: "",
+      dec: "",
+      radiusArcmin: "",
+    });
+
+    component.resolveTypedTarget();
+    fixture.detectChanges();
+
+    expect(forgeApi.resolveTarget).toHaveBeenCalledWith("Cygnus A");
+    expect(component.workbenchForm.getRawValue()).toMatchObject({
+      target: "Cygnus A",
+      ra: "299.86815",
+      dec: "40.73391",
+      radiusArcmin: "12",
+    });
+    expect(component.targetLookupSummary()).toBe("Resolved via CDS Sesame / SIMBAD: Cygnus A");
+    expect(component.targetLookupError()).toBeNull();
+  });
+
+  it("shows a target lookup error when resolution fails", () => {
+    forgeApi.resolveTarget.mockReturnValueOnce(
+      throwError(() => ({
+        error: {
+          message: "No target coordinates were resolved for \"Unknown Source\".",
+        },
+      }))
+    );
+    component.workbenchForm.patchValue({ target: "Unknown Source" });
+
+    component.resolveTypedTarget();
+    fixture.detectChanges();
+
+    expect(component.targetLookupError()).toBe(
+      'No target coordinates were resolved for "Unknown Source".'
+    );
+    expect(component.targetLookupSummary()).toBeNull();
   });
 
   it("renders provider-specific citation and source labels for the selected image", () => {

@@ -80,9 +80,11 @@ Expected current contract:
 3. Create a cutout job against `Legacy Surveys` or `AllWISE`.
 4. Confirm the job progresses to a visible result.
 5. Inspect provenance and external source links.
-6. Use `open in viewer` from a selected result and confirm the viewer route opens with target, coordinates, FOV, and survey context preserved.
-7. Create a composite job with `Legacy Surveys` + `AllWISE`.
-8. Confirm diagnostics and recent job events update.
+6. Use the preset-target dropdown and confirm it prepopulates target, RA, Dec, and radius.
+7. Enter a non-preset target such as `Eta Carinae`, click `Resolve target`, and confirm CDS Sesame lookup populates RA, Dec, and a recommended radius.
+8. Use `open in viewer` from a selected result and confirm the viewer route opens with target, coordinates, FOV, and survey context preserved.
+9. Create a composite job with `Legacy Surveys` + `AllWISE`.
+10. Confirm diagnostics and recent job events update.
 
 Detailed demo steps live in [DEMO_CHECKLIST.md](./DEMO_CHECKLIST.md).
 

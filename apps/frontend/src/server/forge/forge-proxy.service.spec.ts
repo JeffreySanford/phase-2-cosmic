@@ -176,6 +176,50 @@ describe("ForgeProxyService", () => {
     expect(recordMetrics).toHaveBeenCalledWith("GET", 502, 0, 0);
   });
 
+  it("proxies Forge target resolution and preserves the query string", async () => {
+    const svc = new ForgeProxyService();
+    const req = {
+      path: "/api/forge/resolve-target",
+      url: "/api/forge/resolve-target?query=Cygnus%20A",
+      method: "GET",
+    } as Request;
+    const res = createResponse();
+    const recordMetrics = jest.fn();
+
+    fetchMock.mockResolvedValue({
+      status: 200,
+      json: async () => ({
+        data: {
+          canonicalName: "MCG+07-41-003",
+          providerName: "CDS Sesame / SIMBAD",
+          ra: 299.868152368208,
+          dec: 40.733915897917,
+          suggestedRadiusArcmin: 12,
+        },
+      }),
+    });
+
+    const payload = await firstValueFrom(svc.handle(req, res, recordMetrics));
+
+    expect(payload).toEqual({
+      data: {
+        canonicalName: "MCG+07-41-003",
+        providerName: "CDS Sesame / SIMBAD",
+        ra: 299.868152368208,
+        dec: 40.733915897917,
+        suggestedRadiusArcmin: 12,
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://forge-api.test/resolve-target?query=Cygnus%20A",
+      expect.objectContaining({
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal: expect.any(AbortSignal),
+      })
+    );
+  });
+
   it("returns 501 for reserved Forge routes without a handler", async () => {
     const svc = new ForgeProxyService();
     const req = {

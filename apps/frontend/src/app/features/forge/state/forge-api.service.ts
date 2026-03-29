@@ -7,6 +7,7 @@ import {
   ForgeCreateCutoutJobResponseDto,
   ForgeImageMutationResponseDto,
   ForgeJobMutationResponseDto,
+  ForgeResolvedTargetResponseDto,
   ForgeWorkbenchBootstrapResponseDto,
 } from "./forge.models";
 import { Observable } from "rxjs";
@@ -18,6 +19,14 @@ export class ForgeApiService {
   getWorkbenchBootstrap(): Observable<ForgeWorkbenchBootstrapResponseDto> {
     return this.http.post<ForgeWorkbenchBootstrapResponseDto>("/api/forge/graphql", {
       operationName: "ForgeWorkbenchBootstrap",
+    });
+  }
+
+  resolveTarget(query: string): Observable<ForgeResolvedTargetResponseDto> {
+    return this.http.get<ForgeResolvedTargetResponseDto>("/api/forge/resolve-target", {
+      params: {
+        query,
+      },
     });
   }
 

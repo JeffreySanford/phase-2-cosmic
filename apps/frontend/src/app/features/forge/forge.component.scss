@@ -112,6 +112,27 @@
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
+.forge-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.forge-card__eyebrow {
+  max-width: 17rem;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.8rem;
+  background: linear-gradient(180deg, #edf6ff, #f8fbff);
+  border: 1px solid rgba(77, 135, 174, 0.22);
+  color: #24455f;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .forge-card h2 {
   margin-top: 0;
 }
@@ -123,14 +144,39 @@
 
 .forge-form {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
   gap: 0.9rem;
 }
 
-.forge-form label {
+.forge-form label,
+.forge-form__field {
   display: grid;
   gap: 0.35rem;
   font-weight: 600;
+}
+
+.forge-form__field {
+  padding: 0.85rem 0.9rem 0.9rem;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(16, 42, 67, 0.1);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.92), #ffffff);
+}
+
+.forge-form__field--emphasis,
+.forge-form__field--lookup {
+  background: linear-gradient(180deg, #edf6ff, #f8fbff);
+  border-color: rgba(77, 135, 174, 0.22);
+}
+
+.forge-form__field--wide {
+  grid-column: span 2;
+}
+
+.forge-form__lookup-title {
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #3d6786;
 }
 
 .forge-form input {
@@ -138,6 +184,21 @@
   border-radius: 0.75rem;
   padding: 0.8rem 0.9rem;
   font: inherit;
+  background: #fff;
+}
+
+.forge-form select {
+  border: 1px solid rgba(16, 42, 67, 0.18);
+  border-radius: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  font: inherit;
+  background: #fff;
+}
+
+.forge-form__lookup-actions {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
 }
 
 .forge-form__hint,
@@ -158,6 +219,8 @@
 
 .forge-surveys {
   margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(16, 42, 67, 0.08);
 }
 
 .forge-surveys h3,
@@ -511,6 +574,18 @@
   .forge-card,
   .forge-panel {
     padding: 1rem;
+  }
+
+  .forge-card__header {
+    flex-direction: column;
+  }
+
+  .forge-card__eyebrow {
+    max-width: none;
+  }
+
+  .forge-form__field--wide {
+    grid-column: span 1;
   }
 
   .forge-queue__item {

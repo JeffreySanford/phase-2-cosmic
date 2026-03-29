@@ -106,6 +106,50 @@ export class ForgeProxyService {
       );
     }
 
+    if (requestPath === "/api/forge/resolve-target" && method === "GET") {
+      const targetUrls = this.forgeBaseCandidates().map((baseUrl) => {
+        const search = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+        return `${baseUrl}/resolve-target${search}`;
+      });
+      const started = Date.now();
+
+      return defer(() =>
+        from(
+          this.fetchWithFallback(
+            targetUrls,
+            {
+              method: "GET",
+              headers: { Accept: "application/json" },
+            },
+            5000
+          )
+        )
+      ).pipe(
+        switchMap((response) =>
+          from(response.json()).pipe(map((body) => ({ response, body })))
+        ),
+        tap(({ response, body }) => {
+          recordMetrics(
+            method,
+            response.status,
+            Buffer.byteLength(JSON.stringify(body), "utf8"),
+            (Date.now() - started) / 1000
+          );
+          res.status(response.status);
+        }),
+        map(({ body }) => body),
+        catchError((error: unknown) => {
+          console.error("Error proxying Forge target resolution:", error);
+          recordMetrics(method, 502, 0, 0);
+          res.status(502);
+          return of({
+            error: "forge_target_resolution_proxy_error",
+            message: "Unable to reach Cosmic Forge target resolution endpoint",
+          });
+        })
+      );
+    }
+
     if (requestPath.startsWith("/api/forge/artifacts/") && method === "GET") {
       const targetUrls = this.forgeBaseCandidates().map((baseUrl) =>
         `${baseUrl}${requestPath.replace("/api/forge", "")}`

@@ -2,6 +2,7 @@ import {
   ForgeCreateCompositeJobInputDto,
   ForgeImageProductDto,
   ForgeJobDto,
+  ForgeResolvedTargetDto,
   ForgeSurveyDto,
   ForgeVmDiagnosticsDto,
   ForgeVmJobEventDto,
@@ -20,9 +21,62 @@ import { Params } from "@angular/router";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { combineLatest, distinctUntilChanged, map, shareReplay, startWith } from "rxjs";
 import { ForgeFacade } from "./state/forge.facade";
+import { ForgeApiService } from "./state/forge-api.service";
 
 const EXPECTED_FORGE_CONTRACT_VERSION = "forge-workbench.v1";
 const MAX_RADIUS_ARCMIN = 60;
+
+type ForgeTargetPreset = Readonly<{
+  id: string;
+  label: string;
+  targetName: string;
+  ra: number;
+  dec: number;
+  radiusArcmin: number;
+}>;
+
+const FORGE_TARGET_PRESETS: readonly ForgeTargetPreset[] = [
+  {
+    id: "m87",
+    label: "M87",
+    targetName: "M87",
+    ra: 187.70593,
+    dec: 12.39112,
+    radiusArcmin: 15,
+  },
+  {
+    id: "cygnus-a",
+    label: "Cygnus A",
+    targetName: "Cygnus A",
+    ra: 299.86815,
+    dec: 40.73391,
+    radiusArcmin: 12,
+  },
+  {
+    id: "ngc-1275",
+    label: "NGC 1275",
+    targetName: "NGC 1275",
+    ra: 49.95067,
+    dec: 41.5117,
+    radiusArcmin: 12,
+  },
+  {
+    id: "eta-carinae",
+    label: "Eta Carinae",
+    targetName: "Eta Carinae",
+    ra: 161.265,
+    dec: -59.6844,
+    radiusArcmin: 20,
+  },
+  {
+    id: "horsehead",
+    label: "Horsehead",
+    targetName: "Horsehead",
+    ra: 85.25208,
+    dec: -2.46083,
+    radiusArcmin: 18,
+  },
+];
 
 @Component({
   selector: "app-forge",
@@ -34,10 +88,15 @@ const MAX_RADIUS_ARCMIN = 60;
 export class ForgeComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly forgeFacade = inject(ForgeFacade);
+  private readonly forgeApi = inject(ForgeApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly previewLoadErrorImageId = signal<string | null>(null);
   private readonly submitAttempted = signal(false);
   private readonly lastSuccessfulBootstrapAt = signal<string | null>(null);
+  private readonly resolvingTarget = signal(false);
+  private readonly targetResolutionError = signal<string | null>(null);
+  private readonly targetResolutionSummary = signal<string | null>(null);
+  readonly targetPresets = FORGE_TARGET_PRESETS;
 
   readonly workbenchForm = this.fb.group({
     target: ["M87", [Validators.required]],
@@ -114,6 +173,51 @@ export class ForgeComponent implements OnInit {
 
   reload(): void {
     this.forgeFacade.refresh();
+  }
+
+  applyPresetTarget(presetId: string): void {
+    const preset = this.targetPresets.find((item) => item.id === presetId);
+    if (!preset) {
+      return;
+    }
+
+    this.workbenchForm.patchValue({
+      target: preset.targetName,
+      ra: String(preset.ra),
+      dec: String(preset.dec),
+      radiusArcmin: String(preset.radiusArcmin),
+    });
+    this.targetResolutionError.set(null);
+    this.targetResolutionSummary.set(`Preset applied: ${preset.label}`);
+  }
+
+  resolveTypedTarget(): void {
+    const query = String(this.workbenchForm.controls.target.getRawValue() ?? "").trim();
+    if (!query) {
+      this.targetResolutionError.set("Enter a target name before resolving.");
+      this.targetResolutionSummary.set(null);
+      return;
+    }
+
+    this.resolvingTarget.set(true);
+    this.targetResolutionError.set(null);
+    this.targetResolutionSummary.set(null);
+
+    this.forgeApi
+      .resolveTarget(query)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (payload) => {
+          this.resolvingTarget.set(false);
+          this.applyResolvedTarget(payload.data);
+        },
+        error: (error: { error?: { message?: string }; message?: string }) => {
+          this.resolvingTarget.set(false);
+          this.targetResolutionError.set(
+            error?.error?.message || error?.message || "Target lookup failed."
+          );
+        },
+      });
   }
 
   submitCutoutJob(): void {
@@ -337,6 +441,22 @@ export class ForgeComponent implements OnInit {
 
   compositeValidationMessage(): string {
     return "Select at least two live adapters to create a composite job.";
+  }
+
+  resolvingTargetLabel(): string {
+    return this.resolvingTarget() ? "Resolving target..." : "Resolve target";
+  }
+
+  isResolvingTarget(): boolean {
+    return this.resolvingTarget();
+  }
+
+  targetLookupSummary(): string | null {
+    return this.targetResolutionSummary();
+  }
+
+  targetLookupError(): string | null {
+    return this.targetResolutionError();
   }
 
   cancelJob(jobId: string): void {
@@ -681,5 +801,38 @@ export class ForgeComponent implements OnInit {
       default:
         return "P/DSS2/color";
     }
+  }
+
+  private applyResolvedTarget(resolvedTarget: ForgeResolvedTargetDto): void {
+    const preset = this.matchPresetForResolvedTarget(resolvedTarget);
+    const radiusArcmin =
+      preset?.radiusArcmin ??
+      resolvedTarget.suggestedRadiusArcmin ??
+      Number(this.workbenchForm.controls.radiusArcmin.getRawValue() || 15);
+
+    this.workbenchForm.patchValue({
+      target: resolvedTarget.query,
+      ra: String(Number(resolvedTarget.ra.toFixed(6))),
+      dec: String(Number(resolvedTarget.dec.toFixed(6))),
+      radiusArcmin: String(radiusArcmin),
+    });
+    this.targetResolutionSummary.set(
+      `Resolved via ${resolvedTarget.providerName}: ${resolvedTarget.canonicalName}`
+    );
+  }
+
+  private matchPresetForResolvedTarget(
+    resolvedTarget: ForgeResolvedTargetDto
+  ): ForgeTargetPreset | null {
+    const normalizedNames = [
+      resolvedTarget.query,
+      resolvedTarget.canonicalName,
+    ].map((value) => value.trim().toLowerCase());
+
+    return (
+      this.targetPresets.find((preset) =>
+        normalizedNames.includes(preset.targetName.trim().toLowerCase())
+      ) ?? null
+    );
   }
 }

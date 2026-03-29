@@ -46,7 +46,7 @@ The first useful Forge page is a workbench.
 
 It should contain:
 
-- target name or RA/Dec input
+- preset-target dropdown plus target name or RA/Dec input
 - survey selection
 - submit button
 - recent jobs panel
@@ -54,6 +54,8 @@ It should contain:
 
 Current implemented shape on `/forge`:
 
+- preset-target dropdown for common demo/operator sources
+- live target lookup through CDS Sesame for non-preset names
 - validated target, RA, Dec, and radius inputs
 - survey chips with live, derived, planned, and registered states
 - owned-job and global-queue panels

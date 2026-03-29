@@ -24,6 +24,36 @@ describe("forge workbench", () => {
       body: "SIMPLE  =                    T",
     }).as("forgeFits");
 
+    cy.intercept("GET", "/api/forge/resolve-target*", (req) => {
+      const query = String(req.query?.query ?? "");
+
+      if (query === "Eta Carinae") {
+        req.reply({
+          statusCode: 200,
+          body: {
+            data: {
+              query: "Eta Carinae",
+              canonicalName: "Eta Carinae",
+              providerName: "CDS Sesame / SIMBAD",
+              sourceUrl: "https://cds.unistra.fr/cgi-bin/nph-sesame/-oxp/SNV?Eta%20Carinae",
+              ra: 161.265,
+              dec: -59.6844,
+              suggestedRadiusArcmin: 20,
+            },
+          },
+        });
+        return;
+      }
+
+      req.reply({
+        statusCode: 404,
+        body: {
+          error: "forge_target_not_found",
+          message: `No target coordinates were resolved for "${query}".`,
+        },
+      });
+    }).as("forgeResolveTarget");
+
     cy.intercept("POST", "/api/forge/graphql", (req) => {
       const operationName = req.body?.operationName;
 
@@ -736,6 +766,28 @@ describe("forge workbench", () => {
     cy.contains("forge-job-99");
     cy.contains("Surveys: allwise");
     cy.contains("preview pending until completion");
+  });
+
+  it("populates the workbench from presets and live target lookup", () => {
+    cy.visit("/forge");
+    cy.wait("@forgeGraphql");
+
+    cy.get('[data-testid="forge-preset-target"]').select("Cygnus A");
+    cy.get('input[formcontrolname="target"]').should("have.value", "Cygnus A");
+    cy.get('input[formcontrolname="ra"]').should("have.value", "299.86815");
+    cy.get('input[formcontrolname="dec"]').should("have.value", "40.73391");
+    cy.get('input[formcontrolname="radiusArcmin"]').should("have.value", "12");
+    cy.contains("Preset applied: Cygnus A");
+
+    cy.get('input[formcontrolname="target"]').clear().type("Eta Carinae");
+    cy.contains("button", "Resolve target").click({ force: true });
+    cy.wait("@forgeResolveTarget");
+
+    cy.get('input[formcontrolname="target"]').should("have.value", "Eta Carinae");
+    cy.get('input[formcontrolname="ra"]').should("have.value", "161.265");
+    cy.get('input[formcontrolname="dec"]').should("have.value", "-59.6844");
+    cy.get('input[formcontrolname="radiusArcmin"]').should("have.value", "20");
+    cy.contains("Resolved via CDS Sesame / SIMBAD: Eta Carinae");
   });
 
   it("creates a composite job and renders queue diagnostics", () => {

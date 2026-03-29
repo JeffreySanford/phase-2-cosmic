@@ -25,10 +25,32 @@
 
   <section class="forge__grid">
     <article class="forge-card forge-card--wide">
-      <h2>Workbench shell</h2>
-      <p class="forge-graphql__meta">current operator: {{ vm.currentUserId }}</p>
+      <div class="forge-card__header">
+        <div>
+          <h2>Workbench shell</h2>
+          <p class="forge-graphql__meta">current operator: {{ vm.currentUserId }}</p>
+        </div>
+        <p class="forge-card__eyebrow">
+          Presets, live lookup, and archive-targeted cutout dispatch
+        </p>
+      </div>
       <form class="forge-form" [formGroup]="workbenchForm">
-        <label>
+        <label class="forge-form__field forge-form__field--emphasis">
+          <span>Preset target</span>
+          <select
+            data-testid="forge-preset-target"
+            (change)="applyPresetTarget(($any($event.target)).value)"
+          >
+            <option value="">Choose a preset target...</option>
+            <option *ngFor="let preset of targetPresets" [value]="preset.id">
+              {{ preset.label }}
+            </option>
+          </select>
+          <small class="forge-form__hint">
+            Presets populate target, RA, Dec, and a recommended radius.
+          </small>
+        </label>
+        <label class="forge-form__field forge-form__field--wide">
           <span>Target</span>
           <input
             type="text"
@@ -42,7 +64,27 @@
             {{ targetValidationMessage() }}
           </small>
         </label>
-        <label>
+        <div class="forge-form__lookup-actions forge-form__field forge-form__field--lookup">
+          <span class="forge-form__lookup-title">Name lookup</span>
+          <button
+            type="button"
+            class="forge__refresh forge__refresh--secondary"
+            (click)="resolveTypedTarget()"
+            [disabled]="isResolvingTarget()"
+          >
+            {{ resolvingTargetLabel() }}
+          </button>
+          <small class="forge-form__hint">
+            Uses CDS Sesame when the target is not one of the built-in presets.
+          </small>
+          <small *ngIf="targetLookupSummary()" class="forge-form__hint">
+            {{ targetLookupSummary() }}
+          </small>
+          <small *ngIf="targetLookupError()" class="forge-form__error">
+            {{ targetLookupError() }}
+          </small>
+        </div>
+        <label class="forge-form__field">
           <span>RA</span>
           <input type="text" formControlName="ra" placeholder="0 - 360 decimal degrees" />
           <small class="forge-form__hint">Decimal degrees only for this workbench slice.</small>
@@ -50,7 +92,7 @@
             {{ raValidationMessage() }}
           </small>
         </label>
-        <label>
+        <label class="forge-form__field">
           <span>Dec</span>
           <input type="text" formControlName="dec" placeholder="-90 to 90 decimal degrees" />
           <small class="forge-form__hint">Negative values are valid south of the equator.</small>
@@ -58,7 +100,7 @@
             {{ decValidationMessage() }}
           </small>
         </label>
-        <label>
+        <label class="forge-form__field">
           <span>Radius (arcmin)</span>
           <input type="text" formControlName="radiusArcmin" placeholder="0.5 - 60 arcmin" />
           <small class="forge-form__hint">Current UI validation caps radius to 60 arcmin.</small>

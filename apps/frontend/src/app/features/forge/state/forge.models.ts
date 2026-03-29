@@ -186,6 +186,20 @@ export type ForgeCreateCompositeJobResponseDto = Readonly<{
   }>;
 }>;
 
+export type ForgeResolvedTargetDto = Readonly<{
+  query: string;
+  canonicalName: string;
+  providerName: string;
+  sourceUrl: string;
+  ra: number;
+  dec: number;
+  suggestedRadiusArcmin: number;
+}>;
+
+export type ForgeResolvedTargetResponseDto = Readonly<{
+  data: ForgeResolvedTargetDto;
+}>;
+
 export type ForgeJobMutationResponseDto = Readonly<{
   data: Readonly<{
     job: ForgeJobDto;
