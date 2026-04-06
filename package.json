@@ -65,7 +65,7 @@
     "@esbuild/win32-x64": "0.27.4",
     "@eslint/js": "^9.8.0",
     "@nestjs/common": "^11.1.14",
-    "@nestjs/core": "^11.1.14",
+    "@nestjs/core": "^11.1.18",
     "@nestjs/platform-express": "^11.1.14",
     "@nrwl/angular": "19.8.4",
     "@nrwl/workspace": "^19.8.4",
