@@ -183,7 +183,15 @@ const previewProviderPriority = [
 ];
 
 function getPreviewSurveyId(job: ForgeJob): string | null {
+  const isLargeCutout = job.radiusArcmin > 12;
+
   for (const surveyId of previewProviderPriority) {
+    if (surveyId === LEGACY_SURVEYS_ID && isLargeCutout) {
+      // Legacy Surveys cutout can degrade or return blank for large radius requests,
+      // so we prefer higher-reliability secondary adapters for large jobs.
+      continue;
+    }
+
     if (job.requestedSurveyIds.includes(surveyId)) {
       return surveyId;
     }
@@ -213,12 +221,12 @@ export function createPreviewImageProduct(
   imageId: string,
   accessedAt: string
 ): ForgeImageProduct | null {
-  const surveyId = getPreviewSurveyId(job);
-  if (!surveyId) {
+  const selectedSurveyId = getPreviewSurveyId(job);
+  if (!selectedSurveyId) {
     return null;
   }
 
-  const adapter = forgeSurveyAdapters[surveyId];
+  const adapter = forgeSurveyAdapters[selectedSurveyId];
   if (!adapter?.createImageProduct) {
     return null;
   }
@@ -227,7 +235,23 @@ export function createPreviewImageProduct(
     job.request = adapter.buildCutoutRequest(job);
   }
 
-  return adapter.createImageProduct(job, imageId, accessedAt);
+  const imageProduct = adapter.createImageProduct(job, imageId, accessedAt);
+  if (!imageProduct) {
+    return null;
+  }
+
+  const requestedHeaviest =
+    job.requestedSurveyIds.length > 0 ? job.requestedSurveyIds[0] : null;
+  if (requestedHeaviest && selectedSurveyId !== requestedHeaviest) {
+    imageProduct.provenance.transformChain = [
+      ...imageProduct.provenance.transformChain,
+      `fallback:${requestedHeaviest}->${selectedSurveyId}`,
+    ];
+    imageProduct.provenance.outputFormat =
+      imageProduct.provenance.outputFormat || "jpeg";
+  }
+
+  return imageProduct;
 }
 
 export { buildIrsaAllwiseCutoutRequest, buildLegacyCutoutRequest, buildSkyViewCutoutRequest };

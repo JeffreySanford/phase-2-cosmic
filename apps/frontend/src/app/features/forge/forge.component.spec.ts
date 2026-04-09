@@ -348,9 +348,10 @@ describe("ForgeComponent", () => {
     );
     fixture.detectChanges();
 
-    const button = Array.from(fixture.nativeElement.querySelectorAll("button")).find(
-      (element: Element) => element.textContent?.includes("Cache artifact")
-    ) as HTMLButtonElement | undefined;
+    const button = Array.from(fixture.nativeElement.querySelectorAll("button"))
+      .find((element): element is HTMLButtonElement =>
+        (element as HTMLButtonElement).textContent?.includes("Cache artifact")
+      );
 
     expect(button).toBeTruthy();
     button?.click();

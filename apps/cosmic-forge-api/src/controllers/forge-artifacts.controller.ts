@@ -16,19 +16,27 @@ export class ForgeArtifactsController {
   ): void {
     const artifactFiles = this.artifactCache.getArtifactFiles(imageId);
     if (!artifactFiles) {
-      res.status(404).json({
-        error: "ARTIFACT_NOT_CACHED",
-        imageId,
-        kind,
-      });
+      if (!res.headersSent) {
+        res.status(404).json({
+          error: "ARTIFACT_NOT_CACHED",
+          imageId,
+          kind,
+        });
+      }
       return;
     }
 
-    if (kind === "preview") {
-      this.artifactCache.sendBinaryFile(res, artifactFiles.previewPath, "image/jpeg");
-      return;
-    }
+    try {
+      if (kind === "preview") {
+        this.artifactCache.sendBinaryFile(res, artifactFiles.previewPath, "image/jpeg");
+        return;
+      }
 
-    this.artifactCache.sendBinaryFile(res, artifactFiles.fitsPath, "application/fits");
+      this.artifactCache.sendBinaryFile(res, artifactFiles.fitsPath, "application/fits");
+    } catch (error) {
+      if (!res.headersSent) {
+        res.status(500).json({ error: "ARTIFACT_SEND_FAILURE", message: String(error) });
+      }
+    }
   }
 }

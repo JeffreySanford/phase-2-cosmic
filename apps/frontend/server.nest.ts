@@ -2504,7 +2504,7 @@ async function bootstrap() {
   // Create Nest app (let Nest create its internal Express instance)
   const app = await NestFactory.create(AppModule);
 
-  // static assets
+  // Express middleware for API parsing and static assets
   const browserDistFolder = join(
     process.cwd(),
     "dist",
@@ -2513,6 +2513,8 @@ async function bootstrap() {
     "browser"
   );
   const expressInstance = app.getHttpAdapter().getInstance();
+  expressInstance.use(express.json({ limit: "10mb" }));
+  expressInstance.use(express.urlencoded({ extended: false }));
   expressInstance.use(express.static(browserDistFolder));
   expressInstance.use((req: Request, res: Response, next: any) => {
     const path = req.path || req.originalUrl || "";

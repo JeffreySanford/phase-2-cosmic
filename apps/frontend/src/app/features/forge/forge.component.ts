@@ -823,6 +823,22 @@ export class ForgeComponent implements OnInit {
     return `${selectedImage.provenance.providerName} source asset`;
   }
 
+  previewSourceLabel(selectedImage: ForgeImageProductDto | null): string {
+    if (!selectedImage) {
+      return "Unknown";
+    }
+
+    if (selectedImage.artifactMode === "cached") {
+      return "Forge cached (local)";
+    }
+
+    return "External provider";
+  }
+
+  isPreviewSourceExternal(selectedImage: ForgeImageProductDto | null): boolean {
+    return !!selectedImage && selectedImage.artifactMode !== "cached";
+  }
+
   selectedViewerQueryParams(
     selectedJob: ForgeJobDto | null,
     selectedImage: ForgeImageProductDto | null

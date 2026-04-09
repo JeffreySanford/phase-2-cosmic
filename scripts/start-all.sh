@@ -161,6 +161,12 @@ export REDIS_HOST=${REDIS_HOST:-127.0.0.1}
 export REDIS_PORT=${REDIS_PORT:-6379}
 export REDIS_URL=${REDIS_URL:-redis://${REDIS_HOST}:${REDIS_PORT}}
 
+# Ensure Nx does not run analytics / package manager probes in shell mix Windows environments.
+export NX_NO_CLOUD=${NX_NO_CLOUD:-true}
+export NX_CLOUD_DISABLE_METRICS_COLLECTION=${NX_CLOUD_DISABLE_METRICS_COLLECTION:-true}
+export NX_DISABLE_ANALYTICS=${NX_DISABLE_ANALYTICS:-true}
+export NX_CI=${NX_CI:-true}
+
 if command -v cygpath >/dev/null 2>&1; then
 	WIN_REPO_ROOT="$(cygpath -w "$REPO_ROOT")"
 else

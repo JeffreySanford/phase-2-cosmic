@@ -162,8 +162,33 @@ function createGraphqlService(): ForgeGraphqlService {
   );
 }
 
+function createServiceWithStore(): [ForgeGraphqlService, ForgeStoreService] {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "forge-graphql-"));
+  process.env["FORGE_ARTIFACT_CACHE_DIR"] = path.join(root, "artifacts");
+  process.env["FORGE_STATE_FILE"] = path.join(root, "state", "forge-state.json");
+  process.env["FORGE_DISABLE_FITS_PRERENDER"] = "true";
+  const store = new ForgeStoreService(new ArtifactCacheService(), new ForgeStateRepository());
+  return [new ForgeGraphqlService(store), store];
+}
+
 test("ForgeWorkbenchBootstrap resolves via operationName and returns request/provenance fields", async () => {
-  const graphqlService = createGraphqlService();
+  const [graphqlService, store] = createServiceWithStore();
+  await graphqlService.execute({
+    operationName: "CreateCutoutJob",
+    variables: {
+      input: {
+        requestedBy: "test-user",
+        targetName: "M87",
+        ra: 187.70593,
+        dec: 12.39112,
+        radiusArcmin: 10,
+        surveyIds: ["legacy"],
+      },
+    },
+  });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await store.advanceJobs();
+  }
   const result = await graphqlService.execute({
     operationName: "ForgeWorkbenchBootstrap",
     variables: {},
@@ -424,6 +449,19 @@ test("CreateCutoutJob returns a normalized DSS2 SkyView request scaffold", async
 
 test("ForgeJobById resolves a single job through the contract document set", async () => {
   const graphqlService = createGraphqlService();
+  await graphqlService.execute({
+    operationName: "CreateCutoutJob",
+    variables: {
+      input: {
+        requestedBy: "test-user",
+        targetName: "M87",
+        ra: 187.70593,
+        dec: 12.39112,
+        radiusArcmin: 10,
+        surveyIds: ["legacy"],
+      },
+    },
+  });
   const result = await graphqlService.execute({
     operationName: "ForgeJobById",
     variables: {
@@ -448,7 +486,23 @@ test("ForgeJobById resolves a single job through the contract document set", asy
 });
 
 test("ForgeProvenanceByImage resolves a single image provenance record", async () => {
-  const graphqlService = createGraphqlService();
+  const [graphqlService, store] = createServiceWithStore();
+  await graphqlService.execute({
+    operationName: "CreateCutoutJob",
+    variables: {
+      input: {
+        requestedBy: "test-user",
+        targetName: "M87",
+        ra: 187.70593,
+        dec: 12.39112,
+        radiusArcmin: 10,
+        surveyIds: ["legacy"],
+      },
+    },
+  });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await store.advanceJobs();
+  }
   const bootstrap = await graphqlService.execute({
     operationName: "ForgeWorkbenchBootstrap",
     variables: {},

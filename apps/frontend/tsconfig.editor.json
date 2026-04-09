@@ -2,6 +2,8 @@
   "extends": "./tsconfig.json",
   "include": ["src/**/*.ts", "src/server/**/*.ts", "server.nest.ts"],
   "type": "cypress",
-  "compilerOptions": {},
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0"
+  },
   "exclude": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts"]
 }

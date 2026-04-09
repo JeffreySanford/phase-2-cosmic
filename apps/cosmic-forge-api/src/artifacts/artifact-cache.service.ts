@@ -182,20 +182,39 @@ export class ArtifactCacheService {
     const stat = statSync(filePath);
     const resolvedContentType =
       path.extname(filePath).toLowerCase() === ".png" ? "image/png" : contentType;
-    res.writeHead(200, {
-      "Content-Type": resolvedContentType,
-      "Content-Length": stat.size,
-      "Access-Control-Allow-Origin": "*",
-    });
+
+    if (!res.headersSent) {
+      res.status(200);
+      res.set({
+        "Content-Type": resolvedContentType,
+        "Content-Length": stat.size,
+        "Access-Control-Allow-Origin": "*",
+      });
+    }
+
     const stream = createReadStream(filePath);
+
+    const cleanup = () => {
+      if (!stream.destroyed) {
+        stream.destroy();
+      }
+    };
+
     stream.on("error", (err) => {
+      cleanup();
       if (!res.headersSent) {
         res.status(500).json({ error: "STREAM_ERROR", message: err.message });
       } else {
-        // If headers already sent, just destroy the connection
         res.destroy();
       }
     });
+
+    stream.on("end", () => {
+      if (!res.writableEnded) {
+        res.end();
+      }
+    });
+
     stream.pipe(res);
   }
 }

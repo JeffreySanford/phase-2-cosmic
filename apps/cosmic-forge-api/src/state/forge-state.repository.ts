@@ -10,7 +10,11 @@ export class ForgeStateRepository {
   load(initialFactory: () => ForgePersistedState): ForgePersistedState {
     const existing = this.readStateFromDisk();
     if (existing) {
-      return existing;
+      const normalized = this.normalizeState(existing, initialFactory());
+      if (normalized !== existing) {
+        this.save(normalized);
+      }
+      return normalized;
     }
 
     const initialState = initialFactory();
@@ -22,6 +26,35 @@ export class ForgeStateRepository {
     const parentDir = path.dirname(this.stateFilePath);
     fs.mkdirSync(parentDir, { recursive: true });
     fs.writeFileSync(this.stateFilePath, JSON.stringify(state, null, 2), "utf8");
+  }
+
+  private normalizeState(
+    persisted: Partial<ForgePersistedState>,
+    fallback: ForgePersistedState
+  ): ForgePersistedState {
+    const normalized: ForgePersistedState = {
+      jobCounter:
+        typeof persisted.jobCounter === "number"
+          ? persisted.jobCounter
+          : fallback.jobCounter,
+      imageCounter:
+        typeof persisted.imageCounter === "number"
+          ? persisted.imageCounter
+          : fallback.imageCounter,
+      eventCounter:
+        typeof persisted.eventCounter === "number"
+          ? persisted.eventCounter
+          : fallback.eventCounter,
+      jobs: Array.isArray(persisted.jobs) ? persisted.jobs : fallback.jobs,
+      imageProducts: Array.isArray(persisted.imageProducts)
+        ? persisted.imageProducts
+        : fallback.imageProducts,
+      jobEvents: Array.isArray(persisted.jobEvents)
+        ? persisted.jobEvents
+        : fallback.jobEvents,
+    };
+
+    return normalized;
   }
 
   private readStateFromDisk(): ForgePersistedState | null {

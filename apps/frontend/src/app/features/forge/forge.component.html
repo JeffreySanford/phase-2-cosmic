@@ -562,15 +562,17 @@
               </p>
               <p *ngIf="vm.selectedImage">
                 <strong>Preview source:</strong>
+                {{ previewSourceLabel(vm.selectedImage) }}
+                <br />
                 <a
                   [href]="vm.selectedImage.previewUrl"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  external preview
+                  open preview URL
                 </a>
                 <span *ngIf="vm.selectedImage.artifactMode === 'cached'"
-                  >(cached by Forge)</span
+                  > (cached by Forge)</span
                 >
               </p>
               <div class="forge-results__actions">

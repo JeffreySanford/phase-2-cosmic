@@ -15,12 +15,14 @@ const result = spawnSync('pnpm', ['nx', ...args], {
   shell: true,
   env: {
     ...process.env,
-    // Prevent Nx Cloud from attempting to upload run data or requiring auth.
+    // Prevent Nx Cloud and analytics collection (including package manager version probe).
     NX_NO_CLOUD: 'true',
     NX_CLOUD_AUTH_TOKEN: '',
     NX_CLOUD_ACCESS_TOKEN: '',
     NX_CLOUD_ID: '',
     NX_CLOUD_DISABLE_METRICS_COLLECTION: 'true',
+    NX_DISABLE_ANALYTICS: 'true',
+    NX_CI: 'true',
   },
 });
 
