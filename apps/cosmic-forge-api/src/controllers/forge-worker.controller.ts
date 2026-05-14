@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, Inject, Param, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Inject,
+  Param,
+  Post,
+} from "@nestjs/common";
 import { ForgeStoreService } from "../state/forge-store.service";
 
 type WorkerRequestBody = Readonly<{
@@ -9,7 +16,9 @@ const FORGE_WORKER_CONTRACT_VERSION = "forge-worker.v1";
 
 @Controller("internal/worker")
 export class ForgeWorkerController {
-  constructor(@Inject(ForgeStoreService) private readonly store: ForgeStoreService) {}
+  constructor(
+    @Inject(ForgeStoreService) private readonly store: ForgeStoreService
+  ) {}
 
   @Post("claim-next")
   @HttpCode(200)
@@ -26,7 +35,10 @@ export class ForgeWorkerController {
 
   @Post("jobs/:jobId/execute")
   @HttpCode(200)
-  async executeJob(@Param("jobId") jobId: string, @Body() body?: WorkerRequestBody) {
+  async executeJob(
+    @Param("jobId") jobId: string,
+    @Body() body?: WorkerRequestBody
+  ) {
     const job = await this.store.executeClaimedJob(jobId);
     return {
       status: "ok",

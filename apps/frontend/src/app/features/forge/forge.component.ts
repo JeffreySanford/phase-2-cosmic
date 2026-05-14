@@ -19,7 +19,13 @@ import {
 import { FormBuilder, Validators } from "@angular/forms";
 import { Params } from "@angular/router";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { combineLatest, distinctUntilChanged, map, shareReplay, startWith } from "rxjs";
+import {
+  combineLatest,
+  distinctUntilChanged,
+  map,
+  shareReplay,
+  startWith,
+} from "rxjs";
 import { ForgeFacade } from "./state/forge.facade";
 import { ForgeApiService } from "./state/forge-api.service";
 
@@ -118,7 +124,9 @@ export class ForgeComponent implements OnInit {
 
   readonly vm$ = combineLatest([
     this.forgeFacade.vm$,
-    this.workbenchForm.valueChanges.pipe(startWith(this.workbenchForm.getRawValue())),
+    this.workbenchForm.valueChanges.pipe(
+      startWith(this.workbenchForm.getRawValue())
+    ),
   ]).pipe(
     map(([forgeVm, formValue]) => ({
       ...forgeVm,
@@ -144,7 +152,9 @@ export class ForgeComponent implements OnInit {
     this.vm$
       .pipe(
         map((vm) => vm.selectedJob),
-        distinctUntilChanged((previous, current) => previous?.id === current?.id),
+        distinctUntilChanged(
+          (previous, current) => previous?.id === current?.id
+        ),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((selectedJob) => {
@@ -193,7 +203,9 @@ export class ForgeComponent implements OnInit {
   }
 
   resolveTypedTarget(): void {
-    const query = String(this.workbenchForm.controls.target.getRawValue() ?? "").trim();
+    const query = String(
+      this.workbenchForm.controls.target.getRawValue() ?? ""
+    ).trim();
     if (!query) {
       this.targetResolutionError.set("Enter a target name before resolving.");
       this.targetResolutionSummary.set(null);
@@ -230,7 +242,9 @@ export class ForgeComponent implements OnInit {
 
     const rawValue = this.workbenchForm.getRawValue();
     const surveyIds = Array.isArray(rawValue.surveyIds)
-      ? rawValue.surveyIds.filter((value): value is string => typeof value === "string")
+      ? rawValue.surveyIds.filter(
+          (value): value is string => typeof value === "string"
+        )
       : [];
 
     const ra = Number(rawValue.ra ?? 0);
@@ -310,7 +324,9 @@ export class ForgeComponent implements OnInit {
   }
 
   isSurveySelected(surveyId: string): boolean {
-    return (this.workbenchForm.controls.surveyIds.getRawValue() ?? []).includes(surveyId);
+    return (this.workbenchForm.controls.surveyIds.getRawValue() ?? []).includes(
+      surveyId
+    );
   }
 
   isSurveySelectable(survey: ForgeSurveyDto): boolean {
@@ -318,7 +334,10 @@ export class ForgeComponent implements OnInit {
   }
 
   surveyAvailabilityLabel(survey: ForgeSurveyDto): string {
-    if (survey.providerName === "NASA GSFC SkyView" && this.isSurveySelectable(survey)) {
+    if (
+      survey.providerName === "NASA GSFC SkyView" &&
+      this.isSurveySelectable(survey)
+    ) {
       return "derived";
     }
 
@@ -333,8 +352,11 @@ export class ForgeComponent implements OnInit {
     return "registered";
   }
 
-  selectedSurveysIncludeLiveAdapter(surveys: readonly ForgeSurveyDto[]): boolean {
-    const selectedSurveyIds = this.workbenchForm.controls.surveyIds.getRawValue() ?? [];
+  selectedSurveysIncludeLiveAdapter(
+    surveys: readonly ForgeSurveyDto[]
+  ): boolean {
+    const selectedSurveyIds =
+      this.workbenchForm.controls.surveyIds.getRawValue() ?? [];
     return surveys.some(
       (survey) =>
         selectedSurveyIds.includes(survey.id) && this.isSurveySelectable(survey)
@@ -381,7 +403,9 @@ export class ForgeComponent implements OnInit {
   }
 
   showSurveyValidation(surveys: readonly ForgeSurveyDto[]): boolean {
-    return this.submitAttempted() && !this.selectedSurveysIncludeLiveAdapter(surveys);
+    return (
+      this.submitAttempted() && !this.selectedSurveysIncludeLiveAdapter(surveys)
+    );
   }
 
   canSubmit(vm: {
@@ -402,7 +426,9 @@ export class ForgeComponent implements OnInit {
     createJobLoading: boolean;
     surveys: readonly ForgeSurveyDto[];
   }): boolean {
-    const selectedLiveCount = (this.workbenchForm.controls.surveyIds.getRawValue() ?? []).filter(
+    const selectedLiveCount = (
+      this.workbenchForm.controls.surveyIds.getRawValue() ?? []
+    ).filter(
       (surveyId): surveyId is string =>
         typeof surveyId === "string" &&
         vm.surveys.some(
@@ -501,7 +527,10 @@ export class ForgeComponent implements OnInit {
     );
   }
 
-  jobPreviewMode(job: ForgeJobDto, imageProducts: readonly ForgeImageProductDto[]): string {
+  jobPreviewMode(
+    job: ForgeJobDto,
+    imageProducts: readonly ForgeImageProductDto[]
+  ): string {
     const images = imageProducts.filter((image) => image.jobId === job.id);
     if (images.length === 0) {
       return "pending/no preview";
@@ -551,7 +580,9 @@ export class ForgeComponent implements OnInit {
       : "derived preview image, provenance";
   }
 
-  selectedArtifactModeLabel(selectedImage: ForgeImageProductDto | null): string {
+  selectedArtifactModeLabel(
+    selectedImage: ForgeImageProductDto | null
+  ): string {
     if (!selectedImage) {
       return "No artifact selected yet";
     }
@@ -605,18 +636,27 @@ export class ForgeComponent implements OnInit {
     selectedJob: ForgeJobDto | null,
     selectedImage: ForgeImageProductDto | null
   ): string {
-    const pixscale = selectedJob?.request?.pixscale ?? selectedImage?.provenance.pixscale ?? null;
+    const pixscale =
+      selectedJob?.request?.pixscale ??
+      selectedImage?.provenance.pixscale ??
+      null;
     return pixscale === null ? "derived / not reported" : String(pixscale);
   }
 
-  selectedProvenancePixscaleLabel(selectedImage: ForgeImageProductDto | null): string {
+  selectedProvenancePixscaleLabel(
+    selectedImage: ForgeImageProductDto | null
+  ): string {
     return selectedImage?.provenance.pixscale === null || !selectedImage
       ? "derived / not reported"
       : String(selectedImage.provenance.pixscale);
   }
 
   isDerivedPreview(selectedImage: ForgeImageProductDto | null): boolean {
-    return selectedImage?.provenance.transformChain.includes("skyview-derived-image") ?? false;
+    return (
+      selectedImage?.provenance.transformChain.includes(
+        "skyview-derived-image"
+      ) ?? false
+    );
   }
 
   isCompositePreview(selectedImage: ForgeImageProductDto | null): boolean {
@@ -656,7 +696,9 @@ export class ForgeComponent implements OnInit {
   }
 
   lastSuccessfulBootstrapLabel(): string {
-    return this.lastSuccessfulBootstrapAt() || "Awaiting first successful bootstrap";
+    return (
+      this.lastSuccessfulBootstrapAt() || "Awaiting first successful bootstrap"
+    );
   }
 
   freshestEventLabel(jobEvents: readonly ForgeVmJobEventDto[]): string {
@@ -687,11 +729,15 @@ export class ForgeComponent implements OnInit {
       : "Available now: service info and bootstrap payload only";
   }
 
-  hasSupportedContract(vm: { serviceInfo: { contractVersion: string } | null }): boolean {
+  hasSupportedContract(vm: {
+    serviceInfo: { contractVersion: string } | null;
+  }): boolean {
     return vm.serviceInfo?.contractVersion === EXPECTED_FORGE_CONTRACT_VERSION;
   }
 
-  isShellOffline(vm: { graphqlState: { error: string | null; loading: boolean } }): boolean {
+  isShellOffline(vm: {
+    graphqlState: { error: string | null; loading: boolean };
+  }): boolean {
     return !vm.graphqlState.loading && !!vm.graphqlState.error;
   }
 
@@ -794,7 +840,9 @@ export class ForgeComponent implements OnInit {
     }
   }
 
-  previewUnavailableForSelectedImage(selectedImage: ForgeImageProductDto | null): boolean {
+  previewUnavailableForSelectedImage(
+    selectedImage: ForgeImageProductDto | null
+  ): boolean {
     if (!selectedImage) {
       return false;
     }
@@ -803,15 +851,22 @@ export class ForgeComponent implements OnInit {
     return this.previewLoadErrorKey() === key;
   }
 
-  selectedTargetLabel(selectedJob: ForgeJobDto | null, formTarget: string | null | undefined): string {
+  selectedTargetLabel(
+    selectedJob: ForgeJobDto | null,
+    formTarget: string | null | undefined
+  ): string {
     return selectedJob?.targetName || formTarget || "n/a";
   }
 
   selectedCitationLabel(selectedImage: ForgeImageProductDto | null): string {
-    return selectedImage ? `${selectedImage.provenance.providerName} citation` : "source citation";
+    return selectedImage
+      ? `${selectedImage.provenance.providerName} citation`
+      : "source citation";
   }
 
-  selectedAuthoritativeSourceLabel(selectedImage: ForgeImageProductDto | null): string {
+  selectedAuthoritativeSourceLabel(
+    selectedImage: ForgeImageProductDto | null
+  ): string {
     if (!selectedImage) {
       return "provider asset";
     }
@@ -867,7 +922,9 @@ export class ForgeComponent implements OnInit {
   }
 
   private hasValidRadius(): boolean {
-    const radius = Number(this.workbenchForm.controls.radiusArcmin.getRawValue());
+    const radius = Number(
+      this.workbenchForm.controls.radiusArcmin.getRawValue()
+    );
     return Number.isFinite(radius) && radius > 0 && radius <= MAX_RADIUS_ARCMIN;
   }
 

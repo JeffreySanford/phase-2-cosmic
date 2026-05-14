@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  Query,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Query, Res } from "@nestjs/common";
 import type { Response } from "express";
 import { ForgeTargetResolverService } from "../services/forge-target-resolver.service";
 

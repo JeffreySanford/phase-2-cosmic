@@ -1,6 +1,18 @@
-import { Component, Input, Output, EventEmitter, OnDestroy, OnInit, ChangeDetectorRef } from "@angular/core";
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnDestroy,
+  OnInit,
+  ChangeDetectorRef,
+  inject,
+} from "@angular/core";
 import { Subscription } from "rxjs";
-import { SystemStatus, SystemStatusService } from "../../services/system-status.service";
+import {
+  SystemStatus,
+  SystemStatusService,
+} from "../../services/system-status.service";
 
 interface SidebarRoute {
   path: string;
@@ -18,6 +30,9 @@ interface SidebarRoute {
 export class SidebarComponent implements OnInit, OnDestroy {
   @Input() collapsed = false;
   @Output() navigate = new EventEmitter<string>();
+
+  private readonly systemStatusService = inject(SystemStatusService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   systemStatus: SystemStatus = {
     health: "offline",
@@ -40,15 +55,25 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { path: "/visualizations", label: "Visualizations", icon: "📊" },
     { path: "/jobs", label: "Jobs", icon: "🗂️" },
     { path: "/forge", label: "Forge", icon: "🪐", requiredService: "forge" },
-    { path: "/topology", label: "Topology", icon: "🗺️", requiredService: "topology" },
-    { path: "/telemetry", label: "Telemetry", icon: "📡", requiredService: "telemetry" },
-    { path: "/diagnostics", label: "Diagnostics", icon: "🛠️", requiredService: "diagnostics" },
+    {
+      path: "/topology",
+      label: "Topology",
+      icon: "🗺️",
+      requiredService: "topology",
+    },
+    {
+      path: "/telemetry",
+      label: "Telemetry",
+      icon: "📡",
+      requiredService: "telemetry",
+    },
+    {
+      path: "/diagnostics",
+      label: "Diagnostics",
+      icon: "🛠️",
+      requiredService: "diagnostics",
+    },
   ];
-
-  constructor(
-    private systemStatusService: SystemStatusService,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   ngOnInit(): void {
     this.statusSub = this.systemStatusService.status$.subscribe((status) => {

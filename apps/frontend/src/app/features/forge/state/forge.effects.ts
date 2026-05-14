@@ -183,7 +183,11 @@ export class ForgeEffects {
   }
 
   private readGraphqlErrorMessage(errorBody: unknown): string | null {
-    if (!errorBody || typeof errorBody !== "object" || !("errors" in errorBody)) {
+    if (
+      !errorBody ||
+      typeof errorBody !== "object" ||
+      !("errors" in errorBody)
+    ) {
       return null;
     }
 

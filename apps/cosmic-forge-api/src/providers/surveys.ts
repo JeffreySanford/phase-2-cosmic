@@ -1,4 +1,8 @@
-import type { ForgeImageProduct, ForgeJob, ForgeSurvey } from "../domain/forge.models";
+import type {
+  ForgeImageProduct,
+  ForgeJob,
+  ForgeSurvey,
+} from "../domain/forge.models";
 import {
   IRSA_ALLWISE_SURVEY_ID,
   IRSA_CITATION_URL,
@@ -200,7 +204,9 @@ function getPreviewSurveyId(job: ForgeJob): string | null {
   return null;
 }
 
-export function getSurveyAdapterForJob(job: ForgeJob): ForgeSurveyAdapter | null {
+export function getSurveyAdapterForJob(
+  job: ForgeJob
+): ForgeSurveyAdapter | null {
   for (const surveyId of job.requestedSurveyIds) {
     const adapter = forgeSurveyAdapters[surveyId];
     if (adapter) {
@@ -254,4 +260,8 @@ export function createPreviewImageProduct(
   return imageProduct;
 }
 
-export { buildIrsaAllwiseCutoutRequest, buildLegacyCutoutRequest, buildSkyViewCutoutRequest };
+export {
+  buildIrsaAllwiseCutoutRequest,
+  buildLegacyCutoutRequest,
+  buildSkyViewCutoutRequest,
+};

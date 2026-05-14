@@ -121,7 +121,9 @@ describe("ForgeProxyService", () => {
     expect(payload).toBeNull();
     expect(res.statusCode).toBe(200);
     expect(res.getHeader("content-type")).toBe("image/jpeg");
-    expect(res.getHeader("content-length")).toBe(String(artifactBytes.byteLength));
+    expect(res.getHeader("content-length")).toBe(
+      String(artifactBytes.byteLength)
+    );
     expect(res.sentBody).toEqual(artifactBytes);
     expect(recordMetrics).toHaveBeenCalledWith(
       "GET",

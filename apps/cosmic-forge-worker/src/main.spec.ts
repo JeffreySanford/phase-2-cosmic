@@ -32,7 +32,12 @@ function getJson(url: string): Promise<Record<string, unknown>> {
         response.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
         response.on("end", () => {
           try {
-            resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<string, unknown>);
+            resolve(
+              JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<
+                string,
+                unknown
+              >
+            );
           } catch (error) {
             reject(error);
           }
@@ -117,7 +122,7 @@ test("worker health reports the last claim failure", async () => {
       ok: false,
       status: 404,
       json: async () => ({}),
-    }) as Response) as typeof fetch;
+    } as Response)) as typeof fetch;
 
   const { app, executeNext } = loadWorkerModule({
     FORGE_API_URL: "http://127.0.0.1:4222",
@@ -159,7 +164,7 @@ test("worker health reports bounded-concurrency settings", async () => {
         contractVersion: "forge-worker.v1",
         job: null,
       }),
-    }) as Response) as typeof fetch;
+    } as Response)) as typeof fetch;
 
   const { app, pumpQueue } = loadWorkerModule({
     FORGE_API_URL: "http://127.0.0.1:4333",

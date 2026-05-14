@@ -18,14 +18,10 @@ const cypressBin = path.join(
   "cypress"
 );
 
-const child = spawn(
-  process.execPath,
-  [cypressBin, ...args],
-  {
-    stdio: "inherit",
-    env,
-  }
-);
+const child = spawn(process.execPath, [cypressBin, ...args], {
+  stdio: "inherit",
+  env,
+});
 
 child.on("exit", (code, signal) => {
   if (signal) {

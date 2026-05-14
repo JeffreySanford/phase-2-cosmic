@@ -83,7 +83,6 @@ export interface ForgeImageProduct {
   createdAt: string;
 }
 
-
 export interface CompositeJobSpec {
   inputs: ForgeCutoutRequest[];
   operation: string;

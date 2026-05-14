@@ -23,7 +23,11 @@
   align-items: flex-start;
   padding: 1.5rem;
   border-radius: 1rem;
-  background: linear-gradient(135deg, rgba(11, 26, 44, 0.95), rgba(26, 59, 87, 0.9));
+  background: linear-gradient(
+    135deg,
+    rgba(11, 26, 44, 0.95),
+    rgba(26, 59, 87, 0.9)
+  );
   color: #f3f8fd;
 }
 
@@ -266,11 +270,8 @@
   font-weight: 600;
   font: inherit;
   cursor: pointer;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease,
-    color 120ms ease,
-    box-shadow 120ms ease;
+  transition: background-color 120ms ease, border-color 120ms ease,
+    color 120ms ease, box-shadow 120ms ease;
 }
 
 .forge-chip:hover:not(:disabled) {
@@ -436,9 +437,7 @@
   border: 1px solid rgba(16, 42, 67, 0.12);
   background: #fff;
   cursor: pointer;
-  transition:
-    border-color 120ms ease,
-    box-shadow 120ms ease,
+  transition: border-color 120ms ease, box-shadow 120ms ease,
     transform 120ms ease;
 }
 
@@ -618,8 +617,11 @@
   min-height: 12rem;
   border-radius: 1rem;
   border: 1px dashed rgba(16, 42, 67, 0.24);
-  background:
-    radial-gradient(circle at top left, rgba(120, 192, 224, 0.22), transparent 40%),
+  background: radial-gradient(
+      circle at top left,
+      rgba(120, 192, 224, 0.22),
+      transparent 40%
+    ),
     linear-gradient(135deg, #09131d, #13283b 60%, #214b63);
   color: #f4fbff;
   display: flex;

@@ -5,7 +5,8 @@ import { ArtifactCacheService } from "../artifacts/artifact-cache.service";
 @Controller("artifacts")
 export class ForgeArtifactsController {
   constructor(
-    @Inject(ArtifactCacheService) private readonly artifactCache: ArtifactCacheService
+    @Inject(ArtifactCacheService)
+    private readonly artifactCache: ArtifactCacheService
   ) {}
 
   @Get(":imageId/:kind")
@@ -28,14 +29,24 @@ export class ForgeArtifactsController {
 
     try {
       if (kind === "preview") {
-        this.artifactCache.sendBinaryFile(res, artifactFiles.previewPath, "image/jpeg");
+        this.artifactCache.sendBinaryFile(
+          res,
+          artifactFiles.previewPath,
+          "image/jpeg"
+        );
         return;
       }
 
-      this.artifactCache.sendBinaryFile(res, artifactFiles.fitsPath, "application/fits");
+      this.artifactCache.sendBinaryFile(
+        res,
+        artifactFiles.fitsPath,
+        "application/fits"
+      );
     } catch (error) {
       if (!res.headersSent) {
-        res.status(500).json({ error: "ARTIFACT_SEND_FAILURE", message: String(error) });
+        res
+          .status(500)
+          .json({ error: "ARTIFACT_SEND_FAILURE", message: String(error) });
       }
     }
   }

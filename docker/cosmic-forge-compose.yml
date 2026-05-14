@@ -1,3 +1,4 @@
+---
 name: cosmic-forge
 
 services:
@@ -12,7 +13,9 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - pg_isready -U "${FORGE_POSTGRES_USER:-cosmic_forge}" -d "${FORGE_POSTGRES_DB:-cosmic_forge}"
+        - >-
+          pg_isready -U "${FORGE_POSTGRES_USER:-cosmic_forge}"
+          -d "${FORGE_POSTGRES_DB:-cosmic_forge}"
       interval: 10s
       timeout: 5s
       retries: 10
@@ -70,6 +73,7 @@ services:
       NODE_ENV: development
       PORT: 4101
       FORGE_API_HOST_PORT: 4101
+      # yamllint disable-line rule:line-length
       FORGE_POSTGRES_URL: "postgres://${FORGE_POSTGRES_USER:-cosmic_forge}:${FORGE_POSTGRES_PASSWORD:-cosmic_forge_dev}@postgres:5432/${FORGE_POSTGRES_DB:-cosmic_forge}"
       FORGE_REDIS_URL: "redis://redis:6379"
       FORGE_MINIO_ENDPOINT: "http://minio:9000"
@@ -81,7 +85,9 @@ services:
         - node
         - -e
         - >-
-          fetch('http://127.0.0.1:4101/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))
+          fetch('http://127.0.0.1:4101/health')
+          .then((r) => process.exit(r.ok ? 0 : 1))
+          .catch(() => process.exit(1))
       interval: 10s
       timeout: 5s
       retries: 10
@@ -103,6 +109,7 @@ services:
       NODE_ENV: development
       PORT: 4102
       FORGE_WORKER_HOST_PORT: 4102
+      # yamllint disable-line rule:line-length
       FORGE_POSTGRES_URL: "postgres://${FORGE_POSTGRES_USER:-cosmic_forge}:${FORGE_POSTGRES_PASSWORD:-cosmic_forge_dev}@postgres:5432/${FORGE_POSTGRES_DB:-cosmic_forge}"
       FORGE_REDIS_URL: "redis://redis:6379"
       FORGE_MINIO_ENDPOINT: "http://minio:9000"
@@ -114,7 +121,9 @@ services:
         - node
         - -e
         - >-
-          fetch('http://127.0.0.1:4102/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))
+          fetch('http://127.0.0.1:4102/health')
+          .then((r) => process.exit(r.ok ? 0 : 1))
+          .catch(() => process.exit(1))
       interval: 10s
       timeout: 5s
       retries: 10

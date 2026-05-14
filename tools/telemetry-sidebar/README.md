@@ -43,19 +43,19 @@ Events are emitted as JSON over WebSocket:
 
 ```json
 {
-  "type":"emit",
-  "nodeId":"my-service",
-  "broker":"rabbitmq",
-  "topicOrQueue":"/vhost/exchange/routing_key",
-  "timestampMs":1690000000000,
-  "bytes":4096
+  "type": "emit",
+  "nodeId": "my-service",
+  "broker": "rabbitmq",
+  "topicOrQueue": "/vhost/exchange/routing_key",
+  "timestampMs": 1690000000000,
+  "bytes": 4096
 }
 ```
 
 ## Notes
 
 - RabbitMQ Firehose is the most accurate for message-level tracing.
-- Kafka & Pulsar connectors currently focus on *receive* events; emit events can be added by instrumenting the producer path (interceptors) or using a separate producer-side report.
+- Kafka & Pulsar connectors currently focus on _receive_ events; emit events can be added by instrumenting the producer path (interceptors) or using a separate producer-side report.
 
 ### Kafka producer interceptor example
 

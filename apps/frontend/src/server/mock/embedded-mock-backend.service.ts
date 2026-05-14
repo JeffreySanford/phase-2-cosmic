@@ -247,7 +247,9 @@ export class EmbeddedMockBackendService {
     return `e2e-job-${Date.now()}-${this.embeddedJobCounter}`;
   }
 
-  private createEmbeddedJob(payload: Record<string, unknown>): EmbeddedJobRecord {
+  private createEmbeddedJob(
+    payload: Record<string, unknown>
+  ): EmbeddedJobRecord {
     const now = new Date().toISOString();
     const jobId = this.createEmbeddedJobId();
     const requestedBy =
@@ -343,7 +345,10 @@ export class EmbeddedMockBackendService {
       return job;
     }
 
-    if (job.status === "RUNNING" && ageMs > (isLongJob() ? longRunMs : shortRunMs)) {
+    if (
+      job.status === "RUNNING" &&
+      ageMs > (isLongJob() ? longRunMs : shortRunMs)
+    ) {
       job.status = "COMPLETED";
       job.updatedAt = now;
       job.logs.push(`${now} status=COMPLETED`);
@@ -356,7 +361,11 @@ export class EmbeddedMockBackendService {
   private registerVoArtifact(job: EmbeddedJobRecord): void {
     if (job.artifacts.length > 0) return;
     const params = (job.parameters ?? {}) as Record<string, unknown>;
-    const payload = this.voExternalSourcePayload(job.workflow, params, job.jobId);
+    const payload = this.voExternalSourcePayload(
+      job.workflow,
+      params,
+      job.jobId
+    );
     if (!payload) return;
     const artifactName = "external-call.json";
     const artifactUrl = `/api/v1/jobs/${job.jobId}/artifacts/${artifactName}`;
@@ -381,9 +390,16 @@ export class EmbeddedMockBackendService {
             params["radius"] ?? 0.1
           }°)`,
           accessUrl: String(
-            params["serviceUrl"] ?? "https://heasarc.gsfc.nasa.gov/xamin/vo/cone"
+            params["serviceUrl"] ??
+              "https://heasarc.gsfc.nasa.gov/xamin/vo/cone"
           ),
-          sampleFields: ["source_name", "ra", "dec", "flux_erg_s_cm2", "mission"],
+          sampleFields: [
+            "source_name",
+            "ra",
+            "dec",
+            "flux_erg_s_cm2",
+            "mission",
+          ],
           sampleRows: [
             ["3C273", "187.2779", "2.0524", "1.62e-11", "Chandra/CXO"],
             ["3C273_off1", "187.2960", "2.0714", "4.10e-14", "ROSAT/HRI"],
@@ -409,7 +425,13 @@ export class EmbeddedMockBackendService {
           tapUrl: String(
             params["tapUrl"] ?? "https://data-query.nrao.edu/tap/sync"
           ),
-          sampleFields: ["obs_id", "ra", "dec", "t_exptime", "dataproduct_type"],
+          sampleFields: [
+            "obs_id",
+            "ra",
+            "dec",
+            "t_exptime",
+            "dataproduct_type",
+          ],
           sampleRows: [
             ["VLASS1.1+J123049+122322", "187.706", "12.390", "5.0", "image"],
             ["VLASS1.1+J123051+122344", "187.713", "12.395", "5.0", "image"],
@@ -435,8 +457,20 @@ export class EmbeddedMockBackendService {
             "dataproduct_type",
           ],
           sampleRows: [
-            ["ALMA-M87-2017.1.00843", "M87 ALMA Band 6", "187.706", "12.391", "cube"],
-            ["EVLA-M87-13A-292", "M87 JVLA L-band", "187.705", "12.390", "cube"],
+            [
+              "ALMA-M87-2017.1.00843",
+              "M87 ALMA Band 6",
+              "187.706",
+              "12.391",
+              "cube",
+            ],
+            [
+              "EVLA-M87-13A-292",
+              "M87 JVLA L-band",
+              "187.705",
+              "12.390",
+              "cube",
+            ],
           ],
           links: [],
         };
@@ -444,7 +478,9 @@ export class EmbeddedMockBackendService {
         return {
           type: "external-source",
           provider: String(params["provider"] ?? "NRAO"),
-          sourceName: `DataLink – ${params["datasetIdentifier"] ?? "unknown dataset"}`,
+          sourceName: `DataLink – ${
+            params["datasetIdentifier"] ?? "unknown dataset"
+          }`,
           accessUrl: String(
             params["datalinkUrl"] ?? "https://data-query.nrao.edu/datalink"
           ),
@@ -478,7 +514,9 @@ export class EmbeddedMockBackendService {
           type: "external-source",
           provider: String(params["provider"] ?? "NRAO"),
           sourceName: `Product Download – ${
-            String(params["productUrl"] ?? "").split("/").pop() ?? "unknown"
+            String(params["productUrl"] ?? "")
+              .split("/")
+              .pop() ?? "unknown"
           }`,
           accessUrl: String(params["productUrl"] ?? ""),
           sampleFields: ["keyword", "value", "comment"],

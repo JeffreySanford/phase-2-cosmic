@@ -307,7 +307,9 @@ describe("AppController diagnostics endpoints", () => {
     const res = createMockResponse();
     (
       governanceUpstreamService as unknown as { fetchWithFallback: jest.Mock }
-    ).fetchWithFallback = jest.fn().mockRejectedValue(new Error("connect failed"));
+    ).fetchWithFallback = jest
+      .fn()
+      .mockRejectedValue(new Error("connect failed"));
 
     await ctrl.proxyGovernance(req, res);
 

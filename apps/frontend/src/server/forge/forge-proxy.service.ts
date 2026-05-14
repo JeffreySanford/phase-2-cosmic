@@ -21,7 +21,9 @@ export class ForgeProxyService {
     const method = (req.method || "GET").toUpperCase();
 
     if (requestPath === "/api/forge/health" && method === "GET") {
-      const targetUrls = this.forgeBaseCandidates().map((baseUrl) => `${baseUrl}/health`);
+      const targetUrls = this.forgeBaseCandidates().map(
+        (baseUrl) => `${baseUrl}/health`
+      );
       const started = Date.now();
 
       return defer(() =>
@@ -62,7 +64,9 @@ export class ForgeProxyService {
     }
 
     if (requestPath === "/api/forge/graphql" && method === "POST") {
-      const targetUrls = this.forgeBaseCandidates().map((baseUrl) => `${baseUrl}/graphql`);
+      const targetUrls = this.forgeBaseCandidates().map(
+        (baseUrl) => `${baseUrl}/graphql`
+      );
       const started = Date.now();
 
       return defer(() =>
@@ -108,7 +112,9 @@ export class ForgeProxyService {
 
     if (requestPath === "/api/forge/resolve-target" && method === "GET") {
       const targetUrls = this.forgeBaseCandidates().map((baseUrl) => {
-        const search = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+        const search = req.url.includes("?")
+          ? req.url.slice(req.url.indexOf("?"))
+          : "";
         return `${baseUrl}/resolve-target${search}`;
       });
       const started = Date.now();
@@ -151,8 +157,8 @@ export class ForgeProxyService {
     }
 
     if (requestPath.startsWith("/api/forge/artifacts/") && method === "GET") {
-      const targetUrls = this.forgeBaseCandidates().map((baseUrl) =>
-        `${baseUrl}${requestPath.replace("/api/forge", "")}`
+      const targetUrls = this.forgeBaseCandidates().map(
+        (baseUrl) => `${baseUrl}${requestPath.replace("/api/forge", "")}`
       );
       const started = Date.now();
 

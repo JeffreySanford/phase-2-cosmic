@@ -26,6 +26,13 @@ log() {
 	write_log_line "$(timestamp) $*"
 }
 
+fail() {
+	local message="$1"
+	log "$message"
+	printf '%s\n' "$message" >&2
+	exit 1
+}
+
 stage() {
 	local title="$1"
 	write_log_line ""
@@ -60,19 +67,54 @@ elif [ -f "$ENV_SAMPLE" ]; then
  	set +a
 fi
 
+is_placeholder_value() {
+	local value="${1:-}"
+	case "$value" in
+		""|replace_with_*|your-*|your_*|changeme|CHANGEME)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+is_meaningful_secret() {
+	local value="${1:-}"
+	[ -n "$value" ] && ! is_placeholder_value "$value"
+}
+
+stage "Docker Preflight"
+if ! command -v docker >/dev/null 2>&1; then
+	fail "[start-all] Docker CLI was not found in PATH. Install Docker Desktop and ensure 'docker' is available."
+fi
+
+if ! docker info >/dev/null 2>&1; then
+	log "[start-all] Windows hint: missing //./pipe/dockerDesktopLinuxEngine usually means Docker Desktop is not running."
+	fail "[start-all] Docker engine is not reachable. Start Docker Desktop (Linux containers mode) and retry."
+fi
+
+if ! docker compose version >/dev/null 2>&1; then
+	fail "[start-all] 'docker compose' is unavailable. Update Docker Desktop to include Compose v2 and retry."
+fi
+
 stage "Registry Authentication"
 # If a Docker personal access token is provided, attempt to login so builds won't hit unauthenticated pull limits.
-if [ -n "${DOCKER_PAT:-}" ]; then
+if is_meaningful_secret "${DOCKER_PAT:-}"; then
 	DOCKER_USER=${DOCKER_USERNAME:-${USER:-}}
 	log "[start-all] Attempting docker login for user: ${DOCKER_USER}"
 	echo "${DOCKER_PAT}" | docker login --username "${DOCKER_USER}" --password-stdin || log "[start-all] Docker login failed (ignored)"
+elif [ -n "${DOCKER_PAT:-}" ]; then
+	log "[start-all] DOCKER_PAT appears to be a placeholder value; skipping docker login"
 fi
 
 # If a GitHub PAT is provided, log in to ghcr.io so GHCR-hosted images (e.g. nginxlog-exporter) can be pulled.
-if [ -n "${GITHUB_PAT:-}" ]; then
+if is_meaningful_secret "${GITHUB_PAT:-}"; then
 	GH_USER=${GITHUB_USERNAME:-${DOCKER_USERNAME:-${USER:-}}}
 	log "[start-all] Attempting ghcr.io login for user: ${GH_USER}"
 	echo "${GITHUB_PAT}" | docker login ghcr.io --username "${GH_USER}" --password-stdin || log "[start-all] ghcr.io login failed (ignored)"
+elif [ -n "${GITHUB_PAT:-}" ]; then
+	log "[start-all] GITHUB_PAT appears to be a placeholder value; skipping ghcr.io login"
 fi
 
 FAST_START="${FAST_START:-true}"
@@ -346,7 +388,7 @@ stage "Launching Background Services"
 start_bg "allocator" node "$REPO_ROOT/tools/trident-allocator/server.js"
 start_bg "forge-api" env FORGE_API_HOST_PORT="$FORGE_API_HOST_PORT" PORT="$FORGE_API_HOST_PORT" node "$REPO_ROOT/node_modules/tsx/dist/cli.mjs" --tsconfig "$REPO_ROOT/apps/cosmic-forge-api/tsconfig.app.json" "$REPO_ROOT/apps/cosmic-forge-api/src/main.ts"
 start_bg "forge-worker" env PORT="$FORGE_WORKER_HOST_PORT" FORGE_WORKER_HOST_PORT="$FORGE_WORKER_HOST_PORT" FORGE_API_URL="http://127.0.0.1:$FORGE_API_HOST_PORT" node "$REPO_ROOT/node_modules/tsx/dist/cli.mjs" --tsconfig "$REPO_ROOT/apps/cosmic-forge-worker/tsconfig.app.json" "$REPO_ROOT/apps/cosmic-forge-worker/src/main.ts"
-start_bg "ssr" sanitize_windows_env env FRONTEND_PORT="$FRONTEND_PORT" PORT="$FRONTEND_PORT" FORGE_API_URL="http://127.0.0.1:$FORGE_API_HOST_PORT" powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; node '.\\node_modules\\tsx\\dist\\cli.mjs' --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts"
+start_bg "ssr" sanitize_windows_env env FRONTEND_PORT="$FRONTEND_PORT" PORT="$FRONTEND_PORT" FORGE_API_URL="http://127.0.0.1:$FORGE_API_HOST_PORT" USE_EMBEDDED_E2E_BACKEND="false" powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; node '.\\node_modules\\tsx\\dist\\cli.mjs' --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts"
 start_bg "frontend" sanitize_windows_env env NX_DAEMON="false" powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; Set-Item Env:NX_DAEMON false; pnpm nx serve frontend --port=4200 --host=127.0.0.1"
 
 log "[start-all] Background services launched: allocator, forge-api, forge-worker, ssr, frontend"

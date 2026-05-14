@@ -1515,13 +1515,15 @@ export class AppController {
   @Get("/api/metrics/topology")
   async proxyTopologyMetrics(@Res() res: Response): Promise<void> {
     if (this.embeddedMockBackendService.useEmbeddedE2eBackend()) {
-      res.status(200).json(this.embeddedMockBackendService.embeddedTopologyMetrics());
+      res
+        .status(200)
+        .json(this.embeddedMockBackendService.embeddedTopologyMetrics());
       return;
     }
 
-    const targetUrls = this.governanceUpstreamService.governanceBaseCandidates().map(
-      (b) => `${b}/api/v1/metrics/topology`
-    );
+    const targetUrls = this.governanceUpstreamService
+      .governanceBaseCandidates()
+      .map((b) => `${b}/api/v1/metrics/topology`);
     try {
       const started = Date.now();
       const upstream = await this.governanceUpstreamService.fetchWithFallback(
@@ -1581,9 +1583,9 @@ export class AppController {
       return;
     }
 
-    const targetUrls = this.governanceUpstreamService.governanceBaseCandidates().map(
-      (b) => `${b}/api/v1/visualization/metrics`
-    );
+    const targetUrls = this.governanceUpstreamService
+      .governanceBaseCandidates()
+      .map((b) => `${b}/api/v1/visualization/metrics`);
     try {
       const started = Date.now();
       const upstream = await this.governanceUpstreamService.fetchWithFallback(
@@ -1656,7 +1658,8 @@ export class AppController {
 
     const isRange = qp.has("start") || qp.has("end") || qp.has("step");
     const path = isRange ? "/api/v1/query_range" : "/api/v1/query";
-    const baseCandidates = this.governanceUpstreamService.buildBaseCandidates(prom);
+    const baseCandidates =
+      this.governanceUpstreamService.buildBaseCandidates(prom);
     const urls = baseCandidates.map((b) => `${b}${path}?${qp.toString()}`);
     const started = Date.now();
     try {
@@ -2326,9 +2329,9 @@ export class AppController {
         note?: string;
       };
       try {
-        const targetUrls = this.governanceUpstreamService.governanceBaseCandidates().map(
-          (b) => `${b}/api/v1/metrics/topology/runtime-profile`
-        );
+        const targetUrls = this.governanceUpstreamService
+          .governanceBaseCandidates()
+          .map((b) => `${b}/api/v1/metrics/topology/runtime-profile`);
         await this.governanceUpstreamService.fetchWithFallback(
           targetUrls,
           {
@@ -2394,14 +2397,17 @@ export class AppController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response
   ): Observable<unknown> {
-    return this.forgeProxyService.handle(req, res, (method, status, responseBytes, durationSeconds) =>
-      recordFrontendApiMetrics(
-        "forge",
-        method,
-        status,
-        responseBytes,
-        durationSeconds
-      )
+    return this.forgeProxyService.handle(
+      req,
+      res,
+      (method, status, responseBytes, durationSeconds) =>
+        recordFrontendApiMetrics(
+          "forge",
+          method,
+          status,
+          responseBytes,
+          durationSeconds
+        )
     );
   }
 

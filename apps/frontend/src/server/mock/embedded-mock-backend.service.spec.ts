@@ -51,7 +51,10 @@ describe("EmbeddedMockBackendService", () => {
     expect((res as unknown as FakeResponse).statusCode).toBe(200);
     expect((res as unknown as FakeResponse).body).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ workflow: "vo.cone-search", status: "COMPLETED" }),
+        expect.objectContaining({
+          workflow: "vo.cone-search",
+          status: "COMPLETED",
+        }),
       ])
     );
   });

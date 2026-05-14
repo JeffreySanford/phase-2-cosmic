@@ -25,16 +25,16 @@ import { ForgeStateRepository } from "./forge-state.repository";
 
 @Injectable()
 export class ForgeStoreService {
-
   private readonly state: ForgePersistedState;
 
   constructor(
-    @Inject(ArtifactCacheService) private readonly artifactCache: ArtifactCacheService,
-    @Inject(ForgeStateRepository) private readonly stateRepository: ForgeStateRepository
+    @Inject(ArtifactCacheService)
+    private readonly artifactCache: ArtifactCacheService,
+    @Inject(ForgeStateRepository)
+    private readonly stateRepository: ForgeStateRepository
   ) {
     this.state = this.stateRepository.load(() => this.createInitialState());
   }
-
 
   /**
    * Create a composite job (Sprint 7).
@@ -52,7 +52,9 @@ export class ForgeStoreService {
     this.state.jobCounter += 1;
     const timestamp = this.isoNow();
     const requestedSurveyIds = Array.isArray(input.surveyIds)
-      ? input.surveyIds.filter((value): value is string => typeof value === "string")
+      ? input.surveyIds.filter(
+          (value): value is string => typeof value === "string"
+        )
       : [];
     const normalizedInputs =
       input.compositeRequest.inputs.length > 0
@@ -88,7 +90,13 @@ export class ForgeStoreService {
     };
 
     this.state.jobs.unshift(job);
-    this.appendJobEvent(job, "JOB_CREATED", null, "QUEUED", "Composite job created");
+    this.appendJobEvent(
+      job,
+      "JOB_CREATED",
+      null,
+      "QUEUED",
+      "Composite job created"
+    );
     this.persistState();
     return job;
   }
@@ -125,7 +133,9 @@ export class ForgeStoreService {
 
   private createCompositePreviewUrl(job: ForgeJob): string {
     const label = encodeURIComponent(
-      `${job.targetName}\n${job.requestedSurveyIds.join(" + ")}\n${job.compositeRequest?.operation ?? "composite"}`
+      `${job.targetName}\n${job.requestedSurveyIds.join(" + ")}\n${
+        job.compositeRequest?.operation ?? "composite"
+      }`
     );
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
       <defs>
@@ -223,7 +233,11 @@ export class ForgeStoreService {
       return;
     }
 
-    const imageProduct = createPreviewImageProduct(job, this.nextImageId(), this.isoNow());
+    const imageProduct = createPreviewImageProduct(
+      job,
+      this.nextImageId(),
+      this.isoNow()
+    );
     if (!imageProduct) {
       return;
     }
@@ -236,8 +250,16 @@ export class ForgeStoreService {
     this.stateRepository.save(this.state);
   }
 
-  private setJobProgress(job: ForgeJob, progressPercent: number, eventType: string, message: string) {
-    const normalizedProgress = Math.max(job.progressPercent, Math.min(progressPercent, 99));
+  private setJobProgress(
+    job: ForgeJob,
+    progressPercent: number,
+    eventType: string,
+    message: string
+  ) {
+    const normalizedProgress = Math.max(
+      job.progressPercent,
+      Math.min(progressPercent, 99)
+    );
     job.progressPercent = normalizedProgress;
     job.updatedAt = this.isoNow();
     this.appendJobEvent(job, eventType, job.status, job.status, message);
@@ -259,26 +281,31 @@ export class ForgeStoreService {
     }
 
     if (/timeout|timed out/i.test(message)) {
+      return new ForgeDomainError("FORGE_UPSTREAM_TIMEOUT", message, true);
+    }
+
+    if (
+      /fetch failed|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|unavailable/i.test(message)
+    ) {
+      return new ForgeDomainError("FORGE_UPSTREAM_UNAVAILABLE", message, true);
+    }
+
+    if (
+      /bad response|retrieval failed|discovery failed|returned no matching|status/i.test(
+        message
+      )
+    ) {
       return new ForgeDomainError(
-        "FORGE_UPSTREAM_TIMEOUT",
+        "FORGE_UPSTREAM_BAD_RESPONSE",
         message,
-        true
+        false
       );
     }
 
-    if (/fetch failed|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|unavailable/i.test(message)) {
-      return new ForgeDomainError(
-        "FORGE_UPSTREAM_UNAVAILABLE",
-        message,
-        true
-      );
-    }
-
-    if (/bad response|retrieval failed|discovery failed|returned no matching|status/i.test(message)) {
-      return new ForgeDomainError("FORGE_UPSTREAM_BAD_RESPONSE", message, false);
-    }
-
-    return new ForgeDomainError("FORGE_INTERNAL_ERROR", message || "Forge worker execution failed.");
+    return new ForgeDomainError(
+      "FORGE_INTERNAL_ERROR",
+      message || "Forge worker execution failed."
+    );
   }
 
   private nextEventId(): string {
@@ -358,7 +385,8 @@ export class ForgeStoreService {
     if (!adapter) {
       job.status = "FAILED";
       job.errorCode = "FORGE_UNSUPPORTED_SURVEY";
-      job.errorMessage = "No production cutout adapter is available yet for the selected surveys.";
+      job.errorMessage =
+        "No production cutout adapter is available yet for the selected surveys.";
       this.appendJobEvent(
         job,
         "JOB_FAILED",
@@ -371,8 +399,17 @@ export class ForgeStoreService {
     }
 
     if (adapter.executeJob) {
-      this.setJobProgress(job, 45, "JOB_PROVIDER_EXECUTION", "Provider execution started");
-      const imageProduct = await adapter.executeJob(job, this.nextImageId(), this.isoNow());
+      this.setJobProgress(
+        job,
+        45,
+        "JOB_PROVIDER_EXECUTION",
+        "Provider execution started"
+      );
+      const imageProduct = await adapter.executeJob(
+        job,
+        this.nextImageId(),
+        this.isoNow()
+      );
       if (this.findJob(job.id)?.status === "CANCELLED") {
         this.appendJobEvent(
           job,
@@ -384,15 +421,19 @@ export class ForgeStoreService {
         this.persistState();
         return;
       }
-      this.setJobProgress(job, 85, "JOB_ARTIFACT_PERSIST", "Persisting artifact metadata");
+      this.setJobProgress(
+        job,
+        85,
+        "JOB_ARTIFACT_PERSIST",
+        "Persisting artifact metadata"
+      );
       const persistedImageProduct =
         imageProduct.format === "fits"
-          ? ((await this.artifactCache.cacheImageArtifact(
+          ? (await this.artifactCache.cacheImageArtifact(
               imageProduct,
               `${imageProduct.id}-${Date.now()}`,
               this.buildArtifactRoute
-            )) ??
-            imageProduct)
+            )) ?? imageProduct
           : imageProduct;
       if (this.findJob(job.id)?.status === "CANCELLED") {
         this.appendJobEvent(
@@ -417,8 +458,17 @@ export class ForgeStoreService {
     }
 
     if (adapter.createImageProduct) {
-      this.setJobProgress(job, 70, "JOB_PREVIEW_BUILD", "Building derived preview artifact");
-      const imageProduct = adapter.createImageProduct(job, this.nextImageId(), this.isoNow());
+      this.setJobProgress(
+        job,
+        70,
+        "JOB_PREVIEW_BUILD",
+        "Building derived preview artifact"
+      );
+      const imageProduct = adapter.createImageProduct(
+        job,
+        this.nextImageId(),
+        this.isoNow()
+      );
       if (this.findJob(job.id)?.status === "CANCELLED") {
         this.appendJobEvent(
           job,
@@ -443,7 +493,8 @@ export class ForgeStoreService {
 
     job.status = "FAILED";
     job.errorCode = "FORGE_UPSTREAM_BAD_RESPONSE";
-    job.errorMessage = "A normalized request exists for the selected survey, but retrieval is not wired yet.";
+    job.errorMessage =
+      "A normalized request exists for the selected survey, but retrieval is not wired yet.";
     this.appendJobEvent(
       job,
       "JOB_FAILED",
@@ -481,7 +532,9 @@ export class ForgeStoreService {
   }
 
   getImageProductsByJob(jobId: string): ForgeImageProduct[] {
-    return this.sortedImageProducts().filter((imageProduct) => imageProduct.jobId === jobId);
+    return this.sortedImageProducts().filter(
+      (imageProduct) => imageProduct.jobId === jobId
+    );
   }
 
   getJobEvents(limit = 10): ForgeJobEvent[] {
@@ -491,7 +544,8 @@ export class ForgeStoreService {
   }
 
   getProvenanceByImage(imageId: string) {
-    const imageProduct = this.state.imageProducts.find((image) => image.id === imageId) ?? null;
+    const imageProduct =
+      this.state.imageProducts.find((image) => image.id === imageId) ?? null;
     return imageProduct?.provenance ?? null;
   }
 
@@ -505,7 +559,9 @@ export class ForgeStoreService {
       return now - Date.parse(job.updatedAt) > 60_000;
     }).length;
     const retryingJobs = jobs.filter((job) => {
-      const events = this.state.jobEvents.filter((event) => event.jobId === job.id);
+      const events = this.state.jobEvents.filter(
+        (event) => event.jobId === job.id
+      );
       return (
         events.some((event) => event.eventType === "JOB_RETRIED") &&
         (job.status === "QUEUED" || job.status === "RUNNING")
@@ -531,7 +587,9 @@ export class ForgeStoreService {
       .map((job) => {
         const created = Date.parse(job.createdAt);
         const updated = Date.parse(job.updatedAt);
-        return Number.isFinite(created) && Number.isFinite(updated) && updated >= created
+        return Number.isFinite(created) &&
+          Number.isFinite(updated) &&
+          updated >= created
           ? (updated - created) / 1000
           : 0;
       })
@@ -564,7 +622,9 @@ export class ForgeStoreService {
     this.state.jobCounter += 1;
     const timestamp = this.isoNow();
     const requestedSurveyIds = Array.isArray(input.surveyIds)
-      ? input.surveyIds.filter((value): value is string => typeof value === "string")
+      ? input.surveyIds.filter(
+          (value): value is string => typeof value === "string"
+        )
       : [];
 
     const job: ForgeJob = {
@@ -588,7 +648,13 @@ export class ForgeStoreService {
 
     job.request = buildCutoutRequestForJob(job);
     this.state.jobs.unshift(job);
-    this.appendJobEvent(job, "JOB_CREATED", null, "QUEUED", "Cutout job created");
+    this.appendJobEvent(
+      job,
+      "JOB_CREATED",
+      null,
+      "QUEUED",
+      "Cutout job created"
+    );
     this.persistState();
     return job;
   }
@@ -616,7 +682,13 @@ export class ForgeStoreService {
         ? "Cancellation requested by operator. Worker will not publish completion artifacts."
         : null;
     job.updatedAt = this.isoNow();
-    this.appendJobEvent(job, "JOB_CANCELLED", previousStatus, "CANCELLED", "Job cancelled");
+    this.appendJobEvent(
+      job,
+      "JOB_CANCELLED",
+      previousStatus,
+      "CANCELLED",
+      "Job cancelled"
+    );
     this.persistState();
     return job;
   }
@@ -639,15 +711,14 @@ export class ForgeStoreService {
     if (job.type === "composite") {
       job.request = null;
       job.compositeRequest = {
-        inputs:
-          job.compositeRequest?.inputs.length
-            ? job.compositeRequest.inputs
-            : this.buildCompositeInputs({
-                ra: job.ra,
-                dec: job.dec,
-                radiusArcmin: job.radiusArcmin,
-                surveyIds: job.requestedSurveyIds,
-              }),
+        inputs: job.compositeRequest?.inputs.length
+          ? job.compositeRequest.inputs
+          : this.buildCompositeInputs({
+              ra: job.ra,
+              dec: job.dec,
+              radiusArcmin: job.radiusArcmin,
+              surveyIds: job.requestedSurveyIds,
+            }),
         operation: job.compositeRequest?.operation ?? "survey-stack",
         parameters: job.compositeRequest?.parameters ?? {},
       };
@@ -655,7 +726,13 @@ export class ForgeStoreService {
       job.request = buildCutoutRequestForJob(job);
     }
     job.updatedAt = this.isoNow();
-    this.appendJobEvent(job, "JOB_RETRIED", previousStatus, "QUEUED", "Job retried");
+    this.appendJobEvent(
+      job,
+      "JOB_RETRIED",
+      previousStatus,
+      "QUEUED",
+      "Job retried"
+    );
     this.persistState();
     return job;
   }
@@ -695,7 +772,13 @@ export class ForgeStoreService {
     job.errorCode = null;
     job.errorMessage = null;
     job.updatedAt = this.isoNow();
-    this.appendJobEvent(job, "JOB_STARTED", previousStatus, "RUNNING", "Worker claimed job");
+    this.appendJobEvent(
+      job,
+      "JOB_STARTED",
+      previousStatus,
+      "RUNNING",
+      "Worker claimed job"
+    );
     this.persistState();
     return job;
   }
@@ -732,8 +815,11 @@ export class ForgeStoreService {
     return job;
   }
 
-  async cacheImageArtifactById(imageId: string): Promise<ForgeImageProduct | null> {
-    const imageProduct = this.state.imageProducts.find((image) => image.id === imageId) ?? null;
+  async cacheImageArtifactById(
+    imageId: string
+  ): Promise<ForgeImageProduct | null> {
+    const imageProduct =
+      this.state.imageProducts.find((image) => image.id === imageId) ?? null;
     if (!imageProduct) {
       return null;
     }
@@ -751,7 +837,10 @@ export class ForgeStoreService {
     cached.provenance = {
       ...cached.provenance,
       accessedAt: cached.accessedAt,
-      transformChain: [...cached.provenance.transformChain, "local-cache-retention"],
+      transformChain: [
+        ...cached.provenance.transformChain,
+        "local-cache-retention",
+      ],
       artifactMode: "cached",
     };
 

@@ -206,6 +206,8 @@ export type ForgeJobMutationResponseDto = Readonly<{
   }>;
 }>;
 
-export type ForgeVmDiagnosticsDto = ForgeWorkbenchBootstrapDataDto["diagnostics"];
+export type ForgeVmDiagnosticsDto =
+  ForgeWorkbenchBootstrapDataDto["diagnostics"];
 export type ForgeVmMetricsDto = ForgeWorkbenchBootstrapDataDto["metrics"];
-export type ForgeVmJobEventDto = ForgeWorkbenchBootstrapDataDto["jobEvents"][number];
+export type ForgeVmJobEventDto =
+  ForgeWorkbenchBootstrapDataDto["jobEvents"][number];

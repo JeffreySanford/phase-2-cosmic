@@ -6,10 +6,7 @@ import { EffectsModule } from "@ngrx/effects";
 import { StoreModule } from "@ngrx/store";
 import { ForgeComponent } from "./forge.component";
 import { ForgeEffects } from "./state/forge.effects";
-import {
-  FORGE_FEATURE_KEY,
-  forgeReducer,
-} from "./state/forge.reducer";
+import { FORGE_FEATURE_KEY, forgeReducer } from "./state/forge.reducer";
 
 @NgModule({
   declarations: [ForgeComponent],

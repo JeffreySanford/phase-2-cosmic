@@ -1,10 +1,30 @@
 // Shared utility classes for all components
-.mt-8 { margin-top: 8px; }
-.ml-8 { margin-left: 8px; }
-.text-right { text-align: right; }
-.monospace-text { font-family: monospace; }
-.input-full { width: 100%; }
-.input-fixed-160 { width: 160px; }
-.input-fixed-120 { width: 120px; }
-.icon-large { font-size: 1.2em; }
-.actions-row { display: flex; align-items: center; gap: 12px; }
+.mt-8 {
+  margin-top: 8px;
+}
+.ml-8 {
+  margin-left: 8px;
+}
+.text-right {
+  text-align: right;
+}
+.monospace-text {
+  font-family: monospace;
+}
+.input-full {
+  width: 100%;
+}
+.input-fixed-160 {
+  width: 160px;
+}
+.input-fixed-120 {
+  width: 120px;
+}
+.icon-large {
+  font-size: 1.2em;
+}
+.actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}

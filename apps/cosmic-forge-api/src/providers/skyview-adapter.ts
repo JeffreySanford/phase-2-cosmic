@@ -1,10 +1,15 @@
 import type { ForgeImageProduct, ForgeJob } from "../domain/forge.models";
-import type { ForgeCutoutRequestSource, ForgeSurveyAdapter } from "./survey-adapter";
+import type {
+  ForgeCutoutRequestSource,
+  ForgeSurveyAdapter,
+} from "./survey-adapter";
 
 export const SKYVIEW_SURVEY_ID = "skyview";
 export const SKYVIEW_PROVIDER_NAME = "NASA GSFC SkyView";
-export const SKYVIEW_CITATION_URL = "https://skyview.gsfc.nasa.gov/current/cgi/query.pl";
-export const SKYVIEW_RUNQUERY_URL = "https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl";
+export const SKYVIEW_CITATION_URL =
+  "https://skyview.gsfc.nasa.gov/current/cgi/query.pl";
+export const SKYVIEW_RUNQUERY_URL =
+  "https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl";
 export const SKYVIEW_DEFAULT_SURVEY = "DSS2 Red";
 
 const SKYVIEW_DEFAULT_PIXELS = 900;
@@ -82,10 +87,16 @@ function normalizeNumber(value: unknown, fallback: number): number {
 }
 
 function normalizeSizeDegrees(radiusArcmin: number): number {
-  return Math.max(0.05, Number(((Math.max(0.5, radiusArcmin) * 2) / 60).toFixed(4)));
+  return Math.max(
+    0.05,
+    Number(((Math.max(0.5, radiusArcmin) * 2) / 60).toFixed(4))
+  );
 }
 
-function encodeSkyViewQuery(baseUrl: string, params: Record<string, string | number>): string {
+function encodeSkyViewQuery(
+  baseUrl: string,
+  params: Record<string, string | number>
+): string {
   const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     searchParams.set(key, String(value));
@@ -156,8 +167,10 @@ function createSkyViewImageProductForSurvey(
   imageId: string,
   accessedAt: string
 ): ForgeImageProduct {
-  const request = job.request ?? buildSkyViewCutoutRequestForSurvey(definition, job);
-  const previewUrl = request.jpegCutoutUrl ?? request.discoveryUrl ?? SKYVIEW_CITATION_URL;
+  const request =
+    job.request ?? buildSkyViewCutoutRequestForSurvey(definition, job);
+  const previewUrl =
+    request.jpegCutoutUrl ?? request.discoveryUrl ?? SKYVIEW_CITATION_URL;
 
   return {
     id: imageId,
@@ -197,11 +210,14 @@ function createSkyViewImageProductForSurvey(
   };
 }
 
-function createSkyViewSurveyAdapter(definition: SkyViewSurveyDefinition): ForgeSurveyAdapter {
+function createSkyViewSurveyAdapter(
+  definition: SkyViewSurveyDefinition
+): ForgeSurveyAdapter {
   return {
     surveyId: definition.surveyId,
     providerName: SKYVIEW_PROVIDER_NAME,
-    buildCutoutRequest: (job) => buildSkyViewCutoutRequestForSurvey(definition, job),
+    buildCutoutRequest: (job) =>
+      buildSkyViewCutoutRequestForSurvey(definition, job),
     createImageProduct: (job, imageId, accessedAt) =>
       createSkyViewImageProductForSurvey(definition, job, imageId, accessedAt),
   };
@@ -216,14 +232,20 @@ export function createSkyViewImageProduct(
   imageId: string,
   accessedAt: string
 ): ForgeImageProduct {
-  return createSkyViewImageProductForSurvey(skyViewSurveyDefinitions[0], job, imageId, accessedAt);
+  return createSkyViewImageProductForSurvey(
+    skyViewSurveyDefinitions[0],
+    job,
+    imageId,
+    accessedAt
+  );
 }
 
-export const skyViewSurveyAdapters: Record<string, ForgeSurveyAdapter> = Object.fromEntries(
-  skyViewSurveyDefinitions.map((definition) => [
-    definition.surveyId,
-    createSkyViewSurveyAdapter(definition),
-  ])
-);
+export const skyViewSurveyAdapters: Record<string, ForgeSurveyAdapter> =
+  Object.fromEntries(
+    skyViewSurveyDefinitions.map((definition) => [
+      definition.surveyId,
+      createSkyViewSurveyAdapter(definition),
+    ])
+  );
 
 export const skyViewSurveyAdapter = skyViewSurveyAdapters[SKYVIEW_SURVEY_ID];

@@ -1,5 +1,8 @@
 import type { ForgeImageProduct, ForgeJob } from "../domain/forge.models";
-import type { ForgeCutoutRequestSource, ForgeSurveyAdapter } from "./survey-adapter";
+import type {
+  ForgeCutoutRequestSource,
+  ForgeSurveyAdapter,
+} from "./survey-adapter";
 
 export const LEGACY_SURVEYS_ID = "legacy";
 export const LEGACY_PROVIDER_NAME = "NOIRLab / Legacy Surveys";
@@ -33,12 +36,20 @@ export function buildLegacyCutoutRequest(job: ForgeCutoutRequestSource) {
   const encodedLayer = encodeURIComponent(LEGACY_LAYER);
   const encodedBands = encodeURIComponent(bandSet);
   const jpegCutoutUrl =
-    `${LEGACY_CITATION_URL}/jpeg-cutout?ra=${ra.toFixed(5)}&dec=${dec.toFixed(5)}` +
-    `&layer=${encodedLayer}&size=${clampSize(size)}&pixscale=${pixscale.toFixed(3)}` +
+    `${LEGACY_CITATION_URL}/jpeg-cutout?ra=${ra.toFixed(5)}&dec=${dec.toFixed(
+      5
+    )}` +
+    `&layer=${encodedLayer}&size=${clampSize(size)}&pixscale=${pixscale.toFixed(
+      3
+    )}` +
     `&bands=${encodedBands}`;
   const fitsCutoutUrl =
-    `${LEGACY_CITATION_URL}/fits-cutout?ra=${ra.toFixed(5)}&dec=${dec.toFixed(5)}` +
-    `&layer=${encodedLayer}&size=${clampSize(size)}&pixscale=${pixscale.toFixed(3)}`;
+    `${LEGACY_CITATION_URL}/fits-cutout?ra=${ra.toFixed(5)}&dec=${dec.toFixed(
+      5
+    )}` +
+    `&layer=${encodedLayer}&size=${clampSize(size)}&pixscale=${pixscale.toFixed(
+      3
+    )}`;
 
   return {
     providerAdapter: "legacy-surveys",

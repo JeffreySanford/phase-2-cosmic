@@ -1,8 +1,4 @@
-import {
-  createEntityAdapter,
-  EntityAdapter,
-  EntityState,
-} from "@ngrx/entity";
+import { createEntityAdapter, EntityAdapter, EntityState } from "@ngrx/entity";
 import { createReducer, on } from "@ngrx/store";
 import { ForgeActions } from "./forge.actions";
 import {

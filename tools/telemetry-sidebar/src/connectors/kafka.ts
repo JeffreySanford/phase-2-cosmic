@@ -7,7 +7,9 @@ import type { TelemetryConnector, TelemetryEvent } from "../types";
 interface KafkaConsumerLike {
   connect(): Promise<void>;
   subscribe(opts: { topics: string[]; fromBeginning: boolean }): Promise<void>;
-  run(opts: { eachMessage: (payload: EachMessagePayload) => Promise<void> }): Promise<void>;
+  run(opts: {
+    eachMessage: (payload: EachMessagePayload) => Promise<void>;
+  }): Promise<void>;
   disconnect(): Promise<void>;
 }
 
@@ -46,9 +48,14 @@ export class KafkaConnector implements TelemetryConnector {
     const kafka = new Kafka({ brokers: this.opts.brokers });
 
     // Consumer for incoming (receive) events
-    this.consumer = kafka.consumer({ groupId: this.opts.groupId ?? "telemetry-sidebar" }) as KafkaConsumerLike;
+    this.consumer = kafka.consumer({
+      groupId: this.opts.groupId ?? "telemetry-sidebar",
+    }) as KafkaConsumerLike;
     await this.consumer.connect();
-    await this.consumer.subscribe({ topics: this.opts.topics, fromBeginning: false });
+    await this.consumer.subscribe({
+      topics: this.opts.topics,
+      fromBeginning: false,
+    });
 
     await this.consumer.run({
       eachMessage: async ({ topic, message }: EachMessagePayload) => {

@@ -17,10 +17,14 @@ export class ForgeBootstrapService {
     try {
       const jobs = this.store.getJobs();
       const imageProducts = this.store.getImageProducts();
-      const localArtifacts = imageProducts.filter((image) => image.artifactMode !== "external");
+      const localArtifacts = imageProducts.filter(
+        (image) => image.artifactMode !== "external"
+      );
 
       if (localArtifacts.length === 0) {
-        this.logger.log("cosmic-forge-api warmup: no local artifacts to precache");
+        this.logger.log(
+          "cosmic-forge-api warmup: no local artifacts to precache"
+        );
       }
 
       await this.graphqlService.execute({

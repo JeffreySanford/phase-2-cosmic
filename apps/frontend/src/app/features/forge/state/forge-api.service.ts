@@ -17,39 +17,51 @@ export class ForgeApiService {
   private readonly http = inject(HttpClient);
 
   getWorkbenchBootstrap(): Observable<ForgeWorkbenchBootstrapResponseDto> {
-    return this.http.post<ForgeWorkbenchBootstrapResponseDto>("/api/forge/graphql", {
-      operationName: "ForgeWorkbenchBootstrap",
-    });
+    return this.http.post<ForgeWorkbenchBootstrapResponseDto>(
+      "/api/forge/graphql",
+      {
+        operationName: "ForgeWorkbenchBootstrap",
+      }
+    );
   }
 
   resolveTarget(query: string): Observable<ForgeResolvedTargetResponseDto> {
-    return this.http.get<ForgeResolvedTargetResponseDto>("/api/forge/resolve-target", {
-      params: {
-        query,
-      },
-    });
+    return this.http.get<ForgeResolvedTargetResponseDto>(
+      "/api/forge/resolve-target",
+      {
+        params: {
+          query,
+        },
+      }
+    );
   }
 
   createCutoutJob(
     input: ForgeCreateCutoutJobInputDto
   ): Observable<ForgeCreateCutoutJobResponseDto> {
-    return this.http.post<ForgeCreateCutoutJobResponseDto>("/api/forge/graphql", {
-      operationName: "CreateCutoutJob",
-      variables: {
-        input,
-      },
-    });
+    return this.http.post<ForgeCreateCutoutJobResponseDto>(
+      "/api/forge/graphql",
+      {
+        operationName: "CreateCutoutJob",
+        variables: {
+          input,
+        },
+      }
+    );
   }
 
   createCompositeJob(
     input: ForgeCreateCompositeJobInputDto
   ): Observable<ForgeCreateCompositeJobResponseDto> {
-    return this.http.post<ForgeCreateCompositeJobResponseDto>("/api/forge/graphql", {
-      operationName: "CreateCompositeJob",
-      variables: {
-        input,
-      },
-    });
+    return this.http.post<ForgeCreateCompositeJobResponseDto>(
+      "/api/forge/graphql",
+      {
+        operationName: "CreateCompositeJob",
+        variables: {
+          input,
+        },
+      }
+    );
   }
 
   cancelJob(jobId: string): Observable<ForgeJobMutationResponseDto> {
@@ -70,7 +82,9 @@ export class ForgeApiService {
     });
   }
 
-  cacheImageArtifact(imageId: string): Observable<ForgeImageMutationResponseDto> {
+  cacheImageArtifact(
+    imageId: string
+  ): Observable<ForgeImageMutationResponseDto> {
     return this.http.post<ForgeImageMutationResponseDto>("/api/forge/graphql", {
       operationName: "CacheImageArtifact",
       variables: {

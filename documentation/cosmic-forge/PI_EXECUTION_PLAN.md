@@ -69,13 +69,13 @@ These are the highest-value external data sources currently recommended for Cosm
 ### Priority 1 - NSF NOIRLab Legacy Surveys / Astro Data Lab
 
 - [x] Validate NSF NOIRLab Legacy Surveys as the first real cutout adapter target.
-  Decision: validated as the first production adapter for Sprint 5.
-  Official cutout/data access references:
-  [Legacy Surveys DR10 cutouts](https://www.legacysurvey.org/viewer)
-  [NOIRLab Data Lab Legacy Surveys access](https://datalab.noirlab.edu/data/legacy-surveys)
-  [NOIRLab image search and cutout documentation](https://datalab.noirlab.edu/docs/manual/UsingAstroDataLab/WebPortal/DataExplorer/ImageSearchCutout/ImageSearchCutout.html)
+      Decision: validated as the first production adapter for Sprint 5.
+      Official cutout/data access references:
+      [Legacy Surveys DR10 cutouts](https://www.legacysurvey.org/viewer)
+      [NOIRLab Data Lab Legacy Surveys access](https://datalab.noirlab.edu/data/legacy-surveys)
+      [NOIRLab image search and cutout documentation](https://datalab.noirlab.edu/docs/manual/UsingAstroDataLab/WebPortal/DataExplorer/ImageSearchCutout/ImageSearchCutout.html)
 - [x] Confirm allowed cutout parameters, size limits, supported bands, and rate expectations for Forge usage.
-  Confirmed from official Legacy Surveys documentation:
+      Confirmed from official Legacy Surveys documentation:
   - viewer cutouts support `ra`, `dec`, `layer`, `pixscale`
   - cutout sizing can use `width`, `height`, or `size`
   - supported `bands` strings include values such as `griz`, `grz`, `gz`, or single-band requests such as `g`
@@ -83,17 +83,17 @@ These are the highest-value external data sources currently recommended for Cosm
   - northern and southern footprints can be requested separately with `ls-dr9-north` and `ls-dr10-south`
   - current documented maximum cutout size is `512` pixels
   - `pixscale=0.262` is documented as approximately the native pixel scale used by the Tractor
-  Rate expectation note:
+    Rate expectation note:
   - no public numeric rate-limit was found in the cited docs
   - Data Lab’s interactive cutout UI documents at most `20` downloads at once and explicitly points scripted bulk use to the SIA API
   - Forge should therefore treat the viewer cutout service as suitable for single-job retrieval and use conservative request behavior
 - [x] Confirm whether Forge should use the Legacy Surveys viewer cutout URLs directly, Data Lab SIA, or both.
-  Decision:
+      Decision:
   - use Legacy Surveys viewer cutout URLs directly for the first production adapter because they match Forge’s first vertical slice best
   - keep Data Lab SIA as the follow-on path for larger-scale or more script-heavy retrieval scenarios
   - do not make the first Sprint 5 adapter depend on the interactive Data Explorer cutout workflow
 - [x] Capture provenance fields required for NOIRLab-backed results: layer, band set, RA/Dec, pixscale, authoritative URL, access time.
-  Required first-wave provenance fields:
+      Required first-wave provenance fields:
   - provider name
   - source survey / layer
   - requested target name if provided
@@ -115,34 +115,34 @@ Why this is a strong fit:
 ### Priority 2 - NASA/IPAC IRSA
 
 - [x] Validate IRSA as the second major adapter family for WISE, 2MASS, and related infrared image products.
-  Decision: validated as the second adapter family after `Legacy Surveys / NOIRLab`, with `AllWISE` as the recommended first IRSA-backed implementation and `2MASS` as the follow-on infrared companion.
-  Official service references:
-  [IRSA Image APIs](https://irsa.ipac.caltech.edu/docs/program_interface/api_images.html)
-  [IRSA image cutouts application](https://irsa.ipac.caltech.edu/applications/Cutouts/)
-  [IRSA image server cutouts](https://irsa.ipac.caltech.edu/ibe/cutouts.html)
+      Decision: validated as the second adapter family after `Legacy Surveys / NOIRLab`, with `AllWISE` as the recommended first IRSA-backed implementation and `2MASS` as the follow-on infrared companion.
+      Official service references:
+      [IRSA Image APIs](https://irsa.ipac.caltech.edu/docs/program_interface/api_images.html)
+      [IRSA image cutouts application](https://irsa.ipac.caltech.edu/applications/Cutouts/)
+      [IRSA image server cutouts](https://irsa.ipac.caltech.edu/ibe/cutouts.html)
 - [x] Evaluate whether Forge should begin with AllWISE or 2MASS as the first IRSA-backed implementation.
-  Decision: Forge should begin IRSA work with `AllWISE`, not `2MASS`.
-  Rationale:
+      Decision: Forge should begin IRSA work with `AllWISE`, not `2MASS`.
+      Rationale:
   - `AllWISE` is a stronger second-adapter complement to Legacy optical imagery because it adds a clear mid-infrared comparison path rather than another near-infrared optical-adjacent archive
   - IRSA publishes a concrete `AllWISE Atlas` SIA workflow and exposes stable access URLs for the four atlas bands `W1`, `W2`, `W3`, and `W4`
   - the WISE mission page positions `AllWISE` as the main archival release for static-sky WISE imagery, while `2MASS` remains a valuable later follow-on for `J`, `H`, and `K_s`
-  Inference note:
+    Inference note:
   - this sequencing recommendation is an implementation choice derived from the official archive capabilities and Forge’s product goals, not a statement from IRSA that one mission must be used before the other
 - [x] Confirm scriptable cutout access, metadata richness, output formats, and citation expectations.
-  Confirmed from official IRSA documentation:
+      Confirmed from official IRSA documentation:
   - IRSA recommends `SIA v2` as the primary API for new image queries and notes that older `SIA v1` and image-server style APIs are superseded for new work
   - `SIA v2` returns access URLs and rich image metadata in machine-readable formats including `FITS`, `IPAC_TABLE`, `VOTABLE`, `JSON`, `CSV`, and related tabular outputs
   - IRSA `IBE` cutouts are the right programmatic retrieval path once an access URL is known; cutouts are requested by appending `center`, `size`, and optional `gzip` parameters to an `/ibe/data/...` FITS URL
   - IBE cutouts support pixel or angular coordinates, rectangular or square cutout sizes, and return gzipped FITS by default unless `gzip=false` is passed
   - `AllWISE` Atlas imagery is documented as four-band calibrated FITS imagery with related metadata fields such as `sia_url`, `sia_fmt`, `sia_ra`, `sia_dec`, `sia_scale`, `sia_bp_id`, `unc_url`, `cov_url`, and `coadd_id`
   - `2MASS` image services expose `J`, `H`, and `K_s` image sets; Atlas and Quicklook images are delivered in FITS and include WCS headers, while Atlas images also include photometric zero point information
-  Citation expectations:
+    Citation expectations:
   - include the general IRSA archive acknowledgment when IRSA data or services are used
   - include the mission-specific acknowledgment and canonical paper / DOI for the specific data set used
   - for `AllWISE`, include the published AllWISE acknowledgment plus the AllWISE DOI documented by IRSA
   - for `2MASS`, include the standard 2MASS acknowledgment published on the mission page
 - [x] Define IRSA-specific provenance capture: collection, band, cutout geometry, retrieval endpoint, and output format.
-  Required IRSA provenance fields:
+      Required IRSA provenance fields:
   - provider name
   - mission family: `wise`, `allwise`, `neowise`, or `2mass`
   - collection / dataset identifier such as `allwise/p3am_cdd` or the 2MASS atlas collection used
@@ -186,19 +186,19 @@ Why this is a strong fit:
 ### Priority 3 - NASA GSFC SkyView
 
 - [x] Evaluate SkyView as a fallback or comparison adapter rather than the first production adapter.
-  Decision: validated for fallback / comparison / derived-preview use, not as a first-wave archive-native production adapter.
-  Official service references:
-  [SkyView survey availability](https://skyview.gsfc.nasa.gov/current/docs/availability.html)
-  [SkyView in a Jar / SIA notes](https://skyview.gsfc.nasa.gov/jar/skyviewinajar.html)
+      Decision: validated for fallback / comparison / derived-preview use, not as a first-wave archive-native production adapter.
+      Official service references:
+      [SkyView survey availability](https://skyview.gsfc.nasa.gov/current/docs/availability.html)
+      [SkyView in a Jar / SIA notes](https://skyview.gsfc.nasa.gov/jar/skyviewinajar.html)
 - [x] Confirm whether SkyView should be used for quick-look composites and cross-survey discovery rather than authoritative science-ready products.
-  Decision: yes. SkyView should be used for quick-look composites, cross-survey discovery, and comparison output rather than as the authoritative source of science-ready archive-native cutouts.
+      Decision: yes. SkyView should be used for quick-look composites, cross-survey discovery, and comparison output rather than as the authoritative source of science-ready archive-native cutouts.
 - [x] Document reliability tradeoffs when SkyView depends on remote upstream transfers.
-  Confirmed from the official SkyView availability page:
+      Confirmed from the official SkyView availability page:
   - most SkyView data are local, but some survey data are transferred from remote servers
   - SkyView explicitly notes that interrupted upstream connections can cause requested image queries to fail
   - Forge should therefore classify SkyView failures as potential upstream-availability issues rather than only internal adapter failures
 - [x] If adopted, mark SkyView outputs clearly as SkyView-generated products in provenance rather than archive-native cutouts.
-  Required provenance posture:
+      Required provenance posture:
   - provider name should remain `NASA GSFC SkyView`
   - requested survey should be retained as the source survey identifier
   - output should be labeled as a `SkyView-generated` derivative
@@ -220,20 +220,20 @@ Recommended implementation posture:
 ### Priority 4 - ESA ESASky
 
 - [x] Evaluate ESASky for discovery, HiPS-based previewing, and mission-breadth enrichment rather than first-wave science-ready cutout output.
-  Decision: validated for discovery, HiPS-backed previewing, and mission-breadth enrichment rather than first-wave archive-native science-cutout delivery.
-  Official service references:
-  [ESASky overview](https://open.esa.int/esasky/)
-  [ESASky HiPS information](https://www.cosmos.esa.int/web/esdc/esasky-skies)
-  [ESASky EDDIE cutout service help](https://sky.esa.int/esasky/hipsCutout/help.html)
+      Decision: validated for discovery, HiPS-backed previewing, and mission-breadth enrichment rather than first-wave archive-native science-cutout delivery.
+      Official service references:
+      [ESASky overview](https://open.esa.int/esasky/)
+      [ESASky HiPS information](https://www.cosmos.esa.int/web/esdc/esasky-skies)
+      [ESASky EDDIE cutout service help](https://sky.esa.int/esasky/hipsCutout/help.html)
 - [x] Confirm where ESASky cutout output is appropriate for visualization and where mission-native science products are still required.
-  Decision:
+      Decision:
   - ESASky HiPS and EDDIE-generated images are appropriate for visualization, quick-look previewing, and broad mission discovery
   - mission-native science products are still required when Forge needs authoritative science-ready downloadable artifacts rather than a generated preview image
-  Basis:
+    Basis:
   - the ESASky overview describes the portal as providing access to science-ready mission images and catalogues
   - the ESASky HiPS documentation explicitly states that HiPS layers are intended for visualization only and are not science-ready products
 - [x] Define separate handling for HiPS visualization outputs versus mission-grade downloadable products.
-  Required handling split:
+      Required handling split:
   - `HiPS visualization output`
     - derived preview artifact
     - sourced through ESASky HiPS / EDDIE
@@ -243,7 +243,7 @@ Recommended implementation posture:
     - must not share the same provenance semantics as a HiPS-generated image
     - should remain a separate adapter mode or artifact class in Forge
 - [x] Capture ESASky-specific provenance fields: surveyId, HiPS source, projection, FOV, output format, and any science-readiness caveat.
-  Required ESASky provenance fields:
+      Required ESASky provenance fields:
   - provider name
   - output class: `esasky-derived-preview` or `esasky-mission-download`
   - `surveyId` / HiPS source identifier
@@ -276,10 +276,10 @@ Recommended implementation posture:
 ### Priority 5 - MAST / STScI Pan-STARRS
 
 - [x] Evaluate Pan-STARRS through MAST/STScI as an optional additional optical adapter after Legacy Surveys is stable.
-  Official service references:
-  [Pan-STARRS archive overview](https://outerspace.stsci.edu/display/PANSTARRS/)
-  [How to retrieve and use PS1 data](https://outerspace.stsci.edu/display/PANSTARRS/How%2Bto%2Bretrieve%2Band%2Buse%2BPS1%2Bdata)
-  [PS1 Image Cutout Service](https://outerspace.stsci.edu/display/PANSTARRS/PS1%2BImage%2BCutout%2BService)
+      Official service references:
+      [Pan-STARRS archive overview](https://outerspace.stsci.edu/display/PANSTARRS/)
+      [How to retrieve and use PS1 data](https://outerspace.stsci.edu/display/PANSTARRS/How%2Bto%2Bretrieve%2Band%2Buse%2BPS1%2Bdata)
+      [PS1 Image Cutout Service](https://outerspace.stsci.edu/display/PANSTARRS/PS1%2BImage%2BCutout%2BService)
 - [x] Confirm whether Pan-STARRS should be a first-PI adapter or a post-PI extension.
 - [x] Compare Pan-STARRS cutout ergonomics and output quality against Legacy Surveys for the same targets.
 - [x] Define Pan-STARRS provenance fields and citation requirements if adopted.
@@ -300,11 +300,11 @@ Recommended implementation posture:
 ### Source selection gate
 
 - [x] Choose the first production adapter from Priority 1 or Priority 2 and record the decision in the sprint tracker.
-  Decision: `Legacy Surveys / NOIRLab` is the first production adapter.
+      Decision: `Legacy Surveys / NOIRLab` is the first production adapter.
 - [x] Choose one secondary archive for follow-on implementation or comparison testing.
-  Decision: `IRSA` is the second adapter family and first follow-on implementation target.
+      Decision: `IRSA` is the second adapter family and first follow-on implementation target.
 - [x] Document any archive-specific access caveats, reliability concerns, and attribution rules before calling the adapter production-ready.
-  Documented:
+      Documented:
   - `Legacy Surveys / NOIRLab` should be treated as single-job retrieval first, with conservative request behavior and SIA reserved for larger scripted access
   - `IRSA` should prefer `SIA v2` plus `IBE` cutouts for automation, with the browser-oriented image service reserved for manual/operator reference
   - both archive families require result-level provenance and source attribution rather than a generic platform-only citation
@@ -393,7 +393,7 @@ Working implementation reference:
 - `SPRINT_5_IMPLEMENTATION_NOTES.md`
 
 - [x] Choose the first real public survey adapter from the source-selection gate above and lock that choice in docs.
-  Decision locked: `Legacy Surveys / NOIRLab`
+      Decision locked: `Legacy Surveys / NOIRLab`
 - [x] Record the first-adapter rationale and second-adapter sequence in sprint tracking and implementation notes.
 - [x] Implement adapter abstraction boundaries for availability, retrieval, metadata, and preview generation.
 - [x] Implement one mock adapter for deterministic testing.
@@ -505,27 +505,27 @@ Sprint 8 done when:
 ## Deferred after this PI
 
 - [x] Additional survey adapters beyond the first one or two.
-  Implemented in the current branch as additional `SkyView`-derived quick-look presets:
+      Implemented in the current branch as additional `SkyView`-derived quick-look presets:
   - `DSS2 Preview`
   - `FIRST Preview`
   - `2MASS J Preview`
   - `2MASS H Preview`
   - `2MASS K Preview`
-  Remaining follow-on work is additional archive-native families, not just more preview presets.
+    Remaining follow-on work is additional archive-native families, not just more preview presets.
 - [x] Further archive-native survey adapters beyond the current Legacy/AllWISE/SkyView family.
-  Implemented in the current branch as a live `Pan-STARRS / STScI` archive-native optical adapter beside the existing `Legacy Surveys`, `AllWISE`, and `SkyView` family.
+      Implemented in the current branch as a live `Pan-STARRS / STScI` archive-native optical adapter beside the existing `Legacy Surveys`, `AllWISE`, and `SkyView` family.
 - [ ] GraphQL subscriptions if polling is sufficient for the first PI.
-  Deferred explicitly. The current PI stays on GraphQL bootstrap plus refresh semantics because that path is stable, tested, and sufficient for the bounded workbench.
-  The `/forge` UI now surfaces the current transport posture directly:
+      Deferred explicitly. The current PI stays on GraphQL bootstrap plus refresh semantics because that path is stable, tested, and sufficient for the bounded workbench.
+      The `/forge` UI now surfaces the current transport posture directly:
   - refresh mode: `GraphQL bootstrap + 10s auto-refresh`
   - subscriptions: `Deferred for this PI`
   - currently available read-model detail such as queue diagnostics, metrics, and recent job events
 - [x] Native acceleration seam for image-processing hotspots.
-  Implemented via the live `cosmic-forge-fits-renderer-go` prerenderer used to turn FITS-backed artifacts into cached browser-ready previews without coupling the API to a heavier native runtime.
+      Implemented via the live `cosmic-forge-fits-renderer-go` prerenderer used to turn FITS-backed artifacts into cached browser-ready previews without coupling the API to a heavier native runtime.
 - [x] Advanced viewer-layer integration beyond the initial result inspection workflow.
-  Implemented as a tested `/forge` -> `/view` handoff that carries target, coordinates, FOV, and survey context into the viewer route for follow-on inspection.
+      Implemented as a tested `/forge` -> `/view` handoff that carries target, coordinates, FOV, and survey context into the viewer route for follow-on inspection.
 - [ ] Any broker-backed scaling model beyond the bounded v1 worker runtime.
-  Deferred explicitly. The current PI keeps Forge on the bounded worker runtime rather than introducing Kafka, RabbitMQ, or Pulsar dependencies into the branch execution path.
+      Deferred explicitly. The current PI keeps Forge on the bounded worker runtime rather than introducing Kafka, RabbitMQ, or Pulsar dependencies into the branch execution path.
 
 ## Suggested tracking use
 

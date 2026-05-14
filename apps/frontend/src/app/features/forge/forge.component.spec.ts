@@ -6,7 +6,11 @@ import { BehaviorSubject, of, throwError } from "rxjs";
 import { ForgeComponent } from "./forge.component";
 import { ForgeApiService } from "./state/forge-api.service";
 import { ForgeFacade } from "./state/forge.facade";
-import { ForgeImageProductDto, ForgeJobDto, ForgeSurveyDto } from "./state/forge.models";
+import {
+  ForgeImageProductDto,
+  ForgeJobDto,
+  ForgeSurveyDto,
+} from "./state/forge.models";
 
 const surveys: readonly ForgeSurveyDto[] = [
   {
@@ -214,7 +218,8 @@ class ForgeApiServiceStub {
         query: "Cygnus A",
         canonicalName: "Cygnus A",
         providerName: "CDS Sesame / SIMBAD",
-        sourceUrl: "https://cds.unistra.fr/cgi-bin/nph-sesame/-oxp/SNV?Cygnus%20A",
+        sourceUrl:
+          "https://cds.unistra.fr/cgi-bin/nph-sesame/-oxp/SNV?Cygnus%20A",
         ra: 299.86815,
         dec: 40.73391,
         suggestedRadiusArcmin: 12,
@@ -266,10 +271,16 @@ describe("ForgeComponent", () => {
     expect(facade.createCutoutJob).not.toHaveBeenCalled();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain("Target/source is required");
-    expect(text).toContain("RA must be a decimal degree value between 0 and 360.");
-    expect(text).toContain("Dec must be a decimal degree value between -90 and 90.");
+    expect(text).toContain(
+      "RA must be a decimal degree value between 0 and 360."
+    );
+    expect(text).toContain(
+      "Dec must be a decimal degree value between -90 and 90."
+    );
     expect(text).toContain("Radius must be a positive value up to 60 arcmin.");
-    expect(text).toContain("Select at least one live adapter to create a cutout job.");
+    expect(text).toContain(
+      "Select at least one live adapter to create a cutout job."
+    );
   });
 
   it("dispatches a create action when the form and survey selection are valid", () => {
@@ -348,26 +359,34 @@ describe("ForgeComponent", () => {
     );
     fixture.detectChanges();
 
-    const button = Array.from(fixture.nativeElement.querySelectorAll("button"))
-      .find((element): element is HTMLButtonElement =>
-        (element as HTMLButtonElement).textContent?.includes("Cache artifact")
-      );
+    const button = Array.from(
+      fixture.nativeElement.querySelectorAll("button")
+    ).find((element): element is HTMLButtonElement =>
+      (element as HTMLButtonElement).textContent?.includes("Cache artifact")
+    );
 
     expect(button).toBeTruthy();
     button?.click();
-    expect(facade.cacheImageArtifact).toHaveBeenCalledWith("forge-image-legacy");
+    expect(facade.cacheImageArtifact).toHaveBeenCalledWith(
+      "forge-image-legacy"
+    );
   });
 
   it("triggers a cache request when preview fails for external image once", () => {
-    const previewUrl = "https://www.legacysurvey.org/jpeg-cutout?ra=49.95067&dec=41.5117";
+    const previewUrl =
+      "https://www.legacysurvey.org/jpeg-cutout?ra=49.95067&dec=41.5117";
     component.handlePreviewFailed("forge-image-legacy", previewUrl);
     expect(facade.cacheImageArtifact).toHaveBeenCalledTimes(1);
-    expect(facade.cacheImageArtifact).toHaveBeenCalledWith("forge-image-legacy");
-    expect(component.previewUnavailableForSelectedImage({
-      ...externalLegacyImage,
-      id: "forge-image-legacy",
-      previewUrl,
-    })).toBe(true);
+    expect(facade.cacheImageArtifact).toHaveBeenCalledWith(
+      "forge-image-legacy"
+    );
+    expect(
+      component.previewUnavailableForSelectedImage({
+        ...externalLegacyImage,
+        id: "forge-image-legacy",
+        previewUrl,
+      })
+    ).toBe(true);
 
     // Subsequent failures should not re-trigger additional cache requests
     component.handlePreviewFailed("forge-image-legacy", previewUrl);
@@ -375,15 +394,27 @@ describe("ForgeComponent", () => {
   });
 
   it("allows cached preview URL updates after loading successfully", () => {
-    const legacyImage = { ...externalLegacyImage, id: "forge-image-legacy", previewUrl: "https://old.url/1.jpg" };
+    const legacyImage = {
+      ...externalLegacyImage,
+      id: "forge-image-legacy",
+      previewUrl: "https://old.url/1.jpg",
+    };
     component.handlePreviewFailed("forge-image-legacy", legacyImage.previewUrl);
-    expect(component.previewUnavailableForSelectedImage(legacyImage)).toBe(true);
+    expect(component.previewUnavailableForSelectedImage(legacyImage)).toBe(
+      true
+    );
 
-    const cachedUrl = "http://localhost/api/forge/artifacts/forge-image-legacy/preview";
+    const cachedUrl =
+      "http://localhost/api/forge/artifacts/forge-image-legacy/preview";
     component.handlePreviewLoaded("forge-image-legacy", cachedUrl);
 
     // old key should be cleared so new URL can show
-    expect(component.previewUnavailableForSelectedImage({ ...legacyImage, previewUrl: cachedUrl })).toBe(false);
+    expect(
+      component.previewUnavailableForSelectedImage({
+        ...legacyImage,
+        previewUrl: cachedUrl,
+      })
+    ).toBe(false);
   });
 
   it("prepopulates the workbench form from the selected job", () => {
@@ -449,7 +480,9 @@ describe("ForgeComponent", () => {
       dec: "40.73391",
       radiusArcmin: "12",
     });
-    expect(component.targetLookupSummary()).toBe("Resolved via CDS Sesame / SIMBAD: Cygnus A");
+    expect(component.targetLookupSummary()).toBe(
+      "Resolved via CDS Sesame / SIMBAD: Cygnus A"
+    );
     expect(component.targetLookupError()).toBeNull();
   });
 
@@ -457,7 +490,7 @@ describe("ForgeComponent", () => {
     forgeApi.resolveTarget.mockReturnValueOnce(
       throwError(() => ({
         error: {
-          message: "No target coordinates were resolved for \"Unknown Source\".",
+          message: 'No target coordinates were resolved for "Unknown Source".',
         },
       }))
     );
@@ -481,14 +514,19 @@ describe("ForgeComponent", () => {
   });
 
   it("labels SkyView-backed presets as derived instead of planned", () => {
-    const dss2Survey = surveys.find((survey) => survey.id === "dss2") as ForgeSurveyDto;
+    const dss2Survey = surveys.find(
+      (survey) => survey.id === "dss2"
+    ) as ForgeSurveyDto;
 
     expect(component.surveyAvailabilityLabel(dss2Survey)).toBe("derived");
     expect(component.isSurveySelectable(dss2Survey)).toBe(true);
   });
 
   it("builds a viewer handoff query from the selected job", () => {
-    const params = component.selectedViewerQueryParams(selectedLegacyJob, externalLegacyImage);
+    const params = component.selectedViewerQueryParams(
+      selectedLegacyJob,
+      externalLegacyImage
+    );
 
     expect(params).toEqual({
       target: "M87",
@@ -503,9 +541,15 @@ describe("ForgeComponent", () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain("refresh mode: GraphQL bootstrap + 10s auto-refresh");
+    expect(text).toContain(
+      "refresh mode: GraphQL bootstrap + 10s auto-refresh"
+    );
     expect(text).toContain("subscriptions: Deferred for this PI");
-    expect(text).toContain("Available now: queue diagnostics, metrics, recent job events");
-    expect(text).toContain("freshest event timestamp: 2026-03-28T18:01:00.000Z");
+    expect(text).toContain(
+      "Available now: queue diagnostics, metrics, recent job events"
+    );
+    expect(text).toContain(
+      "freshest event timestamp: 2026-03-28T18:01:00.000Z"
+    );
   });
 });

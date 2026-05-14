@@ -1,9 +1,17 @@
-import { ForgeDomainError, type ForgeImageProduct, type ForgeJob } from "../domain/forge.models";
-import type { ForgeCutoutRequestSource, ForgeSurveyAdapter } from "./survey-adapter";
+import {
+  ForgeDomainError,
+  type ForgeImageProduct,
+  type ForgeJob,
+} from "../domain/forge.models";
+import type {
+  ForgeCutoutRequestSource,
+  ForgeSurveyAdapter,
+} from "./survey-adapter";
 
 export const IRSA_ALLWISE_SURVEY_ID = "allwise";
 export const IRSA_PROVIDER_NAME = "NASA/IPAC IRSA";
-export const IRSA_CITATION_URL = "https://irsa.ipac.caltech.edu/Missions/wise.html";
+export const IRSA_CITATION_URL =
+  "https://irsa.ipac.caltech.edu/Missions/wise.html";
 export const IRSA_ALLWISE_COLLECTION = "allwise/p3am_cdd";
 export const IRSA_ALLWISE_BANDS = ["W1", "W2", "W3", "W4"];
 export const IRSA_ALLWISE_DEFAULT_BAND = "W1";
@@ -24,8 +32,18 @@ type AllwiseDiscoveryRecord = {
   coaddId: string | null;
 };
 
-function classifyIrsaHttpError(status: number, stage: string, details: Record<string, unknown>) {
-  if (status === 408 || status === 429 || status === 502 || status === 503 || status === 504) {
+function classifyIrsaHttpError(
+  status: number,
+  stage: string,
+  details: Record<string, unknown>
+) {
+  if (
+    status === 408 ||
+    status === 429 ||
+    status === 502 ||
+    status === 503 ||
+    status === 504
+  ) {
     return new ForgeDomainError(
       "FORGE_UPSTREAM_UNAVAILABLE",
       `IRSA ${stage} is currently unavailable (${status}).`,
@@ -42,7 +60,11 @@ function classifyIrsaHttpError(status: number, stage: string, details: Record<st
   );
 }
 
-function classifyIrsaTransportError(error: unknown, stage: string, details: Record<string, unknown>) {
+function classifyIrsaTransportError(
+  error: unknown,
+  stage: string,
+  details: Record<string, unknown>
+) {
   if (error instanceof ForgeDomainError) {
     return error;
   }
@@ -88,7 +110,7 @@ function normalizeSizeArcsec(radiusArcmin: number): number {
 
 function decodeXmlEntities(value: string): string {
   return value
-    .replace(/&quot;/g, "\"")
+    .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
@@ -96,7 +118,11 @@ function decodeXmlEntities(value: string): string {
     .trim();
 }
 
-function appendCutoutQuery(baseUrl: string, center: string, sizeArcsec: number): string {
+function appendCutoutQuery(
+  baseUrl: string,
+  center: string,
+  sizeArcsec: number
+): string {
   const separator = baseUrl.includes("?") ? "&" : "?";
   return `${baseUrl}${separator}center=${center}&size=${sizeArcsec}arcsec&gzip=false`;
 }
@@ -109,14 +135,16 @@ function parseVotableRows(xml: string): AllwiseDiscoveryRecord[] {
   const rowMatches = xml.matchAll(/<TR>([\s\S]*?)<\/TR>/g);
 
   for (const rowMatch of rowMatches) {
-    const cellValues = Array.from(rowMatch[1].matchAll(/<TD>([\s\S]*?)<\/TD>/g)).map((match) =>
-      decodeXmlEntities(match[1])
-    );
+    const cellValues = Array.from(
+      rowMatch[1].matchAll(/<TD>([\s\S]*?)<\/TD>/g)
+    ).map((match) => decodeXmlEntities(match[1]));
     if (cellValues.length === 0 || cellValues.length !== fieldNames.length) {
       continue;
     }
 
-    const cells = Object.fromEntries(fieldNames.map((name, index) => [name, cellValues[index]]));
+    const cells = Object.fromEntries(
+      fieldNames.map((name, index) => [name, cellValues[index]])
+    );
     rows.push({
       title: cells["sia_title"] ?? "",
       accessUrl: cells["sia_url"] ?? "",
@@ -160,7 +188,9 @@ async function discoverAllwiseImage(
   const rows = parseVotableRows(xml);
   const requestedBand = request.bands[0] ?? IRSA_ALLWISE_DEFAULT_BAND;
   const match =
-    rows.find((row) => row.band.toUpperCase() === requestedBand.toUpperCase()) ?? rows[0];
+    rows.find(
+      (row) => row.band.toUpperCase() === requestedBand.toUpperCase()
+    ) ?? rows[0];
 
   if (!match) {
     throw new ForgeDomainError(
@@ -219,7 +249,11 @@ export function createIrsaAllwiseImageProduct(
 ): ForgeImageProduct {
   const request = job.request ?? buildIrsaAllwiseCutoutRequest(job);
   const center = `${request.ra.toFixed(5)},${request.dec.toFixed(5)}`;
-  const fitsCutoutUrl = appendCutoutQuery(discoveryRecord.accessUrl, center, request.size);
+  const fitsCutoutUrl = appendCutoutQuery(
+    discoveryRecord.accessUrl,
+    center,
+    request.size
+  );
 
   return {
     id: imageId,
@@ -272,7 +306,11 @@ async function executeIrsaAllwiseJob(
   const request = job.request ?? buildIrsaAllwiseCutoutRequest(job);
   const discoveryRecord = await discoverAllwiseImage(request);
   const center = `${request.ra.toFixed(5)},${request.dec.toFixed(5)}`;
-  const fitsCutoutUrl = appendCutoutQuery(discoveryRecord.accessUrl, center, request.size);
+  const fitsCutoutUrl = appendCutoutQuery(
+    discoveryRecord.accessUrl,
+    center,
+    request.size
+  );
 
   let probeResponse: Response;
   try {
@@ -309,7 +347,12 @@ async function executeIrsaAllwiseJob(
     fitsCutoutUrl,
   };
 
-  return createIrsaAllwiseImageProduct(job, imageId, accessedAt, discoveryRecord);
+  return createIrsaAllwiseImageProduct(
+    job,
+    imageId,
+    accessedAt,
+    discoveryRecord
+  );
 }
 
 export const irsaAllwiseSurveyAdapter: ForgeSurveyAdapter = {

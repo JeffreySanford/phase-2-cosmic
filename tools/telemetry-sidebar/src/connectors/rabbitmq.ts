@@ -27,14 +27,22 @@ export class RabbitMqConnector implements TelemetryConnector {
 
     // Firehose exchange is typically 'amq.rabbitmq.trace'
     // The RabbitMQ firehose exchange is typically durable; avoid precondition failures.
-    await this.chan.assertExchange(this.opts.exchange ?? "amq.rabbitmq.trace", "topic", {
-      durable: true,
-      autoDelete: false,
-      internal: true,
-    });
+    await this.chan.assertExchange(
+      this.opts.exchange ?? "amq.rabbitmq.trace",
+      "topic",
+      {
+        durable: true,
+        autoDelete: false,
+        internal: true,
+      }
+    );
 
     const { queue } = await this.chan.assertQueue("", { exclusive: true });
-    await this.chan.bindQueue(queue, this.opts.exchange ?? "amq.rabbitmq.trace", "#");
+    await this.chan.bindQueue(
+      queue,
+      this.opts.exchange ?? "amq.rabbitmq.trace",
+      "#"
+    );
 
     this.chan.consume(queue, (msg: import("amqplib").Message | null) => {
       if (!msg) return;
@@ -50,13 +58,18 @@ export class RabbitMqConnector implements TelemetryConnector {
     });
   }
 
-  private translateTrace(trace: Record<string, unknown>): TelemetryEvent | undefined {
+  private translateTrace(
+    trace: Record<string, unknown>
+  ): TelemetryEvent | undefined {
     // firehose trace format is documented by rabbitmq; this is a minimal
     // implementation that captures publish/consume events.
     const { routing_key, exchange, payload_bytes, name, vhost } = trace;
     const node = this.opts.nodeId;
 
-    const bytes = typeof payload_bytes === "number" ? payload_bytes : Number(payload_bytes ?? 0);
+    const bytes =
+      typeof payload_bytes === "number"
+        ? payload_bytes
+        : Number(payload_bytes ?? 0);
 
     if (name === "basic.publish") {
       return {

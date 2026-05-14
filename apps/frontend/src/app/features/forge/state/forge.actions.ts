@@ -16,14 +16,22 @@ export const ForgeActions = createActionGroup({
     RefreshRequested: emptyProps(),
     StartAutoRefreshRequested: emptyProps(),
     LoadBootstrapRequested: emptyProps(),
-    LoadBootstrapSucceeded: props<{ payload: ForgeWorkbenchBootstrapResponseDto }>(),
+    LoadBootstrapSucceeded: props<{
+      payload: ForgeWorkbenchBootstrapResponseDto;
+    }>(),
     LoadBootstrapFailed: props<{ error: string }>(),
     SelectJobRequested: props<{ jobId: string }>(),
     CreateCutoutJobRequested: props<{ input: ForgeCreateCutoutJobInputDto }>(),
-    CreateCutoutJobSucceeded: props<{ payload: ForgeCreateCutoutJobResponseDto }>(),
+    CreateCutoutJobSucceeded: props<{
+      payload: ForgeCreateCutoutJobResponseDto;
+    }>(),
     CreateCutoutJobFailed: props<{ error: string }>(),
-    CreateCompositeJobRequested: props<{ input: ForgeCreateCompositeJobInputDto }>(),
-    CreateCompositeJobSucceeded: props<{ payload: ForgeCreateCompositeJobResponseDto }>(),
+    CreateCompositeJobRequested: props<{
+      input: ForgeCreateCompositeJobInputDto;
+    }>(),
+    CreateCompositeJobSucceeded: props<{
+      payload: ForgeCreateCompositeJobResponseDto;
+    }>(),
     CreateCompositeJobFailed: props<{ error: string }>(),
     CancelJobRequested: props<{ jobId: string }>(),
     CancelJobSucceeded: props<{ payload: ForgeJobMutationResponseDto }>(),
@@ -32,7 +40,9 @@ export const ForgeActions = createActionGroup({
     RetryJobSucceeded: props<{ payload: ForgeJobMutationResponseDto }>(),
     RetryJobFailed: props<{ error: string }>(),
     CacheImageArtifactRequested: props<{ imageId: string }>(),
-    CacheImageArtifactSucceeded: props<{ payload: ForgeImageMutationResponseDto }>(),
+    CacheImageArtifactSucceeded: props<{
+      payload: ForgeImageMutationResponseDto;
+    }>(),
     CacheImageArtifactFailed: props<{ error: string }>(),
   },
 });

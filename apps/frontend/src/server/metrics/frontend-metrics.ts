@@ -72,10 +72,10 @@ export function recordFrontendRequestMetrics(
     status >= 500
       ? "5xx"
       : status >= 400
-        ? "4xx"
-        : status >= 300
-          ? "3xx"
-          : "2xx";
+      ? "4xx"
+      : status >= 300
+      ? "3xx"
+      : "2xx";
   const key = frontendRequestKey(routeGroup, method.toUpperCase(), statusClass);
   frontendRequestsTotal[key] = (frontendRequestsTotal[key] ?? 0) + 1;
   frontendResponseBytesTotal[key] =
@@ -99,10 +99,10 @@ export function recordFrontendApiMetrics(
     status >= 500
       ? "5xx"
       : status >= 400
-        ? "4xx"
-        : status >= 300
-          ? "3xx"
-          : "2xx";
+      ? "4xx"
+      : status >= 300
+      ? "3xx"
+      : "2xx";
   const key = frontendApiKey(apiGroup, method.toUpperCase(), statusClass);
   frontendApiRequestsTotal[key] = (frontendApiRequestsTotal[key] ?? 0) + 1;
   frontendApiResponseBytesTotal[key] =

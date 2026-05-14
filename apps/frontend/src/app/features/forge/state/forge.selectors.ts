@@ -127,8 +127,7 @@ export const selectForgeLatestMyJob = createSelector(
 export const selectForgeSelectedJob = createSelector(
   selectForgeJobs,
   selectForgeSelectedJobId,
-  (jobs, selectedJobId) =>
-    jobs.find((job) => job.id === selectedJobId) ?? null
+  (jobs, selectedJobId) => jobs.find((job) => job.id === selectedJobId) ?? null
 );
 
 export const selectForgeLatestMyImage = createSelector(
@@ -154,7 +153,9 @@ export const selectForgeSelectedImage = createSelector(
       return null;
     }
 
-    return imageProducts.find((image) => image.jobId === selectedJob.id) ?? null;
+    return (
+      imageProducts.find((image) => image.jobId === selectedJob.id) ?? null
+    );
   }
 );
 

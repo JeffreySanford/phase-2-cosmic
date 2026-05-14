@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
-  "ignoreDeprecations": "7.0",
+  "ignoreDeprecations": "5.0",
   "files": [],
   "include": [],
   "exclude": []

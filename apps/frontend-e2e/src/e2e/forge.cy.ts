@@ -35,7 +35,8 @@ describe("forge workbench", () => {
               query: "Eta Carinae",
               canonicalName: "Eta Carinae",
               providerName: "CDS Sesame / SIMBAD",
-              sourceUrl: "https://cds.unistra.fr/cgi-bin/nph-sesame/-oxp/SNV?Eta%20Carinae",
+              sourceUrl:
+                "https://cds.unistra.fr/cgi-bin/nph-sesame/-oxp/SNV?Eta%20Carinae",
               ra: 161.265,
               dec: -59.6844,
               suggestedRadiusArcmin: 20,
@@ -164,7 +165,8 @@ describe("forge workbench", () => {
                 requestedSurveyIds: ["allwise"],
                 resultImageIds: [],
                 errorCode: null,
-                errorMessage: "Cancellation requested by operator. Worker will not publish completion artifacts.",
+                errorMessage:
+                  "Cancellation requested by operator. Worker will not publish completion artifacts.",
                 createdAt: "2026-03-27T20:30:00.000Z",
                 updatedAt: "2026-03-27T20:31:00.000Z",
               },
@@ -230,7 +232,10 @@ describe("forge workbench", () => {
                   citationUrl: "https://www.legacysurvey.org/viewer",
                   authoritativeUrl: "https://example.invalid/preview.jpg",
                   accessedAt: "2026-03-27T20:05:00.000Z",
-                  transformChain: ["external-cutout-request", "local-cache-retention"],
+                  transformChain: [
+                    "external-cutout-request",
+                    "local-cache-retention",
+                  ],
                   artifactMode: "cached",
                   layer: "ls-dr10",
                   bandSet: ["g", "r", "z"],
@@ -292,7 +297,8 @@ describe("forge workbench", () => {
                 supportsCutout: true,
                 supportsPreview: true,
                 previewReady: true,
-                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+                citationUrl:
+                  "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
               },
               {
                 id: "dss2",
@@ -303,7 +309,8 @@ describe("forge workbench", () => {
                 supportsCutout: true,
                 supportsPreview: true,
                 previewReady: true,
-                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+                citationUrl:
+                  "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
               },
               {
                 id: "first",
@@ -314,7 +321,8 @@ describe("forge workbench", () => {
                 supportsCutout: true,
                 supportsPreview: true,
                 previewReady: true,
-                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+                citationUrl:
+                  "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
               },
               {
                 id: "2mass-j-preview",
@@ -325,7 +333,8 @@ describe("forge workbench", () => {
                 supportsCutout: true,
                 supportsPreview: true,
                 previewReady: true,
-                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+                citationUrl:
+                  "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
               },
               {
                 id: "2mass-h-preview",
@@ -336,7 +345,8 @@ describe("forge workbench", () => {
                 supportsCutout: true,
                 supportsPreview: true,
                 previewReady: true,
-                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+                citationUrl:
+                  "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
               },
               {
                 id: "2mass-k-preview",
@@ -347,7 +357,8 @@ describe("forge workbench", () => {
                 supportsCutout: true,
                 supportsPreview: true,
                 previewReady: true,
-                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+                citationUrl:
+                  "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
               },
               {
                 id: "panstarrs",
@@ -392,7 +403,7 @@ describe("forge workbench", () => {
               },
               ...(includeCreatedJobInBootstrap
                 ? [
-                      {
+                    {
                       id: "forge-job-99",
                       type: "cutout",
                       status: createdJobStatus,
@@ -583,7 +594,9 @@ describe("forge workbench", () => {
                   : "https://example.invalid/image.fits",
                 authoritativeUrl: "https://example.invalid/preview.jpg",
                 accessedAt: "2026-03-27T20:05:00.000Z",
-                cacheKey: legacyArtifactCached ? "forge-image-1-legacy-cache" : null,
+                cacheKey: legacyArtifactCached
+                  ? "forge-image-1-legacy-cache"
+                  : null,
                 cacheStatus: legacyArtifactCached ? "cached" : "external-only",
                 provenance: {
                   sourceSurvey: "Legacy Surveys DR10",
@@ -615,11 +628,16 @@ describe("forge workbench", () => {
                 provenance: {
                   sourceSurvey: "AllWISE Atlas",
                   providerName: "NASA/IPAC IRSA",
-                  citationUrl: "https://irsa.ipac.caltech.edu/Missions/wise.html",
+                  citationUrl:
+                    "https://irsa.ipac.caltech.edu/Missions/wise.html",
                   authoritativeUrl:
                     "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/example.fits?center=187.70593,12.39112&size=1800arcsec&gzip=false",
                   accessedAt: "2026-03-28T07:06:00.000Z",
-                  transformChain: ["irsa-sia-discovery", "irsa-ibe-cutout", "local-cache-retention"],
+                  transformChain: [
+                    "irsa-sia-discovery",
+                    "irsa-ibe-cutout",
+                    "local-cache-retention",
+                  ],
                   artifactMode: "cached",
                   missionFamily: "allwise",
                   collection: "allwise/p3am_cdd",
@@ -685,7 +703,10 @@ describe("forge workbench", () => {
                 : []),
             ],
             diagnostics: {
-              queueDepth: includeCreatedJobInBootstrap || includeRetriedJobInBootstrap ? 1 : 0,
+              queueDepth:
+                includeCreatedJobInBootstrap || includeRetriedJobInBootstrap
+                  ? 1
+                  : 0,
               runningJobs: 0,
               failedJobs: includeRetriedJobInBootstrap ? 0 : 1,
               completedJobs: includeCompositeJobInBootstrap ? 3 : 2,
@@ -702,7 +723,10 @@ describe("forge workbench", () => {
                 (includeRetriedJobInBootstrap ? 0 : 1),
               avgRunTimeSec: 5.4,
               successRate: 0.75,
-              queueDepth: includeCreatedJobInBootstrap || includeRetriedJobInBootstrap ? 1 : 0,
+              queueDepth:
+                includeCreatedJobInBootstrap || includeRetriedJobInBootstrap
+                  ? 1
+                  : 0,
               successCount: includeCompositeJobInBootstrap ? 3 : 2,
               failureCount: includeRetriedJobInBootstrap ? 0 : 1,
               cachedArtifactCount: includeCompositeJobInBootstrap ? 2 : 1,
@@ -751,7 +775,10 @@ describe("forge workbench", () => {
       .and("contain.text", "contract version: forge-workbench.v1")
       .and("contain.text", "refresh mode: GraphQL bootstrap + 10s auto-refresh")
       .and("contain.text", "subscriptions: Deferred for this PI")
-      .and("contain.text", "Available now: queue diagnostics, metrics, recent job events");
+      .and(
+        "contain.text",
+        "Available now: queue diagnostics, metrics, recent job events"
+      );
     cy.contains("h3", "My jobs").closest("section").contains("M87 · cutout");
 
     cy.contains("button.forge-chip", "AllWISE").click({ force: true });
@@ -779,11 +806,15 @@ describe("forge workbench", () => {
     cy.get('input[formcontrolname="radiusArcmin"]').should("have.value", "12");
     cy.contains("Preset applied: Cygnus A");
 
-    cy.get('input[formcontrolname="target"]').clear().type("Eta Carinae");
+    cy.get('input[formcontrolname="target"]').clear();
+    cy.get('input[formcontrolname="target"]').type("Eta Carinae");
     cy.contains("button", "Resolve target").click({ force: true });
     cy.wait("@forgeResolveTarget");
 
-    cy.get('input[formcontrolname="target"]').should("have.value", "Eta Carinae");
+    cy.get('input[formcontrolname="target"]').should(
+      "have.value",
+      "Eta Carinae"
+    );
     cy.get('input[formcontrolname="ra"]').should("have.value", "161.265");
     cy.get('input[formcontrolname="dec"]').should("have.value", "-59.6844");
     cy.get('input[formcontrolname="radiusArcmin"]').should("have.value", "20");
@@ -824,7 +855,10 @@ describe("forge workbench", () => {
     cy.wait("@forgeGraphql");
 
     cy.contains(".forge-queue__item", "M87 composite · composite").click();
-    cy.get('input[formcontrolname="target"]').should("have.value", "M87 composite");
+    cy.get('input[formcontrolname="target"]').should(
+      "have.value",
+      "M87 composite"
+    );
     cy.contains("Composite operation:").parent().contains("survey-stack");
     cy.contains("Preview provider:").parent().contains("Cosmic Forge");
     cy.contains("Transform chain:")
@@ -850,8 +884,10 @@ describe("forge workbench", () => {
       .click({ force: true });
 
     cy.wait("@forgeCancelJob");
-    cy.contains(".forge-queue__item", "preview pending until completion")
-      .should("contain.text", "CANCELLED");
+    cy.contains(
+      ".forge-queue__item",
+      "preview pending until completion"
+    ).should("contain.text", "CANCELLED");
   });
 
   it("allows a failed job to be retried from the Forge queue shell", () => {
@@ -873,9 +909,7 @@ describe("forge workbench", () => {
     cy.visit("/forge");
     cy.wait("@forgeGraphql");
 
-    cy.contains("Cygnus A · cutout")
-      .closest(".forge-queue__item")
-      .click();
+    cy.contains("Cygnus A · cutout").closest(".forge-queue__item").click();
 
     cy.get('input[formcontrolname="target"]').should("have.value", "Cygnus A");
     cy.contains("Status:").parent().contains("FAILED");
@@ -899,16 +933,16 @@ describe("forge workbench", () => {
     cy.get('input[formcontrolname="radiusArcmin"]').should("have.value", "15");
 
     cy.contains("Artifact mode:").parent().contains("cached");
-    cy.contains("Cache status:").parent().contains("Cached and served by Forge");
+    cy.contains("Cache status:")
+      .parent()
+      .contains("Cached and served by Forge");
     cy.contains("Preview provider:").parent().contains("NASA/IPAC IRSA");
     cy.contains("Survey:").parent().contains("allwise");
     cy.contains("Provenance layer:").parent().contains("allwise/p3am_cdd");
     cy.contains("Provenance bands:").parent().contains("W1");
     cy.contains("Transform chain:").parent().contains("irsa-sia-discovery");
     cy.contains("Transform chain:").parent().contains("local-cache-retention");
-    cy.contains("Citation:")
-      .parent()
-      .contains("NASA/IPAC IRSA citation");
+    cy.contains("Citation:").parent().contains("NASA/IPAC IRSA citation");
     cy.contains("Authoritative source:")
       .parent()
       .contains("NASA/IPAC IRSA source asset");
@@ -927,7 +961,11 @@ describe("forge workbench", () => {
     cy.contains("Preview URL:")
       .parent()
       .find("a")
-      .should("have.attr", "href", "/api/forge/artifacts/forge-image-2/preview");
+      .should(
+        "have.attr",
+        "href",
+        "/api/forge/artifacts/forge-image-2/preview"
+      );
 
     cy.contains("FITS URL:")
       .parent()
@@ -979,7 +1017,8 @@ describe("forge workbench", () => {
                 supportsCutout: true,
                 supportsPreview: true,
                 previewReady: true,
-                citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+                citationUrl:
+                  "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
               },
             ],
             jobs: [
@@ -1009,7 +1048,8 @@ describe("forge workbench", () => {
                 providerName: "NASA GSFC SkyView",
                 artifactMode: "external",
                 format: "jpeg",
-                previewUrl: "https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Position=299.86815,40.73391",
+                previewUrl:
+                  "https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Position=299.86815,40.73391",
                 fitsUrl: null,
                 authoritativeUrl:
                   "https://skyview.gsfc.nasa.gov/current/cgi/query.pl?Position=299.86815,40.73391",
@@ -1019,7 +1059,8 @@ describe("forge workbench", () => {
                 provenance: {
                   sourceSurvey: "SkyView DSS",
                   providerName: "NASA GSFC SkyView",
-                  citationUrl: "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
+                  citationUrl:
+                    "https://skyview.gsfc.nasa.gov/current/cgi/query.pl",
                   authoritativeUrl:
                     "https://skyview.gsfc.nasa.gov/current/cgi/query.pl?Position=299.86815,40.73391",
                   accessedAt: "2026-03-28T09:01:00.000Z",
@@ -1125,8 +1166,9 @@ describe("forge workbench", () => {
 
     cy.wait("@forgePreviewUnavailable");
     cy.contains(
-      "Preview artifact unavailable through Forge SSR proxy. Use the source links below or retry once the artifact path recovers."
+      "Preview artifact is not currently loading directly from the provider. Forge is attempting to cache a local copy so it can be served through the Forge proxy for reliable viewing."
     );
+    cy.contains("Please wait a moment and refresh the preview.");
   });
 
   it("surfaces normalized GraphQL validation errors when job creation fails", () => {
@@ -1138,7 +1180,8 @@ describe("forge workbench", () => {
             data: null,
             errors: [
               {
-                message: "At least one survey must be selected for a Forge cutout job.",
+                message:
+                  "At least one survey must be selected for a Forge cutout job.",
                 extensions: {
                   code: "FORGE_VALIDATION_ERROR",
                   retryable: false,
@@ -1169,11 +1212,17 @@ describe("forge workbench", () => {
     cy.wait("@forgeGraphql");
 
     cy.get('input[formcontrolname="target"]').clear();
-    cy.get('input[formcontrolname="ra"]').clear().type("361");
-    cy.get('input[formcontrolname="dec"]').clear().type("-91");
-    cy.get('input[formcontrolname="radiusArcmin"]').clear().type("0");
+    cy.get('input[formcontrolname="ra"]').clear();
+    cy.get('input[formcontrolname="ra"]').type("361");
+    cy.get('input[formcontrolname="dec"]').clear();
+    cy.get('input[formcontrolname="dec"]').type("-91");
+    cy.get('input[formcontrolname="radiusArcmin"]').clear();
+    cy.get('input[formcontrolname="radiusArcmin"]').type("0");
 
-    cy.contains("button.forge-chip.forge-chip--selected", "Legacy Surveys").click({
+    cy.contains(
+      "button.forge-chip.forge-chip--selected",
+      "Legacy Surveys"
+    ).click({
       force: true,
     });
 
@@ -1192,11 +1241,19 @@ describe("forge workbench", () => {
 
     cy.contains(".forge-queue__item", "Surveys: legacy").click();
 
-    cy.contains("Artifact delivery:").parent().contains("External provider asset");
-    cy.contains("button", "Cache artifact").click({ force: true });
+    cy.contains("Artifact delivery:")
+      .parent()
+      .contains("External provider asset");
+    cy.contains("button", "Cache selected image for local serving").click({
+      force: true,
+    });
     cy.wait("@forgeCacheImageArtifact");
 
-    cy.contains("Artifact delivery:").parent().contains("Cached locally through Forge");
-    cy.contains("Cache status:").parent().contains("Cached and served by Forge");
+    cy.contains("Artifact delivery:")
+      .parent()
+      .contains("Cached locally through Forge");
+    cy.contains("Cache status:")
+      .parent()
+      .contains("Cached and served by Forge");
   });
 });

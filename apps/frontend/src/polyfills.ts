@@ -1,7 +1,16 @@
 // Polyfills loaded before Angular bootstraps.
 // Provide a safe runtime $localize shim for Angular template i18n markers.
-if (typeof (globalThis as any).$localize !== "function") {
-  (globalThis as any).$localize = (
+type LocalizeGlobal = typeof globalThis & {
+  $localize?: (
+    messageParts: TemplateStringsArray,
+    ...substitutions: readonly unknown[]
+  ) => string;
+};
+
+const localizeGlobal = globalThis as LocalizeGlobal;
+
+if (typeof localizeGlobal.$localize !== "function") {
+  localizeGlobal.$localize = (
     messageParts: TemplateStringsArray,
     ...substitutions: readonly unknown[]
   ): string => {

@@ -29,7 +29,8 @@ test("resolves a CDS Sesame XML response into Forge target data", async () => {
         query: "Cygnus A",
         canonicalName: "Cygnus A",
         providerName: "CDS Sesame / SIMBAD",
-        sourceUrl: "https://cds.unistra.fr/cgi-bin/nph-sesame/-oxp/SNV?Cygnus%20A",
+        sourceUrl:
+          "https://cds.unistra.fr/cgi-bin/nph-sesame/-oxp/SNV?Cygnus%20A",
         ra: 299.86815,
         dec: 40.73391,
         suggestedRadiusArcmin: 12,
@@ -45,10 +46,13 @@ test("returns not found when Sesame response does not contain coordinates", asyn
   const originalFetch = global.fetch;
 
   global.fetch = (async () =>
-    new Response("<Sesame><Resolver><oname>Unknown</oname></Resolver></Sesame>", {
-      status: 200,
-      headers: { "content-type": "application/xml" },
-    })) as typeof fetch;
+    new Response(
+      "<Sesame><Resolver><oname>Unknown</oname></Resolver></Sesame>",
+      {
+        status: 200,
+        headers: { "content-type": "application/xml" },
+      }
+    )) as typeof fetch;
 
   try {
     const result = await service.resolve("Unknown");

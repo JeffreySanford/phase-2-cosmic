@@ -2,6 +2,11 @@ import { Injectable } from "@nestjs/common";
 import { Request, Response } from "express";
 import { GovernanceUpstreamService } from "./governance-upstream.service";
 
+type UnknownRecord = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is UnknownRecord =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
 type GovernanceProxyDependencies = {
   tryHandleEmbeddedGovernance: (req: Request, res: Response) => boolean;
   mockInfrastructureTelemetry: () => unknown;
@@ -24,16 +29,18 @@ type GovernanceProxyDependencies = {
 
 @Injectable()
 export class GovernanceProxyService {
+  /* eslint-disable @angular-eslint/prefer-inject */
   constructor(
     private readonly governanceUpstreamService: GovernanceUpstreamService
   ) {}
+  /* eslint-enable @angular-eslint/prefer-inject */
 
   async handle(
     req: Request,
     res: Response,
     deps: GovernanceProxyDependencies
   ): Promise<void> {
-    const path = (req as any).path as string;
+    const path = req.path;
     const method = (req.method || "GET").toUpperCase();
     if (path !== "/api/v1/broker-events") {
       const started = Date.now();
@@ -44,8 +51,8 @@ export class GovernanceProxyService {
           typeof lengthHeader === "string"
             ? Number(lengthHeader)
             : typeof lengthHeader === "number"
-              ? lengthHeader
-              : 0;
+            ? lengthHeader
+            : 0;
         deps.recordFrontendApiMetrics(
           apiGroup,
           method,
@@ -77,7 +84,7 @@ export class GovernanceProxyService {
       return;
     }
     if (path === "/api/v1/alerts/ingest" && method === "POST") {
-      const body = (req as any).body ?? {};
+      const body = isRecord(req.body) ? req.body : {};
       res.status(201).json({
         id: `dev-${Date.now()}`,
         eventType: body["eventType"] ?? "UNKNOWN",
@@ -166,7 +173,7 @@ export class GovernanceProxyService {
       return;
     }
     if (path === "/api/v1/commissioning/validate" && method === "POST") {
-      const body = (req as any).body ?? {};
+      const body = isRecord(req.body) ? req.body : {};
       const scenarioId: string = body["scenarioId"] ?? "";
       const scenario = commissioningScenarios.find((s) => s.id === scenarioId);
       if (!scenario) {
@@ -179,7 +186,7 @@ export class GovernanceProxyService {
         });
         return;
       }
-      const params: Record<string, unknown> = body["parameters"] ?? {};
+      const params = isRecord(body["parameters"]) ? body["parameters"] : {};
       const failures = scenario.requiredParameters
         .filter((parameter) => params[parameter] == null)
         .map((parameter) => `missing_required_parameter: ${parameter}`);
@@ -268,7 +275,11 @@ export class GovernanceProxyService {
       Object.entries(req.headers || {}).forEach(([k, v]) => {
         if (!v) return;
         const key = k.toLowerCase();
-        if (key === "host" || key === "content-length" || key === "connection") {
+        if (
+          key === "host" ||
+          key === "content-length" ||
+          key === "connection"
+        ) {
           return;
         }
         if (Array.isArray(v)) {
@@ -280,13 +291,13 @@ export class GovernanceProxyService {
 
       let body: BodyInit | undefined;
       if (method !== "GET" && method !== "HEAD") {
-        const hasBody =
-          (req as any).body !== undefined && (req as any).body !== null;
+        const requestBody = req.body;
+        const hasBody = requestBody !== undefined && requestBody !== null;
         if (hasBody) {
-          if (typeof (req as any).body === "string") {
-            body = (req as any).body;
+          if (typeof requestBody === "string") {
+            body = requestBody;
           } else {
-            body = JSON.stringify((req as any).body);
+            body = JSON.stringify(requestBody);
             if (!headers.has("content-type")) {
               headers.set("content-type", "application/json");
             }
@@ -310,7 +321,7 @@ export class GovernanceProxyService {
         (Date.now() - started) / 1000
       );
       res.status(upstream.status).send(text);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error proxying to governance API:", error);
       res.status(502).json({
         error: "governance_proxy_error",

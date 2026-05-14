@@ -25,7 +25,11 @@ export class ForgeStateRepository {
   save(state: ForgePersistedState): void {
     const parentDir = path.dirname(this.stateFilePath);
     fs.mkdirSync(parentDir, { recursive: true });
-    fs.writeFileSync(this.stateFilePath, JSON.stringify(state, null, 2), "utf8");
+    fs.writeFileSync(
+      this.stateFilePath,
+      JSON.stringify(state, null, 2),
+      "utf8"
+    );
   }
 
   private normalizeState(

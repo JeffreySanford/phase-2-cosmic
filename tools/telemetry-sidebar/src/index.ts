@@ -10,11 +10,25 @@ import type { TelemetryEvent } from "./types";
 
 const argv = yargs(hideBin(process.argv))
   .option("rabbitmq", { type: "string", describe: "RabbitMQ URL" })
-  .option("kafka", { type: "string", describe: "Kafka bootstrap brokers (csv)" })
+  .option("kafka", {
+    type: "string",
+    describe: "Kafka bootstrap brokers (csv)",
+  })
   .option("pulsar", { type: "string", describe: "Pulsar service URL" })
-  .option("mock", { type: "boolean", describe: "Emit mock telemetry events (no broker needed)" })
-  .option("nodeId", { type: "string", default: "node", describe: "Node ID to attribute events" })
-  .option("wsPort", { type: "number", default: 3333, describe: "WebSocket port" })
+  .option("mock", {
+    type: "boolean",
+    describe: "Emit mock telemetry events (no broker needed)",
+  })
+  .option("nodeId", {
+    type: "string",
+    default: "node",
+    describe: "Node ID to attribute events",
+  })
+  .option("wsPort", {
+    type: "number",
+    default: 3333,
+    describe: "WebSocket port",
+  })
   .help()
   .parseSync();
 

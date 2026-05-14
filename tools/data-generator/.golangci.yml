@@ -61,6 +61,6 @@ issues:
         - gosec
         - errcheck
     # Exclude YAML files from all linters (handled by trunk)
-    - path: ".*\.(yaml|yml)$"
+    - path: '.*\.(yaml|yml)$'
       linters:
         - "*"

@@ -55,11 +55,20 @@ import { ForgeStateRepository } from "./forge-state.repository";
 import { ForgeStoreService } from "./forge-store.service";
 
 function createStore(testName = "default"): ForgeStoreService {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), `forge-store-${testName}-`));
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), `forge-store-${testName}-`)
+  );
   process.env["FORGE_ARTIFACT_CACHE_DIR"] = path.join(root, "artifacts");
-  process.env["FORGE_STATE_FILE"] = path.join(root, "state", "forge-state.json");
+  process.env["FORGE_STATE_FILE"] = path.join(
+    root,
+    "state",
+    "forge-state.json"
+  );
   process.env["FORGE_DISABLE_FITS_PRERENDER"] = "true";
-  return new ForgeStoreService(new ArtifactCacheService(), new ForgeStateRepository());
+  return new ForgeStoreService(
+    new ArtifactCacheService(),
+    new ForgeStateRepository()
+  );
 }
 
 test("unsupported non-legacy cutout jobs fail with an explicit adapter error", async () => {
@@ -80,7 +89,10 @@ test("unsupported non-legacy cutout jobs fail with an explicit adapter error", a
   const updated = store.getJobs().find((item) => item.id === job.id);
   assert.equal(updated?.status, "FAILED");
   assert.equal(updated?.errorCode, "FORGE_UNSUPPORTED_SURVEY");
-  assert.match(updated?.errorMessage || "", /No production cutout adapter is available yet/);
+  assert.match(
+    updated?.errorMessage || "",
+    /No production cutout adapter is available yet/
+  );
 });
 
 test("artifact cache retries on 429 and eventually succeeds", async () => {
@@ -92,10 +104,16 @@ test("artifact cache retries on 429 and eventually succeeds", async () => {
   globalThis.fetch = async () => {
     callCount += 1;
     if (callCount < 3) {
-      return new Response(null, { status: 429, statusText: "Too Many Requests" });
+      return new Response(null, {
+        status: 429,
+        statusText: "Too Many Requests",
+      });
     }
     const array = new Uint8Array([1, 2, 3]);
-    return new Response(array, { status: 200, headers: { "Content-Type": "image/jpeg" } });
+    return new Response(array, {
+      status: 200,
+      headers: { "Content-Type": "image/jpeg" },
+    });
   };
 
   try {
@@ -163,7 +181,10 @@ test("allwise jobs get a normalized IRSA request before retrieval is wired", () 
   assert.equal(job.request?.missionFamily, "allwise");
   assert.equal(job.request?.collection, "allwise/p3am_cdd");
   assert.deepEqual(job.request?.bands, ["W1"]);
-  assert.match(job.request?.discoveryUrl || "", /irsa\.ipac\.caltech\.edu\/ibe\/sia/);
+  assert.match(
+    job.request?.discoveryUrl || "",
+    /irsa\.ipac\.caltech\.edu\/ibe\/sia/
+  );
   assert.match(job.request?.fitsCutoutUrl || "", /pending=ibe-cutout/);
 });
 
@@ -227,7 +248,9 @@ test("FIRST preview jobs complete as SkyView-derived radio products", async () =
   }
 
   const completedJob = store.getJobs().find((item) => item.id === job.id);
-  const imageProduct = store.getImageProducts().find((item) => item.jobId === job.id);
+  const imageProduct = store
+    .getImageProducts()
+    .find((item) => item.jobId === job.id);
 
   assert.equal(completedJob?.status, "COMPLETED");
   assert.equal(completedJob?.request?.missionFamily, "first");
@@ -236,7 +259,10 @@ test("FIRST preview jobs complete as SkyView-derived radio products", async () =
   assert.equal(imageProduct?.surveyId, "first");
   assert.equal(imageProduct?.providerName, "NASA GSFC SkyView");
   assert.equal(imageProduct?.provenance.sourceSurvey, "SkyView FIRST");
-  assert.equal(imageProduct?.provenance.collection, "skyview/first/derived-preview");
+  assert.equal(
+    imageProduct?.provenance.collection,
+    "skyview/first/derived-preview"
+  );
   assert.deepEqual(imageProduct?.provenance.bandSet, ["FIRST"]);
 });
 
@@ -255,7 +281,9 @@ test("2MASS J preview jobs retain SkyView-derived provenance without implying ar
     await store.advanceJobs();
   }
 
-  const imageProduct = store.getImageProducts().find((item) => item.jobId === job.id);
+  const imageProduct = store
+    .getImageProducts()
+    .find((item) => item.jobId === job.id);
 
   assert.ok(imageProduct);
   assert.equal(imageProduct?.surveyId, "2mass-j-preview");
@@ -276,9 +304,9 @@ test("Pan-STARRS cutout jobs complete as archive-native optical products", async
         text: async () =>
           [
             "projcell,subcell,ra,dec,filter,mjd,type,filename,shortname",
-            '1405,053,332.600451657,2.19980905757,g,0.0,stack,/rings.v3.skycell/1405/053/rings.v3.skycell.1405.053.stk.g.unconv.fits,rings.v3.skycell.1405.053.stk.g.unconv.fits',
-            '1405,053,332.600451657,2.19980905757,r,0.0,stack,/rings.v3.skycell/1405/053/rings.v3.skycell.1405.053.stk.r.unconv.fits,rings.v3.skycell.1405.053.stk.r.unconv.fits',
-            '1405,053,332.600451657,2.19980905757,i,0.0,stack,/rings.v3.skycell/1405/053/rings.v3.skycell.1405.053.stk.i.unconv.fits,rings.v3.skycell.1405.053.stk.i.unconv.fits',
+            "1405,053,332.600451657,2.19980905757,g,0.0,stack,/rings.v3.skycell/1405/053/rings.v3.skycell.1405.053.stk.g.unconv.fits,rings.v3.skycell.1405.053.stk.g.unconv.fits",
+            "1405,053,332.600451657,2.19980905757,r,0.0,stack,/rings.v3.skycell/1405/053/rings.v3.skycell.1405.053.stk.r.unconv.fits,rings.v3.skycell.1405.053.stk.r.unconv.fits",
+            "1405,053,332.600451657,2.19980905757,i,0.0,stack,/rings.v3.skycell/1405/053/rings.v3.skycell.1405.053.stk.i.unconv.fits,rings.v3.skycell.1405.053.stk.i.unconv.fits",
           ].join("\n"),
       } as Response;
     }
@@ -309,7 +337,9 @@ test("Pan-STARRS cutout jobs complete as archive-native optical products", async
     }
 
     const completedJob = store.getJobs().find((item) => item.id === job.id);
-    const imageProduct = store.getImageProducts().find((item) => item.jobId === job.id);
+    const imageProduct = store
+      .getImageProducts()
+      .find((item) => item.jobId === job.id);
 
     assert.equal(completedJob?.status, "COMPLETED");
     assert.equal(completedJob?.request?.providerAdapter, "panstarrs-ps1");
@@ -353,7 +383,10 @@ test("allwise cutout jobs complete through live SIA discovery and IBE retrieval"
       } as Response;
     }
 
-    if (url.includes("/ibe/data/wise/allwise/p3am_cdd") && init?.method === "HEAD") {
+    if (
+      url.includes("/ibe/data/wise/allwise/p3am_cdd") &&
+      init?.method === "HEAD"
+    ) {
       return {
         ok: true,
         status: 200,
@@ -379,12 +412,17 @@ test("allwise cutout jobs complete through live SIA discovery and IBE retrieval"
     }
 
     const updated = store.getJobs().find((item) => item.id === job.id);
-    const imageProduct = store.getImageProducts().find((item) => item.jobId === job.id);
+    const imageProduct = store
+      .getImageProducts()
+      .find((item) => item.jobId === job.id);
 
     assert.equal(updated?.status, "COMPLETED");
     assert.equal(updated?.request?.providerAdapter, "irsa-allwise");
     assert.deepEqual(updated?.request?.bands, ["W1"]);
-    assert.match(updated?.request?.fitsCutoutUrl || "", /center=187\.70593,12\.39112/);
+    assert.match(
+      updated?.request?.fitsCutoutUrl || "",
+      /center=187\.70593,12\.39112/
+    );
     assert.ok(imageProduct);
     assert.equal(imageProduct?.surveyId, "allwise");
     assert.equal(imageProduct?.format, "fits");
@@ -485,7 +523,9 @@ test("legacy cutout jobs complete with normalized request and provenance fields"
   }
 
   const completedJob = store.getJobs().find((item) => item.id === job.id);
-  const imageProduct = store.getImageProducts().find((item) => item.jobId === job.id);
+  const imageProduct = store
+    .getImageProducts()
+    .find((item) => item.jobId === job.id);
 
   assert.equal(completedJob?.status, "COMPLETED");
   assert.ok(completedJob?.request);
@@ -520,11 +560,16 @@ test("skyview cutout jobs complete as derived preview products with SkyView prov
   }
 
   const completedJob = store.getJobs().find((item) => item.id === job.id);
-  const imageProduct = store.getImageProducts().find((item) => item.jobId === job.id);
+  const imageProduct = store
+    .getImageProducts()
+    .find((item) => item.jobId === job.id);
 
   assert.equal(completedJob?.status, "COMPLETED");
   assert.ok(completedJob?.request);
-  assert.equal(completedJob?.request?.providerAdapter, "skyview-derived-preview");
+  assert.equal(
+    completedJob?.request?.providerAdapter,
+    "skyview-derived-preview"
+  );
   assert.equal(completedJob?.request?.sourceService, "skyview-query");
   assert.equal(completedJob?.request?.fitsCutoutUrl, null);
 
@@ -547,11 +592,18 @@ test("skyview cutout jobs complete as derived preview products with SkyView prov
 test("jobs persist across store instances instead of relying on process memory", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "forge-store-persist-"));
   process.env["FORGE_ARTIFACT_CACHE_DIR"] = path.join(root, "artifacts");
-  process.env["FORGE_STATE_FILE"] = path.join(root, "state", "forge-state.json");
+  process.env["FORGE_STATE_FILE"] = path.join(
+    root,
+    "state",
+    "forge-state.json"
+  );
   process.env["FORGE_DISABLE_FITS_PRERENDER"] = "true";
 
   const repository = new ForgeStateRepository();
-  const firstStore = new ForgeStoreService(new ArtifactCacheService(), repository);
+  const firstStore = new ForgeStoreService(
+    new ArtifactCacheService(),
+    repository
+  );
   const created = firstStore.createCutoutJob({
     requestedBy: "persist-user",
     targetName: "M87",
@@ -561,7 +613,10 @@ test("jobs persist across store instances instead of relying on process memory",
     surveyIds: ["legacy"],
   });
 
-  const secondStore = new ForgeStoreService(new ArtifactCacheService(), repository);
+  const secondStore = new ForgeStoreService(
+    new ArtifactCacheService(),
+    repository
+  );
   const reloaded = secondStore.getJob(created.id);
 
   assert.ok(reloaded);
@@ -655,7 +710,7 @@ test("IRSA discovery 503 failures are classified as upstream unavailable and ret
       ok: false,
       status: 503,
       text: async () => "",
-    }) as Response) as typeof fetch;
+    } as Response)) as typeof fetch;
 
   const store = createStore("irsa-503");
   const job = store.createCutoutJob({
@@ -672,7 +727,10 @@ test("IRSA discovery 503 failures are classified as upstream unavailable and ret
     const failed = await store.executeClaimedJob(job.id);
     assert.equal(failed?.status, "FAILED");
     assert.equal(failed?.errorCode, "FORGE_UPSTREAM_UNAVAILABLE");
-    assert.match(failed?.errorMessage || "", /IRSA SIA discovery is currently unavailable/);
+    assert.match(
+      failed?.errorMessage || "",
+      /IRSA SIA discovery is currently unavailable/
+    );
   } finally {
     global.fetch = originalFetch;
   }
@@ -723,7 +781,10 @@ test("IRSA retrieval 404 failures are classified as upstream bad response", asyn
     const failed = await store.executeClaimedJob(job.id);
     assert.equal(failed?.status, "FAILED");
     assert.equal(failed?.errorCode, "FORGE_UPSTREAM_BAD_RESPONSE");
-    assert.match(failed?.errorMessage || "", /IRSA IBE retrieval returned an unexpected status/);
+    assert.match(
+      failed?.errorMessage || "",
+      /IRSA IBE retrieval returned an unexpected status/
+    );
   } finally {
     global.fetch = originalFetch;
   }

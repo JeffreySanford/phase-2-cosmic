@@ -50,7 +50,10 @@ async function start() {
     try {
       const parsed = JSON.parse(msg.content.toString());
       const { routing_key, exchange, payload_bytes, name, vhost } = parsed;
-      const bytes = typeof payload_bytes === "number" ? payload_bytes : Number(payload_bytes ?? 0);
+      const bytes =
+        typeof payload_bytes === "number"
+          ? payload_bytes
+          : Number(payload_bytes ?? 0);
       const topicOrQueue = `${vhost}/${exchange}/${routing_key}`;
       if (name === "basic.publish") {
         send({
@@ -76,7 +79,9 @@ async function start() {
     }
   });
 
-  console.log(`RabbitMQ firehose proxy running on ws://localhost:${argv.wsPort}`);
+  console.log(
+    `RabbitMQ firehose proxy running on ws://localhost:${argv.wsPort}`
+  );
 }
 
 start().catch((err) => {

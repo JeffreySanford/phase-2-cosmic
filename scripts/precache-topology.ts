@@ -25,7 +25,7 @@ const topology = {
     { id: "zookeeper", label: "Zookeeper", group: "infra" },
     { id: "array-main", label: "Main Array (214 x 18m)", group: "ngvla" },
     { id: "array-lbl", label: "Long Baseline (19 x 6m)", group: "ngvla" },
-    { id: "array-sba", label: "SBA (19 x 18m)", group: "ngvla" }
+    { id: "array-sba", label: "SBA (19 x 18m)", group: "ngvla" },
   ],
   links: [
     { source: "frontend", target: "backend" },
@@ -53,15 +53,15 @@ const topology = {
     { source: "loki", target: "grafana" },
     { source: "array-main", target: "minio", value: 3 },
     { source: "array-lbl", target: "minio", value: 2 },
-    { source: "array-sba", target: "minio", value: 2 }
-  ]
+    { source: "array-sba", target: "minio", value: 2 },
+  ],
 };
-
 
 function precacheTopology$() {
   const subject = new Subject<void>();
   const client = createClient({ url: "redis://localhost:6379" });
-  client.connect()
+  client
+    .connect()
     .then(() => client.set(TOPOLOGY_KEY, JSON.stringify(topology)))
     .then(() => {
       console.log("Precached topology data in Redis.");
@@ -80,5 +80,5 @@ precacheTopology$().subscribe({
   error: (err) => {
     console.error(err);
     process.exit(1);
-  }
+  },
 });

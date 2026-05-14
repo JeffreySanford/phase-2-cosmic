@@ -14,8 +14,13 @@ declare module "kafkajs" {
     constructor(opts: { brokers: string[] });
     consumer(opts: { groupId: string }): {
       connect(): Promise<void>;
-      subscribe(opts: { topics: string[]; fromBeginning: boolean }): Promise<void>;
-      run(opts: { eachMessage: (payload: EachMessagePayload) => Promise<void> }): Promise<void>;
+      subscribe(opts: {
+        topics: string[];
+        fromBeginning: boolean;
+      }): Promise<void>;
+      run(opts: {
+        eachMessage: (payload: EachMessagePayload) => Promise<void>;
+      }): Promise<void>;
       disconnect(): Promise<void>;
     };
   }
@@ -51,8 +56,15 @@ declare module "amqplib" {
   };
 
   export type Channel = {
-    assertExchange(name: string, type: string, opts: Record<string, unknown>): Promise<void>;
-    assertQueue(q: string, opts: Record<string, unknown>): Promise<{ queue: string }>;
+    assertExchange(
+      name: string,
+      type: string,
+      opts: Record<string, unknown>
+    ): Promise<void>;
+    assertQueue(
+      q: string,
+      opts: Record<string, unknown>
+    ): Promise<{ queue: string }>;
     bindQueue(queue: string, exchange: string, pattern: string): Promise<void>;
     consume(queue: string, cb: (msg: Message | null) => void): Promise<void>;
     close(): Promise<void>;

@@ -18,7 +18,6 @@ type GraphqlResolverArgs = Readonly<{
   operationName?: string;
 }>;
 
-
 type CreateCutoutJobArgs = Readonly<{
   input?: Partial<ForgeCreateCutoutJobInput>;
 }>;
@@ -708,7 +707,9 @@ const forgeSchema = buildSchema(`
 
 @Injectable()
 export class ForgeGraphqlService {
-  constructor(@Inject(ForgeStoreService) private readonly store: ForgeStoreService) {}
+  constructor(
+    @Inject(ForgeStoreService) private readonly store: ForgeStoreService
+  ) {}
 
   private toGraphqlError(
     code: ForgeErrorCode,
@@ -735,7 +736,9 @@ export class ForgeGraphqlService {
       dec: Number(input?.dec ?? Number.NaN),
       radiusArcmin: Number(input?.radiusArcmin ?? Number.NaN),
       surveyIds: Array.isArray(input?.surveyIds)
-        ? input.surveyIds.filter((value): value is string => typeof value === "string")
+        ? input.surveyIds.filter(
+            (value): value is string => typeof value === "string"
+          )
         : [],
     };
 
@@ -753,7 +756,10 @@ export class ForgeGraphqlService {
       );
     }
 
-    if (!Number.isFinite(normalized.radiusArcmin) || normalized.radiusArcmin <= 0) {
+    if (
+      !Number.isFinite(normalized.radiusArcmin) ||
+      normalized.radiusArcmin <= 0
+    ) {
       throw this.toGraphqlError(
         "FORGE_VALIDATION_ERROR",
         "Radius must be a positive arcminute value."
@@ -770,7 +776,9 @@ export class ForgeGraphqlService {
     return normalized;
   }
 
-  private normalizeCreateCompositeJobInput(input: CreateCompositeJobArgs["input"]) {
+  private normalizeCreateCompositeJobInput(
+    input: CreateCompositeJobArgs["input"]
+  ) {
     const normalizedCutout = this.normalizeCreateCutoutJobInput(input);
     const operation = String(input?.compositeRequest?.operation ?? "").trim();
     if (!operation) {
@@ -808,7 +816,10 @@ export class ForgeGraphqlService {
     };
   }
 
-  private resolveGraphqlSource(operationName: string | null, query: unknown): string | null {
+  private resolveGraphqlSource(
+    operationName: string | null,
+    query: unknown
+  ): string | null {
     if (typeof query === "string" && query.trim().length > 0) {
       return query;
     }
@@ -846,7 +857,10 @@ export class ForgeGraphqlService {
     }
 
     const domainError = error as ForgeDomainError;
-    if (domainError?.name === "ForgeDomainError" && typeof domainError.code === "string") {
+    if (
+      domainError?.name === "ForgeDomainError" &&
+      typeof domainError.code === "string"
+    ) {
       return {
         message: domainError.message,
         extensions: {
@@ -858,7 +872,10 @@ export class ForgeGraphqlService {
     }
 
     return {
-      message: error instanceof Error ? error.message : "Unexpected Forge GraphQL failure.",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unexpected Forge GraphQL failure.",
       extensions: {
         code: "FORGE_INTERNAL_ERROR",
         retryable: false,
@@ -870,7 +887,8 @@ export class ForgeGraphqlService {
   async execute(body: unknown): Promise<{ status: number; body: unknown }> {
     const input: GraphqlRequestBody =
       body && typeof body === "object" ? (body as GraphqlRequestBody) : {};
-    const operationName = typeof input.operationName === "string" ? input.operationName : null;
+    const operationName =
+      typeof input.operationName === "string" ? input.operationName : null;
     const source = this.resolveGraphqlSource(operationName, input.query);
 
     if (!source) {
@@ -899,12 +917,16 @@ export class ForgeGraphqlService {
       job: ({ id }: JobArgs) => {
         const job = this.store.getJob(id);
         if (!job) {
-          throw this.toGraphqlError("FORGE_JOB_NOT_FOUND", "Forge job not found.");
+          throw this.toGraphqlError(
+            "FORGE_JOB_NOT_FOUND",
+            "Forge job not found."
+          );
         }
         return job;
       },
       imageProducts: () => this.store.getImageProducts(),
-      imageProductsByJob: ({ jobId }: JobIdArgs) => this.store.getImageProductsByJob(jobId),
+      imageProductsByJob: ({ jobId }: JobIdArgs) =>
+        this.store.getImageProductsByJob(jobId),
       provenanceByImage: ({ imageId }: ImageIdArgs) => {
         const provenance = this.store.getProvenanceByImage(imageId);
         if (!provenance) {
@@ -915,24 +937,35 @@ export class ForgeGraphqlService {
         }
         return provenance;
       },
-      jobEvents: ({ limit }: { limit?: number }) => this.store.getJobEvents(limit ?? 10),
+      jobEvents: ({ limit }: { limit?: number }) =>
+        this.store.getJobEvents(limit ?? 10),
       createCutoutJob: ({ input: mutationInput }: CreateCutoutJobArgs) =>
-        this.store.createCutoutJob(this.normalizeCreateCutoutJobInput(mutationInput)),
+        this.store.createCutoutJob(
+          this.normalizeCreateCutoutJobInput(mutationInput)
+        ),
       createCompositeJob: ({ input }: CreateCompositeJobArgs) =>
-        this.store.createCompositeJob(this.normalizeCreateCompositeJobInput(input)),
+        this.store.createCompositeJob(
+          this.normalizeCreateCompositeJobInput(input)
+        ),
       diagnostics: () => this.store.getDiagnostics(),
       metrics: () => this.store.getMetrics(),
       cancelJob: ({ jobId }: JobIdArgs) => {
         const job = this.store.cancelJob(jobId);
         if (!job) {
-          throw this.toGraphqlError("FORGE_JOB_NOT_FOUND", "Forge job not found.");
+          throw this.toGraphqlError(
+            "FORGE_JOB_NOT_FOUND",
+            "Forge job not found."
+          );
         }
         return job;
       },
       retryJob: ({ jobId }: JobIdArgs) => {
         const job = this.store.retryJob(jobId);
         if (!job) {
-          throw this.toGraphqlError("FORGE_JOB_NOT_FOUND", "Forge job not found.");
+          throw this.toGraphqlError(
+            "FORGE_JOB_NOT_FOUND",
+            "Forge job not found."
+          );
         }
         return job;
       },
@@ -970,7 +1003,9 @@ export class ForgeGraphqlService {
       body: result.errors?.length
         ? {
             data: result.data ?? null,
-            errors: result.errors.map((error) => this.normalizeGraphqlError(error)),
+            errors: result.errors.map((error) =>
+              this.normalizeGraphqlError(error)
+            ),
           }
         : result,
     };

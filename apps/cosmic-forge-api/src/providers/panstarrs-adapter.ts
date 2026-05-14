@@ -4,7 +4,10 @@ import {
   type ForgeImageProduct,
   type ForgeJob,
 } from "../domain/forge.models";
-import type { ForgeCutoutRequestSource, ForgeSurveyAdapter } from "./survey-adapter";
+import type {
+  ForgeCutoutRequestSource,
+  ForgeSurveyAdapter,
+} from "./survey-adapter";
 
 export const PANSTARRS_SURVEY_ID = "panstarrs";
 export const PANSTARRS_PROVIDER_NAME = "MAST / STScI";
@@ -15,7 +18,8 @@ export const PANSTARRS_ACKNOWLEDGMENT_URL =
 export const PANSTARRS_FILTERS = ["g", "r", "i", "z", "y"] as const;
 export const PANSTARRS_COLOR_FILTERS = ["i", "r", "g"] as const;
 
-const PANSTARRS_FILENAMES_URL = "https://ps1images.stsci.edu/cgi-bin/ps1filenames.py";
+const PANSTARRS_FILENAMES_URL =
+  "https://ps1images.stsci.edu/cgi-bin/ps1filenames.py";
 const PANSTARRS_FITSCUT_URL = "https://ps1images.stsci.edu/cgi-bin/fitscut.cgi";
 const PANSTARRS_SCALE_ARCSEC_PER_PIXEL = 0.25;
 const PANSTARRS_MIN_SIZE_PX = 240;
@@ -34,7 +38,10 @@ function normalizeNumber(value: unknown, fallback: number): number {
 
 function normalizeSizePixels(radiusArcmin: number): number {
   const requested = Math.round(Math.max(0.5, radiusArcmin) * 240);
-  return Math.min(PANSTARRS_MAX_SIZE_PX, Math.max(PANSTARRS_MIN_SIZE_PX, requested));
+  return Math.min(
+    PANSTARRS_MAX_SIZE_PX,
+    Math.max(PANSTARRS_MIN_SIZE_PX, requested)
+  );
 }
 
 function parseCsvLine(line: string): string[] {
@@ -44,7 +51,7 @@ function parseCsvLine(line: string): string[] {
 
   for (let index = 0; index < line.length; index += 1) {
     const char = line[index];
-    if (char === "\"") {
+    if (char === '"') {
       inQuotes = !inQuotes;
       continue;
     }
@@ -112,7 +119,13 @@ function classifyPanstarrsHttpError(
   stage: string,
   details: Record<string, unknown>
 ) {
-  if (status === 408 || status === 429 || status === 502 || status === 503 || status === 504) {
+  if (
+    status === 408 ||
+    status === 429 ||
+    status === 502 ||
+    status === 503 ||
+    status === 504
+  ) {
     return new ForgeDomainError(
       "FORGE_UPSTREAM_UNAVAILABLE",
       `Pan-STARRS ${stage} is currently unavailable (${status}).`,
@@ -211,10 +224,15 @@ function selectColorFile(
   records: readonly PanstarrsImageRecord[],
   preferredFilter: string
 ): string | null {
-  return records.find((record) => record.filter === preferredFilter)?.filename ?? null;
+  return (
+    records.find((record) => record.filter === preferredFilter)?.filename ??
+    null
+  );
 }
 
-export function buildPanstarrsCutoutRequest(job: ForgeCutoutRequestSource): ForgeCutoutRequest {
+export function buildPanstarrsCutoutRequest(
+  job: ForgeCutoutRequestSource
+): ForgeCutoutRequest {
   const radiusArcmin = Math.max(0.5, normalizeNumber(job.radiusArcmin, 1));
   const ra = Number(normalizeNumber(job.ra, 0).toFixed(5));
   const dec = Number(normalizeNumber(job.dec, 0).toFixed(5));
@@ -252,7 +270,9 @@ export async function executePanstarrsJob(
 ): Promise<ForgeImageProduct> {
   const request = job.request ?? buildPanstarrsCutoutRequest(job);
   const images = await discoverPanstarrsImages(request);
-  const recordsByFilter = new Map(images.map((record) => [record.filter, record]));
+  const recordsByFilter = new Map(
+    images.map((record) => [record.filter, record])
+  );
   const red = selectColorFile(images, "i") ?? selectColorFile(images, "z");
   const green = selectColorFile(images, "r") ?? selectColorFile(images, "i");
   const blue = selectColorFile(images, "g") ?? selectColorFile(images, "r");
@@ -314,7 +334,9 @@ export async function executePanstarrsJob(
     });
   }
 
-  const selectedBands = ["i", "r", "g"].filter((filterName) => recordsByFilter.has(filterName));
+  const selectedBands = ["i", "r", "g"].filter((filterName) =>
+    recordsByFilter.has(filterName)
+  );
   const normalizedRequest: ForgeCutoutRequest = {
     ...request,
     bands: selectedBands.length > 0 ? selectedBands : [fitsRecord.filter],

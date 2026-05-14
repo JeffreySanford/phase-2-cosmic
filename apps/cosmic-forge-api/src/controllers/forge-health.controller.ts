@@ -3,7 +3,9 @@ import { ForgeStoreService } from "../state/forge-store.service";
 
 @Controller()
 export class ForgeHealthController {
-  constructor(@Inject(ForgeStoreService) private readonly store: ForgeStoreService) {}
+  constructor(
+    @Inject(ForgeStoreService) private readonly store: ForgeStoreService
+  ) {}
 
   @Get("health")
   getHealth() {

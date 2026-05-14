@@ -10,9 +10,13 @@ async function bootstrap(): Promise<void> {
   const bootstrapService = app.get(ForgeBootstrapService);
   await bootstrapService.warmup();
 
-  const port = Number(process.env["FORGE_API_HOST_PORT"] || process.env["PORT"] || "4101");
+  const port = Number(
+    process.env["FORGE_API_HOST_PORT"] || process.env["PORT"] || "4101"
+  );
   await app.listen(port, "0.0.0.0");
-  process.stdout.write(`cosmic-forge-api listening on http://127.0.0.1:${port}\n`);
+  process.stdout.write(
+    `cosmic-forge-api listening on http://127.0.0.1:${port}\n`
+  );
 }
 
 if (require.main === module) {

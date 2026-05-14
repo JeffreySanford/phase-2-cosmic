@@ -36,14 +36,20 @@ type WorkerState = {
 const app: Express = express();
 app.use(express.json());
 
-const PORT = Number(process.env["PORT"] || process.env["FORGE_WORKER_HOST_PORT"] || "4102");
+const PORT = Number(
+  process.env["PORT"] || process.env["FORGE_WORKER_HOST_PORT"] || "4102"
+);
 const FORGE_API_URL =
   process.env["FORGE_API_URL"] ||
   `http://127.0.0.1:${process.env["FORGE_API_HOST_PORT"] || "4101"}`;
 const POLL_INTERVAL_MS = Number(process.env["FORGE_WORKER_POLL_MS"] || "3000");
-const MAX_CONCURRENCY = Math.max(1, Number(process.env["FORGE_WORKER_MAX_CONCURRENCY"] || "2"));
+const MAX_CONCURRENCY = Math.max(
+  1,
+  Number(process.env["FORGE_WORKER_MAX_CONCURRENCY"] || "2")
+);
 const WORKER_ID =
-  process.env["FORGE_WORKER_ID"] || `cosmic-forge-worker-${process.pid.toString(10)}`;
+  process.env["FORGE_WORKER_ID"] ||
+  `cosmic-forge-worker-${process.pid.toString(10)}`;
 const WORKER_CONTRACT_VERSION = "forge-worker.v1";
 
 const state: WorkerState = {
@@ -68,7 +74,9 @@ function addActiveJob(jobId: string): void {
 }
 
 function removeActiveJob(jobId: string): void {
-  state.currentActiveJobIds = state.currentActiveJobIds.filter((id) => id !== jobId);
+  state.currentActiveJobIds = state.currentActiveJobIds.filter(
+    (id) => id !== jobId
+  );
 }
 
 async function claimNextJob(): Promise<WorkerJob | null> {
@@ -97,16 +105,19 @@ async function executeJob(jobId: string): Promise<void> {
   addActiveJob(jobId);
 
   try {
-    const response = await fetch(`${FORGE_API_URL}/internal/worker/jobs/${jobId}/execute`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        workerId: WORKER_ID,
-      }),
-    });
+    const response = await fetch(
+      `${FORGE_API_URL}/internal/worker/jobs/${jobId}/execute`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          workerId: WORKER_ID,
+        }),
+      }
+    );
     if (!response.ok) {
       throw new Error(`worker execute-job failed: ${response.status}`);
     }
@@ -123,7 +134,8 @@ async function executeJob(jobId: string): Promise<void> {
     }
   } catch (error) {
     state.lastExecutionDurationMs = Date.now() - startedAt;
-    state.lastExecutionError = error instanceof Error ? error.message : String(error);
+    state.lastExecutionError =
+      error instanceof Error ? error.message : String(error);
     state.totalFailures += 1;
   } finally {
     removeActiveJob(jobId);
@@ -153,7 +165,8 @@ async function pumpQueue(): Promise<void> {
       void executeJob(job.id);
     }
   } catch (error) {
-    state.lastExecutionError = error instanceof Error ? error.message : String(error);
+    state.lastExecutionError =
+      error instanceof Error ? error.message : String(error);
   } finally {
     state.pumpInProgress = false;
     if (state.pumpPending) {
@@ -177,7 +190,8 @@ async function executeNext(): Promise<void> {
     state.totalClaims += 1;
     await executeJob(claimed.id);
   } catch (error) {
-    state.lastExecutionError = error instanceof Error ? error.message : String(error);
+    state.lastExecutionError =
+      error instanceof Error ? error.message : String(error);
   }
 }
 

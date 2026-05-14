@@ -41,10 +41,20 @@ test("CreateCompositeJob mutation creates and completes a composite job", async 
     },
   });
   assert.equal(result.status, 200);
-  const payload = result.body as { data: { createCompositeJob: { type: string; compositeRequest: { operation: string } } } };
+  const payload = result.body as {
+    data: {
+      createCompositeJob: {
+        type: string;
+        compositeRequest: { operation: string };
+      };
+    };
+  };
   assert.equal(payload.data.createCompositeJob.type, "composite");
   assert.ok(payload.data.createCompositeJob.compositeRequest);
-  assert.equal(payload.data.createCompositeJob.compositeRequest.operation, "overlay");
+  assert.equal(
+    payload.data.createCompositeJob.compositeRequest.operation,
+    "overlay"
+  );
 });
 
 test("diagnostics and metrics queries return computed values", async () => {
@@ -64,7 +74,8 @@ test("diagnostics and metrics queries return computed values", async () => {
     },
   });
   const diagnosticsResult = await graphqlService.execute({
-    query: "query ForgeDiagnostics { diagnostics { queueDepth runningJobs failedJobs completedJobs blockedJobs delayedJobs retryingJobs } }",
+    query:
+      "query ForgeDiagnostics { diagnostics { queueDepth runningJobs failedJobs completedJobs blockedJobs delayedJobs retryingJobs } }",
   });
   assert.equal(diagnosticsResult.status, 200);
   const diag = (
@@ -88,7 +99,8 @@ test("diagnostics and metrics queries return computed values", async () => {
   assert.ok(typeof diag.completedJobs === "number");
 
   const metricsResult = await graphqlService.execute({
-    query: "query ForgeMetrics { metrics { totalJobs avgRunTimeSec successRate queueDepth successCount failureCount cachedArtifactCount } }",
+    query:
+      "query ForgeMetrics { metrics { totalJobs avgRunTimeSec successRate queueDepth successCount failureCount cachedArtifactCount } }",
   });
   assert.equal(metricsResult.status, 200);
   const metrics = (
@@ -119,7 +131,10 @@ import test from "node:test";
 import { ArtifactCacheService } from "../artifacts/artifact-cache.service";
 import { ForgeStateRepository } from "../state/forge-state.repository";
 import { ForgeStoreService } from "../state/forge-store.service";
-import { ForgeGraphqlService, forgeGraphqlDocuments } from "./forge-graphql.service";
+import {
+  ForgeGraphqlService,
+  forgeGraphqlDocuments,
+} from "./forge-graphql.service";
 
 type BootstrapPayload = {
   data: {
@@ -155,19 +170,33 @@ type BootstrapPayload = {
 function createGraphqlService(): ForgeGraphqlService {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "forge-graphql-"));
   process.env["FORGE_ARTIFACT_CACHE_DIR"] = path.join(root, "artifacts");
-  process.env["FORGE_STATE_FILE"] = path.join(root, "state", "forge-state.json");
+  process.env["FORGE_STATE_FILE"] = path.join(
+    root,
+    "state",
+    "forge-state.json"
+  );
   process.env["FORGE_DISABLE_FITS_PRERENDER"] = "true";
   return new ForgeGraphqlService(
-    new ForgeStoreService(new ArtifactCacheService(), new ForgeStateRepository())
+    new ForgeStoreService(
+      new ArtifactCacheService(),
+      new ForgeStateRepository()
+    )
   );
 }
 
 function createServiceWithStore(): [ForgeGraphqlService, ForgeStoreService] {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "forge-graphql-"));
   process.env["FORGE_ARTIFACT_CACHE_DIR"] = path.join(root, "artifacts");
-  process.env["FORGE_STATE_FILE"] = path.join(root, "state", "forge-state.json");
+  process.env["FORGE_STATE_FILE"] = path.join(
+    root,
+    "state",
+    "forge-state.json"
+  );
   process.env["FORGE_DISABLE_FITS_PRERENDER"] = "true";
-  const store = new ForgeStoreService(new ArtifactCacheService(), new ForgeStateRepository());
+  const store = new ForgeStoreService(
+    new ArtifactCacheService(),
+    new ForgeStateRepository()
+  );
   return [new ForgeGraphqlService(store), store];
 }
 
@@ -200,7 +229,9 @@ test("ForgeWorkbenchBootstrap resolves via operationName and returns request/pro
   assert.equal(payload.data.serviceInfo.contractVersion, "forge-workbench.v1");
   assert.equal(payload.data.serviceInfo.graphReady, true);
 
-  const legacyJob = payload.data.jobs.find((job) => job.requestedSurveyIds.includes("legacy"));
+  const legacyJob = payload.data.jobs.find((job) =>
+    job.requestedSurveyIds.includes("legacy")
+  );
   const legacyImage = payload.data.imageProducts.find(
     (image) => image.surveyId === "legacy"
   );
@@ -271,7 +302,9 @@ test("ForgeWorkbenchBootstrap includes additional live SkyView-derived survey pr
 
   const dss2 = payload.data.surveys.find((survey) => survey.id === "dss2");
   const first = payload.data.surveys.find((survey) => survey.id === "first");
-  const twoMassJ = payload.data.surveys.find((survey) => survey.id === "2mass-j-preview");
+  const twoMassJ = payload.data.surveys.find(
+    (survey) => survey.id === "2mass-j-preview"
+  );
 
   assert.ok(dss2);
   assert.equal(dss2.providerName, "NASA GSFC SkyView");
@@ -309,7 +342,9 @@ test("ForgeWorkbenchBootstrap includes Pan-STARRS as a live archive-native adapt
     };
   };
 
-  const panstarrs = payload.data.surveys.find((survey) => survey.id === "panstarrs");
+  const panstarrs = payload.data.surveys.find(
+    (survey) => survey.id === "panstarrs"
+  );
   assert.ok(panstarrs);
   assert.equal(panstarrs.name, "Pan-STARRS");
   assert.equal(panstarrs.providerName, "MAST / STScI");
@@ -357,7 +392,10 @@ test("CreateCutoutJob returns a normalized AllWISE request scaffold", async () =
   assert.equal(request.missionFamily, "allwise");
   assert.equal(request.collection, "allwise/p3am_cdd");
   assert.deepEqual(request.bands, ["W1"]);
-  assert.match(request.discoveryUrl || "", /irsa\.ipac\.caltech\.edu\/ibe\/sia/);
+  assert.match(
+    request.discoveryUrl || "",
+    /irsa\.ipac\.caltech\.edu\/ibe\/sia/
+  );
   assert.match(request.fitsCutoutUrl || "", /pending=ibe-cutout/);
 });
 
@@ -513,7 +551,9 @@ test("ForgeProvenanceByImage resolves a single image provenance record", async (
     };
   };
   const legacyImageId =
-    bootstrapPayload.data.imageProducts.find((image) => image.surveyId === "legacy")?.id ?? "";
+    bootstrapPayload.data.imageProducts.find(
+      (image) => image.surveyId === "legacy"
+    )?.id ?? "";
 
   const result = await graphqlService.execute({
     operationName: "ForgeProvenanceByImage",
@@ -532,8 +572,14 @@ test("ForgeProvenanceByImage resolves a single image provenance record", async (
     };
   };
 
-  assert.equal(payload.data.provenanceByImage.providerName, "NOIRLab / Legacy Surveys");
-  assert.equal(payload.data.provenanceByImage.sourceSurvey, "Legacy Surveys DR10");
+  assert.equal(
+    payload.data.provenanceByImage.providerName,
+    "NOIRLab / Legacy Surveys"
+  );
+  assert.equal(
+    payload.data.provenanceByImage.sourceSurvey,
+    "Legacy Surveys DR10"
+  );
 });
 
 test("missing GraphQL source returns a normalized FORGE_BAD_REQUEST error", async () => {

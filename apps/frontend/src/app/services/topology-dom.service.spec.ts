@@ -65,7 +65,17 @@ describe("TopologyDomService", () => {
     const onReceive = jest.fn();
 
     // 2 particles => begin at 0s and 0.5s; duration 1s => end at 1s and 1.5s
-    service.syncParticlesForLink(layer, "a->b", 2, 1, 1, "#000", 0, onEmit, onReceive);
+    service.syncParticlesForLink(
+      layer,
+      "a->b",
+      2,
+      1,
+      1,
+      "#000",
+      0,
+      onEmit,
+      onReceive
+    );
 
     const anims = Array.from(
       layer.querySelectorAll<SVGAnimateMotionElement>("animateMotion")

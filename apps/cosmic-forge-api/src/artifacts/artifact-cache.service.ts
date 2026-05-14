@@ -1,6 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { execFile } from "node:child_process";
-import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  createReadStream,
+  existsSync,
+  mkdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
 import type { Response } from "express";
@@ -17,7 +23,8 @@ export class ArtifactCacheService {
   private readonly cacheDir =
     process.env["FORGE_ARTIFACT_CACHE_DIR"] ||
     path.join(process.cwd(), "tmp", "cosmic-forge-artifacts");
-  private readonly fitsPrerenderDisabled = process.env["FORGE_DISABLE_FITS_PRERENDER"] === "true";
+  private readonly fitsPrerenderDisabled =
+    process.env["FORGE_DISABLE_FITS_PRERENDER"] === "true";
   private readonly artifactCacheIndex = new Map<string, ArtifactFiles>();
 
   private ensureCacheDir(): void {
@@ -36,12 +43,21 @@ export class ArtifactCacheService {
   private async downloadArtifact(url: string): Promise<Buffer> {
     let lastError: Error | null = null;
 
-    for (let attempt = 0; attempt < this.artifactDownloadRetryCount; attempt += 1) {
+    for (
+      let attempt = 0;
+      attempt < this.artifactDownloadRetryCount;
+      attempt += 1
+    ) {
       try {
         const response = await fetch(url);
         if (!response.ok) {
-          const error = new Error(`Artifact download failed: ${response.status} ${response.statusText}`);
-          if ([429, 502, 503, 504].includes(response.status) && attempt < this.artifactDownloadRetryCount - 1) {
+          const error = new Error(
+            `Artifact download failed: ${response.status} ${response.statusText}`
+          );
+          if (
+            [429, 502, 503, 504].includes(response.status) &&
+            attempt < this.artifactDownloadRetryCount - 1
+          ) {
             const delayMs =
               this.artifactDownloadRetryBaseDelayMs * Math.pow(2, attempt);
             await new Promise((resolve) => setTimeout(resolve, delayMs));
@@ -98,7 +114,10 @@ export class ArtifactCacheService {
     };
   }
 
-  private async renderFitsPreview(inputPath: string, outputPath: string): Promise<void> {
+  private async renderFitsPreview(
+    inputPath: string,
+    outputPath: string
+  ): Promise<void> {
     const renderer = this.resolveRendererCommand();
     await this.execFileAsync(
       renderer.command,
@@ -137,18 +156,27 @@ export class ArtifactCacheService {
 
     if (imageProduct.fitsUrl) {
       fitsPath = path.join(this.cacheDir, `${cacheKey}.fits`);
-      writeFileSync(fitsPath, await this.downloadArtifact(imageProduct.fitsUrl));
+      writeFileSync(
+        fitsPath,
+        await this.downloadArtifact(imageProduct.fitsUrl)
+      );
     }
 
     if (needsFitsPrerender) {
       if (!fitsPath) {
         fitsPath = path.join(this.cacheDir, `${cacheKey}.fits`);
-        writeFileSync(fitsPath, await this.downloadArtifact(imageProduct.previewUrl));
+        writeFileSync(
+          fitsPath,
+          await this.downloadArtifact(imageProduct.previewUrl)
+        );
       }
       previewPath = path.join(this.cacheDir, `${cacheKey}.png`);
       await this.renderFitsPreview(fitsPath, previewPath);
     } else {
-      writeFileSync(previewPath, await this.downloadArtifact(imageProduct.previewUrl));
+      writeFileSync(
+        previewPath,
+        await this.downloadArtifact(imageProduct.previewUrl)
+      );
     }
 
     this.artifactCacheIndex.set(imageProduct.id, {
@@ -160,7 +188,9 @@ export class ArtifactCacheService {
     imageProduct.cacheKey = cacheKey;
     imageProduct.cacheStatus = "cached";
     imageProduct.previewUrl = buildArtifactRoute(imageProduct.id, "preview");
-    imageProduct.fitsUrl = fitsPath ? buildArtifactRoute(imageProduct.id, "fits") : null;
+    imageProduct.fitsUrl = fitsPath
+      ? buildArtifactRoute(imageProduct.id, "fits")
+      : null;
 
     return imageProduct;
   }
@@ -169,7 +199,11 @@ export class ArtifactCacheService {
     return this.artifactCacheIndex.get(imageId) ?? null;
   }
 
-  sendBinaryFile(res: Response, filePath: string | null, contentType: string): void {
+  sendBinaryFile(
+    res: Response,
+    filePath: string | null,
+    contentType: string
+  ): void {
     if (!filePath || !existsSync(filePath)) {
       if (!res.headersSent) {
         res.status(404).json({
@@ -181,7 +215,9 @@ export class ArtifactCacheService {
 
     const stat = statSync(filePath);
     const resolvedContentType =
-      path.extname(filePath).toLowerCase() === ".png" ? "image/png" : contentType;
+      path.extname(filePath).toLowerCase() === ".png"
+        ? "image/png"
+        : contentType;
 
     if (!res.headersSent) {
       res.status(200);

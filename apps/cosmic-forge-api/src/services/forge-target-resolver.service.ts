@@ -28,7 +28,9 @@ export class ForgeTargetResolverService {
       };
     }
 
-    const targetUrl = `${SESAME_URL_PREFIX}${encodeURIComponent(normalizedQuery)}`;
+    const targetUrl = `${SESAME_URL_PREFIX}${encodeURIComponent(
+      normalizedQuery
+    )}`;
     try {
       const response = await this.fetchWithTimeout(targetUrl, 5000);
       if (!response.ok) {
@@ -42,7 +44,11 @@ export class ForgeTargetResolverService {
       }
 
       const xml = await response.text();
-      const resolvedTarget = this.parseSesameXml(normalizedQuery, targetUrl, xml);
+      const resolvedTarget = this.parseSesameXml(
+        normalizedQuery,
+        targetUrl,
+        xml
+      );
       if (!resolvedTarget) {
         return {
           status: 404,

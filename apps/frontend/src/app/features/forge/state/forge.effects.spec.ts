@@ -8,7 +8,9 @@ import { ForgeActions } from "./forge.actions";
 import { ForgeEffects } from "./forge.effects";
 
 describe("ForgeEffects", () => {
-  let actions$: ReplaySubject<ReturnType<typeof ForgeActions.createCutoutJobRequested>>;
+  let actions$: ReplaySubject<
+    ReturnType<typeof ForgeActions.createCutoutJobRequested>
+  >;
   let effects: ForgeEffects;
   let forgeApi: jest.Mocked<ForgeApiService>;
 
@@ -46,7 +48,8 @@ describe("ForgeEffects", () => {
               data: null,
               errors: [
                 {
-                  message: "At least one survey must be selected for a Forge cutout job.",
+                  message:
+                    "At least one survey must be selected for a Forge cutout job.",
                   extensions: {
                     code: "FORGE_VALIDATION_ERROR",
                     retryable: false,
