@@ -10,6 +10,7 @@ import {
   inject,
 } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
+import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { BehaviorSubject } from "rxjs";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
@@ -50,6 +51,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   private loadProfile = inject(LoadProfileService);
   private browser = inject(BrowserPlatformService);
   private dom = inject(TopologyDomService);
+  private sanitizer = inject(DomSanitizer);
   private rendererFactory = inject(RendererFactory2);
   private renderer: Renderer2 = this.rendererFactory.createRenderer(null, null);
 
@@ -64,6 +66,13 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   public lastError: string | null = null;
   public topologySource: "live" | "mock" | "unavailable" = "live";
   public hasTopologyData = false;
+  public grafanaDashboardUrl = "";
+  public grafanaDashboardSafeUrl: SafeResourceUrl | null = null;
+  public grafanaDashboardStatus: "loading" | "ready" | "error" = "loading";
+  public grafanaDashboardError: string | null = null;
+  public grafanaDashboardEnabled = true;
+  public grafanaDashboardAccessMode = "local-anonymous";
+  public grafanaDashboardEmbedMode = "direct";
   public showMode: "live" | "max" = "live";
   // throughput aggregate used in header; updated frequently during
   // topology and metrics polling. expose as subject so template updates
@@ -169,6 +178,7 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.loadGrafanaDashboardConfig();
     this.profilePct = this.loadProfile.current;
     this.syncProfileControls(this.profilePct);
     this.profileSub = this.loadProfile.profile$.subscribe((pct) => {
@@ -182,6 +192,76 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     });
+  }
+
+  public loadGrafanaDashboardConfig(): void {
+    this.grafanaDashboardStatus = "loading";
+    this.grafanaDashboardError = null;
+    this.http
+      .get<{
+        GRAFANA_DASHBOARD_URL?: string;
+        GRAFANA_DASHBOARD_ENABLED?: string;
+        GRAFANA_DASHBOARD_ACCESS_MODE?: string;
+        GRAFANA_DASHBOARD_EMBED_MODE?: string;
+      }>("/api/env")
+      .subscribe({
+        next: (env) => {
+          const dashboardUrl = env.GRAFANA_DASHBOARD_URL?.trim();
+          const enabled = env.GRAFANA_DASHBOARD_ENABLED !== "false";
+          const accessMode =
+            env.GRAFANA_DASHBOARD_ACCESS_MODE?.trim() || "local-anonymous";
+          const embedMode =
+            env.GRAFANA_DASHBOARD_EMBED_MODE?.trim() || "direct";
+          this.deferUiUpdate(() => {
+            this.grafanaDashboardEnabled = enabled;
+            this.grafanaDashboardAccessMode = accessMode;
+            this.grafanaDashboardEmbedMode = embedMode;
+            if (!enabled) {
+              this.grafanaDashboardStatus = "error";
+              this.grafanaDashboardError = "Grafana dashboard is disabled.";
+              this.grafanaDashboardUrl = "";
+              this.grafanaDashboardSafeUrl = null;
+              return;
+            }
+            if (!dashboardUrl) {
+              this.grafanaDashboardStatus = "error";
+              this.grafanaDashboardError =
+                "Grafana dashboard URL is not configured.";
+              return;
+            }
+            this.grafanaDashboardUrl = dashboardUrl;
+            this.grafanaDashboardSafeUrl =
+              this.sanitizer.bypassSecurityTrustResourceUrl(dashboardUrl);
+          });
+        },
+        error: () => {
+          this.deferUiUpdate(() => {
+            this.grafanaDashboardStatus = "error";
+            this.grafanaDashboardError =
+              "Grafana dashboard configuration is unavailable.";
+          });
+        },
+      });
+  }
+
+  public onGrafanaDashboardLoad(): void {
+    if (this.grafanaDashboardSafeUrl) {
+      this.grafanaDashboardStatus = "ready";
+      this.grafanaDashboardError = null;
+    }
+  }
+
+  public onGrafanaDashboardError(): void {
+    this.grafanaDashboardStatus = "error";
+    this.grafanaDashboardError = "Grafana dashboard failed to load.";
+  }
+
+  public openGrafanaDashboard(): void {
+    const browserWindow = this.browser.window;
+    if (!browserWindow || !this.grafanaDashboardUrl) {
+      return;
+    }
+    browserWindow.open(this.grafanaDashboardUrl, "_blank", "noopener");
   }
 
   private getLinkKey(l: TopoLink): string {

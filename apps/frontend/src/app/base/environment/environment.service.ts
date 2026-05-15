@@ -10,6 +10,10 @@ export interface AppEnv {
   PNPM_STORE_DIR?: string;
   KAFKA_BROKER?: string;
   RABBITMQ_URL?: string;
+  GRAFANA_DASHBOARD_URL?: string;
+  GRAFANA_DASHBOARD_ENABLED?: string;
+  GRAFANA_DASHBOARD_ACCESS_MODE?: string;
+  GRAFANA_DASHBOARD_EMBED_MODE?: string;
 }
 
 @Injectable({ providedIn: "root" })

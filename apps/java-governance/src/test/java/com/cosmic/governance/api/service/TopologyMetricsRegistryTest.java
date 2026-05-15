@@ -165,7 +165,7 @@ class TopologyMetricsRegistryTest {
     }
 
     @Test
-    void structurallyDerivedLinksRemainDerivedEvenWithFullPrometheusInfrastructure() {
+    void monitoredInfrastructureLinksBecomePrometheusWhenInfrastructureIsObserved() {
         Map<String, Object> infrastructureSnapshot = Map.of(
                 "services",
                 Map.ofEntries(
@@ -186,6 +186,8 @@ class TopologyMetricsRegistryTest {
                                 new SimpleEntry<>("avgLatencyMs", 4.0d)
                         )),
                         new SimpleEntry<>("kafka", Map.of("source", "prometheus", "ingressBytesPerSec", 2048.0d, "egressBytesPerSec", 1024.0d)),
+                        new SimpleEntry<>("grafana", Map.of("source", "prometheus")),
+                        new SimpleEntry<>("loki", Map.of("source", "prometheus")),
                         new SimpleEntry<>("governanceRuntime", Map.ofEntries(
                                 new SimpleEntry<>("source", "prometheus"),
                                 new SimpleEntry<>("redisReadBytesPerSec", 128.0d), new SimpleEntry<>("redisWriteBytesPerSec", 64.0d),
@@ -203,13 +205,12 @@ class TopologyMetricsRegistryTest {
         @SuppressWarnings("unchecked")
         Map<String, Map<String, Object>> links = (Map<String, Map<String, Object>>) registry.snapshot().get("links");
 
-        // These three links are set via setLink() not setMeasuredOrDerivedLink() — they must never become prometheus
-        assertThat(links.get("zookeeper->kafka")).containsEntry("source", "derived");
-        assertThat(links.get("prom->grafana")).containsEntry("source", "derived");
-        assertThat(links.get("loki->grafana")).containsEntry("source", "derived");
-        assertThat(links.get("zookeeper->kafka")).containsEntry("measurementPath", "derived-model");
-        assertThat(links.get("prom->grafana")).containsEntry("measurementPath", "derived-model");
-        assertThat(links.get("loki->grafana")).containsEntry("measurementPath", "derived-model");
+        assertThat(links.get("zookeeper->kafka")).containsEntry("source", "prometheus");
+        assertThat(links.get("prom->grafana")).containsEntry("source", "prometheus");
+        assertThat(links.get("loki->grafana")).containsEntry("source", "prometheus");
+        assertThat(links.get("zookeeper->kafka")).containsEntry("measurementPath", "infrastructure-snapshot");
+        assertThat(links.get("prom->grafana")).containsEntry("measurementPath", "infrastructure-snapshot");
+        assertThat(links.get("loki->grafana")).containsEntry("measurementPath", "infrastructure-snapshot");
     }
 
     @Test
@@ -255,7 +256,10 @@ class TopologyMetricsRegistryTest {
                         new SimpleEntry<>("rabbitmq", Map.of("source", "prometheus", "publishRatePerSec", 0.0d, "deliverRatePerSec", 0.0d)),
                         new SimpleEntry<>("redis", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
                         new SimpleEntry<>("minio", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
-                        new SimpleEntry<>("pulsar", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d))
+                        new SimpleEntry<>("pulsar", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
+                        new SimpleEntry<>("kafka", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
+                        new SimpleEntry<>("grafana", Map.of("source", "prometheus")),
+                        new SimpleEntry<>("loki", Map.of("source", "prometheus"))
                 )
         );
 
@@ -264,7 +268,7 @@ class TopologyMetricsRegistryTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> diagnostics = (Map<String, Object>) registry.snapshot().get("diagnostics");
 
-        assertThat(diagnostics.get("structuralDerivedLinkCount")).isEqualTo(3);
+        assertThat(diagnostics.get("structuralDerivedLinkCount")).isEqualTo(0);
         assertThat(diagnostics.get("fallbackDerivedLinkCount")).isEqualTo(0);
         @SuppressWarnings("unchecked")
         List<String> fallbackDerivedLinks = (List<String>) diagnostics.get("fallbackDerivedLinks");

@@ -22,7 +22,7 @@ import java.util.Set;
 @Service
 public class TopologyMetricsRegistry {
     private static final Logger log = LoggerFactory.getLogger(TopologyMetricsRegistry.class);
-    private static final Set<String> STRUCTURALLY_DERIVED_LINKS = Set.of(
+    private static final Set<String> MONITORED_INFRASTRUCTURE_LINKS = Set.of(
             "zookeeper->kafka",
             "prom->grafana",
             "loki->grafana"
@@ -491,7 +491,14 @@ public class TopologyMetricsRegistry {
                 pulsarIngestLatencyMs > 0.0d ? pulsarIngestLatencyMs : 19 + queuePressure * 14,
                 pulsarIngestErrorPct >= 0.0d ? pulsarIngestErrorPct : 0.03d + failurePressure * 0.12d
         );
-        setLink("zookeeper->kafka", 100, 3 + runtimeProfile.workers * 1.2d, 8 + queuePressure * 4, 0.01d);
+        setMonitoredInfrastructureLink(
+                "zookeeper->kafka",
+                100,
+                3 + runtimeProfile.workers * 1.2d,
+                8 + queuePressure * 4,
+                0.01d,
+                infrastructure.kafkaObserved()
+        );
         setMeasuredOrDerivedLink(
                 "rabbitmq->java-governance",
                 260,
@@ -549,7 +556,14 @@ public class TopologyMetricsRegistry {
                 javaIngestErrorPct >= 0.0d ? javaIngestErrorPct : 0.03d + failurePressure * 0.10d
         );
 
-        setLink("prom->grafana", 120, 8 + loadScale * 6, 10 + loadScale * 4, 0.01d);
+        setMonitoredInfrastructureLink(
+                "prom->grafana",
+                120,
+                8 + loadScale * 6,
+                10 + loadScale * 4,
+                0.01d,
+                infrastructure.grafanaObserved()
+        );
         setMeasuredOrDerivedLink(
                 "prom->alertmanager",
                 80,
@@ -560,7 +574,14 @@ public class TopologyMetricsRegistry {
                         : 12 + failurePressure * 9,
                 promAlertmanagerErrorPct >= 0.0d ? promAlertmanagerErrorPct : 0.01d
         );
-        setLink("loki->grafana", 100, 5 + runningPressure * 10, 11 + runningPressure * 6, 0.01d);
+        setMonitoredInfrastructureLink(
+                "loki->grafana",
+                100,
+                5 + runningPressure * 10,
+                11 + runningPressure * 6,
+                0.01d,
+                infrastructure.lokiObserved() && infrastructure.grafanaObserved()
+        );
 
         setMeasuredOrDerivedLink(
                 "array-main->minio",
@@ -683,6 +704,21 @@ public class TopologyMetricsRegistry {
         telemetry.metricSource = "derived";
     }
 
+    private void setMonitoredInfrastructureLink(
+            String key,
+            double maxMBps,
+            double currentMBps,
+            double latencyMs,
+            double errorRatePct,
+            boolean observed
+    ) {
+        setLink(key, maxMBps, currentMBps, latencyMs, errorRatePct);
+        LinkTelemetry telemetry = links.get(key);
+        if (telemetry != null && observed) {
+            telemetry.metricSource = "prometheus";
+        }
+    }
+
     private void setMeasuredOrDerivedLink(
             String key,
             double maxMBps,
@@ -713,7 +749,7 @@ public class TopologyMetricsRegistry {
                     "latencyMs", round2(telemetry.latencyMs),
                     "errorRatePct", round2(telemetry.errorRatePct),
                     "confidencePct", confidencePct(telemetry),
-                    "measurementPath", measurementPath(telemetry.key()),
+                    "measurementPath", measurementPath(telemetry),
                     "transport", telemetry.transport,
                     "source", telemetry.metricSource
             ));
@@ -730,12 +766,12 @@ public class TopologyMetricsRegistry {
         Map<String, Integer> measurementPathCounts = new LinkedHashMap<>();
 
         for (LinkTelemetry telemetry : links.values()) {
-            measurementPathCounts.merge(measurementPath(telemetry.key()), 1, Integer::sum);
+            measurementPathCounts.merge(measurementPath(telemetry), 1, Integer::sum);
             switch (telemetry.metricSource) {
                 case "prometheus" -> measuredLinks.add(telemetry.key());
                 case "admin" -> adminLinks.add(telemetry.key());
                 case "derived" -> {
-                    if (STRUCTURALLY_DERIVED_LINKS.contains(telemetry.key())) {
+                    if (MONITORED_INFRASTRUCTURE_LINKS.contains(telemetry.key())) {
                         structuralDerivedLinks.add(telemetry.key());
                     } else {
                         fallbackDerivedLinks.add(telemetry.key());
@@ -762,9 +798,10 @@ public class TopologyMetricsRegistry {
         return diagnostics;
     }
 
-    private String measurementPath(String key) {
-        if (STRUCTURALLY_DERIVED_LINKS.contains(key)) {
-            return "derived-model";
+    private String measurementPath(LinkTelemetry telemetry) {
+        String key = telemetry.key();
+        if (MONITORED_INFRASTRUCTURE_LINKS.contains(key)) {
+            return "prometheus".equals(telemetry.metricSource) ? "infrastructure-snapshot" : "derived-model";
         }
         return switch (key) {
             case "data-generator->pulsar", "pulsar->kafka" -> "infrastructure-snapshot";
@@ -1001,6 +1038,10 @@ public class TopologyMetricsRegistry {
                     serviceCurrentMBps((Map<String, Object>) services.get("frontendSsr"), "frontend-prometheus-proxy"),
                     serviceLatencyMs((Map<String, Object>) services.get("frontendSsr"), "frontend-prometheus-proxy"),
                     serviceCurrentMBps((Map<String, Object>) services.get("kafka"), "kafka-ingress"),
+                    serviceObserved((Map<String, Object>) services.get("kafka")),
+                    serviceObserved((Map<String, Object>) services.get("grafana")),
+                    serviceObserved((Map<String, Object>) services.get("loki")),
+                    serviceObserved((Map<String, Object>) services.get("prometheus")),
                     serviceCurrentMBps((Map<String, Object>) services.get("dataGenerator"), "data-generator-array-main"),
                     serviceCurrentMBps((Map<String, Object>) services.get("dataGenerator"), "data-generator-array-lbl"),
                     serviceCurrentMBps((Map<String, Object>) services.get("dataGenerator"), "data-generator-array-sba"),
@@ -1074,6 +1115,10 @@ public class TopologyMetricsRegistry {
             case "alertmanager" -> toMBps(toDouble(service.get("egressBytesPerSec")));
             default -> -1.0d;
         };
+    }
+
+    private boolean serviceObserved(Map<String, Object> service) {
+        return service != null && "prometheus".equals(String.valueOf(service.get("source")));
     }
 
     private double preferMeasured(double preferred, double fallback) {
@@ -1321,6 +1366,10 @@ public class TopologyMetricsRegistry {
             double backendPromCurrentMBps,
             double backendPromLatencyMs,
             double dataGeneratorKafkaCurrentMBps,
+            boolean kafkaObserved,
+            boolean grafanaObserved,
+            boolean lokiObserved,
+            boolean prometheusObserved,
             double dataGeneratorArrayMainCurrentMBps,
             double dataGeneratorArrayLblCurrentMBps,
             double dataGeneratorArraySbaCurrentMBps,
@@ -1336,9 +1385,10 @@ public class TopologyMetricsRegistry {
                     -1.0d, -1.0d, -1.0d, -1.0d,
                     -1.0d, -1.0d, -1.0d, -1.0d,
                     -1.0d, -1.0d, -1.0d, -1.0d,
-                    -1.0d, -1.0d, -1.0d, -1.0d,
                     -1.0d, -1.0d, -1.0d,
-                    -1.0d, -1.0d, -1.0d
+                    false, false, false, false,
+                    -1.0d, -1.0d, -1.0d,
+                    -1.0d, -1.0d, -1.0d, -1.0d
             );
         }
     }

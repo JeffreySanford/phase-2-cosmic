@@ -12,6 +12,8 @@ import {
   Res,
   Injectable,
   All,
+  Inject,
+  Optional,
 } from "@nestjs/common";
 import { ExecutionPlansController } from "./src/app/controllers/execution-plans.controller";
 import { RuntimeLoadProfileService } from "./src/app/services/runtime-load-profile.service";
@@ -778,6 +780,11 @@ class SsrService {
   }
 
   getPublicEnv() {
+    const defaultGrafanaDashboardUrl =
+      "http://localhost:3000/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk";
+    const defaultGrafanaDashboardEnabled = "true";
+    const defaultGrafanaDashboardAccessMode = "local-anonymous";
+    const defaultGrafanaDashboardEmbedMode = "direct";
     const allowed = [
       "NODE_ENV",
       "PORT",
@@ -786,11 +793,23 @@ class SsrService {
       "PNPM_STORE_DIR",
       "KAFKA_BROKER",
       "RABBITMQ_URL",
+      "GRAFANA_DASHBOARD_URL",
+      "GRAFANA_DASHBOARD_ENABLED",
+      "GRAFANA_DASHBOARD_ACCESS_MODE",
+      "GRAFANA_DASHBOARD_EMBED_MODE",
     ];
     const out: Record<string, string> = {};
     allowed.forEach((k) => {
       if (process.env[k] !== undefined) out[k] = process.env[k] as string;
     });
+    out["GRAFANA_DASHBOARD_URL"] =
+      out["GRAFANA_DASHBOARD_URL"] || defaultGrafanaDashboardUrl;
+    out["GRAFANA_DASHBOARD_ENABLED"] =
+      out["GRAFANA_DASHBOARD_ENABLED"] || defaultGrafanaDashboardEnabled;
+    out["GRAFANA_DASHBOARD_ACCESS_MODE"] =
+      out["GRAFANA_DASHBOARD_ACCESS_MODE"] || defaultGrafanaDashboardAccessMode;
+    out["GRAFANA_DASHBOARD_EMBED_MODE"] =
+      out["GRAFANA_DASHBOARD_EMBED_MODE"] || defaultGrafanaDashboardEmbedMode;
     return out;
   }
 
@@ -913,7 +932,9 @@ class SsrService {
 @Controller()
 export class AppController {
   constructor(
-    private ssr: SsrService,
+    @Inject(SsrService) private ssr: SsrService,
+    @Optional()
+    @Inject(RuntimeLoadProfileService)
     private runtimeLoad: RuntimeLoadProfileService | undefined,
     private readonly forgeProxyService: ForgeProxyService = new ForgeProxyService(),
     private readonly governanceUpstreamService: GovernanceUpstreamService = new GovernanceUpstreamService(),

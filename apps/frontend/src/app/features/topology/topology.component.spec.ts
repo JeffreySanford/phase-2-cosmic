@@ -74,6 +74,15 @@ describe("TopologyComponent", () => {
   afterEach(() => {
     // some tests trigger a metrics request that isn't explicitly flushed;
     // clear any lingering requests so verify() doesn't complain.
+    httpMock.match("/api/env").forEach((req) =>
+      req.flush({
+        GRAFANA_DASHBOARD_URL:
+          "http://localhost:3000/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk",
+        GRAFANA_DASHBOARD_ENABLED: "true",
+        GRAFANA_DASHBOARD_ACCESS_MODE: "local-anonymous",
+        GRAFANA_DASHBOARD_EMBED_MODE: "direct",
+      })
+    );
     httpMock.match("/api/metrics/topology").forEach((req) => req.flush({}));
     httpMock.verify();
     matDialog.open.mockReset();
@@ -150,6 +159,58 @@ describe("TopologyComponent", () => {
     expect(component.timingDriftNs).toBe(0);
     expect(component.rfiEventRate).toBe(0);
     // ensure timers cleared
+    tick();
+  }));
+
+  it("loads the Grafana dashboard URL from runtime environment config", fakeAsync(() => {
+    httpMock.expectOne("/api/env").flush({
+      GRAFANA_DASHBOARD_URL:
+        "http://localhost:3000/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk",
+      GRAFANA_DASHBOARD_ENABLED: "true",
+      GRAFANA_DASHBOARD_ACCESS_MODE: "local-anonymous",
+      GRAFANA_DASHBOARD_EMBED_MODE: "direct",
+    });
+    tick();
+    fixture.detectChanges();
+
+    expect(component.grafanaDashboardEnabled).toBe(true);
+    expect(component.grafanaDashboardUrl).toContain("phase2-topology-ops");
+    expect(component.grafanaDashboardSafeUrl).toBeTruthy();
+    expect(component.grafanaDashboardStatus).toBe("loading");
+    expect(component.grafanaDashboardAccessMode).toBe("local-anonymous");
+    expect(component.grafanaDashboardEmbedMode).toBe("direct");
+
+    component.onGrafanaDashboardLoad();
+    expect(component.grafanaDashboardStatus).toBe("ready");
+
+    flushLiveTopology({ nodes: [], links: [] }, {});
+    component["stopLivePoll"]();
+    tick();
+  }));
+
+  it("hides the Grafana dashboard tab when runtime config disables it", fakeAsync(() => {
+    httpMock.expectOne("/api/env").flush({
+      GRAFANA_DASHBOARD_ENABLED: "false",
+      GRAFANA_DASHBOARD_ACCESS_MODE: "production-proxy",
+      GRAFANA_DASHBOARD_EMBED_MODE: "proxy",
+    });
+    tick();
+    fixture.detectChanges();
+
+    expect(component.grafanaDashboardEnabled).toBe(false);
+    expect(component.grafanaDashboardSafeUrl).toBeNull();
+    expect(component.grafanaDashboardStatus).toBe("error");
+    expect(component.grafanaDashboardError).toBe(
+      "Grafana dashboard is disabled."
+    );
+    expect(component.grafanaDashboardAccessMode).toBe("production-proxy");
+    expect(component.grafanaDashboardEmbedMode).toBe("proxy");
+    expect(fixture.nativeElement.textContent).not.toContain(
+      "Metrics Dashboard"
+    );
+
+    flushLiveTopology({ nodes: [], links: [] }, {});
+    component["stopLivePoll"]();
     tick();
   }));
 
