@@ -185,7 +185,10 @@ log "[start-all] Ensuring Redis is ready and precaching sample data..."
 if [ -x "$(command -v bash)" ]; then
 	# run precache (script handles locating/starting redis)
 	log "[start-all] running redis-precache.sh"
-	bash "$REPO_ROOT/scripts/redis-precache.sh" || log "[start-all] redis-precache step failed (ignored)"
+	(
+		cd "$REPO_ROOT"
+		bash ./scripts/redis-precache.sh
+	) || log "[start-all] redis-precache step failed (ignored)"
 else
 	log "[start-all] bash not available; skipping redis precache"
 fi
@@ -388,7 +391,7 @@ stage "Launching Background Services"
 start_bg "allocator" node "$REPO_ROOT/tools/trident-allocator/server.js"
 start_bg "forge-api" env FORGE_API_HOST_PORT="$FORGE_API_HOST_PORT" PORT="$FORGE_API_HOST_PORT" node "$REPO_ROOT/node_modules/tsx/dist/cli.mjs" --tsconfig "$REPO_ROOT/apps/cosmic-forge-api/tsconfig.app.json" "$REPO_ROOT/apps/cosmic-forge-api/src/main.ts"
 start_bg "forge-worker" env PORT="$FORGE_WORKER_HOST_PORT" FORGE_WORKER_HOST_PORT="$FORGE_WORKER_HOST_PORT" FORGE_API_URL="http://127.0.0.1:$FORGE_API_HOST_PORT" node "$REPO_ROOT/node_modules/tsx/dist/cli.mjs" --tsconfig "$REPO_ROOT/apps/cosmic-forge-worker/tsconfig.app.json" "$REPO_ROOT/apps/cosmic-forge-worker/src/main.ts"
-start_bg "ssr" sanitize_windows_env env FRONTEND_PORT="$FRONTEND_PORT" PORT="$FRONTEND_PORT" FORGE_API_URL="http://127.0.0.1:$FORGE_API_HOST_PORT" USE_EMBEDDED_E2E_BACKEND="false" powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; node '.\\node_modules\\tsx\\dist\\cli.mjs' --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts"
+start_bg "ssr" sanitize_windows_env env FRONTEND_PORT="$FRONTEND_PORT" PORT="$FRONTEND_PORT" FORGE_API_URL="http://127.0.0.1:$FORGE_API_HOST_PORT" USE_EMBEDDED_E2E_BACKEND="false" powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; node '.\\node_modules\\tsx\\dist\\cli.mjs' --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts"
 start_bg "frontend" sanitize_windows_env env NX_DAEMON="false" powershell.exe -NoProfile -Command "Set-Location '$WIN_REPO_ROOT'; Set-Item Env:NX_DAEMON false; pnpm nx serve frontend --port=4200 --host=127.0.0.1"
 
 log "[start-all] Background services launched: allocator, forge-api, forge-worker, ssr, frontend"

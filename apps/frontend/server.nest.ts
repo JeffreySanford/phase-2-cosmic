@@ -2564,6 +2564,12 @@ async function bootstrap() {
       const vite = await createServer({
         root: process.cwd(),
         logLevel: "error",
+        optimizeDeps: {
+          exclude: ["fsevents"],
+        },
+        ssr: {
+          external: ["fsevents"],
+        },
         server: { middlewareMode: true as any },
       });
       // Ensure API routes are handled by Nest: skip vite middleware for /api/* to avoid proxy loops

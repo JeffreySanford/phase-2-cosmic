@@ -642,7 +642,10 @@ fi
 
 # Run redis precache script
 if [ -x "$REPO_ROOT/scripts/redis-precache.sh" ]; then
-  if bash "$REPO_ROOT/scripts/redis-precache.sh" >> "$LOG_FILE" 2>&1; then
+  if (
+    cd "$REPO_ROOT"
+    bash ./scripts/redis-precache.sh
+  ) >> "$LOG_FILE" 2>&1; then
     substep_success "All services started and Redis precached"
   else
     substep_warning "Services started but Redis precache failed (continuing)"
@@ -820,7 +823,7 @@ fi
 # start allocator simulator along with SSR and frontend dev server
 node "$CONCURRENTLY_JS" --kill-others-on-fail \
   "powershell.exe -NoProfile -Command \"Set-Location '$WIN_REPO_ROOT'; node ./tools/trident-allocator/server.js\"" \
-  "powershell.exe -NoProfile -Command \"Set-Location '$WIN_REPO_ROOT'; node '$WIN_TSX_CLI_JS' --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts\"" \
+  "powershell.exe -NoProfile -Command \"Set-Location '$WIN_REPO_ROOT'; node '$WIN_TSX_CLI_JS' --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts\"" \
   "cmd.exe /d /s /c \"cd /d $WIN_REPO_ROOT && set NX_DAEMON=false&& pnpm nx serve frontend\"" 2>&1 | tee -a "$LOG_FILE"
 
 log "[start-all-reset] dev servers stopped"
