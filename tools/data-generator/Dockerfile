@@ -12,4 +12,4 @@ RUN chmod +x /usr/local/bin/data-generator /usr/local/bin/collect-system-specs.s
 WORKDIR /var/lib/data-generator
 VOLUME ["/var/lib/data-generator/logs"]
 EXPOSE 9100
-CMD ["bash","-lc","/usr/local/bin/collect-system-specs.sh || true; /usr/local/bin/data-generator --metrics-addr=:9100 --no-stdout --sink=file:/var/lib/data-generator/logs/payloads.bin"]
+CMD ["bash","-lc","/usr/local/bin/collect-system-specs.sh || true; /usr/local/bin/data-generator --metrics-addr=:9100 --no-stdout --sink=kafka:kafka:9092/phase2-events"]

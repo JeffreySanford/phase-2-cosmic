@@ -19,6 +19,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/segmentio/kafka-go"
 )
 
 var (
@@ -66,6 +67,12 @@ func main() {
 		fmt.Fprintf(os.Stderr, "invalid segment distribution: %v\n", err)
 		os.Exit(1)
 	}
+	// Log the segments being simulated
+	segmentNames := make([]string, 0, len(segments))
+	for _, s := range segments {
+		segmentNames = append(segmentNames, fmt.Sprintf("%s (weight %d)", s.name, s.weight))
+	}
+	log.Printf("Simulating segments: %s", strings.Join(segmentNames, ", "))
 
 	// Start metrics server
 	mux := http.NewServeMux()
@@ -88,6 +95,7 @@ func main() {
 	var auditPath string
 	var recordCounter int64
 	var rotateThreshold int64
+	var kafkaWriter *kafka.Writer
 	if strings.HasPrefix(*sinkFlag, "file:") {
 		path := strings.TrimPrefix(*sinkFlag, "file:")
 		sinkPath = path
@@ -123,6 +131,25 @@ func main() {
 			_ = sinkFile.Sync()
 			_ = sinkFile.Close()
 		}()
+	} else if strings.HasPrefix(*sinkFlag, "kafka:") {
+		// Format: kafka:<broker>:<port>/<topic>
+		kafkaUri := strings.TrimPrefix(*sinkFlag, "kafka:")
+		parts := strings.SplitN(kafkaUri, "/", 2)
+		if len(parts) != 2 {
+			fmt.Fprintf(os.Stderr, "invalid kafka sink, must be kafka:<broker>:<port>/<topic>\n")
+			os.Exit(1)
+		}
+		broker := parts[0]
+		topic := parts[1]
+		kafkaWriter = &kafka.Writer{
+			Addr:     kafka.TCP(broker),
+			Topic:    topic,
+			Balancer: &kafka.LeastBytes{},
+		}
+		defer kafkaWriter.Close()
+		// Use kafkaWriter as sinkWriter
+		sinkWriter = nil // handled separately in main loop
+		log.Printf("Kafka sink enabled: broker=%s topic=%s", broker, topic)
 	}
 
 	// helper to rotate sink and audit files when threshold is exceeded
@@ -194,25 +221,33 @@ func main() {
 			recordSegments := allocateSegments(records, segments)
 			for i := 0; i < records; i++ {
 				segment := recordSegments[i]
-				payload := make([]byte, *payloadSize)
-				_, _ = rand.Read(payload)
-				// write to configured sink (file) or stdout depending on flags
+				// Build valid JSON payload matching backend schema
+				traceId := fmt.Sprintf("trace-%s-%03d", time.Now().Format("20060102"), rand.Intn(1000))
+				jsonPayload := fmt.Sprintf(`{"source":"%s","eventType":"telemetry.batch","payloadBytes":%d,"traceId":"%s"}`,
+					segment, *payloadSize, traceId)
+				payloadBytes := []byte(jsonPayload)
 				if sinkWriter != nil {
-					_, _ = sinkWriter.Write(payload)
-					// write an English audit line for each record (human-readable)
+					_, _ = sinkWriter.Write(payloadBytes)
 					if auditWriter != nil {
 						recordCounter++
 						if *auditEvery <= 1 || (recordCounter%int64(*auditEvery) == 0) {
 							ts := time.Now().UTC().Format(time.RFC3339)
-							fmt.Fprintf(auditWriter, "%s wrote %d bytes to %s (record %d)\n", ts, len(payload), filepath.Base(strings.TrimPrefix(*sinkFlag, "file:")), recordCounter)
+							fmt.Fprintf(auditWriter, "%s wrote %d bytes to %s (record %d, segment %s)\n", ts, len(payloadBytes), filepath.Base(strings.TrimPrefix(*sinkFlag, "file:")), recordCounter, segment)
 						}
 					}
+				} else if kafkaWriter != nil {
+					err := kafkaWriter.WriteMessages(context.Background(), kafka.Message{Value: payloadBytes})
+					if err != nil {
+						log.Printf("Kafka write error: %v (segment: %s)", err, segment)
+					} else {
+						log.Printf("Kafka write success: %d bytes sent to topic (segment: %s)", len(payloadBytes), segment)
+					}
 				} else if !*noStdout {
-					_, _ = os.Stdout.Write(payload)
+					_, _ = os.Stdout.Write(payloadBytes)
 				}
-				bytesProduced.Add(float64(len(payload)))
+				bytesProduced.Add(float64(len(payloadBytes)))
 				recordsProduced.Inc()
-				bytesProducedBySegment.WithLabelValues(segment).Add(float64(len(payload)))
+				bytesProducedBySegment.WithLabelValues(segment).Add(float64(len(payloadBytes)))
 				recordsProducedBySegment.WithLabelValues(segment).Inc()
 			}
 			// check for rotation after writing this second's payloads
