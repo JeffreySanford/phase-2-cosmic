@@ -34,7 +34,7 @@ public class SimulatorExecutor implements JobExecutor {
     private final RedisMarshaller marshaller;
     private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
     @Value("${executor.network.enabled:false}")
-    private boolean networkEnabled = false;
+    private boolean networkEnabled;
 
     public SimulatorExecutor(@Autowired RedisMarshaller marshaller,
                              @Autowired GovernanceRuntimeMetricsService governanceRuntimeMetricsService) {
@@ -136,7 +136,7 @@ public class SimulatorExecutor implements JobExecutor {
                                 java.util.List<Map<String,Object>> sampleRows = new ArrayList<>();
                                 if (body != null && body.contains("<VOTABLE")) {
                                     // parse VOTable (simple DOM parse of first TABLE)
-                                    Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(body)));
+                                    Document doc = secureDocumentBuilderFactory().newDocumentBuilder().parse(new InputSource(new StringReader(body)));
                                     NodeList fieldNodes = doc.getElementsByTagName("FIELD");
                                     for (int i=0;i<fieldNodes.getLength();i++) {
                                         Element f = (Element) fieldNodes.item(i);
@@ -271,6 +271,17 @@ public class SimulatorExecutor implements JobExecutor {
         } catch (Exception ignored) {
             return 1;
         }
+    }
+
+    private static DocumentBuilderFactory secureDocumentBuilderFactory() throws javax.xml.parsers.ParserConfigurationException {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        dbf.setXIncludeAware(false);
+        dbf.setExpandEntityReferences(false);
+        return dbf;
     }
 
     private Object readRedisValue(RedisTemplate<String, Object> redisTemplate, String key) {

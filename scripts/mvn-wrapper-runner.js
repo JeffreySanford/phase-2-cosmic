@@ -21,13 +21,14 @@ function exists(p) {
 }
 
 function runSync(cmd, cmdArgs, options = {}) {
-  const useShell = options.shell ?? false;
-  const r = spawnSync(cmd, cmdArgs, { stdio: "inherit", shell: useShell });
+  // nosemgrep: javascript.lang.security.detect-child-process.detect-child-process
+  const r = spawnSync(cmd, cmdArgs, { stdio: "inherit" });
   process.exit(r.status ?? 1);
 }
 
 function runCapture(cmd, cmdArgs) {
   try {
+    // nosemgrep: javascript.lang.security.detect-child-process.detect-child-process
     const r = spawnSync(cmd, cmdArgs, { encoding: "utf8" });
     if (r.status !== 0) return null;
     return (r.stdout || "").toString().trim();
@@ -126,7 +127,7 @@ if (isJavaGovernanceTest || useCompose) {
     "network:",
     networkArg ? networkArg[1] : "(default)"
   );
-  runSync("docker", dockerCmd, { shell: false });
+  runSync("docker", dockerCmd);
 }
 
 // Prefer project-local mvnw (Unix or Windows)
@@ -139,12 +140,12 @@ if (exists(mvnwUnix) || exists(mvnwWin)) {
 
 // Next, prefer system mvn
 try {
-  const probe = spawnSync("mvn", ["-v"], {
+  const mvnCommand = process.platform === "win32" ? "mvn.cmd" : "mvn";
+  const probe = spawnSync(mvnCommand, ["-v"], {
     stdio: "ignore",
-    shell: process.platform === "win32",
   });
   if (probe.status === 0) {
-    runSync("mvn", args);
+    runSync(mvnCommand, args);
   }
 } catch (e) {
   // continue to docker fallback
@@ -164,4 +165,4 @@ const dockerCmdFinal = [
 ];
 
 console.log("No local mvnw/mvn found — running Maven in Docker:", dockerImage);
-runSync("docker", dockerCmdFinal, { shell: true });
+runSync("docker", dockerCmdFinal);

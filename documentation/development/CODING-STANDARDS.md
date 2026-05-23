@@ -224,11 +224,10 @@ security issues survive into production because someone was tired, rushed, or fe
 - **Languages covered**: Java, Go, Python, JavaScript/TypeScript (all in a single scan).
 - **Cost**: Completely free. Uses public registry rulesets (`r/java`, `r/go`, `r/python`, `r/javascript`) — no account or API key required.
 - **CI**: Runs in `build-and-test` via `pip install semgrep` + `semgrep scan`. Fails only on `ERROR`-severity findings (security bugs), not `WARNING`-level style suggestions.
-- **Local**: `pnpm run analyze:semgrep` — gracefully skips if semgrep is not installed.
+- **Local**: `pnpm run analyze:semgrep` — runs Semgrep in Docker by default, so no local Semgrep/Python install is required.
 
   ```bash
-  pip install semgrep          # install
-  pnpm run analyze:semgrep     # run across all languages
+  pnpm run analyze:semgrep     # run across all languages in Docker
   ```
 
 ### Quality gates summary

@@ -15,24 +15,29 @@ function timestamp() {
 }
 
 function usage() {
-  console.error('Usage: node tools/run-with-logs.js "<command>" [log-prefix]');
+  console.error(
+    'Usage: node tools/run-with-logs.js "<command>" [args...] [log-prefix]'
+  );
   process.exit(2);
 }
 
 const argv = process.argv.slice(2);
 if (!argv[0]) usage();
-const command = argv[0];
-const prefix = argv[1] || "start-all-reset";
+const prefix = argv.length > 1 ? argv[argv.length - 1] : "start-all-reset";
+const commandParts =
+  argv.length > 2 ? argv.slice(0, -1) : argv[0].split(/\s+/).filter(Boolean);
+const command = commandParts[0];
+const commandArgs = commandParts.slice(1);
 
 const logsDir = path.join(process.cwd(), "logs");
 if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 const logfile = path.join(logsDir, `${prefix}-${timestamp()}.log`);
 const out = fs.createWriteStream(logfile, { flags: "a" });
 
-console.log(`Running: ${command}`);
+console.log(`Running: ${[command, ...commandArgs].join(" ")}`);
 console.log(`Logging to: ${logfile}`);
 
-const child = spawn(command, { shell: true });
+const child = spawn(command, commandArgs);
 
 child.stdout.on("data", (chunk) => {
   process.stdout.write(chunk);
