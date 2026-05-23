@@ -1,10 +1,10 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "ui-theme": ["libs/ui-theme/src/index.ts"]
     },
+    "baseUrl": ".",
     "rootDir": "./",
     "sourceMap": true,
     "declaration": false,

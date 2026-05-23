@@ -235,6 +235,7 @@ services:
       - DIAG_RUN=false
       # optional: set DIAG_IPERF_TARGET to run iperf3 client when DIAG_RUN=true
       - DIAG_IPERF_TARGET=
+      - SEGMENT_DISTRIBUTION=main:48,lbl:24,sba:21
     depends_on:
       - kafka
       - prometheus

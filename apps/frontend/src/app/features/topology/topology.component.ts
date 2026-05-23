@@ -230,8 +230,11 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
               return;
             }
             this.grafanaDashboardUrl = dashboardUrl;
-            this.grafanaDashboardSafeUrl =
-              this.sanitizer.bypassSecurityTrustResourceUrl(dashboardUrl);
+            // Fix ExpressionChangedAfterItHasBeenCheckedError by deferring assignment
+            setTimeout(() => {
+              this.grafanaDashboardSafeUrl =
+                this.sanitizer.bypassSecurityTrustResourceUrl(dashboardUrl);
+            });
           });
         },
         error: () => {
