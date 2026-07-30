@@ -77,7 +77,7 @@ describe("TopologyComponent", () => {
     httpMock.match("/api/env").forEach((req) =>
       req.flush({
         GRAFANA_DASHBOARD_URL:
-          "http://localhost:3000/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk",
+          "http://localhost:3005/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk",
         GRAFANA_DASHBOARD_ENABLED: "true",
         GRAFANA_DASHBOARD_ACCESS_MODE: "local-anonymous",
         GRAFANA_DASHBOARD_EMBED_MODE: "direct",
@@ -165,7 +165,7 @@ describe("TopologyComponent", () => {
   it("loads the Grafana dashboard URL from runtime environment config", fakeAsync(() => {
     httpMock.expectOne("/api/env").flush({
       GRAFANA_DASHBOARD_URL:
-        "http://localhost:3000/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk",
+        "http://localhost:3005/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk",
       GRAFANA_DASHBOARD_ENABLED: "true",
       GRAFANA_DASHBOARD_ACCESS_MODE: "local-anonymous",
       GRAFANA_DASHBOARD_EMBED_MODE: "direct",

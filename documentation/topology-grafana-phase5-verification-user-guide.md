@@ -18,14 +18,14 @@ Expected local URLs:
 | ----------------- | -------------------------------------------------------------------------------------- |
 | Topology view     | `http://127.0.0.1:4200/topology`                                                       |
 | SSR API           | `http://127.0.0.1:4000/api/env`                                                        |
-| Grafana           | `http://localhost:3000`                                                                |
-| Grafana dashboard | `http://localhost:3000/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk` |
+| Grafana           | `http://localhost:3005`                                                                |
+| Grafana dashboard | `http://localhost:3005/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk` |
 | Prometheus        | `http://localhost:9090`                                                                |
 
 ## Manual Verification Checklist
 
 - Confirm Docker services are running.
-- Confirm `http://localhost:3000/api/health` returns `200`.
+- Confirm `http://localhost:3005/api/health` returns `200`.
 - Confirm `http://127.0.0.1:4000/api/env` includes:
   - `GRAFANA_DASHBOARD_URL`
   - `GRAFANA_DASHBOARD_ENABLED`

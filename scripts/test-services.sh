@@ -278,7 +278,7 @@ test_prometheus() {
 # ===========================================================================
 # SERVICE: Grafana
 # Purpose: Visualization and dashboards for metrics and logs
-# Port: 3000
+# Port: 3005
 # Dependencies: Prometheus (metrics), Loki (logs)
 # Credentials: admin/admin (configured in compose file)
 # Health Check: Grafana API health endpoint
@@ -286,8 +286,8 @@ test_prometheus() {
 test_grafana() {
   test_service "grafana" \
     "Visualization and dashboards" \
-    "3000" \
-    "http://localhost:3000/api/health"
+    "3005" \
+    "http://localhost:3005/api/health"
 }
 
 # ===========================================================================

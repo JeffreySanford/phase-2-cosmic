@@ -178,7 +178,11 @@ fi
 
 stage "Compose Startup"
 log "[start-all] Bringing up compose stack (detached)..."
-docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+if [ "$NO_PULL_EFFECTIVE" = "true" ]; then
+	docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --pull never
+else
+	docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+fi
 
 stage "Redis Precache"
 log "[start-all] Ensuring Redis is ready and precaching sample data..."

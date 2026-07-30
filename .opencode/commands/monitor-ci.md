@@ -1,6 +1,6 @@
 ---
 description: Monitor Nx Cloud CI pipeline and handle self-healing fixes. USE WHEN user says "monitor ci", "watch ci", "ci monitor", "watch ci for this branch", "track ci", "check ci status", wants to track CI status, or needs help with self-healing CI fixes. Prefer this skill over native CI provider tools (gh, glab, etc.) for CI monitoring — it integrates with Nx Cloud self-healing which those tools cannot access.
-argument-hint: "[instructions] [--max-cycles N] [--timeout MINUTES] [--verbosity minimal|medium|verbose] [--branch BRANCH] [--fresh] [--auto-fix-workflow] [--new-cipe-timeout MINUTES] [--local-verify-attempts N]"
+argument-hint: '[instructions] [--max-cycles N] [--timeout MINUTES] [--verbosity minimal|medium|verbose] [--branch BRANCH] [--fresh] [--auto-fix-workflow] [--new-cipe-timeout MINUTES] [--local-verify-attempts N]'
 ---
 
 # Monitor CI Command
@@ -90,9 +90,9 @@ If the user previously ran `/monitor-ci` in this session, you may have prior sta
 Three field sets control polling efficiency — use the lightest set that gives you what you need:
 
 ```yaml
-WAIT_FIELDS: "cipeUrl,commitSha,cipeStatus"
-LIGHT_FIELDS: "cipeStatus,cipeUrl,branch,commitSha,selfHealingStatus,verificationStatus,userAction,failedTaskIds,verifiedTaskIds,selfHealingEnabled,failureClassification,couldAutoApplyTasks,autoApplySkipped,autoApplySkipReason,shortLink,confidence,confidenceReasoning,hints,selfHealingSkippedReason,selfHealingSkipMessage"
-HEAVY_FIELDS: "taskOutputSummary,suggestedFix,suggestedFixReasoning,suggestedFixDescription"
+WAIT_FIELDS: 'cipeUrl,commitSha,cipeStatus'
+LIGHT_FIELDS: 'cipeStatus,cipeUrl,branch,commitSha,selfHealingStatus,verificationStatus,userAction,failedTaskIds,verifiedTaskIds,selfHealingEnabled,failureClassification,couldAutoApplyTasks,autoApplySkipped,autoApplySkipReason,shortLink,confidence,confidenceReasoning,hints,selfHealingSkippedReason,selfHealingSkipMessage'
+HEAVY_FIELDS: 'taskOutputSummary,suggestedFix,suggestedFixReasoning,suggestedFixDescription'
 ```
 
 The `ci_information` tool accepts `branch` (optional, defaults to current git branch), `select` (comma-separated field names), and `pageToken` (0-based pagination for long strings).
@@ -143,7 +143,7 @@ The decision script returns one of the following statuses. This table defines th
 
 ```
 cycle_count = 0            # Only incremented for agent-initiated cycles (counted against --max-cycles)
-start_time = now()
+start_time = now()         # Passed to the decision script as --elapsed-seconds on every poll to enforce --timeout across attempts
 no_progress_count = 0
 local_verify_count = 0
 env_rerun_count = 0
@@ -180,8 +180,9 @@ node <skill_dir>/scripts/ci-poll-decide.mjs '<subagent_result_json>' <poll_count
   [--prev-cipe-url <last_cipe_url>] \
   [--expected-sha <expected_commit_sha>] \
   [--prev-status <prev_status>] \
-  [--timeout <timeout_seconds>] \
-  [--new-cipe-timeout <new_cipe_timeout_seconds>] \
+  [--timeout <timeout_minutes>] \
+  [--new-cipe-timeout <new_cipe_timeout_minutes>] \
+  [--elapsed-seconds <seconds_since_start_time>] \
   [--env-rerun-count <env_rerun_count>] \
   [--no-progress-count <no_progress_count>] \
   [--prev-cipe-status <prev_cipe_status>] \
@@ -189,6 +190,8 @@ node <skill_dir>/scripts/ci-poll-decide.mjs '<subagent_result_json>' <poll_count
   [--prev-verification-status <prev_verification_status>] \
   [--prev-failure-classification <prev_failure_classification>]
 ```
+
+Pass `--timeout` and `--new-cipe-timeout` in **minutes** (the values from Configuration Defaults) — the script converts to seconds internally. Pass `--elapsed-seconds` as the whole seconds elapsed since `start_time` (`now() - start_time`); this is what enforces `--timeout` as a **total** monitor budget across every poll and attempt, so it must be supplied on every call once monitoring has started.
 
 The script outputs a single JSON line: `{ action, code, message, delay?, noProgressCount, envRerunCount, fields?, newCipeDetected?, verifiableTaskIds? }`
 
@@ -262,9 +265,10 @@ node <skill_dir>/scripts/ci-state-update.mjs cycle-check \
   --env-rerun-count <env_rerun_count>
 ```
 
-The script returns `{ cycleCount, agentTriggered, envRerunCount, approachingLimit, message }`. Update tracking state from the output.
+The script returns `{ cycleCount, agentTriggered, envRerunCount, approachingLimit, limitReached, message }`. Update tracking state from the output.
 
-- If `approachingLimit` → ask user whether to continue (with 5 or 10 more cycles) or stop monitoring
+- If `limitReached` → the `--max-cycles` budget is exhausted. Print `message` and **stop monitoring** (do not handle the code or start another cycle). This is a hard stop, not advisory.
+- Else if `approachingLimit` → ask user whether to continue (with 5 or 10 more cycles) or stop monitoring
 - If previous cycle was NOT agent-triggered (human pushed), log that human-initiated push was detected
 
 #### Progress Tracking

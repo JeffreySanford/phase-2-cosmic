@@ -781,7 +781,7 @@ class SsrService {
 
   getPublicEnv() {
     const defaultGrafanaDashboardUrl =
-      "http://localhost:3000/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk";
+      "http://localhost:3005/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk";
     const defaultGrafanaDashboardEnabled = "true";
     const defaultGrafanaDashboardAccessMode = "local-anonymous";
     const defaultGrafanaDashboardEmbedMode = "direct";

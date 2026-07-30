@@ -10,7 +10,7 @@ The topology Grafana embed is controlled by `/api/env`.
 
 | Variable                        | Default                                                                                | Purpose                                                                                  |
 | ------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `GRAFANA_DASHBOARD_URL`         | `http://localhost:3000/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk` | Dashboard iframe and Open in Grafana target.                                             |
+| `GRAFANA_DASHBOARD_URL`         | `http://localhost:3005/d/phase2-topology-ops/phase2-topology-operations?orgId=1&kiosk` | Dashboard iframe and Open in Grafana target.                                             |
 | `GRAFANA_DASHBOARD_ENABLED`     | `true`                                                                                 | When `false`, the Metrics Dashboard tab is hidden.                                       |
 | `GRAFANA_DASHBOARD_ACCESS_MODE` | `local-anonymous`                                                                      | Documents the expected auth posture for the current runtime.                             |
 | `GRAFANA_DASHBOARD_EMBED_MODE`  | `direct`                                                                               | Documents whether the browser embeds Grafana directly or through a future backend proxy. |
