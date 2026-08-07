@@ -22,7 +22,7 @@ jobs:
             openapi:
               - 'openapi/**'
             docs:
-              - 'docuentation/**'
+              - 'documentation/**'
 
       - name: Set up Node 18
         uses: actions/setup-node@v4
