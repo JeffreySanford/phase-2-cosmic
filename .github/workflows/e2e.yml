@@ -69,7 +69,7 @@ jobs:
       - name: Unit tests
         run: |
           pnpm exec cross-env NX_NO_CLOUD=true pnpm nx run-many --target=test --projects=frontend,ui-theme --configuration=ci --parallel=false
-          mvn -f apps/java-governance/pom.xml -T 1C test
+          node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml -T 1C test
 
       - name: OpenAPI + fixture validation
         run: pnpm run openapi-validate

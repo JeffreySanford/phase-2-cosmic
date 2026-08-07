@@ -101,10 +101,10 @@ jobs:
 
       - name: Run java-governance verify (unit + IT)
         run: |
-          mvn -f apps/java-governance/pom.xml clean verify -Pwith-containers -B
+          node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml clean verify -Pwith-containers -B
 
       - name: Generate JaCoCo report
-        run: mvn -f apps/java-governance/pom.xml jacoco:report
+        run: node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml jacoco:report
 
       - name: Run coverage enforcement
         run: bash scripts/check-coverage.sh 90
@@ -121,10 +121,10 @@ jobs:
           if-no-files-found: ignore
 
       - name: Run java-ingest verify (unit)
-        run: mvn -f tools/java-ingest/pom.xml clean verify -B
+        run: node ./scripts/mvn-wrapper-runner.js --use-compose -f tools/java-ingest/pom.xml clean verify -B
 
       - name: Run java-ingest verify (container integration)
-        run: mvn -f tools/java-ingest/pom.xml clean verify -Pwith-containers -B
+        run: node ./scripts/mvn-wrapper-runner.js --use-compose -f tools/java-ingest/pom.xml clean verify -Pwith-containers -B
 
       - name: Archive java-ingest reports
         if: always()
