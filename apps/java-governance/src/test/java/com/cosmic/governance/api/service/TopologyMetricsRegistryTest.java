@@ -7,6 +7,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.AbstractMap.SimpleEntry;
@@ -69,72 +70,7 @@ class TopologyMetricsRegistryTest {
     void snapshotPromotesInfrastructureBackedAppPlaneLinksWhenDirectQueriesAreUnavailable() {
         Map<String, Object> infrastructureSnapshot = Map.of(
                 "services",
-                Map.ofEntries(
-                        new SimpleEntry<>("frontendSsr", Map.ofEntries(
-                                new SimpleEntry<>("source", "prometheus"),
-                                new SimpleEntry<>("frontendResponseBytesPerSec", 0.0d),
-                                new SimpleEntry<>("frontendApiResponseBytesPerSec", 2048.0d),
-                                new SimpleEntry<>("frontendRequestRatePerSec", 0.0d),
-                                new SimpleEntry<>("frontendApiRequestRatePerSec", 1.0d),
-                                new SimpleEntry<>("frontendRequestLatencyMs", 0.0d),
-                                new SimpleEntry<>("frontendApiLatencyMs", 12.0d),
-                                new SimpleEntry<>("governanceProxyBytesPerSec", 4096.0d),
-                                new SimpleEntry<>("governanceProxyLatencyMs", 18.0d),
-                                new SimpleEntry<>("prometheusProxyBytesPerSec", 1024.0d),
-                                new SimpleEntry<>("prometheusProxyLatencyMs", 9.0d),
-                                new SimpleEntry<>("ingressBytesPerSec", 256.0d),
-                                new SimpleEntry<>("egressBytesPerSec", 512.0d),
-                                new SimpleEntry<>("avgLatencyMs", 4.0d)
-                        )),
-                        new SimpleEntry<>("dataGenerator", Map.of(
-                                "source", "prometheus",
-                                "egressBytesPerSec", 4096.0d,
-                                "recordsPerSec", 10.0d,
-                                "mainSegmentBytesPerSec", 3072.0d,
-                                "lblSegmentBytesPerSec", 512.0d,
-                                "sbaSegmentBytesPerSec", 512.0d
-                        )),
-                        new SimpleEntry<>("nginx", Map.of(
-                                "source", "prometheus",
-                                "egressBytesPerSec", 512.0d,
-                                "avgLatencyMs", 6.0d
-                        )),
-                        new SimpleEntry<>("kafka", Map.of(
-                                "source", "prometheus",
-                                "ingressBytesPerSec", 2048.0d,
-                                "egressBytesPerSec", 1024.0d
-                        )),
-                        new SimpleEntry<>("javaIngest", Map.of(
-                                "source", "prometheus",
-                                "payloadBytesPerSec", 1024.0d
-                        )),
-                        new SimpleEntry<>("alertmanager", Map.of(
-                                "source", "prometheus",
-                                "egressBytesPerSec", 256.0d,
-                                "avgLatencyMs", 11.0d
-                        )),
-                        new SimpleEntry<>("governanceRuntime", Map.ofEntries(
-                                new SimpleEntry<>("source", "prometheus"),
-                                new SimpleEntry<>("redisReadBytesPerSec", 128.0d),
-                                new SimpleEntry<>("redisWriteBytesPerSec", 64.0d),
-                                new SimpleEntry<>("redisAvgLatencyMs", 2.0d),
-                                new SimpleEntry<>("redisErrorRatePct", 0.0d),
-                                new SimpleEntry<>("minioObjectWriteBytesPerSec", 0.0d),
-                                new SimpleEntry<>("minioObjectWriteAvgLatencyMs", 0.0d),
-                                new SimpleEntry<>("minioObjectWriteErrorRatePct", 0.0d),
-                                new SimpleEntry<>("kafkaPublishBytesPerSec", 1536.0d),
-                                new SimpleEntry<>("kafkaIngestPayloadBytesPerSec", 0.0d),
-                                new SimpleEntry<>("pulsarIngestPayloadBytesPerSec", 0.0d),
-                                new SimpleEntry<>("rabbitmqPublishBytesPerSec", 0.0d),
-                                new SimpleEntry<>("operatorReadBytesPerSec", 0.0d),
-                                new SimpleEntry<>("datasetMutationPayloadBytesPerSec", 0.0d),
-                                new SimpleEntry<>("jobMetadataMutationPayloadBytesPerSec", 0.0d)
-                        )),
-                        new SimpleEntry<>("rabbitmq", Map.of("source", "prometheus", "publishRatePerSec", 0.0d, "deliverRatePerSec", 0.0d)),
-                        new SimpleEntry<>("redis", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
-                        new SimpleEntry<>("minio", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
-                        new SimpleEntry<>("pulsar", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d))
-                )
+                buildInfrastructureServicesSnapshot()
         );
 
         TopologyMetricsRegistry registry = createRegistry(infrastructureSnapshot);
@@ -168,36 +104,7 @@ class TopologyMetricsRegistryTest {
     void monitoredInfrastructureLinksBecomePrometheusWhenInfrastructureIsObserved() {
         Map<String, Object> infrastructureSnapshot = Map.of(
                 "services",
-                Map.ofEntries(
-                        new SimpleEntry<>("frontendSsr", Map.ofEntries(
-                                new SimpleEntry<>("source", "prometheus"),
-                                new SimpleEntry<>("frontendResponseBytesPerSec", 512.0d),
-                                new SimpleEntry<>("frontendApiResponseBytesPerSec", 2048.0d),
-                                new SimpleEntry<>("frontendRequestRatePerSec", 1.0d),
-                                new SimpleEntry<>("frontendApiRequestRatePerSec", 1.0d),
-                                new SimpleEntry<>("frontendRequestLatencyMs", 5.0d),
-                                new SimpleEntry<>("frontendApiLatencyMs", 12.0d),
-                                new SimpleEntry<>("governanceProxyBytesPerSec", 4096.0d),
-                                new SimpleEntry<>("governanceProxyLatencyMs", 18.0d),
-                                new SimpleEntry<>("prometheusProxyBytesPerSec", 1024.0d),
-                                new SimpleEntry<>("prometheusProxyLatencyMs", 9.0d),
-                                new SimpleEntry<>("ingressBytesPerSec", 256.0d),
-                                new SimpleEntry<>("egressBytesPerSec", 512.0d),
-                                new SimpleEntry<>("avgLatencyMs", 4.0d)
-                        )),
-                        new SimpleEntry<>("kafka", Map.of("source", "prometheus", "ingressBytesPerSec", 2048.0d, "egressBytesPerSec", 1024.0d)),
-                        new SimpleEntry<>("grafana", Map.of("source", "prometheus")),
-                        new SimpleEntry<>("loki", Map.of("source", "prometheus")),
-                        new SimpleEntry<>("governanceRuntime", Map.ofEntries(
-                                new SimpleEntry<>("source", "prometheus"),
-                                new SimpleEntry<>("redisReadBytesPerSec", 128.0d), new SimpleEntry<>("redisWriteBytesPerSec", 64.0d),
-                                new SimpleEntry<>("redisAvgLatencyMs", 2.0d), new SimpleEntry<>("redisErrorRatePct", 0.0d),
-                                new SimpleEntry<>("minioObjectWriteBytesPerSec", 0.0d), new SimpleEntry<>("minioObjectWriteAvgLatencyMs", 0.0d),
-                                new SimpleEntry<>("minioObjectWriteErrorRatePct", 0.0d), new SimpleEntry<>("kafkaPublishBytesPerSec", 1536.0d),
-                                new SimpleEntry<>("kafkaIngestPayloadBytesPerSec", 0.0d), new SimpleEntry<>("pulsarIngestPayloadBytesPerSec", 0.0d),
-                                new SimpleEntry<>("rabbitmqPublishBytesPerSec", 0.0d), new SimpleEntry<>("operatorReadBytesPerSec", 0.0d),
-                                new SimpleEntry<>("datasetMutationPayloadBytesPerSec", 0.0d), new SimpleEntry<>("jobMetadataMutationPayloadBytesPerSec", 0.0d)))
-                )
+                buildMonitoredInfrastructureServicesSnapshot()
         );
 
         TopologyMetricsRegistry registry = createRegistry(infrastructureSnapshot);
@@ -217,49 +124,7 @@ class TopologyMetricsRegistryTest {
     void diagnosticsFallbackDerivedLinksIsEmptyWhenAllPromotableLinksAreInfrastructureBacked() {
         Map<String, Object> infrastructureSnapshot = Map.of(
                 "services",
-                Map.ofEntries(
-                        new SimpleEntry<>("frontendSsr", Map.ofEntries(
-                                new SimpleEntry<>("source", "prometheus"),
-                                new SimpleEntry<>("frontendResponseBytesPerSec", 0.0d),
-                                new SimpleEntry<>("frontendApiResponseBytesPerSec", 2048.0d),
-                                new SimpleEntry<>("frontendRequestRatePerSec", 0.0d),
-                                new SimpleEntry<>("frontendApiRequestRatePerSec", 1.0d),
-                                new SimpleEntry<>("frontendRequestLatencyMs", 0.0d),
-                                new SimpleEntry<>("frontendApiLatencyMs", 12.0d),
-                                new SimpleEntry<>("governanceProxyBytesPerSec", 4096.0d),
-                                new SimpleEntry<>("governanceProxyLatencyMs", 18.0d),
-                                new SimpleEntry<>("prometheusProxyBytesPerSec", 1024.0d),
-                                new SimpleEntry<>("prometheusProxyLatencyMs", 9.0d),
-                                new SimpleEntry<>("ingressBytesPerSec", 256.0d),
-                                new SimpleEntry<>("egressBytesPerSec", 512.0d),
-                                new SimpleEntry<>("avgLatencyMs", 4.0d)
-                        )),
-                        new SimpleEntry<>("dataGenerator", Map.of(
-                                "source", "prometheus",
-                                "egressBytesPerSec", 4096.0d, "recordsPerSec", 10.0d,
-                                "mainSegmentBytesPerSec", 3072.0d, "lblSegmentBytesPerSec", 512.0d, "sbaSegmentBytesPerSec", 512.0d
-                        )),
-                        new SimpleEntry<>("nginx", Map.of("source", "prometheus", "egressBytesPerSec", 512.0d, "avgLatencyMs", 6.0d)),
-                        new SimpleEntry<>("kafka", Map.of("source", "prometheus", "ingressBytesPerSec", 2048.0d, "egressBytesPerSec", 1024.0d)),
-                        new SimpleEntry<>("javaIngest", Map.of("source", "prometheus", "payloadBytesPerSec", 1024.0d)),
-                        new SimpleEntry<>("alertmanager", Map.of("source", "prometheus", "egressBytesPerSec", 256.0d, "avgLatencyMs", 11.0d)),
-                        new SimpleEntry<>("governanceRuntime", Map.ofEntries(
-                                new SimpleEntry<>("source", "prometheus"),
-                                new SimpleEntry<>("redisReadBytesPerSec", 128.0d), new SimpleEntry<>("redisWriteBytesPerSec", 64.0d),
-                                new SimpleEntry<>("redisAvgLatencyMs", 2.0d), new SimpleEntry<>("redisErrorRatePct", 0.0d),
-                                new SimpleEntry<>("minioObjectWriteBytesPerSec", 0.0d), new SimpleEntry<>("minioObjectWriteAvgLatencyMs", 0.0d),
-                                new SimpleEntry<>("minioObjectWriteErrorRatePct", 0.0d), new SimpleEntry<>("kafkaPublishBytesPerSec", 1536.0d),
-                                new SimpleEntry<>("kafkaIngestPayloadBytesPerSec", 0.0d), new SimpleEntry<>("pulsarIngestPayloadBytesPerSec", 0.0d),
-                                new SimpleEntry<>("rabbitmqPublishBytesPerSec", 0.0d), new SimpleEntry<>("operatorReadBytesPerSec", 0.0d),
-                                new SimpleEntry<>("datasetMutationPayloadBytesPerSec", 0.0d), new SimpleEntry<>("jobMetadataMutationPayloadBytesPerSec", 0.0d)
-                        )),
-                        new SimpleEntry<>("rabbitmq", Map.of("source", "prometheus", "publishRatePerSec", 0.0d, "deliverRatePerSec", 0.0d)),
-                        new SimpleEntry<>("redis", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
-                        new SimpleEntry<>("minio", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
-                        new SimpleEntry<>("pulsar", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
-                        new SimpleEntry<>("grafana", Map.of("source", "prometheus")),
-                        new SimpleEntry<>("loki", Map.of("source", "prometheus"))
-                )
+                buildFallbackInfrastructureServicesSnapshot()
         );
 
         TopologyMetricsRegistry registry = createRegistry(infrastructureSnapshot);
@@ -272,6 +137,91 @@ class TopologyMetricsRegistryTest {
         @SuppressWarnings("unchecked")
         List<String> fallbackDerivedLinks = (List<String>) diagnostics.get("fallbackDerivedLinks");
         assertThat(fallbackDerivedLinks).isEmpty();
+    }
+
+    private Map<String, Object> buildInfrastructureServicesSnapshot() {
+        Map<String, Object> services = new LinkedHashMap<>();
+        services.put("frontendSsr", buildFrontendSsrService());
+        services.put("dataGenerator", Map.of(
+                "source", "prometheus",
+                "egressBytesPerSec", 4096.0d,
+                "recordsPerSec", 10.0d,
+                "mainSegmentBytesPerSec", 3072.0d,
+                "lblSegmentBytesPerSec", 512.0d,
+                "sbaSegmentBytesPerSec", 512.0d
+        ));
+        services.put("nginx", Map.of("source", "prometheus", "egressBytesPerSec", 512.0d, "avgLatencyMs", 6.0d));
+        services.put("kafka", Map.of("source", "prometheus", "ingressBytesPerSec", 2048.0d, "egressBytesPerSec", 1024.0d));
+        services.put("javaIngest", Map.of("source", "prometheus", "payloadBytesPerSec", 1024.0d));
+        services.put("alertmanager", Map.of("source", "prometheus", "egressBytesPerSec", 256.0d, "avgLatencyMs", 11.0d));
+        services.put("governanceRuntime", buildGovernanceRuntimeService());
+        services.put("rabbitmq", Map.of("source", "prometheus", "publishRatePerSec", 0.0d, "deliverRatePerSec", 0.0d));
+        services.put("redis", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d));
+        services.put("minio", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d));
+        services.put("pulsar", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d));
+        return Map.of("services", services);
+    }
+
+    private Map<String, Object> buildMonitoredInfrastructureServicesSnapshot() {
+        Map<String, Object> services = new LinkedHashMap<>();
+        services.put("frontendSsr", buildFrontendSsrService(512.0d));
+        services.put("kafka", Map.of("source", "prometheus", "ingressBytesPerSec", 2048.0d, "egressBytesPerSec", 1024.0d));
+        services.put("grafana", Map.of("source", "prometheus"));
+        services.put("loki", Map.of("source", "prometheus"));
+        services.put("governanceRuntime", buildGovernanceRuntimeService());
+        return Map.of("services", services);
+    }
+
+    private Map<String, Object> buildFallbackInfrastructureServicesSnapshot() {
+        Map<String, Object> services = buildInfrastructureServicesSnapshot().get("services") instanceof Map<?, ?> map
+                ? new LinkedHashMap<>((Map<String, Object>) map)
+                : new LinkedHashMap<>();
+        services.put("grafana", Map.of("source", "prometheus"));
+        services.put("loki", Map.of("source", "prometheus"));
+        return Map.of("services", services);
+    }
+
+    private Map<String, Object> buildFrontendSsrService() {
+        return buildFrontendSsrService(0.0d);
+    }
+
+    private Map<String, Object> buildFrontendSsrService(double frontendResponseBytesPerSec) {
+        Map<String, Object> service = new LinkedHashMap<>();
+        service.put("source", "prometheus");
+        service.put("frontendResponseBytesPerSec", frontendResponseBytesPerSec);
+        service.put("frontendApiResponseBytesPerSec", 2048.0d);
+        service.put("frontendRequestRatePerSec", 0.0d);
+        service.put("frontendApiRequestRatePerSec", 1.0d);
+        service.put("frontendRequestLatencyMs", 0.0d);
+        service.put("frontendApiLatencyMs", 12.0d);
+        service.put("governanceProxyBytesPerSec", 4096.0d);
+        service.put("governanceProxyLatencyMs", 18.0d);
+        service.put("prometheusProxyBytesPerSec", 1024.0d);
+        service.put("prometheusProxyLatencyMs", 9.0d);
+        service.put("ingressBytesPerSec", 256.0d);
+        service.put("egressBytesPerSec", 512.0d);
+        service.put("avgLatencyMs", 4.0d);
+        return service;
+    }
+
+    private Map<String, Object> buildGovernanceRuntimeService() {
+        Map<String, Object> service = new LinkedHashMap<>();
+        service.put("source", "prometheus");
+        service.put("redisReadBytesPerSec", 128.0d);
+        service.put("redisWriteBytesPerSec", 64.0d);
+        service.put("redisAvgLatencyMs", 2.0d);
+        service.put("redisErrorRatePct", 0.0d);
+        service.put("minioObjectWriteBytesPerSec", 0.0d);
+        service.put("minioObjectWriteAvgLatencyMs", 0.0d);
+        service.put("minioObjectWriteErrorRatePct", 0.0d);
+        service.put("kafkaPublishBytesPerSec", 1536.0d);
+        service.put("kafkaIngestPayloadBytesPerSec", 0.0d);
+        service.put("pulsarIngestPayloadBytesPerSec", 0.0d);
+        service.put("rabbitmqPublishBytesPerSec", 0.0d);
+        service.put("operatorReadBytesPerSec", 0.0d);
+        service.put("datasetMutationPayloadBytesPerSec", 0.0d);
+        service.put("jobMetadataMutationPayloadBytesPerSec", 0.0d);
+        return service;
     }
 
     private TopologyMetricsRegistry createRegistry() {
