@@ -62,9 +62,8 @@ jobs:
           ./scripts/ci/preflight.sh
 
       - name: Run Maven tests (no skipping, with containers)
-        working-directory: apps/java-governance
         # this execution includes the ProvenanceE2ETest added in Sprint 2
-        run: mvn -B test -Pwith-containers
+        run: node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml -B test -Pwith-containers
 
       - name: Upload Surefire reports
         if: always()

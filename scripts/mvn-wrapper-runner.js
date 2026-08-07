@@ -12,6 +12,12 @@ if (useCompose) {
   args = args.slice(0, useComposeIdx).concat(args.slice(useComposeIdx + 1));
 }
 
+const dockerOnlyIdx = args.indexOf("--docker-only");
+const dockerOnly = dockerOnlyIdx !== -1;
+if (dockerOnly) {
+  args = args.slice(0, dockerOnlyIdx).concat(args.slice(dockerOnlyIdx + 1));
+}
+
 function exists(p) {
   try {
     return fs.existsSync(p);
@@ -72,17 +78,26 @@ if (!dockerImage) {
   dockerImage = "maven:3.8.8-jdk-17";
 }
 
-// If this is a Maven 'test' run for the java-governance module, force Docker so
-// the container can join the compose network and resolve the hostname `redis`.
+// For Java modules, run Maven in Docker by default so tests match CI and do not
+// depend on a host Maven install or local toolchain.
 const fIndex = args.indexOf("-f");
-const isJavaGovernanceTest =
-  args.includes("test") &&
-  fIndex !== -1 &&
-  args[fIndex + 1] &&
-  args[fIndex + 1].includes("apps/java-governance");
-if (isJavaGovernanceTest || useCompose) {
+const javaPomPath = fIndex !== -1 && args[fIndex + 1] ? args[fIndex + 1] : "";
+const cwdPath = cwd.replace(/\\/g, "/");
+const isJavaModuleInvocation =
+  !!javaPomPath &&
+  (javaPomPath.includes("apps/java-governance") ||
+    javaPomPath.includes("tools/java-ingest") ||
+    javaPomPath === "pom.xml");
+const isJavaModuleWorkspace =
+  cwdPath.includes("/apps/java-governance") ||
+  cwdPath.includes("/tools/java-ingest") ||
+  cwdPath.endsWith("/java-governance") ||
+  cwdPath.endsWith("/java-ingest");
+const isJavaBuildCommand = args.some((arg) => ["test", "verify", "package", "compile", "install"].includes(arg));
+const shouldRunInDocker = dockerOnly || useCompose || ((isJavaModuleInvocation || isJavaModuleWorkspace) && isJavaBuildCommand);
+if (shouldRunInDocker) {
   console.log(
-    "Forcing Maven in Docker for java-governance test so redis resolves on the compose network"
+    "Running Maven in Docker for Java module so tests execute in the same environment as CI"
   );
   // try to discover the compose network by inspecting the running redis container
   let redisContainerId = runCapture("docker", [
@@ -128,6 +143,7 @@ if (isJavaGovernanceTest || useCompose) {
     networkArg ? networkArg[1] : "(default)"
   );
   runSync("docker", dockerCmd);
+  return;
 }
 
 // Prefer project-local mvnw (Unix or Windows)

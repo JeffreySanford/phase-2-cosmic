@@ -257,7 +257,6 @@ class TopologyMetricsRegistryTest {
                         new SimpleEntry<>("redis", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
                         new SimpleEntry<>("minio", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
                         new SimpleEntry<>("pulsar", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
-                        new SimpleEntry<>("kafka", Map.of("source", "prometheus", "ingressBytesPerSec", 0.0d, "egressBytesPerSec", 0.0d)),
                         new SimpleEntry<>("grafana", Map.of("source", "prometheus")),
                         new SimpleEntry<>("loki", Map.of("source", "prometheus"))
                 )

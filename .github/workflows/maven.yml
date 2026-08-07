@@ -24,11 +24,11 @@ jobs:
 
       - name: Run tests for `apps/java-governance`
         working-directory: ./apps/java-governance
-        run: mvn -B test
+        run: node ../../scripts/mvn-wrapper-runner.js --use-compose -f pom.xml -B test
 
       - name: Run tests for `tools/java-ingest`
         working-directory: ./tools/java-ingest
-        run: mvn -B test || true
+        run: node ../../scripts/mvn-wrapper-runner.js --use-compose -f pom.xml -B test || true
 
       - name: Upload Surefire reports
         if: always()
@@ -56,8 +56,8 @@ jobs:
 
       - name: Build `apps/java-governance`
         working-directory: ./apps/java-governance
-        run: mvn -B package
+        run: node ../../scripts/mvn-wrapper-runner.js --use-compose -f pom.xml -B package
 
       - name: Build `tools/java-ingest`
         working-directory: ./tools/java-ingest
-        run: mvn -B package
+        run: node ../../scripts/mvn-wrapper-runner.js --use-compose -f pom.xml -B package

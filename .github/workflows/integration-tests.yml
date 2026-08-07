@@ -64,7 +64,7 @@ jobs:
           KAFKA_BOOTSTRAP_SERVERS: "localhost:${{ env.KAFKA_HOST_PORT }}"
           MAVEN_OPTS: -Xmx2g
         run: |
-          mvn -f apps/java-governance/pom.xml clean verify -Pintegration-tests -DskipTests=false -B -V
+          node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml clean verify -Pintegration-tests -DskipTests=false -B -V
 
       - name: Tear down compose
         if: always()
