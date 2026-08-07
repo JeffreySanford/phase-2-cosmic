@@ -35,7 +35,7 @@ jobs:
       - name: Enable corepack (pnpm)
         run: |
           corepack enable
-          corepack prepare pnpm@latest --activate
+          corepack prepare pnpm@10.32.1 --activate
 
       - name: Log in to Docker registry
         if: ${{ env.DOCKER_USERNAME != '' && env.DOCKER_PAT != '' }}

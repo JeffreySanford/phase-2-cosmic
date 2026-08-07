@@ -32,7 +32,7 @@ jobs:
       - name: Enable corepack (pnpm)
         run: |
           corepack enable
-          corepack prepare pnpm@10.23.0 --activate
+          corepack prepare pnpm@10.32.1 --activate
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
@@ -85,7 +85,7 @@ jobs:
       - name: Enable corepack (pnpm)
         run: |
           corepack enable
-          corepack prepare pnpm@10.23.0 --activate
+          corepack prepare pnpm@10.32.1 --activate
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
@@ -241,7 +241,7 @@ jobs:
       - name: Enable corepack (pnpm)
         run: |
           corepack enable
-          corepack prepare pnpm@10.23.0 --activate
+          corepack prepare pnpm@10.32.1 --activate
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
