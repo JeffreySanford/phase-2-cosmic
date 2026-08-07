@@ -19,7 +19,7 @@ timestamp() {
 
 write_log_line() {
 	local line="$1"
-	printf '%s\n' "$line" | tee -a "$LOG_FILE" >> "$SESSION_LOG_FILE"
+	printf '%s\n' "$line" | tee -a "$LOG_FILE" | tee -a "$SESSION_LOG_FILE"
 }
 
 log() {
@@ -350,10 +350,12 @@ LABELS=()
 start_bg() {
 	local label="$1"
 	shift
+	log "[start-all] starting ${label}"
 	"$@" &
 	local pid=$!
 	PIDS+=("$pid")
 	LABELS+=("$label")
+	log "[start-all] started ${label} watcher PID ${pid}"
 }
 
 service_port_for_label() {

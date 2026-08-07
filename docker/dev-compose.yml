@@ -374,6 +374,8 @@ services:
 
   test-runner:
     image: node:20-bullseye
+    profiles:
+      - test
     working_dir: /workspace
     volumes:
       - ..:/workspace:cached
