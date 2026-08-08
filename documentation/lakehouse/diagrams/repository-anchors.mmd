@@ -1,0 +1,24 @@
+flowchart LR
+  GEN[Go Data Generator / Replay Processors]
+  K[Kafka]
+  P[Pulsar]
+  R[RabbitMQ]
+  GOV[Java Governance API]
+  ING[Java Ingest Service]
+  OBJ[MinIO / S3]
+  TELE[Prometheus / Grafana]
+  LAKE[Lakehouse Analytical Plane]
+
+  GEN --> K
+  GEN --> P
+  GEN --> R
+  K --> ING
+  P --> ING
+  R --> GOV
+  GOV --> OBJ
+  ING --> OBJ
+  GOV --> TELE
+  ING --> TELE
+  K --> LAKE
+  OBJ --> LAKE
+  GOV -. metadata / lineage refs .-> LAKE

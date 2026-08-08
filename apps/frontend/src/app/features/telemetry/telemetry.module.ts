@@ -16,6 +16,7 @@ import { MatBadgeModule } from "@angular/material/badge";
 import { SharedModule } from "../../shared/shared.module";
 
 import { TelemetryComponent } from "./telemetry.component";
+import { PipelineTelemetryComponent } from "./pipeline-telemetry.component";
 import { InfraTabsComponent } from "./infra-tabs.component";
 import { PulsarStatusComponent } from "./pulsar-status/pulsar-status.component";
 import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.component";
@@ -30,7 +31,7 @@ import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.compo
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    RouterModule.forChild([{ path: "", component: TelemetryComponent }]),
+    RouterModule.forChild([{ path: "", component: PipelineTelemetryComponent }]),
     MatCardModule,
     MatFormFieldModule,
     MatSelectModule,
@@ -44,6 +45,7 @@ import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.compo
     MatBadgeModule,
     SharedModule,
     InfraTabsComponent,
+    PipelineTelemetryComponent,
   ],
   exports: [TelemetryComponent, PulsarStatusComponent, RabbitMQStatusComponent],
 })

@@ -1,0 +1,14 @@
+flowchart LR
+  SOURCE[Observation / Simulation]
+  INGEST[Existing Ingest + Governance]
+  STORE[MinIO / S3]
+  BROKER[Kafka / Pulsar]
+  BRONZE[Bronze]
+  SILVER[Silver]
+  GOLD[Gold]
+
+  SOURCE --> INGEST
+  INGEST --> STORE
+  INGEST --> BROKER
+  BROKER --> BRONZE --> SILVER --> GOLD
+  STORE -->|object metadata / controlled extraction| BRONZE

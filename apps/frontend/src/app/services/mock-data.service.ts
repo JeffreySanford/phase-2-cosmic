@@ -122,6 +122,57 @@ export class MockDataService {
     });
   }
 
+  lakehouseMetrics(): Observable<{
+    source: "live" | "fallback";
+    bronzeState: string;
+    silverQuality: string;
+    goldReadiness: string;
+    evidence: string;
+    bronzePercent: number;
+    silverPercent: number;
+    goldPercent: number;
+    qualityFailureRate: number;
+    transferTimeEstimate: string;
+    upstream: {
+      kind: "eso-obscore" | "fallback";
+      endpoint: string;
+      query: string;
+      rowCount: number;
+    };
+    persistedAt: string;
+    freshness: {
+      maxAgeMs: number;
+      lastUpdatedAt: string;
+      stale: boolean;
+    };
+  }> {
+    const s = this.scale();
+    return of({
+      source: "live",
+      bronzeState: "Bronze ingest active",
+      silverQuality: `Silver quality ${Math.round((97 + s * 2) * 10) / 10}% pass`,
+      goldReadiness: "Ready for analyst review",
+      evidence: "ESO ObsCore proof slice",
+      bronzePercent: Math.round(86 + s * 6),
+      silverPercent: Math.round(72 + s * 8),
+      goldPercent: Math.round(41 + s * 10),
+      qualityFailureRate: Math.round((1.2 + s * 0.8) * 10) / 10,
+      transferTimeEstimate: "~3.2 min",
+      upstream: {
+        kind: "eso-obscore",
+        endpoint: "https://archive.eso.org/tap_obs",
+        query: "SELECT TOP 5 ... FROM ivoa.ObsCore",
+        rowCount: 5,
+      },
+      persistedAt: new Date().toISOString(),
+      freshness: {
+        maxAgeMs: 15 * 60 * 1000,
+        lastUpdatedAt: new Date().toISOString(),
+        stale: false,
+      },
+    });
+  }
+
   // Diagnostics index mock
   diagnosticsIndex(): Observable<{ path: string; files: string[] }> {
     const now = new Date();

@@ -1,0 +1,729 @@
+{
+    "pipes": [],
+    "interfaces": [],
+    "injectables": [],
+    "guards": [],
+    "interceptors": [],
+    "classes": [
+        {
+            "name": "MockEventSource",
+            "id": "class-MockEventSource-08deede435b17ad72cc8b5f348abb4efe680e207659244938b6ab7b3acf99d4a66583fbbbf33e9c8ffb6ea8c750de0d79fd8189fe7c7f78262580cca772847ce",
+            "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+            "coverageIgnore": false,
+            "deprecated": false,
+            "deprecationMessage": "",
+            "type": "class",
+            "sourceCode": "import { Component, Input } from \"@angular/core\";\nimport { HttpClient } from \"@angular/common/http\";\nimport { FormsModule } from \"@angular/forms\";\nimport { MatButtonModule } from \"@angular/material/button\";\nimport { MatCardModule } from \"@angular/material/card\";\nimport { MatFormFieldModule } from \"@angular/material/form-field\";\nimport { MatIconModule } from \"@angular/material/icon\";\nimport { MatSelectModule } from \"@angular/material/select\";\nimport { MatTabsModule } from \"@angular/material/tabs\";\nimport { NoopAnimationsModule } from \"@angular/platform-browser/animations\";\nimport type { Meta, StoryObj } from \"@storybook/angular\";\nimport { moduleMetadata } from \"@storybook/angular\";\nimport { of } from \"rxjs\";\nimport { DataSourceService } from \"../../services/data-source.service\";\nimport { LoadProfileService } from \"../../services/load-profile.service\";\nimport { MockDataService } from \"../../services/mock-data.service\";\nimport { RequestCacheService } from \"../../services/request-cache.service\";\nimport { DiagnosticsComponent } from \"./diagnostics.component\";\n\n@Component({ selector: \"app-promql-card\", template: \"\" })\nclass PromqlCardStubComponent {\n  @Input() query?: string;\n  @Input() title?: string;\n  @Input() tone?: string;\n}\n\n@Component({ selector: \"app-pulsar-status\", template: \"\" })\nclass PulsarStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-rabbitmq-status\", template: \"\" })\nclass RabbitMQStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-disclaimer-banner\", template: \"\" })\nclass DisclaimerBannerStubComponent {\n  @Input() dismissible?: boolean;\n  @Input() type?: string;\n  @Input() ready?: boolean;\n}\n\n@Component({ selector: \"app-trident-allocator\", template: \"\" })\nclass TridentAllocatorStubComponent {}\n\nclass MockEventSource {\n  onmessage: ((event: MessageEvent) => void) | null = null;\n  onerror: (() => void) | null = null;\n  close(): void {\n    // no-op for stories\n  }\n}\n\n(globalThis as typeof globalThis & { EventSource?: typeof EventSource }).EventSource =\n  MockEventSource as unknown as typeof EventSource;\n\nconst meta: Meta<DiagnosticsComponent> = {\n  title: \"Features/Diagnostics\",\n  component: DiagnosticsComponent,\n  decorators: [\n    moduleMetadata({\n      declarations: [\n        DiagnosticsComponent,\n        PromqlCardStubComponent,\n        PulsarStatusStubComponent,\n        RabbitMQStatusStubComponent,\n        DisclaimerBannerStubComponent,\n        TridentAllocatorStubComponent,\n      ],\n      imports: [\n        FormsModule,\n        MatButtonModule,\n        MatCardModule,\n        MatFormFieldModule,\n        MatIconModule,\n        MatSelectModule,\n        MatTabsModule,\n        NoopAnimationsModule,\n      ],\n      providers: [\n        {\n          provide: DataSourceService,\n          useValue: { mode: \"mock\" },\n        },\n        {\n          provide: MockDataService,\n          useValue: {\n            diagnosticsIndex: () =>\n              of({ path: \"/tmp\", files: [\"system-specs.txt\", \"payloads.log.20260807T100000Z\"] }),\n            systemSpecsText: () => of(\"mock system specs\"),\n            mockDockerServices: () => of([]),\n          },\n        },\n        {\n          provide: LoadProfileService,\n          useValue: {\n            pollingMs$: of(5000),\n            profile$: of(10),\n            current: 10,\n          },\n        },\n        {\n          provide: RequestCacheService,\n          useValue: {\n            getOrCreate: (_key: string, _ttl: number, factory: () => unknown) =>\n              of(factory()),\n          },\n        },\n        {\n          provide: HttpClient,\n          useValue: {\n            get: (url: string) => {\n              switch (url) {\n                case \"/api/diagnostics/database-benchmarks\":\n                  return of({\n                    generatedAt: new Date().toISOString(),\n                    source: \"prometheus\",\n                    postgres: {\n                      status: \"healthy\",\n                      connection: \"configured\",\n                      host: \"postgres\",\n                      database: \"cosmic\",\n                      activeConnections: 7,\n                      latencyMs: 3,\n                      details: \"Prometheus-backed metrics surfaced in Storybook\",\n                    },\n                    benchmarks: {\n                      ingestRatePerSec: 132,\n                      ingestBytesPerSec: 2097152,\n                      averageLatencyMs: 6,\n                      queueDepth: 4,\n                      activeJobs: 3,\n                      failureRatePerSec: 0.14,\n                      throughputMbPerSec: 11.4,\n                    },\n                    prometheus: {\n                      available: true,\n                      queries: [\n                        { query: \"pg_up\", label: \"pg_up\", value: 1 },\n                        { query: \"pg_stat_activity_count\", label: \"Connections\", value: 7 },\n                      ],\n                    },\n                  });\n                case \"/api/v1/pulsar/status\":\n                  return of({ brokers: 3, topics: 14, partitions: 42 });\n                case \"/api/v1/rabbitmq/status\":\n                  return of({ status: \"connected\", connection: \"connected\" });\n                case \"/api/metrics/topology\":\n                  return of({ timing_drift_ns: 128, rfi_event_rate: 4 });\n                case \"/api/diagnostics/docker-services\":\n                  return of([]);\n                case \"/api/diagnostics\":\n                  return of({ path: \"/tmp\", files: [\"system-specs.txt\"] });\n                case \"/api/diagnostics/system-specs\":\n                  return of(\"storybook system specs\");\n                default:\n                  return of([]);\n              }\n            },\n          },\n        },\n      ],\n    }),\n  ],\n};\n\nexport default meta;\ntype Story = StoryObj<DiagnosticsComponent>;\n\nexport const Default: Story = {};\n",
+            "displayName": "MockEventSource",
+            "inputsClass": [],
+            "outputsClass": [],
+            "properties": [
+                {
+                    "name": "onerror",
+                    "coverageIgnore": false,
+                    "defaultValue": "null",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "type": "unknown | null",
+                    "indexKey": "",
+                    "optional": false,
+                    "description": "",
+                    "line": 49,
+                    "rawdescription": "\n"
+                },
+                {
+                    "name": "onmessage",
+                    "coverageIgnore": false,
+                    "defaultValue": "null",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "type": "unknown | null",
+                    "indexKey": "",
+                    "optional": false,
+                    "description": "",
+                    "line": 48,
+                    "rawdescription": "\n"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "close",
+                    "coverageIgnore": false,
+                    "args": [],
+                    "optional": false,
+                    "returnType": "void",
+                    "typeParameters": [],
+                    "line": 50,
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "\n",
+                    "description": ""
+                }
+            ],
+            "indexSignatures": [],
+            "extends": [],
+            "hostBindings": [],
+            "hostListeners": [],
+            "relationships": {
+                "incoming": [],
+                "outgoing": []
+            }
+        }
+    ],
+    "directives": [],
+    "components": [
+        {
+            "name": "DisclaimerBannerStubComponent",
+            "id": "component-DisclaimerBannerStubComponent-08deede435b17ad72cc8b5f348abb4efe680e207659244938b6ab7b3acf99d4a66583fbbbf33e9c8ffb6ea8c750de0d79fd8189fe7c7f78262580cca772847ce",
+            "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+            "encapsulation": [],
+            "entryComponents": [],
+            "inputs": [],
+            "outputs": [],
+            "providers": [],
+            "selector": "app-disclaimer-banner",
+            "styleUrls": [],
+            "styles": [],
+            "template": "",
+            "templateUrl": [],
+            "templateVariables": [],
+            "viewProviders": [],
+            "hostDirectives": [],
+            "inputsClass": [
+                {
+                    "coverageIgnore": false,
+                    "name": "dismissible",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "\n",
+                    "description": "",
+                    "line": 39,
+                    "type": "boolean",
+                    "decorators": []
+                },
+                {
+                    "coverageIgnore": false,
+                    "name": "ready",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "\n",
+                    "description": "",
+                    "line": 41,
+                    "type": "boolean",
+                    "decorators": []
+                },
+                {
+                    "coverageIgnore": false,
+                    "name": "type",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "\n",
+                    "description": "",
+                    "line": 40,
+                    "type": "string",
+                    "decorators": []
+                }
+            ],
+            "outputsClass": [],
+            "propertiesClass": [],
+            "methodsClass": [],
+            "coverageIgnore": false,
+            "deprecated": false,
+            "deprecationMessage": "",
+            "hostBindings": [],
+            "hostListeners": [],
+            "standalone": true,
+            "imports": [],
+            "description": "",
+            "rawdescription": "\n",
+            "type": "component",
+            "sourceCode": "import { Component, Input } from \"@angular/core\";\nimport { HttpClient } from \"@angular/common/http\";\nimport { FormsModule } from \"@angular/forms\";\nimport { MatButtonModule } from \"@angular/material/button\";\nimport { MatCardModule } from \"@angular/material/card\";\nimport { MatFormFieldModule } from \"@angular/material/form-field\";\nimport { MatIconModule } from \"@angular/material/icon\";\nimport { MatSelectModule } from \"@angular/material/select\";\nimport { MatTabsModule } from \"@angular/material/tabs\";\nimport { NoopAnimationsModule } from \"@angular/platform-browser/animations\";\nimport type { Meta, StoryObj } from \"@storybook/angular\";\nimport { moduleMetadata } from \"@storybook/angular\";\nimport { of } from \"rxjs\";\nimport { DataSourceService } from \"../../services/data-source.service\";\nimport { LoadProfileService } from \"../../services/load-profile.service\";\nimport { MockDataService } from \"../../services/mock-data.service\";\nimport { RequestCacheService } from \"../../services/request-cache.service\";\nimport { DiagnosticsComponent } from \"./diagnostics.component\";\n\n@Component({ selector: \"app-promql-card\", template: \"\" })\nclass PromqlCardStubComponent {\n  @Input() query?: string;\n  @Input() title?: string;\n  @Input() tone?: string;\n}\n\n@Component({ selector: \"app-pulsar-status\", template: \"\" })\nclass PulsarStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-rabbitmq-status\", template: \"\" })\nclass RabbitMQStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-disclaimer-banner\", template: \"\" })\nclass DisclaimerBannerStubComponent {\n  @Input() dismissible?: boolean;\n  @Input() type?: string;\n  @Input() ready?: boolean;\n}\n\n@Component({ selector: \"app-trident-allocator\", template: \"\" })\nclass TridentAllocatorStubComponent {}\n\nclass MockEventSource {\n  onmessage: ((event: MessageEvent) => void) | null = null;\n  onerror: (() => void) | null = null;\n  close(): void {\n    // no-op for stories\n  }\n}\n\n(globalThis as typeof globalThis & { EventSource?: typeof EventSource }).EventSource =\n  MockEventSource as unknown as typeof EventSource;\n\nconst meta: Meta<DiagnosticsComponent> = {\n  title: \"Features/Diagnostics\",\n  component: DiagnosticsComponent,\n  decorators: [\n    moduleMetadata({\n      declarations: [\n        DiagnosticsComponent,\n        PromqlCardStubComponent,\n        PulsarStatusStubComponent,\n        RabbitMQStatusStubComponent,\n        DisclaimerBannerStubComponent,\n        TridentAllocatorStubComponent,\n      ],\n      imports: [\n        FormsModule,\n        MatButtonModule,\n        MatCardModule,\n        MatFormFieldModule,\n        MatIconModule,\n        MatSelectModule,\n        MatTabsModule,\n        NoopAnimationsModule,\n      ],\n      providers: [\n        {\n          provide: DataSourceService,\n          useValue: { mode: \"mock\" },\n        },\n        {\n          provide: MockDataService,\n          useValue: {\n            diagnosticsIndex: () =>\n              of({ path: \"/tmp\", files: [\"system-specs.txt\", \"payloads.log.20260807T100000Z\"] }),\n            systemSpecsText: () => of(\"mock system specs\"),\n            mockDockerServices: () => of([]),\n          },\n        },\n        {\n          provide: LoadProfileService,\n          useValue: {\n            pollingMs$: of(5000),\n            profile$: of(10),\n            current: 10,\n          },\n        },\n        {\n          provide: RequestCacheService,\n          useValue: {\n            getOrCreate: (_key: string, _ttl: number, factory: () => unknown) =>\n              of(factory()),\n          },\n        },\n        {\n          provide: HttpClient,\n          useValue: {\n            get: (url: string) => {\n              switch (url) {\n                case \"/api/diagnostics/database-benchmarks\":\n                  return of({\n                    generatedAt: new Date().toISOString(),\n                    source: \"prometheus\",\n                    postgres: {\n                      status: \"healthy\",\n                      connection: \"configured\",\n                      host: \"postgres\",\n                      database: \"cosmic\",\n                      activeConnections: 7,\n                      latencyMs: 3,\n                      details: \"Prometheus-backed metrics surfaced in Storybook\",\n                    },\n                    benchmarks: {\n                      ingestRatePerSec: 132,\n                      ingestBytesPerSec: 2097152,\n                      averageLatencyMs: 6,\n                      queueDepth: 4,\n                      activeJobs: 3,\n                      failureRatePerSec: 0.14,\n                      throughputMbPerSec: 11.4,\n                    },\n                    prometheus: {\n                      available: true,\n                      queries: [\n                        { query: \"pg_up\", label: \"pg_up\", value: 1 },\n                        { query: \"pg_stat_activity_count\", label: \"Connections\", value: 7 },\n                      ],\n                    },\n                  });\n                case \"/api/v1/pulsar/status\":\n                  return of({ brokers: 3, topics: 14, partitions: 42 });\n                case \"/api/v1/rabbitmq/status\":\n                  return of({ status: \"connected\", connection: \"connected\" });\n                case \"/api/metrics/topology\":\n                  return of({ timing_drift_ns: 128, rfi_event_rate: 4 });\n                case \"/api/diagnostics/docker-services\":\n                  return of([]);\n                case \"/api/diagnostics\":\n                  return of({ path: \"/tmp\", files: [\"system-specs.txt\"] });\n                case \"/api/diagnostics/system-specs\":\n                  return of(\"storybook system specs\");\n                default:\n                  return of([]);\n              }\n            },\n          },\n        },\n      ],\n    }),\n  ],\n};\n\nexport default meta;\ntype Story = StoryObj<DiagnosticsComponent>;\n\nexport const Default: Story = {};\n",
+            "assetsDirs": [],
+            "styleUrlsData": "",
+            "stylesData": "",
+            "extends": [],
+            "relationships": {
+                "incoming": [],
+                "outgoing": []
+            }
+        },
+        {
+            "name": "PromqlCardStubComponent",
+            "id": "component-PromqlCardStubComponent-08deede435b17ad72cc8b5f348abb4efe680e207659244938b6ab7b3acf99d4a66583fbbbf33e9c8ffb6ea8c750de0d79fd8189fe7c7f78262580cca772847ce",
+            "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+            "encapsulation": [],
+            "entryComponents": [],
+            "inputs": [],
+            "outputs": [],
+            "providers": [],
+            "selector": "app-promql-card",
+            "styleUrls": [],
+            "styles": [],
+            "template": "",
+            "templateUrl": [],
+            "templateVariables": [],
+            "viewProviders": [],
+            "hostDirectives": [],
+            "inputsClass": [
+                {
+                    "coverageIgnore": false,
+                    "name": "query",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "\n",
+                    "description": "",
+                    "line": 22,
+                    "type": "string",
+                    "decorators": []
+                },
+                {
+                    "coverageIgnore": false,
+                    "name": "title",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "\n",
+                    "description": "",
+                    "line": 23,
+                    "type": "string",
+                    "decorators": []
+                },
+                {
+                    "coverageIgnore": false,
+                    "name": "tone",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "\n",
+                    "description": "",
+                    "line": 24,
+                    "type": "string",
+                    "decorators": []
+                }
+            ],
+            "outputsClass": [],
+            "propertiesClass": [],
+            "methodsClass": [],
+            "coverageIgnore": false,
+            "deprecated": false,
+            "deprecationMessage": "",
+            "hostBindings": [],
+            "hostListeners": [],
+            "standalone": true,
+            "imports": [],
+            "description": "",
+            "rawdescription": "\n",
+            "type": "component",
+            "sourceCode": "import { Component, Input } from \"@angular/core\";\nimport { HttpClient } from \"@angular/common/http\";\nimport { FormsModule } from \"@angular/forms\";\nimport { MatButtonModule } from \"@angular/material/button\";\nimport { MatCardModule } from \"@angular/material/card\";\nimport { MatFormFieldModule } from \"@angular/material/form-field\";\nimport { MatIconModule } from \"@angular/material/icon\";\nimport { MatSelectModule } from \"@angular/material/select\";\nimport { MatTabsModule } from \"@angular/material/tabs\";\nimport { NoopAnimationsModule } from \"@angular/platform-browser/animations\";\nimport type { Meta, StoryObj } from \"@storybook/angular\";\nimport { moduleMetadata } from \"@storybook/angular\";\nimport { of } from \"rxjs\";\nimport { DataSourceService } from \"../../services/data-source.service\";\nimport { LoadProfileService } from \"../../services/load-profile.service\";\nimport { MockDataService } from \"../../services/mock-data.service\";\nimport { RequestCacheService } from \"../../services/request-cache.service\";\nimport { DiagnosticsComponent } from \"./diagnostics.component\";\n\n@Component({ selector: \"app-promql-card\", template: \"\" })\nclass PromqlCardStubComponent {\n  @Input() query?: string;\n  @Input() title?: string;\n  @Input() tone?: string;\n}\n\n@Component({ selector: \"app-pulsar-status\", template: \"\" })\nclass PulsarStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-rabbitmq-status\", template: \"\" })\nclass RabbitMQStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-disclaimer-banner\", template: \"\" })\nclass DisclaimerBannerStubComponent {\n  @Input() dismissible?: boolean;\n  @Input() type?: string;\n  @Input() ready?: boolean;\n}\n\n@Component({ selector: \"app-trident-allocator\", template: \"\" })\nclass TridentAllocatorStubComponent {}\n\nclass MockEventSource {\n  onmessage: ((event: MessageEvent) => void) | null = null;\n  onerror: (() => void) | null = null;\n  close(): void {\n    // no-op for stories\n  }\n}\n\n(globalThis as typeof globalThis & { EventSource?: typeof EventSource }).EventSource =\n  MockEventSource as unknown as typeof EventSource;\n\nconst meta: Meta<DiagnosticsComponent> = {\n  title: \"Features/Diagnostics\",\n  component: DiagnosticsComponent,\n  decorators: [\n    moduleMetadata({\n      declarations: [\n        DiagnosticsComponent,\n        PromqlCardStubComponent,\n        PulsarStatusStubComponent,\n        RabbitMQStatusStubComponent,\n        DisclaimerBannerStubComponent,\n        TridentAllocatorStubComponent,\n      ],\n      imports: [\n        FormsModule,\n        MatButtonModule,\n        MatCardModule,\n        MatFormFieldModule,\n        MatIconModule,\n        MatSelectModule,\n        MatTabsModule,\n        NoopAnimationsModule,\n      ],\n      providers: [\n        {\n          provide: DataSourceService,\n          useValue: { mode: \"mock\" },\n        },\n        {\n          provide: MockDataService,\n          useValue: {\n            diagnosticsIndex: () =>\n              of({ path: \"/tmp\", files: [\"system-specs.txt\", \"payloads.log.20260807T100000Z\"] }),\n            systemSpecsText: () => of(\"mock system specs\"),\n            mockDockerServices: () => of([]),\n          },\n        },\n        {\n          provide: LoadProfileService,\n          useValue: {\n            pollingMs$: of(5000),\n            profile$: of(10),\n            current: 10,\n          },\n        },\n        {\n          provide: RequestCacheService,\n          useValue: {\n            getOrCreate: (_key: string, _ttl: number, factory: () => unknown) =>\n              of(factory()),\n          },\n        },\n        {\n          provide: HttpClient,\n          useValue: {\n            get: (url: string) => {\n              switch (url) {\n                case \"/api/diagnostics/database-benchmarks\":\n                  return of({\n                    generatedAt: new Date().toISOString(),\n                    source: \"prometheus\",\n                    postgres: {\n                      status: \"healthy\",\n                      connection: \"configured\",\n                      host: \"postgres\",\n                      database: \"cosmic\",\n                      activeConnections: 7,\n                      latencyMs: 3,\n                      details: \"Prometheus-backed metrics surfaced in Storybook\",\n                    },\n                    benchmarks: {\n                      ingestRatePerSec: 132,\n                      ingestBytesPerSec: 2097152,\n                      averageLatencyMs: 6,\n                      queueDepth: 4,\n                      activeJobs: 3,\n                      failureRatePerSec: 0.14,\n                      throughputMbPerSec: 11.4,\n                    },\n                    prometheus: {\n                      available: true,\n                      queries: [\n                        { query: \"pg_up\", label: \"pg_up\", value: 1 },\n                        { query: \"pg_stat_activity_count\", label: \"Connections\", value: 7 },\n                      ],\n                    },\n                  });\n                case \"/api/v1/pulsar/status\":\n                  return of({ brokers: 3, topics: 14, partitions: 42 });\n                case \"/api/v1/rabbitmq/status\":\n                  return of({ status: \"connected\", connection: \"connected\" });\n                case \"/api/metrics/topology\":\n                  return of({ timing_drift_ns: 128, rfi_event_rate: 4 });\n                case \"/api/diagnostics/docker-services\":\n                  return of([]);\n                case \"/api/diagnostics\":\n                  return of({ path: \"/tmp\", files: [\"system-specs.txt\"] });\n                case \"/api/diagnostics/system-specs\":\n                  return of(\"storybook system specs\");\n                default:\n                  return of([]);\n              }\n            },\n          },\n        },\n      ],\n    }),\n  ],\n};\n\nexport default meta;\ntype Story = StoryObj<DiagnosticsComponent>;\n\nexport const Default: Story = {};\n",
+            "assetsDirs": [],
+            "styleUrlsData": "",
+            "stylesData": "",
+            "extends": [],
+            "relationships": {
+                "incoming": [],
+                "outgoing": []
+            }
+        },
+        {
+            "name": "PulsarStatusStubComponent",
+            "id": "component-PulsarStatusStubComponent-08deede435b17ad72cc8b5f348abb4efe680e207659244938b6ab7b3acf99d4a66583fbbbf33e9c8ffb6ea8c750de0d79fd8189fe7c7f78262580cca772847ce",
+            "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+            "encapsulation": [],
+            "entryComponents": [],
+            "inputs": [],
+            "outputs": [],
+            "providers": [],
+            "selector": "app-pulsar-status",
+            "styleUrls": [],
+            "styles": [],
+            "template": "",
+            "templateUrl": [],
+            "templateVariables": [],
+            "viewProviders": [],
+            "hostDirectives": [],
+            "inputsClass": [
+                {
+                    "coverageIgnore": false,
+                    "name": "status",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "\n",
+                    "description": "",
+                    "line": 29,
+                    "type": "unknown",
+                    "decorators": []
+                }
+            ],
+            "outputsClass": [],
+            "propertiesClass": [],
+            "methodsClass": [],
+            "coverageIgnore": false,
+            "deprecated": false,
+            "deprecationMessage": "",
+            "hostBindings": [],
+            "hostListeners": [],
+            "standalone": true,
+            "imports": [],
+            "description": "",
+            "rawdescription": "\n",
+            "type": "component",
+            "sourceCode": "import { Component, Input } from \"@angular/core\";\nimport { HttpClient } from \"@angular/common/http\";\nimport { FormsModule } from \"@angular/forms\";\nimport { MatButtonModule } from \"@angular/material/button\";\nimport { MatCardModule } from \"@angular/material/card\";\nimport { MatFormFieldModule } from \"@angular/material/form-field\";\nimport { MatIconModule } from \"@angular/material/icon\";\nimport { MatSelectModule } from \"@angular/material/select\";\nimport { MatTabsModule } from \"@angular/material/tabs\";\nimport { NoopAnimationsModule } from \"@angular/platform-browser/animations\";\nimport type { Meta, StoryObj } from \"@storybook/angular\";\nimport { moduleMetadata } from \"@storybook/angular\";\nimport { of } from \"rxjs\";\nimport { DataSourceService } from \"../../services/data-source.service\";\nimport { LoadProfileService } from \"../../services/load-profile.service\";\nimport { MockDataService } from \"../../services/mock-data.service\";\nimport { RequestCacheService } from \"../../services/request-cache.service\";\nimport { DiagnosticsComponent } from \"./diagnostics.component\";\n\n@Component({ selector: \"app-promql-card\", template: \"\" })\nclass PromqlCardStubComponent {\n  @Input() query?: string;\n  @Input() title?: string;\n  @Input() tone?: string;\n}\n\n@Component({ selector: \"app-pulsar-status\", template: \"\" })\nclass PulsarStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-rabbitmq-status\", template: \"\" })\nclass RabbitMQStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-disclaimer-banner\", template: \"\" })\nclass DisclaimerBannerStubComponent {\n  @Input() dismissible?: boolean;\n  @Input() type?: string;\n  @Input() ready?: boolean;\n}\n\n@Component({ selector: \"app-trident-allocator\", template: \"\" })\nclass TridentAllocatorStubComponent {}\n\nclass MockEventSource {\n  onmessage: ((event: MessageEvent) => void) | null = null;\n  onerror: (() => void) | null = null;\n  close(): void {\n    // no-op for stories\n  }\n}\n\n(globalThis as typeof globalThis & { EventSource?: typeof EventSource }).EventSource =\n  MockEventSource as unknown as typeof EventSource;\n\nconst meta: Meta<DiagnosticsComponent> = {\n  title: \"Features/Diagnostics\",\n  component: DiagnosticsComponent,\n  decorators: [\n    moduleMetadata({\n      declarations: [\n        DiagnosticsComponent,\n        PromqlCardStubComponent,\n        PulsarStatusStubComponent,\n        RabbitMQStatusStubComponent,\n        DisclaimerBannerStubComponent,\n        TridentAllocatorStubComponent,\n      ],\n      imports: [\n        FormsModule,\n        MatButtonModule,\n        MatCardModule,\n        MatFormFieldModule,\n        MatIconModule,\n        MatSelectModule,\n        MatTabsModule,\n        NoopAnimationsModule,\n      ],\n      providers: [\n        {\n          provide: DataSourceService,\n          useValue: { mode: \"mock\" },\n        },\n        {\n          provide: MockDataService,\n          useValue: {\n            diagnosticsIndex: () =>\n              of({ path: \"/tmp\", files: [\"system-specs.txt\", \"payloads.log.20260807T100000Z\"] }),\n            systemSpecsText: () => of(\"mock system specs\"),\n            mockDockerServices: () => of([]),\n          },\n        },\n        {\n          provide: LoadProfileService,\n          useValue: {\n            pollingMs$: of(5000),\n            profile$: of(10),\n            current: 10,\n          },\n        },\n        {\n          provide: RequestCacheService,\n          useValue: {\n            getOrCreate: (_key: string, _ttl: number, factory: () => unknown) =>\n              of(factory()),\n          },\n        },\n        {\n          provide: HttpClient,\n          useValue: {\n            get: (url: string) => {\n              switch (url) {\n                case \"/api/diagnostics/database-benchmarks\":\n                  return of({\n                    generatedAt: new Date().toISOString(),\n                    source: \"prometheus\",\n                    postgres: {\n                      status: \"healthy\",\n                      connection: \"configured\",\n                      host: \"postgres\",\n                      database: \"cosmic\",\n                      activeConnections: 7,\n                      latencyMs: 3,\n                      details: \"Prometheus-backed metrics surfaced in Storybook\",\n                    },\n                    benchmarks: {\n                      ingestRatePerSec: 132,\n                      ingestBytesPerSec: 2097152,\n                      averageLatencyMs: 6,\n                      queueDepth: 4,\n                      activeJobs: 3,\n                      failureRatePerSec: 0.14,\n                      throughputMbPerSec: 11.4,\n                    },\n                    prometheus: {\n                      available: true,\n                      queries: [\n                        { query: \"pg_up\", label: \"pg_up\", value: 1 },\n                        { query: \"pg_stat_activity_count\", label: \"Connections\", value: 7 },\n                      ],\n                    },\n                  });\n                case \"/api/v1/pulsar/status\":\n                  return of({ brokers: 3, topics: 14, partitions: 42 });\n                case \"/api/v1/rabbitmq/status\":\n                  return of({ status: \"connected\", connection: \"connected\" });\n                case \"/api/metrics/topology\":\n                  return of({ timing_drift_ns: 128, rfi_event_rate: 4 });\n                case \"/api/diagnostics/docker-services\":\n                  return of([]);\n                case \"/api/diagnostics\":\n                  return of({ path: \"/tmp\", files: [\"system-specs.txt\"] });\n                case \"/api/diagnostics/system-specs\":\n                  return of(\"storybook system specs\");\n                default:\n                  return of([]);\n              }\n            },\n          },\n        },\n      ],\n    }),\n  ],\n};\n\nexport default meta;\ntype Story = StoryObj<DiagnosticsComponent>;\n\nexport const Default: Story = {};\n",
+            "assetsDirs": [],
+            "styleUrlsData": "",
+            "stylesData": "",
+            "extends": [],
+            "relationships": {
+                "incoming": [],
+                "outgoing": []
+            }
+        },
+        {
+            "name": "RabbitMQStatusStubComponent",
+            "id": "component-RabbitMQStatusStubComponent-08deede435b17ad72cc8b5f348abb4efe680e207659244938b6ab7b3acf99d4a66583fbbbf33e9c8ffb6ea8c750de0d79fd8189fe7c7f78262580cca772847ce",
+            "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+            "encapsulation": [],
+            "entryComponents": [],
+            "inputs": [],
+            "outputs": [],
+            "providers": [],
+            "selector": "app-rabbitmq-status",
+            "styleUrls": [],
+            "styles": [],
+            "template": "",
+            "templateUrl": [],
+            "templateVariables": [],
+            "viewProviders": [],
+            "hostDirectives": [],
+            "inputsClass": [
+                {
+                    "coverageIgnore": false,
+                    "name": "status",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "\n",
+                    "description": "",
+                    "line": 34,
+                    "type": "unknown",
+                    "decorators": []
+                }
+            ],
+            "outputsClass": [],
+            "propertiesClass": [],
+            "methodsClass": [],
+            "coverageIgnore": false,
+            "deprecated": false,
+            "deprecationMessage": "",
+            "hostBindings": [],
+            "hostListeners": [],
+            "standalone": true,
+            "imports": [],
+            "description": "",
+            "rawdescription": "\n",
+            "type": "component",
+            "sourceCode": "import { Component, Input } from \"@angular/core\";\nimport { HttpClient } from \"@angular/common/http\";\nimport { FormsModule } from \"@angular/forms\";\nimport { MatButtonModule } from \"@angular/material/button\";\nimport { MatCardModule } from \"@angular/material/card\";\nimport { MatFormFieldModule } from \"@angular/material/form-field\";\nimport { MatIconModule } from \"@angular/material/icon\";\nimport { MatSelectModule } from \"@angular/material/select\";\nimport { MatTabsModule } from \"@angular/material/tabs\";\nimport { NoopAnimationsModule } from \"@angular/platform-browser/animations\";\nimport type { Meta, StoryObj } from \"@storybook/angular\";\nimport { moduleMetadata } from \"@storybook/angular\";\nimport { of } from \"rxjs\";\nimport { DataSourceService } from \"../../services/data-source.service\";\nimport { LoadProfileService } from \"../../services/load-profile.service\";\nimport { MockDataService } from \"../../services/mock-data.service\";\nimport { RequestCacheService } from \"../../services/request-cache.service\";\nimport { DiagnosticsComponent } from \"./diagnostics.component\";\n\n@Component({ selector: \"app-promql-card\", template: \"\" })\nclass PromqlCardStubComponent {\n  @Input() query?: string;\n  @Input() title?: string;\n  @Input() tone?: string;\n}\n\n@Component({ selector: \"app-pulsar-status\", template: \"\" })\nclass PulsarStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-rabbitmq-status\", template: \"\" })\nclass RabbitMQStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-disclaimer-banner\", template: \"\" })\nclass DisclaimerBannerStubComponent {\n  @Input() dismissible?: boolean;\n  @Input() type?: string;\n  @Input() ready?: boolean;\n}\n\n@Component({ selector: \"app-trident-allocator\", template: \"\" })\nclass TridentAllocatorStubComponent {}\n\nclass MockEventSource {\n  onmessage: ((event: MessageEvent) => void) | null = null;\n  onerror: (() => void) | null = null;\n  close(): void {\n    // no-op for stories\n  }\n}\n\n(globalThis as typeof globalThis & { EventSource?: typeof EventSource }).EventSource =\n  MockEventSource as unknown as typeof EventSource;\n\nconst meta: Meta<DiagnosticsComponent> = {\n  title: \"Features/Diagnostics\",\n  component: DiagnosticsComponent,\n  decorators: [\n    moduleMetadata({\n      declarations: [\n        DiagnosticsComponent,\n        PromqlCardStubComponent,\n        PulsarStatusStubComponent,\n        RabbitMQStatusStubComponent,\n        DisclaimerBannerStubComponent,\n        TridentAllocatorStubComponent,\n      ],\n      imports: [\n        FormsModule,\n        MatButtonModule,\n        MatCardModule,\n        MatFormFieldModule,\n        MatIconModule,\n        MatSelectModule,\n        MatTabsModule,\n        NoopAnimationsModule,\n      ],\n      providers: [\n        {\n          provide: DataSourceService,\n          useValue: { mode: \"mock\" },\n        },\n        {\n          provide: MockDataService,\n          useValue: {\n            diagnosticsIndex: () =>\n              of({ path: \"/tmp\", files: [\"system-specs.txt\", \"payloads.log.20260807T100000Z\"] }),\n            systemSpecsText: () => of(\"mock system specs\"),\n            mockDockerServices: () => of([]),\n          },\n        },\n        {\n          provide: LoadProfileService,\n          useValue: {\n            pollingMs$: of(5000),\n            profile$: of(10),\n            current: 10,\n          },\n        },\n        {\n          provide: RequestCacheService,\n          useValue: {\n            getOrCreate: (_key: string, _ttl: number, factory: () => unknown) =>\n              of(factory()),\n          },\n        },\n        {\n          provide: HttpClient,\n          useValue: {\n            get: (url: string) => {\n              switch (url) {\n                case \"/api/diagnostics/database-benchmarks\":\n                  return of({\n                    generatedAt: new Date().toISOString(),\n                    source: \"prometheus\",\n                    postgres: {\n                      status: \"healthy\",\n                      connection: \"configured\",\n                      host: \"postgres\",\n                      database: \"cosmic\",\n                      activeConnections: 7,\n                      latencyMs: 3,\n                      details: \"Prometheus-backed metrics surfaced in Storybook\",\n                    },\n                    benchmarks: {\n                      ingestRatePerSec: 132,\n                      ingestBytesPerSec: 2097152,\n                      averageLatencyMs: 6,\n                      queueDepth: 4,\n                      activeJobs: 3,\n                      failureRatePerSec: 0.14,\n                      throughputMbPerSec: 11.4,\n                    },\n                    prometheus: {\n                      available: true,\n                      queries: [\n                        { query: \"pg_up\", label: \"pg_up\", value: 1 },\n                        { query: \"pg_stat_activity_count\", label: \"Connections\", value: 7 },\n                      ],\n                    },\n                  });\n                case \"/api/v1/pulsar/status\":\n                  return of({ brokers: 3, topics: 14, partitions: 42 });\n                case \"/api/v1/rabbitmq/status\":\n                  return of({ status: \"connected\", connection: \"connected\" });\n                case \"/api/metrics/topology\":\n                  return of({ timing_drift_ns: 128, rfi_event_rate: 4 });\n                case \"/api/diagnostics/docker-services\":\n                  return of([]);\n                case \"/api/diagnostics\":\n                  return of({ path: \"/tmp\", files: [\"system-specs.txt\"] });\n                case \"/api/diagnostics/system-specs\":\n                  return of(\"storybook system specs\");\n                default:\n                  return of([]);\n              }\n            },\n          },\n        },\n      ],\n    }),\n  ],\n};\n\nexport default meta;\ntype Story = StoryObj<DiagnosticsComponent>;\n\nexport const Default: Story = {};\n",
+            "assetsDirs": [],
+            "styleUrlsData": "",
+            "stylesData": "",
+            "extends": [],
+            "relationships": {
+                "incoming": [],
+                "outgoing": []
+            }
+        },
+        {
+            "name": "TridentAllocatorStubComponent",
+            "id": "component-TridentAllocatorStubComponent-08deede435b17ad72cc8b5f348abb4efe680e207659244938b6ab7b3acf99d4a66583fbbbf33e9c8ffb6ea8c750de0d79fd8189fe7c7f78262580cca772847ce",
+            "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+            "encapsulation": [],
+            "entryComponents": [],
+            "inputs": [],
+            "outputs": [],
+            "providers": [],
+            "selector": "app-trident-allocator",
+            "styleUrls": [],
+            "styles": [],
+            "template": "",
+            "templateUrl": [],
+            "templateVariables": [],
+            "viewProviders": [],
+            "hostDirectives": [],
+            "inputsClass": [],
+            "outputsClass": [],
+            "propertiesClass": [],
+            "methodsClass": [],
+            "coverageIgnore": false,
+            "deprecated": false,
+            "deprecationMessage": "",
+            "hostBindings": [],
+            "hostListeners": [],
+            "standalone": true,
+            "imports": [],
+            "description": "",
+            "rawdescription": "\n",
+            "type": "component",
+            "sourceCode": "import { Component, Input } from \"@angular/core\";\nimport { HttpClient } from \"@angular/common/http\";\nimport { FormsModule } from \"@angular/forms\";\nimport { MatButtonModule } from \"@angular/material/button\";\nimport { MatCardModule } from \"@angular/material/card\";\nimport { MatFormFieldModule } from \"@angular/material/form-field\";\nimport { MatIconModule } from \"@angular/material/icon\";\nimport { MatSelectModule } from \"@angular/material/select\";\nimport { MatTabsModule } from \"@angular/material/tabs\";\nimport { NoopAnimationsModule } from \"@angular/platform-browser/animations\";\nimport type { Meta, StoryObj } from \"@storybook/angular\";\nimport { moduleMetadata } from \"@storybook/angular\";\nimport { of } from \"rxjs\";\nimport { DataSourceService } from \"../../services/data-source.service\";\nimport { LoadProfileService } from \"../../services/load-profile.service\";\nimport { MockDataService } from \"../../services/mock-data.service\";\nimport { RequestCacheService } from \"../../services/request-cache.service\";\nimport { DiagnosticsComponent } from \"./diagnostics.component\";\n\n@Component({ selector: \"app-promql-card\", template: \"\" })\nclass PromqlCardStubComponent {\n  @Input() query?: string;\n  @Input() title?: string;\n  @Input() tone?: string;\n}\n\n@Component({ selector: \"app-pulsar-status\", template: \"\" })\nclass PulsarStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-rabbitmq-status\", template: \"\" })\nclass RabbitMQStatusStubComponent {\n  @Input() status?: unknown;\n}\n\n@Component({ selector: \"app-disclaimer-banner\", template: \"\" })\nclass DisclaimerBannerStubComponent {\n  @Input() dismissible?: boolean;\n  @Input() type?: string;\n  @Input() ready?: boolean;\n}\n\n@Component({ selector: \"app-trident-allocator\", template: \"\" })\nclass TridentAllocatorStubComponent {}\n\nclass MockEventSource {\n  onmessage: ((event: MessageEvent) => void) | null = null;\n  onerror: (() => void) | null = null;\n  close(): void {\n    // no-op for stories\n  }\n}\n\n(globalThis as typeof globalThis & { EventSource?: typeof EventSource }).EventSource =\n  MockEventSource as unknown as typeof EventSource;\n\nconst meta: Meta<DiagnosticsComponent> = {\n  title: \"Features/Diagnostics\",\n  component: DiagnosticsComponent,\n  decorators: [\n    moduleMetadata({\n      declarations: [\n        DiagnosticsComponent,\n        PromqlCardStubComponent,\n        PulsarStatusStubComponent,\n        RabbitMQStatusStubComponent,\n        DisclaimerBannerStubComponent,\n        TridentAllocatorStubComponent,\n      ],\n      imports: [\n        FormsModule,\n        MatButtonModule,\n        MatCardModule,\n        MatFormFieldModule,\n        MatIconModule,\n        MatSelectModule,\n        MatTabsModule,\n        NoopAnimationsModule,\n      ],\n      providers: [\n        {\n          provide: DataSourceService,\n          useValue: { mode: \"mock\" },\n        },\n        {\n          provide: MockDataService,\n          useValue: {\n            diagnosticsIndex: () =>\n              of({ path: \"/tmp\", files: [\"system-specs.txt\", \"payloads.log.20260807T100000Z\"] }),\n            systemSpecsText: () => of(\"mock system specs\"),\n            mockDockerServices: () => of([]),\n          },\n        },\n        {\n          provide: LoadProfileService,\n          useValue: {\n            pollingMs$: of(5000),\n            profile$: of(10),\n            current: 10,\n          },\n        },\n        {\n          provide: RequestCacheService,\n          useValue: {\n            getOrCreate: (_key: string, _ttl: number, factory: () => unknown) =>\n              of(factory()),\n          },\n        },\n        {\n          provide: HttpClient,\n          useValue: {\n            get: (url: string) => {\n              switch (url) {\n                case \"/api/diagnostics/database-benchmarks\":\n                  return of({\n                    generatedAt: new Date().toISOString(),\n                    source: \"prometheus\",\n                    postgres: {\n                      status: \"healthy\",\n                      connection: \"configured\",\n                      host: \"postgres\",\n                      database: \"cosmic\",\n                      activeConnections: 7,\n                      latencyMs: 3,\n                      details: \"Prometheus-backed metrics surfaced in Storybook\",\n                    },\n                    benchmarks: {\n                      ingestRatePerSec: 132,\n                      ingestBytesPerSec: 2097152,\n                      averageLatencyMs: 6,\n                      queueDepth: 4,\n                      activeJobs: 3,\n                      failureRatePerSec: 0.14,\n                      throughputMbPerSec: 11.4,\n                    },\n                    prometheus: {\n                      available: true,\n                      queries: [\n                        { query: \"pg_up\", label: \"pg_up\", value: 1 },\n                        { query: \"pg_stat_activity_count\", label: \"Connections\", value: 7 },\n                      ],\n                    },\n                  });\n                case \"/api/v1/pulsar/status\":\n                  return of({ brokers: 3, topics: 14, partitions: 42 });\n                case \"/api/v1/rabbitmq/status\":\n                  return of({ status: \"connected\", connection: \"connected\" });\n                case \"/api/metrics/topology\":\n                  return of({ timing_drift_ns: 128, rfi_event_rate: 4 });\n                case \"/api/diagnostics/docker-services\":\n                  return of([]);\n                case \"/api/diagnostics\":\n                  return of({ path: \"/tmp\", files: [\"system-specs.txt\"] });\n                case \"/api/diagnostics/system-specs\":\n                  return of(\"storybook system specs\");\n                default:\n                  return of([]);\n              }\n            },\n          },\n        },\n      ],\n    }),\n  ],\n};\n\nexport default meta;\ntype Story = StoryObj<DiagnosticsComponent>;\n\nexport const Default: Story = {};\n",
+            "assetsDirs": [],
+            "styleUrlsData": "",
+            "stylesData": "",
+            "extends": [],
+            "relationships": {
+                "incoming": [],
+                "outgoing": []
+            }
+        }
+    ],
+    "modules": [],
+    "miscellaneous": {
+        "variables": [
+            {
+                "name": "config",
+                "ctype": "miscellaneous",
+                "subtype": "variable",
+                "file": ".storybook/main.ts",
+                "coverageIgnore": false,
+                "deprecated": false,
+                "deprecationMessage": "",
+                "type": "StorybookConfig",
+                "defaultValue": "{\n  stories: [\"../apps/frontend/src/**/*.stories.@(ts|tsx|js|jsx|mdx)\"],\n  addons: [],\n  framework: {\n    name: \"@storybook/angular\",\n    options: {},\n  },\n}"
+            },
+            {
+                "name": "Default",
+                "ctype": "miscellaneous",
+                "subtype": "variable",
+                "file": "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts",
+                "coverageIgnore": false,
+                "deprecated": false,
+                "deprecationMessage": "",
+                "type": "Story",
+                "defaultValue": "{\n  args: {\n    summary: {\n      source: \"live\",\n      bronzeState: \"Bronze ingest active\",\n      silverQuality: \"97.4% pass\",\n      goldReadiness: \"Ready for analyst review\",\n      evidence: \"ESO ObsCore proof slice\",\n      bronzePercent: 86,\n      silverPercent: 72,\n      goldPercent: 41,\n      qualityFailureRate: 1.2,\n      transferTimeEstimate: \"~3.2 min\",\n      upstream: {\n        kind: \"eso-obscore\",\n        endpoint: \"https://archive.eso.org/tap_obs\",\n        query: \"SELECT TOP 5 ... FROM ivoa.ObsCore\",\n        rowCount: 5,\n      },\n      persistedAt: \"2026-08-07T18:00:00.000Z\",\n      freshness: {\n        maxAgeMs: 15 * 60 * 1000,\n        lastUpdatedAt: \"2026-08-07T18:05:00.000Z\",\n        stale: false,\n      },\n    },\n  },\n}"
+            },
+            {
+                "name": "Default",
+                "ctype": "miscellaneous",
+                "subtype": "variable",
+                "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "coverageIgnore": false,
+                "deprecated": false,
+                "deprecationMessage": "",
+                "type": "Story",
+                "defaultValue": "{}"
+            },
+            {
+                "name": "meta",
+                "ctype": "miscellaneous",
+                "subtype": "variable",
+                "file": "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts",
+                "coverageIgnore": false,
+                "deprecated": false,
+                "deprecationMessage": "",
+                "type": "Meta<LakehousePanelComponent>",
+                "defaultValue": "{\n  title: \"Shared/LakehousePanel\",\n  component: LakehousePanelComponent,\n  tags: [\"autodocs\"],\n}"
+            },
+            {
+                "name": "meta",
+                "ctype": "miscellaneous",
+                "subtype": "variable",
+                "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "coverageIgnore": false,
+                "deprecated": false,
+                "deprecationMessage": "",
+                "type": "Meta<DiagnosticsComponent>",
+                "defaultValue": "{\n  title: \"Features/Diagnostics\",\n  component: DiagnosticsComponent,\n  decorators: [\n    moduleMetadata({\n      declarations: [\n        DiagnosticsComponent,\n        PromqlCardStubComponent,\n        PulsarStatusStubComponent,\n        RabbitMQStatusStubComponent,\n        DisclaimerBannerStubComponent,\n        TridentAllocatorStubComponent,\n      ],\n      imports: [\n        FormsModule,\n        MatButtonModule,\n        MatCardModule,\n        MatFormFieldModule,\n        MatIconModule,\n        MatSelectModule,\n        MatTabsModule,\n        NoopAnimationsModule,\n      ],\n      providers: [\n        {\n          provide: DataSourceService,\n          useValue: { mode: \"mock\" },\n        },\n        {\n          provide: MockDataService,\n          useValue: {\n            diagnosticsIndex: () =>\n              of({ path: \"/tmp\", files: [\"system-specs.txt\", \"payloads.log.20260807T100000Z\"] }),\n            systemSpecsText: () => of(\"mock system specs\"),\n            mockDockerServices: () => of([]),\n          },\n        },\n        {\n          provide: LoadProfileService,\n          useValue: {\n            pollingMs$: of(5000),\n            profile$: of(10),\n            current: 10,\n          },\n        },\n        {\n          provide: RequestCacheService,\n          useValue: {\n            getOrCreate: (_key: string, _ttl: number, factory: () => unknown) =>\n              of(factory()),\n          },\n        },\n        {\n          provide: HttpClient,\n          useValue: {\n            get: (url: string) => {\n              switch (url) {\n                case \"/api/diagnostics/database-benchmarks\":\n                  return of({\n                    generatedAt: new Date().toISOString(),\n                    source: \"prometheus\",\n                    postgres: {\n                      status: \"healthy\",\n                      connection: \"configured\",\n                      host: \"postgres\",\n                      database: \"cosmic\",\n                      activeConnections: 7,\n                      latencyMs: 3,\n                      details: \"Prometheus-backed metrics surfaced in Storybook\",\n                    },\n                    benchmarks: {\n                      ingestRatePerSec: 132,\n                      ingestBytesPerSec: 2097152,\n                      averageLatencyMs: 6,\n                      queueDepth: 4,\n                      activeJobs: 3,\n                      failureRatePerSec: 0.14,\n                      throughputMbPerSec: 11.4,\n                    },\n                    prometheus: {\n                      available: true,\n                      queries: [\n                        { query: \"pg_up\", label: \"pg_up\", value: 1 },\n                        { query: \"pg_stat_activity_count\", label: \"Connections\", value: 7 },\n                      ],\n                    },\n                  });\n                case \"/api/v1/pulsar/status\":\n                  return of({ brokers: 3, topics: 14, partitions: 42 });\n                case \"/api/v1/rabbitmq/status\":\n                  return of({ status: \"connected\", connection: \"connected\" });\n                case \"/api/metrics/topology\":\n                  return of({ timing_drift_ns: 128, rfi_event_rate: 4 });\n                case \"/api/diagnostics/docker-services\":\n                  return of([]);\n                case \"/api/diagnostics\":\n                  return of({ path: \"/tmp\", files: [\"system-specs.txt\"] });\n                case \"/api/diagnostics/system-specs\":\n                  return of(\"storybook system specs\");\n                default:\n                  return of([]);\n              }\n            },\n          },\n        },\n      ],\n    }),\n  ],\n}"
+            },
+            {
+                "name": "parameters",
+                "ctype": "miscellaneous",
+                "subtype": "variable",
+                "file": ".storybook/preview.ts",
+                "coverageIgnore": false,
+                "deprecated": false,
+                "deprecationMessage": "",
+                "type": "object",
+                "defaultValue": "{\n  layout: \"centered\",\n  docs: {\n    theme: themes.light,\n  },\n}"
+            }
+        ],
+        "functions": [],
+        "typealiases": [
+            {
+                "name": "Story",
+                "ctype": "miscellaneous",
+                "subtype": "typealias",
+                "coverageIgnore": false,
+                "rawtype": "StoryObj<LakehousePanelComponent>",
+                "file": "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts",
+                "deprecated": false,
+                "deprecationMessage": "",
+                "rawdescription": "",
+                "description": "",
+                "kind": 184
+            },
+            {
+                "name": "Story",
+                "ctype": "miscellaneous",
+                "subtype": "typealias",
+                "coverageIgnore": false,
+                "rawtype": "StoryObj<DiagnosticsComponent>",
+                "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "deprecated": false,
+                "deprecationMessage": "",
+                "rawdescription": "",
+                "description": "",
+                "kind": 184
+            }
+        ],
+        "enumerations": [],
+        "groupedVariables": {
+            ".storybook/main.ts": [
+                {
+                    "name": "config",
+                    "ctype": "miscellaneous",
+                    "subtype": "variable",
+                    "file": ".storybook/main.ts",
+                    "coverageIgnore": false,
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "type": "StorybookConfig",
+                    "defaultValue": "{\n  stories: [\"../apps/frontend/src/**/*.stories.@(ts|tsx|js|jsx|mdx)\"],\n  addons: [],\n  framework: {\n    name: \"@storybook/angular\",\n    options: {},\n  },\n}"
+                }
+            ],
+            "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts": [
+                {
+                    "name": "Default",
+                    "ctype": "miscellaneous",
+                    "subtype": "variable",
+                    "file": "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts",
+                    "coverageIgnore": false,
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "type": "Story",
+                    "defaultValue": "{\n  args: {\n    summary: {\n      source: \"live\",\n      bronzeState: \"Bronze ingest active\",\n      silverQuality: \"97.4% pass\",\n      goldReadiness: \"Ready for analyst review\",\n      evidence: \"ESO ObsCore proof slice\",\n      bronzePercent: 86,\n      silverPercent: 72,\n      goldPercent: 41,\n      qualityFailureRate: 1.2,\n      transferTimeEstimate: \"~3.2 min\",\n      upstream: {\n        kind: \"eso-obscore\",\n        endpoint: \"https://archive.eso.org/tap_obs\",\n        query: \"SELECT TOP 5 ... FROM ivoa.ObsCore\",\n        rowCount: 5,\n      },\n      persistedAt: \"2026-08-07T18:00:00.000Z\",\n      freshness: {\n        maxAgeMs: 15 * 60 * 1000,\n        lastUpdatedAt: \"2026-08-07T18:05:00.000Z\",\n        stale: false,\n      },\n    },\n  },\n}"
+                },
+                {
+                    "name": "meta",
+                    "ctype": "miscellaneous",
+                    "subtype": "variable",
+                    "file": "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts",
+                    "coverageIgnore": false,
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "type": "Meta<LakehousePanelComponent>",
+                    "defaultValue": "{\n  title: \"Shared/LakehousePanel\",\n  component: LakehousePanelComponent,\n  tags: [\"autodocs\"],\n}"
+                }
+            ],
+            "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts": [
+                {
+                    "name": "Default",
+                    "ctype": "miscellaneous",
+                    "subtype": "variable",
+                    "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                    "coverageIgnore": false,
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "type": "Story",
+                    "defaultValue": "{}"
+                },
+                {
+                    "name": "meta",
+                    "ctype": "miscellaneous",
+                    "subtype": "variable",
+                    "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                    "coverageIgnore": false,
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "type": "Meta<DiagnosticsComponent>",
+                    "defaultValue": "{\n  title: \"Features/Diagnostics\",\n  component: DiagnosticsComponent,\n  decorators: [\n    moduleMetadata({\n      declarations: [\n        DiagnosticsComponent,\n        PromqlCardStubComponent,\n        PulsarStatusStubComponent,\n        RabbitMQStatusStubComponent,\n        DisclaimerBannerStubComponent,\n        TridentAllocatorStubComponent,\n      ],\n      imports: [\n        FormsModule,\n        MatButtonModule,\n        MatCardModule,\n        MatFormFieldModule,\n        MatIconModule,\n        MatSelectModule,\n        MatTabsModule,\n        NoopAnimationsModule,\n      ],\n      providers: [\n        {\n          provide: DataSourceService,\n          useValue: { mode: \"mock\" },\n        },\n        {\n          provide: MockDataService,\n          useValue: {\n            diagnosticsIndex: () =>\n              of({ path: \"/tmp\", files: [\"system-specs.txt\", \"payloads.log.20260807T100000Z\"] }),\n            systemSpecsText: () => of(\"mock system specs\"),\n            mockDockerServices: () => of([]),\n          },\n        },\n        {\n          provide: LoadProfileService,\n          useValue: {\n            pollingMs$: of(5000),\n            profile$: of(10),\n            current: 10,\n          },\n        },\n        {\n          provide: RequestCacheService,\n          useValue: {\n            getOrCreate: (_key: string, _ttl: number, factory: () => unknown) =>\n              of(factory()),\n          },\n        },\n        {\n          provide: HttpClient,\n          useValue: {\n            get: (url: string) => {\n              switch (url) {\n                case \"/api/diagnostics/database-benchmarks\":\n                  return of({\n                    generatedAt: new Date().toISOString(),\n                    source: \"prometheus\",\n                    postgres: {\n                      status: \"healthy\",\n                      connection: \"configured\",\n                      host: \"postgres\",\n                      database: \"cosmic\",\n                      activeConnections: 7,\n                      latencyMs: 3,\n                      details: \"Prometheus-backed metrics surfaced in Storybook\",\n                    },\n                    benchmarks: {\n                      ingestRatePerSec: 132,\n                      ingestBytesPerSec: 2097152,\n                      averageLatencyMs: 6,\n                      queueDepth: 4,\n                      activeJobs: 3,\n                      failureRatePerSec: 0.14,\n                      throughputMbPerSec: 11.4,\n                    },\n                    prometheus: {\n                      available: true,\n                      queries: [\n                        { query: \"pg_up\", label: \"pg_up\", value: 1 },\n                        { query: \"pg_stat_activity_count\", label: \"Connections\", value: 7 },\n                      ],\n                    },\n                  });\n                case \"/api/v1/pulsar/status\":\n                  return of({ brokers: 3, topics: 14, partitions: 42 });\n                case \"/api/v1/rabbitmq/status\":\n                  return of({ status: \"connected\", connection: \"connected\" });\n                case \"/api/metrics/topology\":\n                  return of({ timing_drift_ns: 128, rfi_event_rate: 4 });\n                case \"/api/diagnostics/docker-services\":\n                  return of([]);\n                case \"/api/diagnostics\":\n                  return of({ path: \"/tmp\", files: [\"system-specs.txt\"] });\n                case \"/api/diagnostics/system-specs\":\n                  return of(\"storybook system specs\");\n                default:\n                  return of([]);\n              }\n            },\n          },\n        },\n      ],\n    }),\n  ],\n}"
+                }
+            ],
+            ".storybook/preview.ts": [
+                {
+                    "name": "parameters",
+                    "ctype": "miscellaneous",
+                    "subtype": "variable",
+                    "file": ".storybook/preview.ts",
+                    "coverageIgnore": false,
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "type": "object",
+                    "defaultValue": "{\n  layout: \"centered\",\n  docs: {\n    theme: themes.light,\n  },\n}"
+                }
+            ]
+        },
+        "groupedFunctions": {},
+        "groupedEnumerations": {},
+        "groupedTypeAliases": {
+            "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts": [
+                {
+                    "name": "Story",
+                    "ctype": "miscellaneous",
+                    "subtype": "typealias",
+                    "coverageIgnore": false,
+                    "rawtype": "StoryObj<LakehousePanelComponent>",
+                    "file": "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "",
+                    "description": "",
+                    "kind": 184
+                }
+            ],
+            "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts": [
+                {
+                    "name": "Story",
+                    "ctype": "miscellaneous",
+                    "subtype": "typealias",
+                    "coverageIgnore": false,
+                    "rawtype": "StoryObj<DiagnosticsComponent>",
+                    "file": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                    "deprecated": false,
+                    "deprecationMessage": "",
+                    "rawdescription": "",
+                    "description": "",
+                    "kind": 184
+                }
+            ]
+        }
+    },
+    "routes": {
+        "name": "<root>",
+        "kind": "module",
+        "children": []
+    },
+    "coverage": {
+        "count": 0,
+        "status": "low",
+        "files": [
+            {
+                "filePath": ".storybook/main.ts",
+                "type": "variable",
+                "linktype": "miscellaneous",
+                "linksubtype": "variable",
+                "name": "config",
+                "coveragePercent": 0,
+                "coverageCount": "0/1",
+                "status": "low"
+            },
+            {
+                "filePath": ".storybook/preview.ts",
+                "type": "variable",
+                "linktype": "miscellaneous",
+                "linksubtype": "variable",
+                "name": "parameters",
+                "coveragePercent": 0,
+                "coverageCount": "0/1",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "type": "component",
+                "linktype": "component",
+                "name": "DisclaimerBannerStubComponent",
+                "coveragePercent": 0,
+                "coverageCount": "0/4",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "type": "component",
+                "linktype": "component",
+                "name": "PromqlCardStubComponent",
+                "coveragePercent": 0,
+                "coverageCount": "0/4",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "type": "component",
+                "linktype": "component",
+                "name": "PulsarStatusStubComponent",
+                "coveragePercent": 0,
+                "coverageCount": "0/2",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "type": "component",
+                "linktype": "component",
+                "name": "RabbitMQStatusStubComponent",
+                "coveragePercent": 0,
+                "coverageCount": "0/2",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "type": "component",
+                "linktype": "component",
+                "name": "TridentAllocatorStubComponent",
+                "coveragePercent": 0,
+                "coverageCount": "0/1",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "type": "class",
+                "linktype": "classe",
+                "name": "MockEventSource",
+                "coveragePercent": 0,
+                "coverageCount": "0/4",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "type": "variable",
+                "linktype": "miscellaneous",
+                "linksubtype": "variable",
+                "name": "Default",
+                "coveragePercent": 0,
+                "coverageCount": "0/1",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "type": "variable",
+                "linktype": "miscellaneous",
+                "linksubtype": "variable",
+                "name": "meta",
+                "coveragePercent": 0,
+                "coverageCount": "0/1",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/features/diagnostics/diagnostics.component.stories.ts",
+                "type": "type alias",
+                "linktype": "miscellaneous",
+                "linksubtype": "typealias",
+                "name": "Story",
+                "coveragePercent": 0,
+                "coverageCount": "0/1",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts",
+                "type": "variable",
+                "linktype": "miscellaneous",
+                "linksubtype": "variable",
+                "name": "Default",
+                "coveragePercent": 0,
+                "coverageCount": "0/1",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts",
+                "type": "variable",
+                "linktype": "miscellaneous",
+                "linksubtype": "variable",
+                "name": "meta",
+                "coveragePercent": 0,
+                "coverageCount": "0/1",
+                "status": "low"
+            },
+            {
+                "filePath": "apps/frontend/src/app/shared/lakehouse-panel/lakehouse-panel.component.stories.ts",
+                "type": "type alias",
+                "linktype": "miscellaneous",
+                "linksubtype": "typealias",
+                "name": "Story",
+                "coveragePercent": 0,
+                "coverageCount": "0/1",
+                "status": "low"
+            }
+        ]
+    }
+}

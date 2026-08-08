@@ -84,6 +84,9 @@ jobs:
       - name: E2E smoke
         run: pnpm run e2e-smoke
 
+      - name: Storybook smoke
+        run: pnpm exec nx run frontend:storybook --smoke-test
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
 

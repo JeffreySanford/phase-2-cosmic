@@ -1,13 +1,36 @@
+/* eslint-disable @angular-eslint/component-selector */
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { Component, NO_ERRORS_SCHEMA } from "@angular/core";
+import { Component, Input, NO_ERRORS_SCHEMA } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { BehaviorSubject, of } from "rxjs";
 import { HttpClientTestingModule } from "@angular/common/http/testing";
+import { RouterTestingModule } from "@angular/router/testing";
+import { MatTabsModule } from "@angular/material/tabs";
 import { DashboardComponent } from "./dashboard.component";
 import { ReplayMode } from "../../services/load-profile.service";
+import { LakehousePanelComponent } from "../../shared/lakehouse-panel/lakehouse-panel.component";
 
 @Component({ selector: "app-promql-card", template: "" })
 class PromqlCardStubComponent {}
+
+@Component({
+  selector: "mat-tab-group",
+  template: "<ng-content></ng-content>",
+  standalone: true,
+})
+class MatTabGroupStubComponent {
+  @Input() animationDuration?: string;
+  @Input() dynamicHeight?: boolean;
+}
+
+@Component({
+  selector: "mat-tab",
+  template: "<ng-content></ng-content>",
+  standalone: true,
+})
+class MatTabStubComponent {
+  @Input() label?: string;
+}
 
 type DashboardComponentWithLoadProfile = DashboardComponent & {
   loadProfile: {
@@ -54,8 +77,14 @@ describe("DashboardComponent", () => {
     setModeSpy = jest.spyOn(mockLoadProfileService, "setReplayMode");
 
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, FormsModule, PromqlCardStubComponent],
-      declarations: [DashboardComponent],
+      imports: [
+        HttpClientTestingModule,
+        RouterTestingModule,
+        FormsModule,
+        PromqlCardStubComponent,
+        LakehousePanelComponent,
+        DashboardComponent,
+      ],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         {
@@ -77,7 +106,16 @@ describe("DashboardComponent", () => {
           useValue: mockLoadProfileService,
         },
       ],
-    }).compileComponents();
+    })
+      .overrideComponent(DashboardComponent, {
+        remove: {
+          imports: [MatTabsModule],
+        },
+        add: {
+          imports: [MatTabGroupStubComponent, MatTabStubComponent],
+        },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
@@ -161,5 +199,33 @@ describe("DashboardComponent", () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain("Pulsar ingest:");
     expect(el.textContent).toContain("0.80 req/s");
+  });
+
+  it("renders a Lakehouse operations panel for the proof slice", () => {
+    component.lakehouseSummary = {
+      source: "live",
+      bronzeState: "Bronze ingest active",
+      silverQuality: "97.4% pass",
+      goldReadiness: "Ready for analyst review",
+      evidence: "ESO ObsCore proof slice",
+    };
+
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain("Lakehouse");
+    expect(el.textContent).toContain("Bronze ingest active");
+    expect(el.textContent).toContain("ESO ObsCore proof slice");
+  });
+
+  it("exposes the diagnostics workspace link from the operations panel", () => {
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector(
+      "a.diagnostics-link"
+    ) as HTMLAnchorElement | null;
+    expect(link).toBeTruthy();
+    expect(link?.textContent).toContain("Open diagnostics workspace");
+    expect(link?.classList.contains("diagnostics-link")).toBe(true);
   });
 });

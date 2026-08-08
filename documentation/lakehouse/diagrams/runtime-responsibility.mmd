@@ -1,0 +1,34 @@
+flowchart TB
+  subgraph HOST[Existing Runtime]
+    GEN[Go Replay / Generator]
+    K[Kafka]
+    P[Pulsar]
+    R[RabbitMQ]
+    JG[Java Governance]
+    JI[Java Ingest]
+    M[MinIO / S3]
+  end
+
+  subgraph ANALYTICS[Planned Analytical Runtime]
+    SS[Spark Structured Streaming]
+    D[Delta Lake]
+    C[Catalog / Access / Lineage Integration]
+  end
+
+  GEN --> K
+  GEN --> P
+  GEN --> R
+  K --> JI
+  P --> JI
+  R --> JG
+  JG --> M
+  JI --> M
+
+  K --> SS
+  P -. evaluation path .-> SS
+  M --> SS
+  SS --> D
+  D --> C
+
+  style HOST fill:#f7fbff,stroke:#2b8bd6
+  style ANALYTICS fill:#f0fff4,stroke:#20a86a

@@ -113,7 +113,7 @@ class GovernanceControllerTest extends AbstractRedisTest {
     @Test
     void cancelEndpointWorksAndIsIdempotent() throws Exception {
         String body = """
-                {"workflow":"a","datasetId":"b","parameters":{},"requestedBy":"u"}
+                {"workflow":"a","datasetId":"b","parameters":{"deferred":true},"requestedBy":"u"}
                 """;
         String resp = mockMvc.perform(post("/api/v1/jobs").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isAccepted())

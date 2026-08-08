@@ -14,6 +14,7 @@ on:
 jobs:
   integration-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       KAFKA_HOST_PORT: 9094
 
@@ -26,26 +27,18 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: maven
+          cache-dependency-path: apps/java-governance/pom.xml
 
-      - name: Cache Maven local repository
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.m2/repository
-            ~/.m2/settings.xml
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Start Kafka, Zookeeper, and RabbitMQ (dev-compose)
+      - name: Start Kafka, Zookeeper, RabbitMQ, and Redis (dev-compose)
         run: |
           set -euo pipefail
-          KAFKA_HOST_PORT=${{ env.KAFKA_HOST_PORT }} docker compose -f docker/dev-compose.yml up -d zookeeper kafka rabbitmq
+          KAFKA_HOST_PORT=${{ env.KAFKA_HOST_PORT }} docker compose -f docker/dev-compose.yml up -d zookeeper kafka rabbitmq redis
 
       - name: Wait for Kafka readiness
         run: |
+          set -euo pipefail
           echo "Waiting for Kafka on localhost:${{ env.KAFKA_HOST_PORT }}"
-          # Try TCP connect up to 60 times (120s)
           for _ in $(seq 1 60); do
             if timeout 1 bash -c "cat < /dev/tcp/localhost/${{ env.KAFKA_HOST_PORT }}" 2>/dev/null; then
               echo "Kafka is accepting connections"
@@ -54,18 +47,53 @@ jobs:
             sleep 2
           done
           echo "Timed out waiting for Kafka"
-          docker compose -f docker/dev-compose.yml logs kafka || true
+          docker compose -f docker/dev-compose.yml ps || true
+          docker compose -f docker/dev-compose.yml logs --no-color kafka || true
           exit 1
 
       - name: Run integration tests
         env:
           USE_HOST_KAFKA: "true"
-          HOST_KAFKA_BOOTSTRAP: "localhost:${{ env.KAFKA_HOST_PORT }}"
-          KAFKA_BOOTSTRAP_SERVERS: "localhost:${{ env.KAFKA_HOST_PORT }}"
+          HOST_KAFKA_BOOTSTRAP: "kafka:9092"
+          KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_REDIS_HOST: "redis"
+          SPRING_RABBITMQ_HOST: "rabbitmq"
           MAVEN_OPTS: -Xmx2g
         run: |
-          node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml clean verify -Pintegration-tests -DskipTests=false -B -V
+          set -o pipefail
+          node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml clean verify -Pintegration-tests -DskipTests=false -B -V 2>&1 | tee integration-test.log
+
+      - name: Integration test diagnostics
+        if: failure()
+        run: |
+          echo "::group::Compose status"
+          docker compose -f docker/dev-compose.yml ps || true
+          echo "::endgroup::"
+
+          echo "::group::Kafka / Zookeeper / RabbitMQ / Redis logs"
+          docker compose -f docker/dev-compose.yml logs --no-color zookeeper kafka rabbitmq redis || true
+          echo "::endgroup::"
+
+          echo "::group::Maven test failure summary"
+          find apps/java-governance/target -type f \
+            \( -path "*/surefire-reports/*" -o -path "*/failsafe-reports/*" \) \
+            -print -exec sh -c 'grep -nE "FAILURE|ERROR|Failures:|Errors:|Caused by:|AssertionError" "$1" || true' _ {} \; \
+            2>/dev/null || true
+          echo "::endgroup::"
+
+      - name: Upload integration test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-governance-integration-test-reports
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            integration-test.log
+            apps/java-governance/target/surefire-reports/**
+            apps/java-governance/target/failsafe-reports/**
 
       - name: Tear down compose
         if: always()
-        run: docker compose -f docker/dev-compose.yml down
+        run: docker compose -f docker/dev-compose.yml down --remove-orphans

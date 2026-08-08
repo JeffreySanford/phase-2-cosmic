@@ -1,0 +1,30 @@
+{
+  "evidenceStatus": "illustrative-not-measured",
+  "source": "ILLUSTRATIVE ESO ObsCore example - not measured Lakehouse output",
+  "estimatedSizeMb": 12,
+  "timestamp": "2026-08-07T00:00:00Z",
+  "notes": "These values are UI/demo fixtures only. Replace them with measured Bronze/Silver/Gold evidence after the real Delta pipeline exists.",
+  "layers": {
+    "bronze": {
+      "records": 120,
+      "percentOfTotal": 100,
+      "qualityFailures": 6
+    },
+    "silver": {
+      "records": 96,
+      "percentOfTotal": 80,
+      "qualityFailures": 24
+    },
+    "gold": {
+      "records": 3,
+      "percentOfTotal": 2.5,
+      "qualityFailures": 0
+    }
+  },
+  "quality": {
+    "duplicateRate": 8,
+    "missingMetadataRate": 5,
+    "malformedRowRate": 3,
+    "quarantineRate": 20
+  }
+}

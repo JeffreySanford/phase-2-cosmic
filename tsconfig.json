@@ -1,7 +1,9 @@
 {
   "extends": "./tsconfig.base.json",
-  "ignoreDeprecations": "5.0",
+  "compilerOptions": {
+    "ignoreDeprecations": "5.0"
+  },
   "files": [],
-  "include": [],
+  "include": ["./.storybook/**/*.ts", "./apps/frontend/src/**/*.stories.ts"],
   "exclude": []
 }

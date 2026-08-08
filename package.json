@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "nx-no-cloud": "node ./scripts/run-nx-no-cloud.cjs",
-    "start:all": "sh ./scripts/start-all.sh",
+    "start:all": "sh ./scripts/start-all-local.sh",
+    "postgres:reconcile": "sh ./scripts/reconcile-forge-postgres.sh",
     "serve:ssr": "node ./node_modules/tsx/dist/cli.mjs --watch --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts",
     "serve:ssr:e2e": "node ./node_modules/tsx/dist/cli.mjs --tsconfig apps/frontend/tsconfig.server.json apps/frontend/server.nest.ts",
     "start:all:reset": "node ./tools/run-with-logs.js \"sh ./scripts/start-all-reset.sh\" start-all-reset",
@@ -48,6 +49,8 @@
     "validate:stress": "bash scripts/check-stress-containers.sh",
     "validate:ci:stress": "bash scripts/ci-validate-stress.sh",
     "e2e:playwright": "pnpm exec playwright test --config=tools/playwright/playwright.config.ts --reporter=html",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
     "ci:integration": "pnpm run test:trident-allocator && pnpm run test:java:governance:it",
     "coverage:check": "bash scripts/check-coverage.sh 90"
   },
@@ -62,6 +65,7 @@
     "@angular/language-service": "21.2.3",
     "@angular/localize": "^21.2.6",
     "@apidevtools/swagger-parser": "^12.1.0",
+    "@compodoc/compodoc": "^2.0.0",
     "@esbuild/win32-x64": "0.27.4",
     "@eslint/js": "^9.8.0",
     "@nestjs/common": "^11.1.14",
@@ -79,6 +83,10 @@
     "@playwright/test": "^1.58.2",
     "@rollup/rollup-win32-x64-msvc": "^4.59.0",
     "@schematics/angular": "~21.2.2",
+    "@storybook/addon-docs": "^8.6.0",
+    "@storybook/addon-essentials": "^8.6.0",
+    "@storybook/angular": "^8.6.0",
+    "@storybook/theming": "^8.6.0",
     "@swc-node/register": "1.11.1",
     "@swc/core": "1.15.8",
     "@swc/helpers": "0.5.18",
@@ -135,13 +143,16 @@
     "@ngrx/entity": "^21.1.0",
     "@ngrx/store": "^21.1.0",
     "@ngrx/store-devtools": "^21.1.0",
+    "@types/pg": "^8.20.4",
     "aladin-lite": "^3.7.3-beta",
     "concurrently": "^9.2.1",
     "d3": "^7.9.0",
     "graphql": "^16.13.2",
+    "pg": "^8.22.0",
     "redis": "^4.6.7",
     "rxjs": "7.8.2",
     "tslib": "^2.3.0",
+    "ui-theme": "workspace:*",
     "zone.js": "~0.15.0"
   },
   "packageManager": "pnpm@10.32.1",
@@ -150,18 +161,6 @@
       "@nestjs/platform-express>multer": "^2.1.1",
       "esbuild": "0.27.4",
       "@esbuild/*": "0.27.4"
-    },
-    "onlyBuiltDependencies": [
-      "@nestjs/core",
-      "@parcel/watcher",
-      "@swc/core",
-      "cpu-features",
-      "cypress",
-      "esbuild",
-      "lmdb",
-      "msgpackr-extract",
-      "nx",
-      "ssh2"
-    ]
+    }
   }
 }

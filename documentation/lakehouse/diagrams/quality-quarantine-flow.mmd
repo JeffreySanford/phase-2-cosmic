@@ -1,0 +1,11 @@
+flowchart LR
+  B[Bronze Record]
+  V{Silver Validation}
+  S[Silver Canonical Entity]
+  Q[Silver Quarantine]
+  G[Gold Product]
+
+  B --> V
+  V -->|valid| S --> G
+  V -->|invalid| Q
+  Q -. corrected / replayed .-> V

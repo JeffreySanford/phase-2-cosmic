@@ -1,0 +1,74 @@
+flowchart LR
+  subgraph SRC[Scientific Data Sources]
+    VLA[Public VLA / VLASS Data]
+    SIM[ngVLA Simulation Output]
+    GEN[Go Generator / Replay Engine]
+    VLA --> GEN
+    SIM --> GEN
+  end
+
+  subgraph STREAM[Operational Streaming Plane]
+    K[Kafka]
+    P[Pulsar]
+    R[RabbitMQ]
+    GEN --> K
+    GEN --> P
+    GEN --> R
+  end
+
+  subgraph GOV[Governance Plane]
+    API[Java Governance API]
+    ING[Java Ingest Service]
+    META[Dataset / Job / Provenance Metadata]
+    API --> ING
+    API --> META
+  end
+
+  subgraph OBJ[Object Storage Plane]
+    MINIO[MinIO / S3]
+    RAW[RAW objects]
+    CAL[CAL objects]
+    SCI[SCI objects]
+    ARC[Archive objects]
+    MINIO --> RAW
+    MINIO --> CAL
+    MINIO --> SCI
+    MINIO --> ARC
+  end
+
+  subgraph LAKE[Lakehouse Analytical Plane]
+    DBX[Databricks / Spark]
+    BR[Bronze Delta]
+    SI[Silver Delta]
+    GO[Gold Delta]
+    DBX --> BR --> SI --> GO
+  end
+
+  subgraph CONSUME[Consumption Plane]
+    UI[Cosmic Horizon Console]
+    SQL[Analytics / SQL]
+    AI[Future AI-ready Consumers]
+  end
+
+  K --> ING
+  P --> ING
+  R --> API
+
+  ING --> MINIO
+  META -. policy / lineage .-> MINIO
+
+  K --> DBX
+  P -. planned comparison .-> DBX
+  MINIO --> DBX
+  META -. metadata / lineage refs .-> DBX
+
+  GO --> SQL
+  GO --> UI
+  GO --> AI
+
+  style SRC fill:#e6f7ff,stroke:#2b8bd6
+  style STREAM fill:#e6f7ff,stroke:#2b8bd6
+  style GOV fill:#fff6e6,stroke:#d18b2b
+  style OBJ fill:#fff0e6,stroke:#ff7f00
+  style LAKE fill:#f0fff4,stroke:#20a86a
+  style CONSUME fill:#fff3f3,stroke:#d12b2b

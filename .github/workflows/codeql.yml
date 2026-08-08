@@ -78,8 +78,8 @@ jobs:
       - name: Build Java for CodeQL
         if: matrix.language == 'java'
         run: |
-          node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml clean compile -B -DskipTests
-          node ./scripts/mvn-wrapper-runner.js --use-compose -f tools/java-ingest/pom.xml clean compile -B -DskipTests
+          mvn -f apps/java-governance/pom.xml clean compile -B -DskipTests
+          mvn -f tools/java-ingest/pom.xml clean compile -B -DskipTests
 
       - name: Build Go for CodeQL
         if: matrix.language == 'go'

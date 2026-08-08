@@ -3,18 +3,22 @@ describe("Telemetry page", () => {
     cy.visit("/telemetry?e2e=1");
   });
 
-  it("displays Pulsar status component", () => {
-    cy.contains("Data Generator Telemetry").should("exist");
-    cy.contains("mat-panel-title", "Pulsar").should("exist");
-    cy.contains("mat-expansion-panel-header", "Pulsar").click();
-    cy.contains("Brokers:").should("exist");
-    cy.contains("Topics:").should("exist");
-    cy.contains("Partitions:").should("exist");
+  it("displays the pipeline telemetry overview", () => {
+    cy.contains("Pipeline Telemetry").should("exist");
+    cy.contains("Evidence state:").should("exist");
+    cy.contains("Configured target").should("exist");
+    cy.contains("Actual generator output").should("exist");
+    cy.contains("Target attainment").should("exist");
   });
 
-  it("updates Pulsar status periodically", () => {
-    cy.contains("Data Generator Telemetry").should("exist");
-    cy.get("mat-expansion-panel").should("have.length.greaterThan", 1);
-    cy.contains("mat-panel-title", "Pulsar").should("contain.text", "Brokers:");
+  it("shows infrastructure proof values without synthetic substitution", () => {
+    cy.contains("Pipeline Telemetry").should("exist");
+    cy.contains("mat-tab-header", "Overview").should("exist");
+    cy.contains("Actual generator output")
+      .parent()
+      .should("contain.text", "Unavailable");
+    cy.contains("Kafka consumer lag")
+      .parent()
+      .should("contain.text", "Unavailable");
   });
 });

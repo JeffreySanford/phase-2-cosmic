@@ -47,15 +47,73 @@ export class GovernanceUpstreamService {
     init: RequestInit,
     timeoutMs = 7000
   ): Promise<globalThis.Response> {
+    const topologyStartupRead = this.isTopologyMetricsRead(urls, init);
+    const attemptTimeoutMs = topologyStartupRead
+      ? Math.min(timeoutMs, 1000)
+      : timeoutMs;
+
     let lastError: unknown;
     for (const url of urls) {
       try {
-        return await this.fetchWithTimeout(url, init, timeoutMs);
+        return await this.fetchWithTimeout(url, init, attemptTimeoutMs);
       } catch (error) {
         lastError = error;
       }
     }
 
+    if (topologyStartupRead) {
+      return this.jsonResponse({
+        source: "warming",
+        runtimeProfile: {
+          profilePct: 10,
+          workers: 0,
+          note: "waiting for Java Governance topology cache",
+        },
+        observedIngestMBps: 0,
+        diagnostics: {},
+        links: {},
+        nodeActivity: {},
+        cache: {
+          state: "warming",
+          reason: "governance_startup",
+        },
+      });
+    }
+
     throw lastError ?? new Error("fetch_failed");
+  }
+
+  private jsonResponse(body: unknown): globalThis.Response {
+    const encoded = JSON.stringify(body);
+    if (typeof globalThis.Response === "function") {
+      return new globalThis.Response(encoded, {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    return {
+      status: 200,
+      ok: true,
+      json: async () => body,
+      text: async () => encoded,
+    } as unknown as globalThis.Response;
+  }
+
+  private isTopologyMetricsRead(
+    urls: readonly string[],
+    init: RequestInit
+  ): boolean {
+    if ((init.method || "GET").toUpperCase() !== "GET" || urls.length === 0) {
+      return false;
+    }
+
+    return urls.every((candidate) => {
+      try {
+        return new URL(candidate).pathname === "/api/v1/metrics/topology";
+      } catch {
+        return false;
+      }
+    });
   }
 }

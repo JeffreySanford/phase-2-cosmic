@@ -8,22 +8,22 @@ import {
   MatDialogConfig,
 } from "@angular/material/dialog";
 
-@Component({ selector: "app-header", template: "" })
+@Component({ selector: "app-header", template: "", standalone: true })
 class HeaderStubComponent {}
-@Component({ selector: "app-status-band", template: "" })
+@Component({ selector: "app-status-band", template: "", standalone: true })
 class StatusBandStubComponent {}
-@Component({ selector: "app-sidebar", template: "" })
+@Component({ selector: "app-sidebar", template: "", standalone: true })
 class SidebarStubComponent {}
-@Component({ selector: "app-mainstage", template: "" })
+@Component({ selector: "app-mainstage", template: "", standalone: true })
 class MainstageStubComponent {}
-@Component({ selector: "app-footer", template: "" })
+@Component({ selector: "app-footer", template: "", standalone: true })
 class FooterStubComponent {}
 
 describe("AppComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [AppComponent],
       imports: [
+        AppComponent,
         HeaderStubComponent,
         StatusBandStubComponent,
         SidebarStubComponent,
@@ -40,7 +40,19 @@ describe("AppComponent", () => {
           useValue: { setCollapsed: () => undefined },
         },
       ],
-    }).compileComponents();
+    })
+      .overrideComponent(AppComponent, {
+        set: {
+          imports: [
+            HeaderStubComponent,
+            StatusBandStubComponent,
+            SidebarStubComponent,
+            MainstageStubComponent,
+            FooterStubComponent,
+          ],
+        },
+      })
+      .compileComponents();
   });
 
   it("should render title", () => {

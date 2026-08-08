@@ -1,0 +1,14 @@
+flowchart LR
+  ESO[ESO TAP / ObsCore\nreal public metadata]
+  FETCH[Frontend server\nlive bounded fetch]
+  METRICS[LakehouseMetricsService\nsummary/evidence state]
+  STORE[(Postgres\nor in-memory test repository)]
+  API[Lakehouse API / summary]
+  UI[Operator Lakehouse panel]
+
+  ESO --> FETCH --> METRICS
+  METRICS --> STORE
+  STORE --> API --> UI
+
+  TARGET[Kafka / Spark / Delta\nBronze -> Silver -> Gold]
+  FETCH -. next full Lakehouse stage .-> TARGET

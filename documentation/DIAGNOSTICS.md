@@ -10,13 +10,16 @@ The diagnostics UI is at the `Diagnostics` feature in the frontend and uses a ta
 
 ### Overview Tab
 
-- **Live Signals**: Vibrant, colorful metric cards showing real-time Prometheus data
-  - Ingest Rate (1m) - cyan gradient
-  - Total Bytes - violet gradient
-  - Generator Up - mint gradient
-  - Records Rate - amber gradient
-  - Targets Up - blue gradient
-  - CPU Load - rose gradient
+- Summarises file, infrastructure, and runtime diagnostics state
+- Presents the system status cards and the existing live telemetry summaries
+
+### Database & Benchmarks Tab
+
+- Adds a monitoring-style slice for PostgreSQL and benchmark health
+- Shows a source badge, refresh badge, KPI strip, trend indicators, and sparkline bars
+- Surfaces PostgreSQL-native details, Prometheus signal availability, and benchmark values in a dashboard-like layout
+- Uses the endpoint `GET /api/diagnostics/database-benchmarks` to populate the view
+- Treats `source: "postgres"` as native PostgreSQL evidence; `fallback`, `prometheus`, and explicit mock sources must not be presented as native database measurements
 
 ### Broker Systems Tab
 
@@ -62,6 +65,44 @@ Returns `system-specs.txt` as plain text
 Returns a structured payload derived from `system-specs.txt` for summary
 rendering and machine-readable diagnostics parsing.
 
+### `GET /api/diagnostics/database-benchmarks`
+
+Returns PostgreSQL and benchmark evidence for the Database & Benchmarks tab.
+
+Evidence-source rules:
+
+- `source: "postgres"` means the SSR process successfully connected to the configured PostgreSQL sidecar and read native PostgreSQL statistics.
+- `source: "prometheus"` means native PostgreSQL access was unavailable but one or more relevant Prometheus queries returned measurements.
+- `source: "fallback"` means neither native PostgreSQL nor the required Prometheus benchmark measurements were available. Values in that response are fallback status context and must not be interpreted as native database measurements.
+- Explicit mock/test mode remains synthetic and must be visibly labeled as such.
+
+A healthy native response has the following shape:
+
+```json
+{
+  "source": "postgres",
+  "postgres": {
+    "status": "healthy",
+    "connection": "configured",
+    "host": "127.0.0.1:55432",
+    "database": "cosmic_forge",
+    "activeConnections": 3,
+    "version": "..."
+  }
+}
+```
+
+The `postgres.host` field is endpoint identity only. It must never contain a password-bearing PostgreSQL URL or other secret. Local startup keeps the password out of `FORGE_POSTGRES_URL` and verifies the real host -> Docker authentication path before Nest SSR starts.
+
+For the supported local startup contract, use `pnpm start:all`. Its PostgreSQL preflight:
+
+1. Converges the sidecar against current Compose configuration while preserving the named volume.
+2. Restricts the published database port to loopback (`127.0.0.1`).
+3. Discovers the actual Docker-published host port.
+4. Reconciles the persisted role password when needed.
+5. Verifies authentication with the same host-side `node-postgres` path used by the SSR process.
+6. Performs at most one controlled role-password reset and retry when the host path returns PostgreSQL `28P01`.
+
 ### `GET /api/diagnostics/docker-services`
 
 Returns an array of service status objects:
@@ -79,12 +120,12 @@ Returns an array of service status objects:
 ]
 ```
 
-Current list-endpoint status values: `online`, `offline`, `unknown`
+Current list-endpoint status values: `healthy`, `degraded`, `offline`, `unknown`
 
 Notes:
 
-- The frontend styles a `degraded` state, but the list endpoint does not emit
-  it yet.
+- Slow but reachable checks now emit `degraded` so the frontend can surface
+  latency-sensitive health issues without marking the service fully offline.
 - The single-service endpoint includes `lastChecked`; the list endpoint does
   not yet expose that field.
 
@@ -211,6 +252,11 @@ Override default service URLs via environment variables:
 - `RABBITMQ_URL` - default: `rabbitmq:5672`
 - `ALERTMANAGER_URL` - default: `http://alertmanager:9093/-/ready`
 - `REDIS_URL` - default: `redis:6379`
+- `FORGE_POSTGRES_DB` - local Cosmic Forge database name
+- `FORGE_POSTGRES_USER` - local Cosmic Forge database role
+- `FORGE_POSTGRES_PASSWORD` - private local credential; do not log or commit it
+- `FORGE_POSTGRES_HOST_PORT` - preferred local published port; normal startup verifies the actual Docker binding
+- `FORGE_POSTGRES_URL` - runtime endpoint identity used by SSR; local startup keeps the password out of this value
 
 ## Styling
 
@@ -238,5 +284,6 @@ the same mock range series used to render sparklines.
 - PromQL Cards: `apps/frontend/src/app/shared/promql-card/promql-card.component.*`
 - Mock Data: `apps/frontend/src/app/services/mock-data.service.ts`
 - Server Endpoints: `apps/frontend/server.nest.ts`
+- PostgreSQL startup preflight: `scripts/start-all-local.sh`, `scripts/reconcile-forge-postgres.sh`, `scripts/verify-forge-postgres.mjs`
 - Tests: `apps/frontend/src/app/features/diagnostics/*.spec.ts`
 <!-- markdownlint-enable MD013 -->

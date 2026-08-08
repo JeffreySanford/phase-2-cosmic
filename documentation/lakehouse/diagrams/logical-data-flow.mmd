@@ -1,0 +1,17 @@
+flowchart LR
+  SOURCE[Source Observation / Simulation]
+  OBJECT[Authoritative Science Object]
+  EVENT[Broker Event / Envelope]
+  BR[Bronze]
+  VALIDATE[Validate / Dedupe / Normalize / Quarantine]
+  SI[Silver]
+  AGG[Aggregate / Enrich / Optimize]
+  GO[Gold]
+  CONSUMER[Analytics / API / UI / AI-ready Dataset]
+
+  SOURCE --> OBJECT
+  SOURCE --> EVENT
+  OBJECT --> BR
+  EVENT --> BR
+  BR --> VALIDATE --> SI --> AGG --> GO --> CONSUMER
+  GO -. source URI / lineage .-> OBJECT

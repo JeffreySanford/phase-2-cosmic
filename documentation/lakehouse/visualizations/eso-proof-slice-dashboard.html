@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lakehouse proof-slice design artifact</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0f172a;
+        --panel: #111827;
+        --panel-alt: #1f2937;
+        --text: #f9fafb;
+        --muted: #9ca3af;
+        --accent: #34d399;
+        --accent-2: #60a5fa;
+        --warn: #f59e0b;
+        --danger: #fb7185;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        background: linear-gradient(135deg, var(--bg), #111827);
+        color: var(--text);
+      }
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 3rem;
+      }
+      h1, h2 { margin-top: 0; }
+      .hero p, .muted, .status { color: var(--muted); }
+      .notice {
+        margin: 1rem 0 1.25rem;
+        padding: 1rem;
+        border: 1px solid rgba(245, 158, 11, 0.55);
+        border-radius: 14px;
+        background: rgba(245, 158, 11, 0.12);
+      }
+      .notice strong { color: var(--warn); }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 0.6rem 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        color: white;
+        background: linear-gradient(90deg, #60a5fa, #34d399);
+      }
+      button.secondary { background: var(--panel-alt); }
+      .stats, .state-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 0.8rem;
+        margin: 1rem 0;
+      }
+      .card, .panel {
+        background: linear-gradient(145deg, rgba(17, 24, 39, 0.97), rgba(31, 41, 55, 0.95));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 1rem;
+      }
+      .card .label { color: var(--muted); font-size: 0.88rem; }
+      .card .value { margin-top: 0.3rem; font-size: 1.5rem; font-weight: 800; }
+      .state {
+        display: inline-block;
+        margin-top: 0.35rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: var(--danger);
+        background: rgba(251, 113, 133, 0.12);
+      }
+      .panel { margin-top: 1rem; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td {
+        text-align: left;
+        padding: 0.65rem 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      th { color: var(--muted); }
+      .fixture {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        color: var(--accent-2);
+      }
+      .footer { margin-top: 1.25rem; color: var(--muted); font-size: 0.9rem; }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f8fafc;
+          --panel: #ffffff;
+          --panel-alt: #f3f4f6;
+          --text: #111827;
+          --muted: #4b5563;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <h1>Lakehouse proof-slice design artifact</h1>
+        <p>
+          A static visualization used to discuss candidate astronomy sources and the shape of future
+          Bronze/Silver/Gold evidence.
+        </p>
+      </section>
+
+      <section class="notice" role="note" aria-label="Evidence disclaimer">
+        <strong>Illustrative only — not measured runtime evidence.</strong>
+        The values shown by this file and <code>sample-metrics.json</code> are design fixtures. They do
+        not prove that Bronze Delta, Silver, or Gold tables exist and must not be cited as measured
+        Lakehouse throughput, quality, promotion, quarantine, or readiness results. The active runtime
+        evidence surface is <code>GET /api/v1/lakehouse/metrics</code>, which currently keeps
+        Bronze/Silver/Gold at zero / Not Implemented until Stage 3 produces runnable Delta evidence.
+      </section>
+
+      <div class="controls">
+        <button id="fixture-button">Load illustrative sample fixture</button>
+        <button class="secondary" id="reset-button">Reset design values</button>
+        <div class="status" id="status">Showing built-in illustrative design values.</div>
+      </div>
+
+      <section class="state-grid" aria-label="Implementation state">
+        <div class="card">
+          <div class="label">Bronze Delta implementation</div>
+          <div class="state">NOT IMPLEMENTED</div>
+        </div>
+        <div class="card">
+          <div class="label">Silver implementation</div>
+          <div class="state">NOT IMPLEMENTED</div>
+        </div>
+        <div class="card">
+          <div class="label">Gold implementation</div>
+          <div class="state">NOT IMPLEMENTED</div>
+        </div>
+      </section>
+
+      <section class="stats" aria-label="Illustrative fixture values">
+        <div class="card">
+          <div class="label">Illustrative Bronze records</div>
+          <div class="value" id="bronze-count">120</div>
+        </div>
+        <div class="card">
+          <div class="label">Illustrative Silver records</div>
+          <div class="value" id="silver-count">96</div>
+        </div>
+        <div class="card">
+          <div class="label">Illustrative Gold aggregates</div>
+          <div class="value" id="gold-count">3</div>
+        </div>
+        <div class="card">
+          <div class="label">Illustrative quality-failure rate</div>
+          <div class="value" id="quality-rate">20%</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Candidate source discussion</h2>
+        <p class="muted">
+          Sizes and transfer-time labels below are planning examples for choosing a manageable proof
+          source. They are not current archive measurements or performance evidence.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Source profile</th>
+              <th>Illustrative size</th>
+              <th>Planning role</th>
+              <th>Implementation status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ESO ObsCore — small metadata sample</td>
+              <td>12 MB example</td>
+              <td>First public-source proof profile</td>
+              <td>Live metadata proof exists; Delta stages not implemented</td>
+            </tr>
+            <tr>
+              <td>NRAO / VLA / VLASS metadata</td>
+              <td>250 MB example</td>
+              <td>Radio-astronomy validation profile</td>
+              <td>Planned provider validation</td>
+            </tr>
+            <tr>
+              <td>CADC / CAOM metadata</td>
+              <td>600 MB example</td>
+              <td>Cross-archive contract validation</td>
+              <td>Planned</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Fixture provenance</h2>
+        <p>
+          When loaded, <span class="fixture">sample-metrics.json</span> is treated only as an
+          illustrative fixture for the layout. The timestamp in that file is fixture metadata, not a
+          runtime freshness assertion. Real public-source freshness and source identity belong to the
+          versioned Lakehouse evidence API.
+        </p>
+        <pre id="fixture-details">No fixture file loaded.</pre>
+      </section>
+
+      <div class="footer">
+        Stage 3 remains the first implementation gate for a real
+        source → Kafka → Spark → Bronze Delta → Silver → Gold pipeline. This HTML file is not part of
+        that acceptance evidence.
+      </div>
+    </main>
+
+    <script>
+      const defaults = {
+        bronze: 120,
+        silver: 96,
+        gold: 3,
+        quality: 20
+      };
+
+      const status = document.getElementById('status');
+      const fixtureDetails = document.getElementById('fixture-details');
+      const fixtureButton = document.getElementById('fixture-button');
+      const resetButton = document.getElementById('reset-button');
+
+      function render(values) {
+        document.getElementById('bronze-count').textContent = values.bronze;
+        document.getElementById('silver-count').textContent = values.silver;
+        document.getElementById('gold-count').textContent = values.gold;
+        document.getElementById('quality-rate').textContent = `${values.quality}%`;
+      }
+
+      function extractFixture(payload) {
+        return {
+          bronze: Number(payload?.layers?.bronze?.records ?? defaults.bronze),
+          silver: Number(payload?.layers?.silver?.records ?? defaults.silver),
+          gold: Number(payload?.layers?.gold?.records ?? defaults.gold),
+          quality: Number(
+            (payload?.layers?.bronze?.qualityFailures ?? 0) +
+            (payload?.layers?.silver?.qualityFailures ?? defaults.quality)
+          )
+        };
+      }
+
+      async function loadFixture() {
+        fixtureButton.disabled = true;
+        status.textContent = 'Loading illustrative sample-metrics.json fixture…';
+        try {
+          const response = await fetch('./sample-metrics.json');
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const payload = await response.json();
+          render(extractFixture(payload));
+          fixtureDetails.textContent = JSON.stringify(
+            {
+              artifact: 'sample-metrics.json',
+              classification: 'illustrative fixture — not measured runtime evidence',
+              fixtureTimestamp: payload.timestamp ?? null
+            },
+            null,
+            2
+          );
+          status.textContent = 'Illustrative fixture loaded. Values remain non-measured design data.';
+        } catch (error) {
+          render(defaults);
+          fixtureDetails.textContent = `Fixture unavailable: ${String(error)}`;
+          status.textContent = 'Fixture unavailable; showing built-in illustrative design values.';
+        } finally {
+          fixtureButton.disabled = false;
+        }
+      }
+
+      fixtureButton.addEventListener('click', loadFixture);
+      resetButton.addEventListener('click', () => {
+        render(defaults);
+        fixtureDetails.textContent = 'No fixture file loaded.';
+        status.textContent = 'Showing built-in illustrative design values.';
+      });
+    </script>
+  </body>
+</html>

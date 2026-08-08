@@ -1,4 +1,5 @@
 import { HttpClient } from "@angular/common/http";
+import { CommonModule } from "@angular/common";
 import {
   AfterViewInit,
   Component,
@@ -6,6 +7,15 @@ import {
   OnInit,
   inject,
 } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { MatButtonModule } from "@angular/material/button";
+import { MatCardModule } from "@angular/material/card";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatIconModule } from "@angular/material/icon";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatTabsModule } from "@angular/material/tabs";
+import { RouterModule } from "@angular/router";
 import {
   Observable,
   Subscription,
@@ -25,6 +35,12 @@ import { TelemetryService } from "../../services/telemetry.service";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
 import { InfrastructureTelemetrySnapshot } from "../../shared/types";
+import {
+  LakehouseMetricsService,
+  type LakehouseMetricsSummary,
+} from "../../services/lakehouse-metrics.service";
+import { SharedModule } from "../../shared/shared.module";
+import { LakehousePanelComponent } from "../../shared/lakehouse-panel/lakehouse-panel.component";
 
 type SourceLabel = "live" | "fallback";
 
@@ -75,7 +91,21 @@ type PrometheusRangeResponseLocal = {
   selector: "app-dashboard",
   templateUrl: "./dashboard.component.html",
   styleUrls: ["./dashboard.component.scss"],
-  standalone: false,
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    MatTabsModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatInputModule,
+    MatIconModule,
+    SharedModule,
+    LakehousePanelComponent,
+  ],
 })
 export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private deferUiUpdate(task: () => void): void {
@@ -87,6 +117,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly dataSource = inject(DataSourceService);
   private readonly mock = inject(MockDataService);
+  private readonly lakehouseMetrics = inject(LakehouseMetricsService);
 
   replayIntervalMs = 5000;
   readonly minReplayIntervalMs = 100;
@@ -236,6 +267,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     pulsarIngestRate: "0.00 req/s",
     proxyRate: "0.00 req/s",
     source: "fallback" as SourceLabel,
+  };
+
+  lakehouseSummary: LakehouseMetricsSummary = {
+    source: "fallback" as SourceLabel,
+    bronzeState: "Queueing metadata for Bronze",
+    silverQuality: "Pending validation",
+    goldReadiness: "Awaiting analyst handoff",
+    evidence: "Proof slice aligned to ESO ObsCore metadata",
+    bronzePercent: 0,
+    silverPercent: 0,
+    goldPercent: 0,
+    qualityFailureRate: 0,
+    transferTimeEstimate: "n/a",
   };
 
   readonly quickLinks = [
@@ -423,6 +467,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       ),
       {} as unknown
     );
+    const lakehouse$ = this.probe(this.lakehouseMetrics.getSummary(), {
+      source: "fallback",
+      bronzeState: "No Lakehouse metrics available",
+      silverQuality: "Pending validation",
+      goldReadiness: "Awaiting analyst handoff",
+      evidence: "No evidence captured",
+      bronzePercent: 0,
+      silverPercent: 0,
+      goldPercent: 0,
+      qualityFailureRate: 0,
+      transferTimeEstimate: "n/a",
+    });
 
     this.sub.add(
       forkJoin({
@@ -437,6 +493,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         cpuRange: cpuRange$,
         bytesRange: bytesRange$,
         targetsRange: targetsRange$,
+        lakehouse: lakehouse$,
       }).subscribe((snapshot) => {
         // perform all state updates asynchronously to avoid
         // ExpressionChangedAfterItHasBeenCheckedError when the
@@ -682,6 +739,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           const warnings = this.alerts.filter(
             (a) => a.level === "warning"
           ).length;
+          this.lakehouseSummary = {
+            source: snapshot.lakehouse.ok ? snapshot.lakehouse.value.source : "fallback",
+            bronzeState: snapshot.lakehouse.value.bronzeState,
+            silverQuality: snapshot.lakehouse.value.silverQuality,
+            goldReadiness: snapshot.lakehouse.value.goldReadiness,
+            evidence: snapshot.lakehouse.value.evidence,
+          };
+
           this.headerKpis = [
             {
               label: "CPU Load",

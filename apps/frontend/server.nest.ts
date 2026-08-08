@@ -28,9 +28,14 @@ import {
 import { GovernanceUpstreamService } from "./src/server/governance/governance-upstream.service";
 import { GovernanceProxyService } from "./src/server/governance/governance-proxy.service";
 import { EmbeddedMockBackendService } from "./src/server/mock/embedded-mock-backend.service";
+import {
+  LakehouseMetricsService,
+  type LakehouseMetricsSummary,
+} from "./src/server/lakehouse/lakehouse-metrics.service";
 
 import express from "express";
 import { createClient } from "redis";
+import { Client } from "pg";
 import { CommonEngine } from "@angular/ssr/node";
 import { join } from "path";
 import {
@@ -941,7 +946,8 @@ export class AppController {
     private readonly governanceProxyService: GovernanceProxyService = new GovernanceProxyService(
       governanceUpstreamService
     ),
-    private readonly embeddedMockBackendService: EmbeddedMockBackendService = new EmbeddedMockBackendService()
+    private readonly embeddedMockBackendService: EmbeddedMockBackendService = new EmbeddedMockBackendService(),
+    private readonly lakehouseMetricsService: LakehouseMetricsService
   ) {
     // In some development setups the runtime load service may not be provided via DI.
     // Fall back to an explicit instance so stress profile endpoints still work.
@@ -971,6 +977,13 @@ export class AppController {
   @Get("api/telemetry/debug")
   telemetryDebug() {
     return getTelemetryDebugInfo();
+  }
+
+  @Get("api/lakehouse/metrics")
+  async lakehouseMetrics(): Promise<LakehouseMetricsSummary> {
+    return this.lakehouseMetricsService.getPublicEvidenceSummary({
+      maxAgeMs: 15 * 60 * 1000,
+    });
   }
 
   private embeddedPrometheusPayload(
@@ -1833,6 +1846,252 @@ export class AppController {
     }
   }
 
+  private async readPrometheusScalar(
+    query: string,
+    fallback = 0
+  ): Promise<{ value: number; available: boolean }> {
+    const promUrl = process.env["PROMETHEUS_URL"] || "http://127.0.0.1:9090";
+    const endpoint = `${promUrl.replace(
+      /\/$/,
+      ""
+    )}/api/v1/query?query=${encodeURIComponent(query)}`;
+
+    try {
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        return { value: fallback, available: false };
+      }
+
+      const payload = (await response.json()) as {
+        data?: { result?: Array<{ value?: [number, string] }> };
+      };
+      const firstValue = payload.data?.result?.[0]?.value?.[1];
+      const parsed = Number(firstValue);
+      return {
+        value: Number.isFinite(parsed) ? parsed : fallback,
+        available: Number.isFinite(parsed),
+      };
+    } catch {
+      return { value: fallback, available: false };
+    }
+  }
+
+  private async readNativePostgresMetrics() {
+    const connectionString = process.env["FORGE_POSTGRES_URL"];
+    if (!connectionString) {
+      return null;
+    }
+
+    const client = new Client({ connectionString });
+    try {
+      await client.connect();
+      const result = await client.query<{
+        database_name: string;
+        version: string;
+        active_connections: string;
+        active_query_seconds: string | null;
+        database_size_mb: string;
+        blks_hit: string;
+        blks_read: string;
+      }>(`
+        SELECT
+          current_database() AS database_name,
+          current_setting('server_version', true) AS version,
+          (SELECT count(*) FROM pg_stat_activity WHERE datname = current_database()) AS active_connections,
+          (
+            SELECT ROUND(EXTRACT(EPOCH FROM (now() - query_start))::numeric)
+            FROM pg_stat_activity
+            WHERE state = 'active' AND datname = current_database()
+            ORDER BY query_start DESC NULLS LAST
+            LIMIT 1
+          ) AS active_query_seconds,
+          ROUND(pg_database_size(current_database()) / 1024.0 / 1024.0, 2) AS database_size_mb,
+          COALESCE((SELECT sum(blks_hit) FROM pg_stat_database WHERE datname = current_database()), 0) AS blks_hit,
+          COALESCE((SELECT sum(blks_read) FROM pg_stat_database WHERE datname = current_database()), 0) AS blks_read
+      `);
+
+      const row = result.rows[0];
+      const activeQuerySeconds = Number(row?.active_query_seconds ?? 0);
+      return {
+        status: "healthy",
+        connection: "configured",
+        host: connectionString.includes("@")
+          ? connectionString.split("@")[1].split("/")[0]
+          : "postgres",
+        database:
+          row?.database_name ?? (process.env["FORGE_POSTGRES_DB"] || "cosmic"),
+        activeConnections: Number(row?.active_connections ?? 0),
+        latencyMs:
+          activeQuerySeconds > 0 ? Math.round(activeQuerySeconds * 1000) : 0,
+        version: row?.version ?? undefined,
+        details: `PostgreSQL-native metrics • active query seconds: ${activeQuerySeconds}`,
+      };
+    } catch (error) {
+      console.warn("Unable to read PostgreSQL-native metrics", error);
+      return null;
+    } finally {
+      await client.end().catch(() => undefined);
+    }
+  }
+
+  private buildBenchmarkFallbackPayload(
+    telemetry: ReturnType<typeof this.mockInfrastructureTelemetry>,
+    postgresNative: Awaited<ReturnType<typeof this.readNativePostgresMetrics>>
+  ) {
+    const fallbackSource = telemetry.source === "mock" ? "mock" : "fallback";
+    const fallbackPostgres = postgresNative ?? {
+      status:
+        telemetry.services?.pulsar?.status === "healthy"
+          ? "healthy"
+          : "degraded",
+      connection: process.env["FORGE_POSTGRES_URL"] ? "configured" : "fallback",
+      host: process.env["FORGE_POSTGRES_URL"] || "postgres",
+      database: process.env["FORGE_POSTGRES_DB"] || "cosmic",
+      activeConnections: Math.max(
+        1,
+        Math.round((telemetry.services?.redis?.connectedClients ?? 0) + 2)
+      ),
+      latencyMs: Number(
+        telemetry.services?.redis?.redisAvgLatencyMs ??
+          telemetry.services?.nginx?.avgLatencyMs ??
+          0
+      ),
+      version: undefined,
+      details: "No native Postgres or Prometheus benchmark data available.",
+    };
+
+    return {
+      generatedAt: telemetry.measuredAt,
+      source: fallbackSource,
+      postgres: fallbackPostgres,
+      benchmarks: {
+        ingestRatePerSec: 0,
+        ingestBytesPerSec: 0,
+        averageLatencyMs: 0,
+        queueDepth: 0,
+        activeJobs: 0,
+        failureRatePerSec: 0,
+        throughputMbPerSec: 0,
+      },
+      prometheus: {
+        available: false,
+        queries: [],
+      },
+    };
+  }
+
+  @Get("/api/diagnostics/database-benchmarks")
+  async getDatabaseBenchmarks() {
+    const telemetry = this.mockInfrastructureTelemetry();
+    const postgresNative = await this.readNativePostgresMetrics();
+
+    const prometheusQueries = [
+      { query: "pg_up", label: "postgres_up" },
+      { query: "pg_stat_database_numbackends", label: "numbackends" },
+      {
+        query: "rate(pg_stat_database_tup_inserted[5m])",
+        label: "insert_rate",
+      },
+      { query: "rate(pg_stat_database_tup_updated[5m])", label: "update_rate" },
+    ];
+
+    const prometheusValues = await Promise.all(
+      prometheusQueries.map(({ query }) => this.readPrometheusScalar(query, 0))
+    );
+    const availablePrometheusMetrics = prometheusValues.filter(
+      (entry) => entry.available
+    );
+
+    const ingestService =
+      telemetry.services?.javaIngest ?? telemetry.services?.governanceRuntime;
+    const benchmarkService =
+      telemetry.services?.governanceRuntime ?? telemetry.services?.javaIngest;
+
+    if (!postgresNative && availablePrometheusMetrics.length === 0) {
+      return {
+        ...this.buildBenchmarkFallbackPayload(telemetry, postgresNative),
+        source: "fallback",
+      };
+    }
+
+    const throughputMbPerSec = Math.max(
+      0,
+      ((benchmarkService?.artifactPayloadBytesPerSec ??
+        benchmarkService?.payloadBytesPerSec ??
+        0) /
+        (1024 * 1024)) *
+        0.5
+    );
+
+    const postgres = postgresNative ?? {
+      status:
+        telemetry.services?.pulsar?.status === "healthy"
+          ? "healthy"
+          : "degraded",
+      connection: process.env["FORGE_POSTGRES_URL"] ? "configured" : "fallback",
+      host: process.env["FORGE_POSTGRES_URL"] || "postgres",
+      database: process.env["FORGE_POSTGRES_DB"] || "cosmic",
+      activeConnections: Math.max(
+        1,
+        Math.round((telemetry.services?.redis?.connectedClients ?? 0) + 2)
+      ),
+      latencyMs: Number(
+        telemetry.services?.redis?.redisAvgLatencyMs ??
+          telemetry.services?.nginx?.avgLatencyMs ??
+          0
+      ),
+      version: undefined,
+      details: availablePrometheusMetrics.length
+        ? `Prometheus-backed metrics available (${
+            availablePrometheusMetrics.length
+          } query${availablePrometheusMetrics.length === 1 ? "" : "s"})`
+        : `Telemetry source: ${telemetry.source}`,
+    };
+
+    return {
+      generatedAt: telemetry.measuredAt,
+      source: postgresNative
+        ? "postgres"
+        : availablePrometheusMetrics.length > 0
+        ? "prometheus"
+        : telemetry.source === "mock"
+        ? "mock"
+        : "fallback",
+      postgres,
+      benchmarks: {
+        ingestRatePerSec: Number(
+          ingestService?.receiveRatePerSec ??
+            ingestService?.submissionRatePerSec ??
+            availablePrometheusMetrics[2]?.value ??
+            0
+        ),
+        ingestBytesPerSec: Number(ingestService?.payloadBytesPerSec ?? 0),
+        averageLatencyMs: Number(
+          ingestService?.avgLatencyMs ?? benchmarkService?.httpLatencyMs ?? 0
+        ),
+        queueDepth: Number(
+          benchmarkService?.queuedJobs ??
+            telemetry.services?.rabbitmq?.queueDepth ??
+            0
+        ),
+        activeJobs: Number(benchmarkService?.runningJobs ?? 0),
+        failureRatePerSec: Number(
+          ingestService?.failureRatePerSec ??
+            benchmarkService?.failedRatePerSec ??
+            0
+        ),
+        throughputMbPerSec,
+      },
+      prometheus: {
+        available: availablePrometheusMetrics.length > 0,
+        queries: prometheusQueries.map((item, index) => ({
+          ...item,
+          value: prometheusValues[index].value,
+        })),
+      },
+    };
+  }
+
   @Get("/api/diagnostics/docker-services")
   async getDockerServices(@Res() res: Response) {
     if (process.env["NODE_ENV"] === "production") {
@@ -1862,7 +2121,7 @@ export class AppController {
           name: "Grafana",
           kind: "http",
           url: process.env["GRAFANA_URL"] || "http://grafana:3000/api/health",
-          fallbackUrl: "http://127.0.0.1:3000/api/health",
+          fallbackUrl: "http://127.0.0.1:3005/api/health",
           icon: "dashboard",
         },
         {
@@ -2025,7 +2284,7 @@ export class AppController {
             return {
               name: s.name,
               status: result.ok
-                ? result.latencyMs > 1000
+                ? result.latencyMs >= 1000
                   ? "degraded"
                   : "healthy"
                 : "offline",
@@ -2522,6 +2781,7 @@ export class AppController {
     GovernanceUpstreamService,
     GovernanceProxyService,
     EmbeddedMockBackendService,
+    LakehouseMetricsService,
   ],
   controllers: [AppController, ExecutionPlansController],
 })

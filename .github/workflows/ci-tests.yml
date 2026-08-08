@@ -61,8 +61,20 @@ jobs:
           chmod +x ./scripts/ci/preflight.sh || true
           ./scripts/ci/preflight.sh
 
+      - name: Start Java test dependencies
+        run: |
+          docker stop ci-redis || true
+          docker compose -f docker/dev-compose.yml up -d zookeeper kafka rabbitmq redis
+
       - name: Run Maven tests (no skipping, with containers)
         # this execution includes the ProvenanceE2ETest added in Sprint 2
+        env:
+          USE_HOST_KAFKA: "true"
+          HOST_KAFKA_BOOTSTRAP: "kafka:9092"
+          KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_REDIS_HOST: "redis"
+          SPRING_RABBITMQ_HOST: "rabbitmq"
         run: node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml -B test -Pwith-containers
 
       - name: Upload Surefire reports
@@ -73,8 +85,19 @@ jobs:
           path: apps/java-governance/target/surefire-reports || true
 
       - name: Run JS integration tests and simulator harness
+        env:
+          USE_HOST_KAFKA: "true"
+          HOST_KAFKA_BOOTSTRAP: "kafka:9092"
+          KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_REDIS_HOST: "redis"
+          SPRING_RABBITMQ_HOST: "rabbitmq"
         run: |
           corepack enable
           corepack prepare pnpm@10.32.1 --activate
           pnpm install --frozen-lockfile
           pnpm run ci:integration
+
+      - name: Tear down compose
+        if: always()
+        run: docker compose -f docker/dev-compose.yml down --remove-orphans

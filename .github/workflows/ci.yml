@@ -99,11 +99,31 @@ jobs:
       - name: Run frontend unit tests with coverage
         run: pnpm exec cross-env NX_NO_CLOUD=true pnpm nx run-many --target=test --projects=frontend,ui-theme --configuration=ci --parallel=false
 
+      - name: Storybook smoke
+        run: pnpm exec nx run frontend:storybook --smoke-test
+
+      - name: Start Java test dependencies
+        run: docker compose -f docker/dev-compose.yml up -d zookeeper kafka rabbitmq redis
+
       - name: Run java-governance verify (unit + IT)
+        env:
+          USE_HOST_KAFKA: "true"
+          HOST_KAFKA_BOOTSTRAP: "kafka:9092"
+          KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_REDIS_HOST: "redis"
+          SPRING_RABBITMQ_HOST: "rabbitmq"
         run: |
           node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml clean verify -Pwith-containers -B
 
       - name: Generate JaCoCo report
+        env:
+          USE_HOST_KAFKA: "true"
+          HOST_KAFKA_BOOTSTRAP: "kafka:9092"
+          KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_REDIS_HOST: "redis"
+          SPRING_RABBITMQ_HOST: "rabbitmq"
         run: node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml jacoco:report
 
       - name: Run coverage enforcement
@@ -125,6 +145,10 @@ jobs:
 
       - name: Run java-ingest verify (container integration)
         run: node ./scripts/mvn-wrapper-runner.js --use-compose -f tools/java-ingest/pom.xml clean verify -Pwith-containers -B
+
+      - name: Tear down compose
+        if: always()
+        run: docker compose -f docker/dev-compose.yml down --remove-orphans
 
       - name: Archive java-ingest reports
         if: always()

@@ -3,13 +3,30 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 COMPOSE_FILE="$REPO_ROOT/docker/dev-compose.yml"
+ENV_FILE="$REPO_ROOT/.env"
+ENV_SAMPLE="$REPO_ROOT/.env.sample"
+COMPOSE_ENV_FILE=""
+
+if [ -f "$ENV_FILE" ]; then
+  COMPOSE_ENV_FILE="$ENV_FILE"
+elif [ -f "$ENV_SAMPLE" ]; then
+  COMPOSE_ENV_FILE="$ENV_SAMPLE"
+fi
+
+compose() {
+  if [ -n "$COMPOSE_ENV_FILE" ]; then
+    docker compose --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
+  else
+    docker compose -f "$COMPOSE_FILE" "$@"
+  fi
+}
 
 echo "[redis-precache] Locating redis container (compose or standalone)..."
 REDIS_CONTAINER=""
-if docker compose -f "$COMPOSE_FILE" config --services 2>/dev/null | grep -q '^redis$'; then
+if compose config --services 2>/dev/null | grep -q '^redis$'; then
   echo "[redis-precache] redis service defined in compose; using compose-managed redis"
-  docker compose -f "$COMPOSE_FILE" up -d redis || true
-  REDIS_CONTAINER=$(docker compose -f "$COMPOSE_FILE" ps -q redis 2>/dev/null || true)
+  compose up -d redis || true
+  REDIS_CONTAINER=$(compose ps -q redis 2>/dev/null || true)
 fi
 
 if [ -z "$REDIS_CONTAINER" ]; then

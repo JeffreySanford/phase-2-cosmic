@@ -131,6 +131,159 @@
       </div>
     </mat-tab>
 
+    <mat-tab label="Database & Benchmarks">
+      <div class="tab-content">
+        <section class="benchmark-section">
+          <h2>Postgres & Benchmarks</h2>
+          <p class="muted">
+            Monitor the PostgreSQL sidecar health and the benchmark signals that
+            influence diagnostics and throughput readiness.
+          </p>
+          <div class="monitoring-strip" *ngIf="databaseMetrics">
+            <div class="source-badge">
+              <span class="source-chip" [attr.data-source]="databaseMetrics.source">
+                {{ getSourceLabel(databaseMetrics.source) }}
+              </span>
+              <span
+                class="refresh-status"
+                [attr.data-status]="lastMetricsRefreshStatus"
+                [attr.title]="lastMetricsRefreshStatus === 'refreshing' ? 'Refresh in progress' : lastMetricsRefreshAt ? 'Last refresh: ' + lastMetricsRefreshAt.toISOString() : 'Awaiting first refresh'"
+              >
+                <span class="refresh-dot"></span>
+                <span>{{ metricsRefreshBadgeText }}</span>
+              </span>
+            </div>
+            <div class="kpi-strip">
+              <div class="kpi-pill">
+                <span class="kpi-label">Throughput</span>
+                <strong>
+                  <span class="trend-indicator" [ngClass]="getKpiTrend(throughputMbPerSecValue, previousThroughputMbPerSecValue).className">
+                    {{ getKpiTrend(throughputMbPerSecValue, previousThroughputMbPerSecValue).symbol }}
+                  </span>
+                  {{ throughputMbPerSecValue | number: '1.2-2' }} MB/s
+                </strong>
+                <div class="sparkline" [attr.data-pulse]="sparklinePulseKey" aria-hidden="true">
+                  <span *ngFor="let bar of getKpiHistoryBars(throughputMbPerSecValue, previousThroughputMbPerSecValue)" [style.height.%]="bar"></span>
+                </div>
+              </div>
+              <div class="kpi-pill">
+                <span class="kpi-label">Latency</span>
+                <strong>
+                  <span class="trend-indicator" [ngClass]="getKpiTrend(averageLatencyMsValue, previousAverageLatencyMsValue).className">
+                    {{ getKpiTrend(averageLatencyMsValue, previousAverageLatencyMsValue).symbol }}
+                  </span>
+                  {{ averageLatencyMsValue }} ms
+                </strong>
+                <div class="sparkline" [attr.data-pulse]="sparklinePulseKey" aria-hidden="true">
+                  <span *ngFor="let bar of getKpiHistoryBars(averageLatencyMsValue, previousAverageLatencyMsValue)" [style.height.%]="bar"></span>
+                </div>
+              </div>
+              <div class="kpi-pill">
+                <span class="kpi-label">Connections</span>
+                <strong>
+                  <span class="trend-indicator" [ngClass]="getKpiTrend(activeConnectionsValue, previousActiveConnectionsValue).className">
+                    {{ getKpiTrend(activeConnectionsValue, previousActiveConnectionsValue).symbol }}
+                  </span>
+                  {{ activeConnectionsValue }}
+                </strong>
+                <div class="sparkline" [attr.data-pulse]="sparklinePulseKey" aria-hidden="true">
+                  <span *ngFor="let bar of getKpiHistoryBars(activeConnectionsValue, previousActiveConnectionsValue)" [style.height.%]="bar"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tiles-grid" *ngIf="databaseMetrics; else databaseMetricsLoading">
+            <mat-card class="tile tile-db">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>storage</mat-icon>
+                  Postgres
+                </div>
+              </div>
+              <div class="tile-body">
+                <p class="metric-value">{{ databaseMetrics.postgres.status | titlecase }}</p>
+                <p class="muted">Connection: {{ databaseMetrics.postgres.connection }} · {{ databaseMetrics.postgres.host }}</p>
+                <p class="muted">Metric source: {{ databaseMetrics.source === 'postgres' ? 'PostgreSQL-native' : databaseMetrics.source === 'prometheus' ? 'Prometheus' : databaseMetrics.source }}</p>
+                <ul class="metric-list">
+                  <li>Database: {{ databaseMetrics.postgres.database }}</li>
+                  <li>Active connections: {{ databaseMetrics.postgres.activeConnections }}</li>
+                  <li>Latency: {{ databaseMetrics.postgres.latencyMs }} ms</li>
+                  <li *ngIf="databaseMetrics.postgres.version">Version: {{ databaseMetrics.postgres.version }}</li>
+                </ul>
+              </div>
+            </mat-card>
+            <mat-card class="tile tile-source">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>insights</mat-icon>
+                  Source details
+                </div>
+              </div>
+              <div class="tile-body">
+                <p class="metric-value">{{ getSourceLabel(databaseMetrics.source) }}</p>
+                <div class="source-summary-row">
+                  <span class="source-chip" [attr.data-source]="databaseMetrics.source">{{ databaseMetrics.source }}</span>
+                  <span class="source-status-chip" [attr.data-state]="databaseMetrics.postgres.status === 'healthy' ? 'healthy' : databaseMetrics.postgres.status === 'degraded' ? 'degraded' : 'fallback'">{{ databaseMetrics.postgres.status }}</span>
+                  <span class="mini-badge" *ngIf="hasPrometheusSignals">Prometheus</span>
+                  <span class="mini-badge" *ngIf="databaseMetrics.postgres.version">PG version</span>
+                </div>
+                <div class="legend-row">
+                  <span class="legend-item"><span class="legend-dot healthy"></span>Healthy</span>
+                  <span class="legend-item"><span class="legend-dot degraded"></span>Degraded</span>
+                  <span class="legend-item"><span class="legend-dot fallback"></span>Fallback</span>
+                </div>
+                <p class="muted">{{ databaseMetrics.postgres.details || 'No extra source detail available.' }}</p>
+                <ul class="metric-list" *ngIf="hasPrometheusSignals">
+                  <li>Prometheus signals: {{ prometheusSignals.length }}</li>
+                  <li *ngFor="let query of prometheusSignals">
+                    {{ query.label }} = {{ query.value }}
+                  </li>
+                </ul>
+              </div>
+            </mat-card>
+            <mat-card class="tile tile-benchmark">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>speed</mat-icon>
+                  Benchmarks
+                </div>
+              </div>
+              <div class="tile-body">
+                <p class="metric-value">{{ databaseMetrics.benchmarks.throughputMbPerSec | number: '1.2-2' }} MB/s</p>
+                <p class="muted">Generated {{ databaseMetrics.generatedAt | date:'medium' }} via {{ databaseMetrics.source }} metrics.</p>
+                <ul class="metric-list">
+                  <li>Ingest rate: {{ databaseMetrics.benchmarks.ingestRatePerSec | number: '1.0-0' }} req/s</li>
+                  <li>Bytes/s: {{ databaseMetrics.benchmarks.ingestBytesPerSec | number: '1.0-0' }}</li>
+                  <li>Avg latency: {{ databaseMetrics.benchmarks.averageLatencyMs }} ms</li>
+                  <li>Queue depth: {{ databaseMetrics.benchmarks.queueDepth }}</li>
+                  <li>Active jobs: {{ databaseMetrics.benchmarks.activeJobs }}</li>
+                  <li>Failure rate: {{ databaseMetrics.benchmarks.failureRatePerSec }} /s</li>
+                </ul>
+                <div class="prometheus-signals" *ngIf="hasPrometheusSignals">
+                  <p class="muted">Prometheus signals</p>
+                  <ul class="metric-list">
+                    <li *ngFor="let query of prometheusSignals">
+                      {{ query.label }}: {{ query.value }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </mat-card>
+          </div>
+          <ng-template #databaseMetricsLoading>
+            <div class="tiles-grid">
+              <mat-card class="tile tile-db">
+                <div class="tile-body">
+                  <p class="metric-value">Loading…</p>
+                  <p class="muted">Requesting the latest PostgreSQL and benchmark payload.</p>
+                </div>
+              </mat-card>
+            </div>
+          </ng-template>
+        </section>
+      </div>
+    </mat-tab>
+
     <mat-tab label="Live Events">
       <div class="tab-content">
         <section class="live-events-section">

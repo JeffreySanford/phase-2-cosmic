@@ -1,0 +1,18 @@
+flowchart LR
+  DATA[Small Real/Public Dataset]
+  REPLAY[Replay / Extraction Adapter]
+  K[Kafka]
+  SPARK[Spark Structured Streaming]
+  BR[Bronze Delta]
+  SI[Silver Canonical Tables]
+  GO[One Gold Aggregate]
+  QUERY[SQL / Evidence]
+
+  DATA --> REPLAY --> K --> SPARK --> BR --> SI --> GO --> QUERY
+
+  style DATA fill:#fff0e6,stroke:#ff7f00
+  style K fill:#e6f7ff,stroke:#2b8bd6
+  style SPARK fill:#f0fff4,stroke:#20a86a
+  style BR fill:#f0fff4,stroke:#20a86a
+  style SI fill:#f0fff4,stroke:#20a86a
+  style GO fill:#f0fff4,stroke:#20a86a

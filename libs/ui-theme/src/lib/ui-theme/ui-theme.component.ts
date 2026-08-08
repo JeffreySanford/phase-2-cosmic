@@ -4,6 +4,6 @@ import { Component } from "@angular/core";
   selector: "lib-ui-theme",
   templateUrl: "./ui-theme.component.html",
   styleUrls: ["./ui-theme.component.scss"],
-  standalone: false,
+  standalone: true,
 })
 export class UiThemeComponent {}
