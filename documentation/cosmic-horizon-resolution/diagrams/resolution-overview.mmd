@@ -1,0 +1,26 @@
+flowchart TB
+  P1[Phase 1 — Foundation / Prototype\nExplore capabilities]
+  P2[Phase 2 — Realization\nOperational architecture + governance + Lakehouse + evidence]
+  P3[Phase 3 — Resolution\nEvidence Graph & Scientific Intelligence]
+
+  P1 --> P2 --> P3
+
+  subgraph R[Cosmic Horizon: Resolution]
+    S[Scientific / data evidence]
+    O[Operational evidence]
+    L[Lakehouse analytical history]
+    G[Evidence Graph]
+    A[Graph analytics]
+    Q[Ask Cosmic / GraphRAG]
+    E[Evidence paths + citations + limitations]
+
+    S --> G
+    O --> G
+    L --> G
+    G --> A
+    G --> Q
+    A --> E
+    Q --> E
+  end
+
+  P3 --> R
