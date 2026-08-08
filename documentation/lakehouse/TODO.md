@@ -142,3 +142,20 @@ and the repository contains evidence for:
 - Postgres evidence-summary persistence is not a Bronze/Silver/Gold implementation claim.
 - Static/sample visualization fixtures are not measured runtime evidence.
 - Lakehouse representations remain analytical projections unless an explicit future architecture decision changes ownership.
+
+## Future product-phase handoff — Cosmic Horizon: Resolution
+
+The Lakehouse stages above belong to **Phase 2 / PR #40**. They are intentionally not the same thing as the future product **Phase 3 — Cosmic Horizon: Resolution**.
+
+Resolution planning is captured under [`../cosmic-horizon-resolution/`](../cosmic-horizon-resolution/). Its proposed Evidence Graph & Scientific Intelligence layer depends on this Lakehouse producing real canonical and lineage-backed evidence first.
+
+The Phase 2 handoff should preserve:
+
+- stable source/event/dataset/job/artifact identities,
+- source attribution and citations,
+- Gold -> Silver -> Bronze -> source traceability,
+- quality/quarantine reason codes,
+- measured/stale/unavailable evidence state,
+- replayability and deterministic lineage.
+
+Those contracts allow a future Phase 3 graph to be a trustworthy projection rather than a second competing domain model.
