@@ -45,6 +45,7 @@
     "test:all": "pnpm run quality:ci && pnpm run test:java:it && pnpm run analyze:semgrep",
     "playwright:install": "pnpm exec playwright install --with-deps",
     "docs:validate": "bash scripts/check-docs.sh",
+    "lakehouse:pr41:mvp": "node ./scripts/run-nx-no-cloud.cjs run lakehouse-mvp:test",
     "validate:load": "node scripts/validate-100pct-load.js",
     "validate:stress": "bash scripts/check-stress-containers.sh",
     "validate:ci:stress": "bash scripts/ci-validate-stress.sh",

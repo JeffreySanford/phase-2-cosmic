@@ -1,0 +1,30 @@
+{
+  "name": "lakehouse-mvp",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "tools/lakehouse-mvp",
+  "targets": {
+    "run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python tools/lakehouse-mvp/pr41_lakehouse_mvp.py"
+      }
+    },
+    "verify": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/lakehouse-mvp/verify-pr41-mvp.mjs"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "python tools/lakehouse-mvp/pr41_lakehouse_mvp.py",
+          "node tools/lakehouse-mvp/verify-pr41-mvp.mjs"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

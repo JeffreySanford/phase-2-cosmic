@@ -134,7 +134,7 @@ export class MockDataService {
     qualityFailureRate: number;
     transferTimeEstimate: string;
     upstream: {
-      kind: "eso-obscore" | "fallback";
+      kind: "eso-obscore" | "pr41-local-mvp" | "fallback";
       endpoint: string;
       query: string;
       rowCount: number;

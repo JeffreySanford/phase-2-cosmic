@@ -1,0 +1,19 @@
+flowchart LR
+  SRC[Provider extract]
+  RUN[MVP runner]
+  BR[Bronze observation_events]
+  SI[Silver observations]
+  QUAR[Silver quarantine]
+  GO[Gold observation_summary]
+  VERIFY[MVP verifier]
+
+  SRC --> RUN
+  RUN --> BR
+  BR --> SI
+  BR --> QUAR
+  SI --> GO
+  QUAR --> GO
+  BR --> VERIFY
+  SI --> VERIFY
+  QUAR --> VERIFY
+  GO --> VERIFY

@@ -1,7 +1,7 @@
 # Lakehouse Initiative
 
 > Status: **active architecture and proof-slice initiative**
-> PR scope: **all Lakehouse Initiative work remains under PR #40**
+> PR scope: **PR40 documents the architecture/evidence scaffold; PR41 starts the MVP medallion implementation; PR42 plans Databricks production-runtime integration**
 > Purpose: add a governed analytical data plane without replacing the existing streaming, governance, scientific-processing, or object-storage architecture.
 
 ## Repository layout
@@ -19,7 +19,10 @@ documentation/lakehouse/
 │   ├── REAL_DATA_SOURCES.md
 │   ├── ESO_PROOF_SLICE_BRIEF.md
 │   ├── ESO_INGESTION_ADAPTER_CONTRACT.md
-│   └── PIPELINE_TELEMETRY_EVIDENCE.md
+│   ├── PIPELINE_TELEMETRY_EVIDENCE.md
+│   ├── PR41_MVP_LAKEHOUSE.md
+│   ├── PR42_DATABRICKS_SPRINT_PLAN.md
+│   └── PR40_PR42_ROADMAP.md
 ├── diagrams/
 │   ├── README.md
 │   ├── concept-overview.mmd
@@ -35,7 +38,9 @@ documentation/lakehouse/
 │   ├── quality-quarantine-flow.mmd
 │   ├── failure-routing.mmd
 │   ├── storage-responsibility-topology.mmd
-│   └── write-path-boundary.mmd
+│   ├── write-path-boundary.mmd
+│   ├── pr41-mvp-lakehouse.mmd
+│   └── pr42-databricks-sprint-plan.mmd
 └── visualizations/
     ├── eso-proof-slice-dashboard.html
     └── sample-metrics.json
@@ -84,6 +89,12 @@ This is useful runnable evidence, but it is **not yet the Lakehouse data plane i
 - persisted Gold analytical tables with lineage to Bronze/Silver,
 - measured Kafka/Pulsar Lakehouse throughput or recovery behavior.
 
+PR41 introduces the first MVP implementation target for that gap. See [`docs/PR41_MVP_LAKEHOUSE.md`](./docs/PR41_MVP_LAKEHOUSE.md). The PR41 MVP is local-first, creates reproducible Bronze/Silver/Gold table artifacts under `tmp/lakehouse/pr41-delta/`, and lets the Lakehouse evidence service report verified PR41 medallion evidence when the local manifest exists.
+
+PR42 defines how the PR41 medallion contract graduates into Databricks. See [`docs/PR42_DATABRICKS_SPRINT_PLAN.md`](./docs/PR42_DATABRICKS_SPRINT_PLAN.md). Databricks is the planned managed Spark/Delta/Unity Catalog runtime for analytical tables and workflows; it does not replace Java Governance or MinIO/S3.
+
+For cross-PR documentation updates, use [`docs/PR40_PR42_ROADMAP.md`](./docs/PR40_PR42_ROADMAP.md) as the coordination guide.
+
 | Artifact                        | Status                            | Notes                                                                                                                                |
 | ------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Architecture topology           | Documented                        | Planned analytical-plane boundaries and runtime relationships.                                                                       |
@@ -95,7 +106,8 @@ This is useful runnable evidence, but it is **not yet the Lakehouse data plane i
 | Lakehouse evidence persistence  | Implemented on PR #40             | Postgres-backed summary persistence when available; in-memory support for tests. Persistence is not a Delta-stage claim.             |
 | Operator evidence surfaces      | Implemented on PR #40             | Dashboard/Lakehouse panel and Pipeline Telemetry use the proof-only contract.                                                        |
 | Static visualization artifact   | Illustrative only                 | `visualizations/eso-proof-slice-dashboard.html` and `sample-metrics.json` are design/sample fixtures, not measured runtime evidence. |
-| Delta Bronze/Silver/Gold tables | Planned                           | Still require runnable table and transformation evidence.                                                                            |
+| Delta Bronze/Silver/Gold tables | PR41 MVP started                  | Local medallion artifact runner/verifier under `tools/lakehouse-mvp`; Spark/Kafka production runtime remains future work.            |
+| Databricks production runtime   | PR42 planned                      | Managed Spark/Delta/Unity Catalog target; no implementation claim until workspace/table/job evidence exists.                         |
 | Kafka/Spark streaming path      | Planned                           | Remains the first full Lakehouse pipeline target.                                                                                    |
 | Pulsar comparison               | Planned                           | Follows only after the Kafka baseline is real and repeatable.                                                                        |
 

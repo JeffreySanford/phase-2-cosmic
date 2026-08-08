@@ -66,6 +66,7 @@ test-results/
 .nx/workspace-data/
 tmp/cosmic-forge-state/
 tmp/cosmic-forge-artifacts/
+tmp/lakehouse/
 
 .claude/worktrees
 .claude/settings.local.json

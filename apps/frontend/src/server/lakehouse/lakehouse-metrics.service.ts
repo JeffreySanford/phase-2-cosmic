@@ -1,5 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Client } from "pg";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export type LakehouseSource = "live" | "fallback";
 
@@ -15,7 +17,7 @@ export interface LakehouseMetricsSummary {
   qualityFailureRate: number;
   transferTimeEstimate: string;
   upstream?: {
-    kind: "eso-obscore" | "fallback";
+    kind: "eso-obscore" | "pr41-local-mvp" | "fallback";
     endpoint: string;
     query: string;
     rowCount: number;
@@ -32,6 +34,19 @@ export interface LakehouseRepository {
   upsertSummary(summary: LakehouseMetricsSummary): Promise<void>;
   getSummary(): Promise<LakehouseMetricsSummary | null>;
   getLastUpdatedAt(): Promise<Date | null>;
+}
+
+interface Pr41MvpManifest {
+  generatedAt?: string;
+  outputRoot?: string;
+  tables?: Record<string, { path: string; rows: number }>;
+  evidence?: {
+    hasBronzeSourceFidelity?: boolean;
+    hasSilverCanonicalEntity?: boolean;
+    hasSilverQuarantine?: boolean;
+    hasGoldAggregate?: boolean;
+    lineage?: string;
+  };
 }
 
 class InMemoryLakehouseRepository implements LakehouseRepository {
@@ -332,6 +347,19 @@ export class LakehouseMetricsService {
         Date.now() - lastUpdatedAt.getTime() < maxAgeMs
     );
 
+    const pr41Mvp = this.getPr41MvpSummary(maxAgeMs);
+    if (pr41Mvp) {
+      try {
+        await this.upsertSummary(pr41Mvp);
+      } catch (error) {
+        console.warn(
+          "PR41 Lakehouse MVP evidence collected but persistence failed:",
+          error
+        );
+      }
+      return pr41Mvp;
+    }
+
     if (persisted && persistedIsFresh) {
       return {
         ...persisted,
@@ -409,6 +437,78 @@ export class LakehouseMetricsService {
           stale: true,
         },
       };
+    }
+  }
+
+  private getPr41MvpSummary(maxAgeMs: number): LakehouseMetricsSummary | null {
+    const root =
+      process.env["LAKEHOUSE_MVP_ROOT"] ||
+      join(process.cwd(), "tmp", "lakehouse", "pr41-delta");
+    const manifestPath = join(root, "manifest.json");
+
+    if (!existsSync(manifestPath)) {
+      return null;
+    }
+
+    try {
+      const manifest = JSON.parse(
+        readFileSync(manifestPath, "utf8")
+      ) as Pr41MvpManifest;
+      const tables = manifest.tables ?? {};
+      const bronzeRows = tables["bronze.observation_events"]?.rows ?? 0;
+      const silverRows = tables["silver.observations"]?.rows ?? 0;
+      const quarantineRows = tables["silver.quarantine"]?.rows ?? 0;
+      const goldRows = tables["gold.observation_summary"]?.rows ?? 0;
+      const hasCompleteMvp = Boolean(
+        manifest.evidence?.hasBronzeSourceFidelity &&
+          manifest.evidence?.hasSilverCanonicalEntity &&
+          manifest.evidence?.hasSilverQuarantine &&
+          manifest.evidence?.hasGoldAggregate &&
+          bronzeRows > 0 &&
+          silverRows > 0 &&
+          quarantineRows > 0 &&
+          goldRows > 0
+      );
+
+      if (!hasCompleteMvp) {
+        return null;
+      }
+
+      const qualityFailureRate =
+        bronzeRows > 0
+          ? Math.round((quarantineRows / bronzeRows) * 1000) / 10
+          : 0;
+      const generatedAt = manifest.generatedAt ?? new Date().toISOString();
+
+      return {
+        source: "live",
+        bronzeState: `PR41 MVP Bronze table verified (${bronzeRows} records)`,
+        silverQuality: `PR41 MVP Silver verified (${silverRows} accepted, ${quarantineRows} quarantined)`,
+        goldReadiness: `PR41 MVP Gold aggregate verified (${goldRows} rows)`,
+        evidence: `Lakehouse Initiative PR41 MVP - ${
+          manifest.evidence?.lineage ?? "Gold -> Silver -> Bronze lineage"
+        }`,
+        bronzePercent: 100,
+        silverPercent: 100,
+        goldPercent: 100,
+        qualityFailureRate,
+        transferTimeEstimate: "n/a",
+        upstream: {
+          kind: "pr41-local-mvp",
+          endpoint: root,
+          query: "manifest.json",
+          rowCount: bronzeRows,
+        },
+        persistedAt: generatedAt,
+        freshness: {
+          maxAgeMs,
+          lastUpdatedAt: generatedAt,
+          stale: false,
+        },
+      };
+    } catch (error) {
+      console.warn("Unable to read PR41 Lakehouse MVP manifest:", error);
+      return null;
     }
   }
 

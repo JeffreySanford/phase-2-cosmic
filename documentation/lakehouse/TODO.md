@@ -1,6 +1,11 @@
 # Lakehouse Implementation TODO
 
-This file tracks staged delivery for the complete Lakehouse Initiative under **PR #40**. The stages below are implementation gates, not separate pull requests.
+This file tracks staged delivery for the complete Lakehouse Initiative.
+**PR40** owns the architecture and public-source evidence scaffold.
+**PR41** starts the MVP medallion implementation.
+**PR42** plans the Databricks production-runtime integration path.
+
+Cross-PR documentation guidance lives in [`docs/PR40_PR42_ROADMAP.md`](./docs/PR40_PR42_ROADMAP.md).
 
 The goal is to progress from architecture and a live public-data evidence scaffold to a real, evidence-backed Bronze/Silver/Gold pipeline without changing the authoritative storage, governance, or scientific-processing boundaries already defined by Phase 2.
 
@@ -35,6 +40,23 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 
 ## Stage 3 — first real Lakehouse vertical slice
 
+> PR41 label: **Lakehouse Initiative / PR41 MVP**.
+> See [`docs/PR41_MVP_LAKEHOUSE.md`](./docs/PR41_MVP_LAKEHOUSE.md).
+
+### PR41 MVP local reference runtime
+
+- [x] Add a local MVP runner for Bronze/Silver/Gold medallion artifacts.
+- [x] Add a generated artifact root under `tmp/lakehouse/pr41-delta/`.
+- [x] Persist Bronze source-faithful observation events as Parquet-backed table artifacts with Delta transaction metadata.
+- [x] Persist Silver canonical observations derived from Bronze.
+- [x] Persist Silver analytical quarantine with deterministic reason codes.
+- [x] Persist one Gold observation summary aggregate with lineage to Bronze event IDs.
+- [x] Add an Nx verifier target for the generated medallion artifacts.
+- [x] Document all PR41 MVP moving parts under `documentation/lakehouse/docs/PR41_MVP_LAKEHOUSE.md`.
+- [ ] Replace the local reference writer with Spark Structured Streaming or another selected Delta-capable runtime.
+- [ ] Route the MVP source envelope through Kafka before Bronze.
+- [x] Connect one verified Gold output to the existing Lakehouse evidence service when the local PR41 manifest exists.
+
 ### Source contract
 
 - [ ] Implement a reusable VO/TAP-style source adapter contract rather than coupling Lakehouse entities to ESO-specific field names.
@@ -46,29 +68,29 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 
 - [ ] Route a bounded real/public astronomy extract or replay through Kafka.
 - [ ] Consume the Kafka path with Spark Structured Streaming or the selected Delta-capable reference runtime.
-- [ ] Persist a real `bronze.observation_events` representation.
+- [x] Persist an MVP `bronze.observation_events` representation.
 - [ ] Preserve source payload, source attribution, event identifiers, ingest timestamps, object/source references, schema version, and available checksums.
 - [ ] Retain malformed/incomplete source truth in Bronze rather than silently dropping records because Silver validation fails.
 - [ ] Add deterministic replay/reprocessing for the same source input.
-- [ ] Capture sample Bronze output as evidence.
+- [x] Capture sample Bronze output as local generated evidence.
 
 ### Silver and analytical quarantine
 
-- [ ] Implement `silver.observations` or one equivalent canonical entity derived from Bronze.
+- [x] Implement MVP `silver.observations` derived from Bronze.
 - [ ] Normalize provider-specific VO/TAP fields into the existing Cosmic observation/source-attribution model.
 - [ ] Add duplicate suppression using stable source/event identifiers.
 - [ ] Add explicit late/out-of-order handling.
 - [ ] Add controlled schema-version normalization.
-- [ ] Route records that cannot satisfy the canonical analytical contract to `silver.quarantine` with deterministic reason codes.
-- [ ] Retain lineage from Silver/quarantine back to Bronze and the authoritative source/object reference.
-- [ ] Capture one promoted and one quarantined record as evidence.
+- [x] Route records that cannot satisfy the canonical analytical contract to `silver.quarantine` with deterministic reason codes.
+- [x] Retain lineage from Silver/quarantine back to Bronze and the authoritative source/object reference in the MVP tables.
+- [x] Capture one promoted and one quarantined record as generated local evidence.
 
 ### Gold
 
-- [ ] Implement at least one persisted Gold aggregate such as `gold.observation_summary`, `gold.source_coverage`, or `gold.ingest_health`.
-- [ ] Document the Gold table's consumer, refresh semantics, source Silver tables, and validation expectations.
-- [ ] Prove Gold -> Silver -> Bronze -> source/object traceability.
-- [ ] Connect one real Gold output to the existing operator evidence surface.
+- [x] Implement MVP `gold.observation_summary`.
+- [x] Document the Gold table's consumer, refresh semantics, source Silver tables, and validation expectations.
+- [x] Prove Gold -> Silver -> Bronze -> source/object traceability in the local MVP manifest/table data.
+- [x] Connect one verified MVP Gold output to the existing operator evidence surface through the Lakehouse metrics service.
 
 ## Stage 4 — quality and resilience proof
 
@@ -80,6 +102,23 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 - [ ] Demonstrate correction/replay from Silver quarantine.
 - [ ] Confirm Broker DLQ, science-object quarantine, and Silver analytical quarantine remain separate failure domains.
 - [ ] Record repeatable evidence for each failure scenario.
+
+## Stage 4.5 — PR42 Databricks production-runtime plan
+
+> PR42 label: **Lakehouse Initiative / PR42 Databricks Sprint Plan**.
+> See [`docs/PR42_DATABRICKS_SPRINT_PLAN.md`](./docs/PR42_DATABRICKS_SPRINT_PLAN.md).
+
+- [x] Document Databricks as the planned managed Spark/Delta/Unity Catalog runtime.
+- [x] Keep Java Governance authoritative for application governance semantics.
+- [x] Keep MinIO/S3 authoritative for large science objects and archive packages.
+- [x] Map PR41 MVP artifacts to Databricks table names.
+- [x] Define Databricks environment variables and secret boundaries.
+- [x] Define validation states before implementing Databricks jobs.
+- [x] Define the evidence fallback order from Databricks to PR41 local MVP to PR40 public-source proof.
+- [x] Sequence follow-on PRs for config validation, Bronze, Silver/quarantine, Gold, Kafka streaming, and Unity Catalog governance review.
+- [ ] Implement a Databricks config validator target.
+- [ ] Verify a real Databricks workspace connection.
+- [ ] Create real Databricks Bronze/Silver/Gold tables.
 
 ## Stage 5 — broker comparison
 
