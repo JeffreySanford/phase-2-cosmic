@@ -1,0 +1,42 @@
+flowchart TB
+  subgraph DataReality["Data Reality"]
+    Observations[Observations]
+    Datasets[Datasets]
+    Products[Products]
+    Provenance[Provenance]
+    Lakehouse[Lakehouse records]
+    Quality[Quality / quarantine]
+  end
+
+  subgraph SystemReality["System Reality"]
+    Services[Services]
+    Brokers[Brokers]
+    Jobs[Jobs]
+    Telemetry[Telemetry]
+    Failures[Failures]
+    EvidenceState[Measured / configured / stale / unavailable]
+  end
+
+  Graph[Evidence Graph]
+  Analytics[Graph analytics]
+  GraphRAG[GraphRAG / Ask Cosmic]
+  Answer[Grounded answer + evidence path]
+
+  Observations --> Graph
+  Datasets --> Graph
+  Products --> Graph
+  Provenance --> Graph
+  Lakehouse --> Graph
+  Quality --> Graph
+
+  Services --> Graph
+  Brokers --> Graph
+  Jobs --> Graph
+  Telemetry --> Graph
+  Failures --> Graph
+  EvidenceState --> Graph
+
+  Graph --> Analytics
+  Graph --> GraphRAG
+  Analytics --> Answer
+  GraphRAG --> Answer

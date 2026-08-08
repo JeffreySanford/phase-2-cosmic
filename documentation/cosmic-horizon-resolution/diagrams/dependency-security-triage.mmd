@@ -1,0 +1,40 @@
+flowchart TB
+  Banner[GitHub dependency alert banner]
+  Triage[Triage dependency alert]
+
+  Direct[Direct vs transitive]
+  Scope[Production vs development]
+  Reach[Runtime reachability]
+  Update[Patch/minor vs coordinated major update]
+  PR[Existing Dependabot PR]
+  CI[CI evidence]
+  Decision[Decision]
+
+  Patch[Apply safe update]
+  Defer[Document exception / owner / expiry]
+  Reject[Close as false positive or non-reachable]
+
+  Evidence[Security evidence record]
+
+  Banner --> Triage
+  Triage --> Direct
+  Triage --> Scope
+  Triage --> Reach
+  Triage --> Update
+  Triage --> PR
+  Triage --> CI
+
+  Direct --> Decision
+  Scope --> Decision
+  Reach --> Decision
+  Update --> Decision
+  PR --> Decision
+  CI --> Decision
+
+  Decision --> Patch
+  Decision --> Defer
+  Decision --> Reject
+
+  Patch --> Evidence
+  Defer --> Evidence
+  Reject --> Evidence

@@ -103,6 +103,8 @@ documentation/cosmic-horizon-resolution/
 ├── GRAPH_MODEL_AND_USE_CASES.md
 ├── EVALUATION_AND_GUARDRAILS.md
 ├── LEARNING_PLAN.md
+├── NAMING_AND_REALITY_MODEL.md
+├── DEPENDENCY_SECURITY_TRIAGE.md
 ├── TODO.md
 └── diagrams/
     ├── README.md
@@ -110,7 +112,9 @@ documentation/cosmic-horizon-resolution/
     ├── evidence-graph.mmd
     ├── lakehouse-to-graphrag.mmd
     ├── phase-3-gates.mmd
-    └── learning-roadmap.mmd
+    ├── learning-roadmap.mmd
+    ├── data-system-reality.mmd
+    └── dependency-security-triage.mmd
 ```
 
 ## Core design rule
@@ -126,4 +130,6 @@ Structured domain entities and relationships should be produced deterministicall
 3. [`GRAPH_MODEL_AND_USE_CASES.md`](./GRAPH_MODEL_AND_USE_CASES.md)
 4. [`EVALUATION_AND_GUARDRAILS.md`](./EVALUATION_AND_GUARDRAILS.md)
 5. [`LEARNING_PLAN.md`](./LEARNING_PLAN.md)
-6. [`TODO.md`](./TODO.md)
+6. [`NAMING_AND_REALITY_MODEL.md`](./NAMING_AND_REALITY_MODEL.md)
+7. [`DEPENDENCY_SECURITY_TRIAGE.md`](./DEPENDENCY_SECURITY_TRIAGE.md)
+8. [`TODO.md`](./TODO.md)

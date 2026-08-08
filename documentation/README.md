@@ -53,6 +53,8 @@ The following package is intentionally captured in PR #40 as **future Phase 3 pl
 - [RESOLUTION_GRAPH_MODEL_AND_USE_CASES.md](/documentation/cosmic-horizon-resolution/GRAPH_MODEL_AND_USE_CASES.md) — initial graph model and bounded ESO/M87/3C 273/VLASS-style engineering use cases
 - [RESOLUTION_EVALUATION_AND_GUARDRAILS.md](/documentation/cosmic-horizon-resolution/EVALUATION_AND_GUARDRAILS.md) — software/data-engineering evidence criteria and scientific-claim boundaries
 - [RESOLUTION_LEARNING_PLAN.md](/documentation/cosmic-horizon-resolution/LEARNING_PLAN.md) — current Databricks/Spark, Neo4j/GraphRAG, Stanford CS224W, GraphFrames, PyTorch Geometric, and Microsoft GraphRAG learning path
+- [RESOLUTION_NAMING_AND_REALITY_MODEL.md](/documentation/cosmic-horizon-resolution/NAMING_AND_REALITY_MODEL.md) — naming alternatives, selected Resolution rationale, and Data Reality/System Reality framing
+- [RESOLUTION_DEPENDENCY_SECURITY_TRIAGE.md](/documentation/cosmic-horizon-resolution/DEPENDENCY_SECURITY_TRIAGE.md) — dependency-alert interpretation, triage candidates, and future security evidence direction
 - [RESOLUTION_TODO.md](/documentation/cosmic-horizon-resolution/TODO.md) — future P3.1-P3.7 execution gates
 - [RESOLUTION_MERMAID_SOURCES.md](/documentation/cosmic-horizon-resolution/diagrams/README.md) — reusable Phase 3 architecture and learning-roadmap diagrams
 
