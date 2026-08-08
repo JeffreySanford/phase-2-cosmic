@@ -1,0 +1,19 @@
+flowchart LR
+  D[Databricks / Spark / Delta]
+  S[Structured Streaming]
+  L[Lakehouse Bronze / Silver / Gold]
+  N[Neo4j fundamentals / Cypher]
+  G[Knowledge Graph / GraphRAG]
+  F[GraphFrames analytics]
+  C[Stanford CS224W]
+  P[PyTorch Geometric]
+  R[Resolution implementation]
+
+  D --> S --> L --> N
+  N --> G
+  L --> F
+  G --> R
+  F --> R
+  C --> P
+  R --> C
+  P -. optional Graph ML after deterministic graph quality .-> R
