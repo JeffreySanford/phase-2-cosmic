@@ -146,17 +146,17 @@ export class MockDataService {
       stale: boolean;
     };
   }> {
-    const s = this.scale();
     return of({
       source: "live",
-      bronzeState: "Bronze ingest active",
-      silverQuality: `Silver quality ${Math.round((97 + s * 2) * 10) / 10}% pass`,
-      goldReadiness: "Ready for analyst review",
+      bronzeState: "Public source proof only; Bronze Delta not implemented",
+      silverQuality:
+        "Evidence state only; Silver quality tables not implemented",
+      goldReadiness: "Gold readiness not implemented",
       evidence: "ESO ObsCore proof slice",
-      bronzePercent: Math.round(86 + s * 6),
-      silverPercent: Math.round(72 + s * 8),
-      goldPercent: Math.round(41 + s * 10),
-      qualityFailureRate: Math.round((1.2 + s * 0.8) * 10) / 10,
+      bronzePercent: 0,
+      silverPercent: 0,
+      goldPercent: 0,
+      qualityFailureRate: 0,
       transferTimeEstimate: "~3.2 min",
       upstream: {
         kind: "eso-obscore",

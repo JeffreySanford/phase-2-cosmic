@@ -14,14 +14,15 @@ describe("LakehousePanelComponent", () => {
     component = fixture.componentInstance;
     component.summary = {
       source: "live",
-      bronzeState: "Bronze ingest active",
-      silverQuality: "97.4% pass",
-      goldReadiness: "Ready for analyst review",
+      bronzeState: "Public source proof only; Bronze Delta not implemented",
+      silverQuality:
+        "Evidence state only; Silver quality tables not implemented",
+      goldReadiness: "Gold readiness not implemented",
       evidence: "ESO ObsCore proof slice",
-      bronzePercent: 86,
-      silverPercent: 72,
-      goldPercent: 41,
-      qualityFailureRate: 1.2,
+      bronzePercent: 0,
+      silverPercent: 0,
+      goldPercent: 0,
+      qualityFailureRate: 0,
       transferTimeEstimate: "~3.2 min",
       upstream: {
         kind: "eso-obscore",
@@ -41,8 +42,9 @@ describe("LakehousePanelComponent", () => {
 
   it("renders the Lakehouse summary details", () => {
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain("Bronze ingest active");
-    expect(text).toContain("97.4% pass");
+    expect(text).toContain("Proof boundary");
+    expect(text).toContain("Public source proof only");
+    expect(text).toContain("Evidence state only");
     expect(text).toContain("ESO ObsCore proof slice");
     expect(text).toContain("~3.2 min");
   });
@@ -51,7 +53,8 @@ describe("LakehousePanelComponent", () => {
     component.summary = {
       ...component.summary,
       freshness: {
-        ...component.summary.freshness!,
+        maxAgeMs: component.summary.freshness?.maxAgeMs ?? 15 * 60 * 1000,
+        lastUpdatedAt: component.summary.freshness?.lastUpdatedAt ?? "n/a",
         stale: true,
       },
     };

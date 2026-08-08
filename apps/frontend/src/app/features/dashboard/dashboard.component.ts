@@ -271,9 +271,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   lakehouseSummary: LakehouseMetricsSummary = {
     source: "fallback" as SourceLabel,
-    bronzeState: "Queueing metadata for Bronze",
-    silverQuality: "Pending validation",
-    goldReadiness: "Awaiting analyst handoff",
+    bronzeState: "Public source proof only; Bronze Delta not implemented",
+    silverQuality: "Evidence state only; Silver quality tables not implemented",
+    goldReadiness: "Gold readiness not implemented",
     evidence: "Proof slice aligned to ESO ObsCore metadata",
     bronzePercent: 0,
     silverPercent: 0,
@@ -469,9 +469,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     );
     const lakehouse$ = this.probe(this.lakehouseMetrics.getSummary(), {
       source: "fallback",
-      bronzeState: "No Lakehouse metrics available",
-      silverQuality: "Pending validation",
-      goldReadiness: "Awaiting analyst handoff",
+      bronzeState: "No Lakehouse proof evidence available",
+      silverQuality:
+        "Evidence state unavailable; Silver quality tables not implemented",
+      goldReadiness: "Gold readiness not implemented",
       evidence: "No evidence captured",
       bronzePercent: 0,
       silverPercent: 0,
@@ -740,7 +741,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             (a) => a.level === "warning"
           ).length;
           this.lakehouseSummary = {
-            source: snapshot.lakehouse.ok ? snapshot.lakehouse.value.source : "fallback",
+            source: snapshot.lakehouse.ok
+              ? snapshot.lakehouse.value.source
+              : "fallback",
             bronzeState: snapshot.lakehouse.value.bronzeState,
             silverQuality: snapshot.lakehouse.value.silverQuality,
             goldReadiness: snapshot.lakehouse.value.goldReadiness,

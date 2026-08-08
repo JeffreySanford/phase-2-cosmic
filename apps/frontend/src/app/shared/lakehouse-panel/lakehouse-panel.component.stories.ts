@@ -14,14 +14,15 @@ export const Default: Story = {
   args: {
     summary: {
       source: "live",
-      bronzeState: "Bronze ingest active",
-      silverQuality: "97.4% pass",
-      goldReadiness: "Ready for analyst review",
+      bronzeState: "Public source proof only; Bronze Delta not implemented",
+      silverQuality:
+        "Evidence state only; Silver quality tables not implemented",
+      goldReadiness: "Gold readiness not implemented",
       evidence: "ESO ObsCore proof slice",
-      bronzePercent: 86,
-      silverPercent: 72,
-      goldPercent: 41,
-      qualityFailureRate: 1.2,
+      bronzePercent: 0,
+      silverPercent: 0,
+      goldPercent: 0,
+      qualityFailureRate: 0,
       transferTimeEstimate: "~3.2 min",
       upstream: {
         kind: "eso-obscore",

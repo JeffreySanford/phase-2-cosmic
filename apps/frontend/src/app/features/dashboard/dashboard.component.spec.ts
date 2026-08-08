@@ -204,9 +204,10 @@ describe("DashboardComponent", () => {
   it("renders a Lakehouse operations panel for the proof slice", () => {
     component.lakehouseSummary = {
       source: "live",
-      bronzeState: "Bronze ingest active",
-      silverQuality: "97.4% pass",
-      goldReadiness: "Ready for analyst review",
+      bronzeState: "Public source proof only; Bronze Delta not implemented",
+      silverQuality:
+        "Evidence state only; Silver quality tables not implemented",
+      goldReadiness: "Gold readiness not implemented",
       evidence: "ESO ObsCore proof slice",
     };
 
@@ -214,7 +215,8 @@ describe("DashboardComponent", () => {
 
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain("Lakehouse");
-    expect(el.textContent).toContain("Bronze ingest active");
+    expect(el.textContent).toContain("Proof boundary");
+    expect(el.textContent).toContain("Public source proof only");
     expect(el.textContent).toContain("ESO ObsCore proof slice");
   });
 

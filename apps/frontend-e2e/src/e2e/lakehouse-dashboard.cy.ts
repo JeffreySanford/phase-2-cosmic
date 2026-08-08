@@ -7,19 +7,21 @@ describe("Lakehouse dashboard proof slice", () => {
     cy.get("mat-tab-group").contains("Operations").click({ force: true });
     cy.contains("Lakehouse", { timeout: 20000 }).scrollIntoView();
     cy.contains("Lakehouse", { timeout: 20000 }).should("be.visible");
-    cy.get(".lakehouse-panel", { timeout: 20000 }).scrollIntoView();
-    cy.get(".lakehouse-panel", { timeout: 20000 }).should("be.visible");
     cy.get(".lakehouse-panel", { timeout: 20000 }).should(
       "contain.text",
-      "Bronze:"
+      "Proof boundary:"
+    );
+    cy.get(".lakehouse-panel", { timeout: 20000 }).should(
+      "contain.text",
+      "Evidence state:"
+    );
+    cy.get(".lakehouse-panel", { timeout: 20000 }).should(
+      "contain.text",
+      "Readiness boundary:"
     );
     cy.get(".lakehouse-panel", { timeout: 20000 }).should(
       "contain.text",
       "evidence:"
-    );
-    cy.get(".lakehouse-panel", { timeout: 20000 }).should(
-      "contain.text",
-      "Gold readiness:"
     );
   });
 });

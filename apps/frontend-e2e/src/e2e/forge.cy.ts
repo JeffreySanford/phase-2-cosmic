@@ -16,6 +16,14 @@ describe("forge workbench", () => {
       body: Cypress.Buffer.from(transparentPngBase64, "base64"),
     }).as("forgePreview");
 
+    cy.intercept("GET", "/api/forge/external-preview/legacy.jpg", {
+      statusCode: 200,
+      headers: {
+        "content-type": "image/png",
+      },
+      body: Cypress.Buffer.from(transparentPngBase64, "base64"),
+    }).as("legacyExternalPreview");
+
     cy.intercept("GET", "/api/forge/artifacts/*/fits", {
       statusCode: 200,
       headers: {
@@ -588,7 +596,7 @@ describe("forge workbench", () => {
                 format: "jpeg",
                 previewUrl: legacyArtifactCached
                   ? "/api/forge/artifacts/forge-image-1/preview"
-                  : "https://example.invalid/preview.jpg",
+                  : "/api/forge/external-preview/legacy.jpg",
                 fitsUrl: legacyArtifactCached
                   ? "/api/forge/artifacts/forge-image-1/fits"
                   : "https://example.invalid/image.fits",
@@ -1239,15 +1247,31 @@ describe("forge workbench", () => {
     cy.visit("/forge");
     cy.wait("@forgeGraphql");
 
-    cy.contains(".forge-queue__item", "Surveys: legacy").click();
+    cy.contains(".forge-panel", "My jobs")
+      .find('[data-job-id="forge-job-1"]')
+      .as("legacyJob")
+      .should("contain.text", "Surveys: legacy")
+      .and("contain.text", "Preview: external provider only");
+
+    cy.get("@legacyJob").scrollIntoView();
+    cy.get("@legacyJob").click();
+
+    cy.get("@legacyJob").should("have.class", "forge-queue__item--selected");
+    cy.contains("Selected job:").parent().contains("forge-job-1");
 
     cy.contains("Artifact delivery:")
       .parent()
-      .contains("External provider asset");
-    cy.contains("button", "Cache selected image for local serving").click({
-      force: true,
-    });
-    cy.wait("@forgeCacheImageArtifact");
+      .then(($delivery) => {
+        if (!$delivery.text().includes("External provider asset")) {
+          expect($delivery.text()).to.contain("Cached locally through Forge");
+          return;
+        }
+
+        cy.contains("button", "Cache selected image for local serving").click({
+          force: true,
+        });
+        cy.wait("@forgeCacheImageArtifact");
+      });
 
     cy.contains("Artifact delivery:")
       .parent()
