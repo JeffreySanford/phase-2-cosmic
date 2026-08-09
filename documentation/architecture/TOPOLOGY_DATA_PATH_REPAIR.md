@@ -92,9 +92,15 @@ Rules:
 - [x] Build the `pulsar-collector` component that forwards Pulsar to Kafka with
       region attribution, negative-acking anything it fails to forward.
 - [x] Add collector unit coverage and static analysis to the Go gate.
-- [x] Add collector integration coverage against a live Pulsar and Kafka, guarded
-      by a build tag and required environment variables so the default gate and
-      broker-less machines are unaffected.
+- [~] Add collector integration coverage against a live Pulsar and Kafka. The test
+  is written and guarded by a build tag plus required environment variables,
+  but it does not pass from the host: Kafka advertises partition leaders on
+  the in-network listener, so a host-side client cannot route to them. It must
+  run inside the compose network before it can be trusted.
+- [x] Prove the chain manually: a regional generator produced through the edge
+      Pulsar cluster and the collector forwarded to Kafka, with
+      `collector_messages_forwarded_total{region="us-west"}` climbing and zero
+      forward failures.
 - [x] Wire three geographically independent Pulsar clusters and three collectors
       behind an opt-in compose profile, with a regional generator per cluster.
 

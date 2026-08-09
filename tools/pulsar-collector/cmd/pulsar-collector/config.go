@@ -12,13 +12,13 @@ import (
 // carries a region so downstream consumers can attribute an event to the
 // collector that admitted it.
 type Config struct {
-	Region        string
-	PulsarURL     string
-	PulsarTopic   string
-	Subscription  string
-	KafkaBrokers  []string
-	KafkaTopic    string
-	MetricsAddr   string
+	Region       string
+	PulsarURL    string
+	PulsarTopic  string
+	Subscription string
+	KafkaBrokers []string
+	KafkaTopic   string
+	MetricsAddr  string
 }
 
 func (c Config) Validate() error {
