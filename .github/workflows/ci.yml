@@ -160,7 +160,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Run Go unit tests (data-generator)
-        run: sh ./scripts/test-go.sh
+        run: bash ./scripts/test-go.sh
 
       - name: Run stress-mode validation (CI)
         run: pnpm run validate:ci:stress
