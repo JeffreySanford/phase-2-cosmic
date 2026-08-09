@@ -376,6 +376,7 @@ export class RuntimeLoadProfileService {
         "-v",
         `${logDir}:/var/lib/data-generator/logs`,
         this.dockerImage,
+        "/usr/local/bin/data-generator",
         ...args,
       ],
       mode: "docker",
@@ -391,7 +392,7 @@ export class RuntimeLoadProfileService {
             Binds: [`${logDir}:/var/lib/data-generator/logs`],
             AutoRemove: true,
           },
-          Cmd: args,
+          Cmd: ["/usr/local/bin/data-generator", ...args],
         });
         await container.start();
 

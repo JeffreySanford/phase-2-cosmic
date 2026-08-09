@@ -81,6 +81,11 @@ describe("RuntimeLoadProfileService (dockerode)", () => {
 
     // With max workers = 2, we should create two containers.
     expect(createContainerMock).toHaveBeenCalledTimes(2);
+    expect(createContainerMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        Cmd: expect.arrayContaining(["/usr/local/bin/data-generator"]),
+      })
+    );
 
     // Stopping the profile should remove the containers.
     await svc.setProfile(10, 1);
@@ -88,6 +93,23 @@ describe("RuntimeLoadProfileService (dockerode)", () => {
     for (const container of containerMocks) {
       expect(container.remove).toHaveBeenCalled();
     }
+  });
+
+  it("uses the data-generator binary when falling back to docker CLI", async () => {
+    process.env.STRESS_USE_DOCKER_WORKERS = "true";
+    process.env.STRESS_DISABLE = "false";
+    process.env.STRESS_MAX_WORKERS = "1";
+
+    createContainerMock.mockRejectedValue(new Error("dockerode unavailable"));
+
+    const svc = new RuntimeLoadProfileService();
+    await expect(svc.setProfile(100, 1)).resolves.not.toThrow();
+
+    expect(spawnSyncMock).toHaveBeenCalledWith(
+      "docker",
+      expect.arrayContaining(["/usr/local/bin/data-generator"]),
+      expect.any(Object)
+    );
   });
 
   it("cleans up partially started containers when a subsequent container fails", async () => {
