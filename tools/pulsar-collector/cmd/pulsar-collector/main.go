@@ -97,8 +97,11 @@ func run(ctx context.Context, cfg Config) error {
 		Topic:            cfg.PulsarTopic,
 		SubscriptionName: cfg.Subscription,
 		// Shared lets collector replicas scale horizontally within one region
-		// without partition reassignment.
-		Type: pulsar.Shared,
+		// without partition reassignment. Earliest prevents startup ordering from
+		// dropping retained events when a regional generator starts before the
+		// collector creates its subscription for the first time.
+		Type:                        pulsar.Shared,
+		SubscriptionInitialPosition: pulsar.SubscriptionPositionEarliest,
 	})
 	if err != nil {
 		return err
