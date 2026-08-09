@@ -57,13 +57,14 @@ describe("ingest event channel", () => {
     resetIngestEventsForTest();
   });
 
-  it("accepts a forwarded event and records it", () => {
+  it("accepts a forwarded event and preserves event identity, region, and source", () => {
     const controller = makeController();
 
     const result = controller.receiveIngestEvent({
       broker: "kafka",
       collectorRegion: "us-west",
       payload: {
+        eventId: "event-001",
         source: "main",
         eventType: "telemetry.batch",
         traceId: "trace-001",
@@ -75,8 +76,12 @@ describe("ingest event channel", () => {
     const stats = getIngestEventStats();
     expect(stats.received).toBe(1);
     expect(stats.latest?.traceId).toBe("trace-001");
+    expect(stats.latest?.source).toBe("main");
     expect(stats.latest?.collectorRegion).toBe("us-west");
     expect(stats.latest?.broker).toBe("kafka");
+    expect(
+      (stats.latest?.payload as { eventId?: string } | undefined)?.eventId
+    ).toBe("event-001");
   });
 
   it("broadcasts an event to a subscribed SSE client", () => {
@@ -89,11 +94,12 @@ describe("ingest event channel", () => {
 
     controller.receiveIngestEvent({
       broker: "kafka",
-      payload: { source: "lbl", traceId: "trace-002" },
+      payload: { eventId: "event-002", source: "lbl", traceId: "trace-002" },
     });
 
     const body = written.join("");
     expect(body).toContain("event: ingest-event");
+    expect(body).toContain("event-002");
     expect(body).toContain("trace-002");
   });
 
