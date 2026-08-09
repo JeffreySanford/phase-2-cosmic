@@ -48,8 +48,8 @@ func requireEnv(t *testing.T, name string) string {
 }
 
 // TestCollectorForwardsPulsarToKafkaWithRegionAttribution proves the real bridge:
-// a record produced to Pulsar arrives on Kafka with its payload intact and the
-// collector's region recorded in headers.
+// a record produced to Pulsar arrives on Kafka with its payload intact, the
+// collector's region recorded, and the generator event identity unchanged.
 func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 	pulsarURL := requireEnv(t, "PULSAR_URL")
 	kafkaBrokers := requireEnv(t, "KAFKA_BOOTSTRAP_SERVERS")
@@ -98,6 +98,7 @@ func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 	defer producer.Close()
 
 	marker := fmt.Sprintf("it-%d", time.Now().UnixNano())
+	eventID := "e2e-" + marker
 	payload := []byte(fmt.Sprintf(
 		`{"source":"main","eventType":"telemetry.batch","payloadBytes":512,"traceId":"%s"}`,
 		marker))
@@ -116,7 +117,12 @@ func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 		t.Fatalf("could not attach to the Kafka topic tail: %v", err)
 	}
 
-	if _, err := producer.Send(ctx, &pulsar.ProducerMessage{Payload: payload}); err != nil {
+	if _, err := producer.Send(ctx, &pulsar.ProducerMessage{
+		Payload: payload,
+		Properties: map[string]string{
+			"event-id": eventID,
+		},
+	}); err != nil {
 		t.Fatalf("pulsar send: %v", err)
 	}
 
@@ -143,6 +149,12 @@ func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 	}
 	if got := headers["collector-region"]; got != expectedRegion {
 		t.Errorf("collector-region header = %q, want %q", got, expectedRegion)
+	}
+	if got := headers["event-id"]; got != eventID {
+		t.Errorf("event-id header = %q, want %q", got, eventID)
+	}
+	if got := headers["collector-kafka-topic"]; got != topic {
+		t.Errorf("collector-kafka-topic header = %q, want %q", got, topic)
 	}
 	if headers["collector-pulsar-message-id"] == "" {
 		t.Error("expected collector-pulsar-message-id header to be recorded")
