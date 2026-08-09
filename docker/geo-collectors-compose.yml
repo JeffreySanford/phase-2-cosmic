@@ -1,0 +1,188 @@
+---
+# Geographically distributed Pulsar edge-collection tier.
+#
+#   data-generator -> regional Pulsar cluster -> collector -> Kafka backbone
+#
+# Each region is an INDEPENDENT Pulsar cluster with its own metadata store, so a
+# region can keep accepting data while its link to the core is down. That is the
+# property the edge tier exists for; a single shared cluster would not model it.
+#
+# This stack is opt-in. It is a separate compose file AND profile-gated so normal
+# local development and CI never pay for it:
+#
+#   docker compose -f docker/dev-compose.yml -f docker/geo-collectors-compose.yml \
+#     --profile geo up -d
+#
+# Scoped exception to ADR-003 ("run Pulsar as a full profile, not standalone-only"):
+# the CORE pulsar service in dev-compose.yml remains a full broker + bookkeeper +
+# zookeeper deployment and is unchanged. The three REGIONAL edge clusters run in
+# standalone mode because three full clusters is nine containers, which is not
+# workable on a developer workstation. Production intent is a full cluster per
+# region; standalone here models cluster independence, not production topology.
+
+services:
+  # --- Regional Pulsar edge clusters -------------------------------------
+  pulsar-us:
+    image: apachepulsar/pulsar:3.2.4
+    profiles: ["geo"]
+    command: ["bin/pulsar", "standalone"]
+    environment:
+      - PULSAR_MEM=-Xms384m -Xmx384m -XX:MaxDirectMemorySize=256m
+    ports:
+      - "6651:6650"
+      - "8086:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/admin/v2/clusters"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  pulsar-eu:
+    image: apachepulsar/pulsar:3.2.4
+    profiles: ["geo"]
+    command: ["bin/pulsar", "standalone"]
+    environment:
+      - PULSAR_MEM=-Xms384m -Xmx384m -XX:MaxDirectMemorySize=256m
+    ports:
+      - "6652:6650"
+      - "8087:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/admin/v2/clusters"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  pulsar-apac:
+    image: apachepulsar/pulsar:3.2.4
+    profiles: ["geo"]
+    command: ["bin/pulsar", "standalone"]
+    environment:
+      - PULSAR_MEM=-Xms384m -Xmx384m -XX:MaxDirectMemorySize=256m
+    ports:
+      - "6653:6650"
+      - "8088:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/admin/v2/clusters"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  # --- Collectors: one per region, all forwarding to the single Kafka backbone
+  collector-us:
+    build:
+      context: ../tools/pulsar-collector
+      dockerfile: Dockerfile
+    image: phase2/pulsar-collector:dev
+    profiles: ["geo"]
+    environment:
+      - COLLECTOR_REGION=us-west
+      - PULSAR_URL=pulsar://pulsar-us:6650
+      - PULSAR_TOPIC=phase2-events
+      - PULSAR_SUBSCRIPTION=collector-us-west
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=phase2-events
+      - METRICS_ADDR=:9110
+    ports:
+      - "9111:9110"
+    depends_on:
+      pulsar-us:
+        condition: service_healthy
+    restart: unless-stopped
+
+  collector-eu:
+    image: phase2/pulsar-collector:dev
+    profiles: ["geo"]
+    environment:
+      - COLLECTOR_REGION=eu-central
+      - PULSAR_URL=pulsar://pulsar-eu:6650
+      - PULSAR_TOPIC=phase2-events
+      - PULSAR_SUBSCRIPTION=collector-eu-central
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=phase2-events
+      - METRICS_ADDR=:9110
+    ports:
+      - "9112:9110"
+    depends_on:
+      pulsar-eu:
+        condition: service_healthy
+      collector-us:
+        condition: service_started
+    restart: unless-stopped
+
+  collector-apac:
+    image: phase2/pulsar-collector:dev
+    profiles: ["geo"]
+    environment:
+      - COLLECTOR_REGION=apac-southeast
+      - PULSAR_URL=pulsar://pulsar-apac:6650
+      - PULSAR_TOPIC=phase2-events
+      - PULSAR_SUBSCRIPTION=collector-apac-southeast
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=phase2-events
+      - METRICS_ADDR=:9110
+    ports:
+      - "9113:9110"
+    depends_on:
+      pulsar-apac:
+        condition: service_healthy
+      collector-us:
+        condition: service_started
+    restart: unless-stopped
+
+  # --- Regional generators feeding their local edge cluster ---------------
+  generator-us:
+    image: phase2/data-generator:dev
+    profiles: ["geo"]
+    environment:
+      - GENERATOR_TARGET_BYTES_PER_SEC=25000
+      - GENERATOR_TARGET_PAYLOAD_BYTES=512
+    command:
+      - /usr/local/bin/data-generator
+      - --rate=25000
+      - --payload-size=512
+      - --metrics-addr=:9100
+      - --no-stdout
+      - --sink=pulsar:pulsar-us:6650/phase2-events
+    depends_on:
+      pulsar-us:
+        condition: service_healthy
+    restart: unless-stopped
+
+  generator-eu:
+    image: phase2/data-generator:dev
+    profiles: ["geo"]
+    environment:
+      - GENERATOR_TARGET_BYTES_PER_SEC=25000
+      - GENERATOR_TARGET_PAYLOAD_BYTES=512
+    command:
+      - /usr/local/bin/data-generator
+      - --rate=25000
+      - --payload-size=512
+      - --metrics-addr=:9100
+      - --no-stdout
+      - --sink=pulsar:pulsar-eu:6650/phase2-events
+    depends_on:
+      pulsar-eu:
+        condition: service_healthy
+    restart: unless-stopped
+
+  generator-apac:
+    image: phase2/data-generator:dev
+    profiles: ["geo"]
+    environment:
+      - GENERATOR_TARGET_BYTES_PER_SEC=25000
+      - GENERATOR_TARGET_PAYLOAD_BYTES=512
+    command:
+      - /usr/local/bin/data-generator
+      - --rate=25000
+      - --payload-size=512
+      - --metrics-addr=:9100
+      - --no-stdout
+      - --sink=pulsar:pulsar-apac:6650/phase2-events
+    depends_on:
+      pulsar-apac:
+        condition: service_healthy
+    restart: unless-stopped

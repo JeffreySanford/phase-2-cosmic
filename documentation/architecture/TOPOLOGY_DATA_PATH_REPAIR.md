@@ -92,9 +92,11 @@ Rules:
 - [x] Build the `pulsar-collector` component that forwards Pulsar to Kafka with
       region attribution, negative-acking anything it fails to forward.
 - [x] Add collector unit coverage and static analysis to the Go gate.
-- [ ] Add collector integration coverage against a live Pulsar and Kafka.
-- [ ] Wire three geographically independent Pulsar clusters and three collectors
-      behind an opt-in compose profile.
+- [x] Add collector integration coverage against a live Pulsar and Kafka, guarded
+      by a build tag and required environment variables so the default gate and
+      broker-less machines are unaffected.
+- [x] Wire three geographically independent Pulsar clusters and three collectors
+      behind an opt-in compose profile, with a regional generator per cluster.
 
 ### Stage 2 — complete the chain
 
