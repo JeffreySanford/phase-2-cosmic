@@ -1,6 +1,18 @@
 {
   "schemaVersion": "lakehouse-source-registry.v1",
-  "defaultBundle": "offline-fixture",
+  "defaultBundle": "live-default",
+  "adapterContract": {
+    "id": "vo-tap-obscore.v1",
+    "canonicalFields": [
+      "sourceIdentifier",
+      "collection",
+      "dataProductType",
+      "ra",
+      "dec",
+      "accessUri"
+    ],
+    "notes": "Provider profiles map their own column vocabulary onto these canonical fields. Silver canonicalization reads the field map rather than provider-specific column names, so Lakehouse entities are not coupled to any single archive's schema."
+  },
   "selectionPolicy": {
     "activeStates": ["fixture", "included"],
     "inactiveStates": ["planned", "excluded"],
@@ -14,6 +26,18 @@
       "activationState": "fixture",
       "includeByDefault": true,
       "evidenceRole": "offline-fixture",
+      "adapter": {
+        "contract": "vo-tap-obscore.v1",
+        "fixturePath": "fixtures/obscore-deterministic.json",
+        "fieldMap": {
+          "sourceIdentifier": "obs_publisher_did",
+          "collection": "obs_collection",
+          "dataProductType": "dataproduct_type",
+          "ra": "s_ra",
+          "dec": "s_dec",
+          "accessUri": "access_url"
+        }
+      },
       "notes": "Built-in bounded records used by the local PR41 runner and CI-safe MVP tests."
     },
     "eso-obscore-core-proof": {
@@ -24,39 +48,84 @@
       "includeByDefault": false,
       "endpoint": "https://archive.eso.org/tap_obs",
       "query": "SELECT TOP 5 obs_publisher_did, obs_collection, dataproduct_type, s_ra, s_dec, access_url FROM ivoa.ObsCore",
-      "evidenceRole": "public-proof",
-      "notes": "PR40 public-source proof profile; PR41 keeps this as a registry contract without requiring live network access for the local MVP."
+      "evidenceRole": "offline-fixture",
+      "adapter": {
+        "contract": "vo-tap-obscore.v1",
+        "fixturePath": "fixtures/eso-obscore.json",
+        "fieldMap": {
+          "sourceIdentifier": "obs_publisher_did",
+          "collection": "obs_collection",
+          "dataProductType": "dataproduct_type",
+          "ra": "s_ra",
+          "dec": "s_dec",
+          "accessUri": "access_url"
+        }
+      },
+      "notes": "PR40 public-source proof profile. PR41 runs it from a checked-in offline fixture so the MVP stays CI-safe; the endpoint/query are recorded as the contract this fixture is shaped after, not as evidence of a live PR41 query."
     },
     "nrao-vlass-development": {
-      "label": "NRAO VLASS Development Candidate",
+      "label": "NRAO VLASS Development Fixture",
       "provider": "NRAO",
-      "kind": "planned",
-      "activationState": "planned",
+      "kind": "vo-tap",
+      "activationState": "included",
       "includeByDefault": false,
       "endpoint": "https://archive-new.nrao.edu/",
+      "query": "SELECT TOP 5 product_id, collection_name, product_type, ra_deg, dec_deg, download_url FROM vlass.quicklook_products",
+      "evidenceRole": "offline-fixture",
+      "adapter": {
+        "contract": "vo-tap-obscore.v1",
+        "fixturePath": "fixtures/nrao-vlass.json",
+        "fieldMap": {
+          "sourceIdentifier": "product_id",
+          "collection": "collection_name",
+          "dataProductType": "product_type",
+          "ra": "ra_deg",
+          "dec": "dec_deg",
+          "accessUri": "download_url"
+        }
+      },
+      "notes": "Radio-astronomy-aligned profile that validates the adapter contract against a non-ObsCore column vocabulary. Backed by a checked-in offline fixture; it is not a live NRAO/VLASS extract."
+    },
+    "nrao-tap-live": {
+      "label": "NRAO TAP Live Extract",
+      "provider": "NRAO",
+      "kind": "vo-tap",
+      "activationState": "planned",
+      "includeByDefault": false,
+      "endpoint": "https://archive-new.nrao.edu/vlass/tap",
+      "query": "SELECT TOP 5 product_id, collection_name, product_type, ra_deg, dec_deg, download_url FROM vlass.quicklook_products",
       "evidenceRole": "development-candidate",
-      "notes": "Radio-astronomy-aligned profile for later validation; not active in the PR41 local MVP."
+      "notes": "Live radio-astronomy extract requiring network access and a validated query contract. Intentionally inactive: PR41 does not perform live source queries, so this profile has no adapter fixture and is excluded from every active bundle."
     }
   },
   "bundles": {
+    "live-default": {
+      "label": "Live Default",
+      "profileRefs": [
+        "deterministic-obscore-fixture",
+        "eso-obscore-core-proof"
+      ],
+      "intendedUse": "Default PR41 bundle. The ESO profile queries live on a developer machine and falls back to its fixture in CI. The deterministic fixture is always included so the quarantine, duplicate, and invalid-coordinate contracts stay provable regardless of what a live archive returns."
+    },
     "offline-fixture": {
       "label": "Offline Fixture",
       "profileRefs": ["deterministic-obscore-fixture"],
-      "intendedUse": "Default local and CI-safe PR41 source bundle."
+      "intendedUse": "Fully offline PR41 source bundle for runs that must never touch the network."
     },
     "core-proof": {
       "label": "Core Public Proof",
       "profileRefs": ["eso-obscore-core-proof"],
-      "intendedUse": "Bounded public-source profile inherited from PR40 proof work."
+      "intendedUse": "Bounded ESO-shaped profile inherited from PR40 proof work, run offline in PR41."
     },
     "expanded-development": {
       "label": "Expanded Development",
       "profileRefs": [
         "deterministic-obscore-fixture",
         "eso-obscore-core-proof",
-        "nrao-vlass-development"
+        "nrao-vlass-development",
+        "nrao-tap-live"
       ],
-      "intendedUse": "Planning bundle for wider source-contract validation without making every profile active by default."
+      "intendedUse": "Multi-provider bundle that validates the adapter contract across ObsCore and NRAO column vocabularies without activating live-network profiles."
     }
   }
 }

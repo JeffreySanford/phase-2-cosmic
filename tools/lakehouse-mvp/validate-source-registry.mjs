@@ -70,12 +70,87 @@ for (const [bundleName, bundle] of Object.entries(registry.bundles)) {
   }
 }
 
+const canonicalFields = registry.adapterContract.canonicalFields;
+
 for (const [profileName, profile] of Object.entries(registry.profiles)) {
   if (profile.includeByDefault && profile.activationState === "planned") {
     fail(`planned profile ${profileName} cannot be included by default`);
   }
   if (profile.kind === "vo-tap" && (!profile.endpoint || !profile.query)) {
     fail(`VO/TAP profile ${profileName} must define endpoint and query`);
+  }
+
+  const isActive = activeStates.has(profile.activationState);
+
+  // Active profiles must be able to produce rows through the shared adapter
+  // contract. Inactive profiles are documentation-only and must not carry an
+  // adapter that implies they run.
+  if (isActive && !profile.adapter) {
+    fail(`active profile ${profileName} must define an adapter`);
+  }
+  if (!isActive && profile.adapter) {
+    fail(
+      `inactive profile ${profileName} must not define an adapter; an adapter implies the profile produces rows`
+    );
+  }
+
+  if (!profile.adapter) {
+    continue;
+  }
+
+  if (profile.adapter.contract !== registry.adapterContract.id) {
+    fail(
+      `profile ${profileName} uses adapter contract ${profile.adapter.contract} instead of the registered ${registry.adapterContract.id}`
+    );
+  }
+
+  const missing = canonicalFields.filter(
+    (field) => !profile.adapter.fieldMap[field]
+  );
+  if (missing.length > 0) {
+    fail(
+      `profile ${profileName} adapter fieldMap is missing canonical field(s): ${missing.join(
+        ", "
+      )}`
+    );
+  }
+
+  const fixturePath = path.join(
+    repoRoot,
+    "tools",
+    "lakehouse-mvp",
+    profile.adapter.fixturePath
+  );
+  if (!fs.existsSync(fixturePath)) {
+    fail(
+      `profile ${profileName} references missing fixture ${profile.adapter.fixturePath}`
+    );
+  }
+
+  const fixture = readJson(fixturePath);
+  if (!Array.isArray(fixture.rows) || fixture.rows.length === 0) {
+    fail(`fixture ${profile.adapter.fixturePath} must contain rows`);
+  }
+  if (fixture.contract !== registry.adapterContract.id) {
+    fail(
+      `fixture ${profile.adapter.fixturePath} declares contract ${fixture.contract} instead of ${registry.adapterContract.id}`
+    );
+  }
+
+  // The field map must actually address the fixture's column vocabulary,
+  // otherwise canonicalization would silently produce empty records.
+  const fixtureColumns = new Set(Object.keys(fixture.rows[0]));
+  const unmapped = canonicalFields.filter(
+    (field) => !fixtureColumns.has(profile.adapter.fieldMap[field])
+  );
+  if (unmapped.length > 0) {
+    fail(
+      `profile ${profileName} fieldMap targets column(s) absent from ${
+        profile.adapter.fixturePath
+      }: ${unmapped
+        .map((field) => `${field} -> ${profile.adapter.fieldMap[field]}`)
+        .join(", ")}`
+    );
   }
 }
 

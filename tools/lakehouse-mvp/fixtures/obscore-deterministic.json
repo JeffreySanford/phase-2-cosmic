@@ -1,0 +1,46 @@
+{
+  "note": "Deterministic offline fixture used by the default PR41 bundle and CI. These rows are synthetic and shaped like IVOA ObsCore. They are not a live archive extract and are not public-source evidence.",
+  "contract": "vo-tap-obscore.v1",
+  "rows": [
+    {
+      "obs_publisher_did": "ivo://eso.org/ID-001",
+      "obs_collection": "MUSE",
+      "dataproduct_type": "cube",
+      "s_ra": 150.117,
+      "s_dec": -34.612,
+      "access_url": "https://archive.eso.org/datalink/ID-001"
+    },
+    {
+      "obs_publisher_did": "ivo://eso.org/ID-002",
+      "obs_collection": "ALMA",
+      "dataproduct_type": "visibility",
+      "s_ra": 83.822,
+      "s_dec": -5.391,
+      "access_url": "s3://phase2-public/eso/ID-002"
+    },
+    {
+      "obs_publisher_did": "ivo://eso.org/ID-001",
+      "obs_collection": "MUSE",
+      "dataproduct_type": "cube",
+      "s_ra": 150.117,
+      "s_dec": -34.612,
+      "access_url": "https://archive.eso.org/datalink/ID-001"
+    },
+    {
+      "obs_publisher_did": "ivo://eso.org/ID-003",
+      "obs_collection": "VLT",
+      "dataproduct_type": "image",
+      "s_ra": 10.5,
+      "s_dec": 22.25,
+      "access_url": "https://archive.eso.org/datalink/ID-003"
+    },
+    {
+      "obs_publisher_did": "",
+      "obs_collection": "BROKEN",
+      "dataproduct_type": "spectrum",
+      "s_ra": null,
+      "s_dec": -91.0,
+      "access_url": ""
+    }
+  ]
+}

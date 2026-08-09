@@ -23,6 +23,18 @@ const profileArgIndex = args.indexOf("--profile");
 const expectedProfile =
   profileArgIndex >= 0 ? args[profileArgIndex + 1] : "tiny";
 
+// `--require-fresh` asserts the manifest was produced by a recent run. The
+// quality gate runs the writer immediately before the verifier, so a stale
+// manifest there means the writer silently failed and the verifier would
+// otherwise pass against a previous run's artifacts.
+const requireFresh = args.includes("--require-fresh");
+const maxAgeSecondsIndex = args.indexOf("--max-age-seconds");
+const maxAgeSeconds = Number(
+  maxAgeSecondsIndex >= 0
+    ? args[maxAgeSecondsIndex + 1]
+    : process.env.LAKEHOUSE_MAX_MANIFEST_AGE_SECONDS ?? 3600
+);
+
 function fail(message) {
   console.error(`[lakehouse-pr41] ${message}`);
   process.exit(1);
@@ -174,6 +186,103 @@ if (!manifest.reproductionCommand?.includes("lakehouse-mvp:test")) {
   fail(
     "manifest reproductionCommand must describe the lakehouse MVP test command"
   );
+}
+
+if (requireFresh) {
+  if (!Number.isFinite(maxAgeSeconds) || maxAgeSeconds <= 0) {
+    fail(`--max-age-seconds must be a positive number, got ${maxAgeSeconds}`);
+  }
+  const generatedAt = Date.parse(manifest.generatedAt ?? "");
+  if (!Number.isFinite(generatedAt)) {
+    fail(
+      `manifest generatedAt is not a parsable timestamp: ${manifest.generatedAt}`
+    );
+  }
+  const ageSeconds = Math.round((Date.now() - generatedAt) / 1000);
+  if (ageSeconds > maxAgeSeconds) {
+    fail(
+      `manifest is ${ageSeconds}s old which exceeds the ${maxAgeSeconds}s freshness budget; ` +
+        "the writer likely did not run, so these artifacts are from a previous run"
+    );
+  }
+}
+
+// The adapter contract keeps Lakehouse entities provider-neutral. A bundle that
+// reports active profiles must say which providers and contracts produced them.
+const adapterContract = sourceRegistry.adapterContract || {};
+const canonicalFields = adapterContract.canonicalFields || [];
+if (canonicalFields.length === 0) {
+  fail("source registry must declare adapterContract.canonicalFields");
+}
+if (!manifest.sourceBundle?.providers?.length) {
+  fail("manifest sourceBundle must record the providers that produced rows");
+}
+if (!manifest.sourceBundle?.adapterContracts?.length) {
+  fail("manifest sourceBundle must record the adapter contracts it used");
+}
+for (const contractId of manifest.sourceBundle.adapterContracts) {
+  if (contractId !== adapterContract.id) {
+    fail(
+      `manifest sourceBundle uses adapter contract ${contractId} that is not the registered ${adapterContract.id}`
+    );
+  }
+}
+// Source-mode truthfulness: the manifest must state how each profile's rows
+// were obtained, and a CI run must never claim a live archive query.
+const validModes = new Set(["auto", "live", "fixture"]);
+const validResolvedModes = new Set(["live", "fixture", "fixture-fallback"]);
+if (!validModes.has(manifest.sourceBundle?.requestedMode)) {
+  fail(
+    `manifest sourceBundle.requestedMode must be one of ${[...validModes].join(
+      ", "
+    )}, found ${manifest.sourceBundle?.requestedMode}`
+  );
+}
+if (!manifest.sourceBundle?.resolvedProfiles?.length) {
+  fail(
+    "manifest sourceBundle must record how each active profile was resolved"
+  );
+}
+for (const resolved of manifest.sourceBundle.resolvedProfiles) {
+  if (!validResolvedModes.has(resolved.mode)) {
+    fail(
+      `manifest resolved profile ${resolved.ref} has unknown mode ${resolved.mode}`
+    );
+  }
+  if (resolved.mode !== "live" && !resolved.reason) {
+    fail(
+      `manifest resolved profile ${resolved.ref} used ${resolved.mode} without recording a reason`
+    );
+  }
+}
+const claimsLive = manifest.sourceBundle.resolvedProfiles.some(
+  (resolved) => resolved.mode === "live"
+);
+if (claimsLive !== Boolean(manifest.sourceBundle.hasLiveRows)) {
+  fail(
+    `manifest hasLiveRows=${manifest.sourceBundle.hasLiveRows} contradicts the resolved profile modes`
+  );
+}
+if (process.env.CI && claimsLive) {
+  fail(
+    "a CI run must not report live archive rows; CI is expected to resolve every profile to a fixture"
+  );
+}
+
+for (const profileRef of manifest.sourceBundle.activeProfileRefs) {
+  const profile = sourceRegistry.profiles?.[profileRef];
+  const fieldMap = profile?.adapter?.fieldMap;
+  if (!fieldMap) {
+    fail(`active source profile ${profileRef} has no adapter fieldMap`);
+  }
+  const missing = canonicalFields.filter((field) => !fieldMap[field]);
+  if (missing.length > 0) {
+    fail(
+      `active source profile ${profileRef} adapter fieldMap is missing canonical field(s): ${missing.join(
+        ", "
+      )}`
+    );
+  }
 }
 
 assertTable("bronze.observation_events", 5);
