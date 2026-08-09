@@ -77,8 +77,13 @@ func main() {
 	// Start metrics server
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200); w.Write([]byte("ok")) })
-	srv := &http.Server{Addr: *metricsAddr, Handler: mux}
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte("ok")); err != nil {
+			log.Printf("health response write error: %v", err)
+		}
+	})
+	srv := &http.Server{Addr: *metricsAddr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
 		_ = srv.ListenAndServe()
 	}()
@@ -103,11 +108,11 @@ func main() {
 			rotateThreshold = int64(*rotateSizeMB) * 1024 * 1024
 		}
 		// ensure directory exists
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to create sink directory: %v\n", err)
 			os.Exit(1)
 		}
-		f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to open sink file: %v\n", err)
 			os.Exit(1)
@@ -116,7 +121,7 @@ func main() {
 		sinkWriter = f
 		// open an English audit log in same dir
 		auditPath = filepath.Join(filepath.Dir(path), "payloads.log")
-		af, err := os.OpenFile(auditPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		af, err := os.OpenFile(auditPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to open audit log file: %v\n", err)
 			_ = sinkFile.Close()
@@ -146,7 +151,11 @@ func main() {
 			Topic:    topic,
 			Balancer: &kafka.LeastBytes{},
 		}
-		defer kafkaWriter.Close()
+		defer func() {
+			if err := kafkaWriter.Close(); err != nil {
+				log.Printf("Kafka writer close error: %v", err)
+			}
+		}()
 		// Use kafkaWriter as sinkWriter
 		sinkWriter = nil // handled separately in main loop
 		log.Printf("Kafka sink enabled: broker=%s topic=%s", broker, topic)
@@ -181,12 +190,12 @@ func main() {
 		_ = os.Rename(sinkPath, rotatedSink)
 		_ = os.Rename(auditPath, rotatedAudit)
 		// reopen new files
-		f, err := os.OpenFile(sinkPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		f, err := os.OpenFile(sinkPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 		if err == nil {
 			sinkFile = f
 			sinkWriter = f
 		}
-		af, err := os.OpenFile(auditPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		af, err := os.OpenFile(auditPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 		if err == nil {
 			auditFile = af
 			auditWriter = bufio.NewWriter(af)
@@ -232,7 +241,9 @@ func main() {
 						recordCounter++
 						if *auditEvery <= 1 || (recordCounter%int64(*auditEvery) == 0) {
 							ts := time.Now().UTC().Format(time.RFC3339)
-							fmt.Fprintf(auditWriter, "%s wrote %d bytes to %s (record %d, segment %s)\n", ts, len(payloadBytes), filepath.Base(strings.TrimPrefix(*sinkFlag, "file:")), recordCounter, segment)
+							if _, err := fmt.Fprintf(auditWriter, "%s wrote %d bytes to %s (record %d, segment %s)\n", ts, len(payloadBytes), filepath.Base(strings.TrimPrefix(*sinkFlag, "file:")), recordCounter, segment); err != nil {
+								log.Printf("audit write error: %v", err)
+							}
 						}
 					}
 				} else if kafkaWriter != nil {
