@@ -1,0 +1,64 @@
+---
+# golangci-lint config
+# for apps/cosmic-forge-fits-renderer-go
+# Mirrors tools/data-generator/.golangci.yml so both Go modules are held to the
+# same standard rather than falling back to golangci defaults.
+# Run locally: golangci-lint run ./...
+# Install:     https://golangci-lint.run/usage/install/
+
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  # default: none means only explicitly listed linters run
+  default: none
+  enable:
+    # Correctness
+    # enforces checked error returns
+    - errcheck
+    # reports suspicious constructs (vet suite)
+    - govet
+    # SA/ST/QF checks from staticcheck.io
+    - staticcheck
+    # detects assignments whose value is never used
+    - ineffassign
+    # reports unused code
+    - unused
+    # Safety patterns
+    # checks HTTP response body is closed after use
+    - bodyclose
+    # checks for returning nil alongside a non-nil error
+    - nilerr
+    # OWASP-aligned security checks
+    - gosec
+  settings:
+    govet:
+      enable:
+        - shadow
+    gosec:
+      excludes:
+        - G104
+        - G304
+        - G404
+  exclusions:
+    rules:
+      # Exclude test files from gosec and errcheck
+      # (test code intentionally uses hardcoded values)
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+
+issues:
+  # Do not limit output — show all findings
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  # Style / formatting (must match gofmt + goimports in CODING-STANDARDS.md)
+  enable:
+    - gofmt
+    - goimports
