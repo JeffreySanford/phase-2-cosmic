@@ -12,6 +12,8 @@ The control view must be conservative. It should make the active profile visible
 
 The implementation sequence, storage budget, and profile verification matrix are defined in [`PR41_SCALE_IMPLEMENTATION_PLAN.md`](./PR41_SCALE_IMPLEMENTATION_PLAN.md).
 
+The diagnostic UI state model for this control contract is defined in [`PR41_DIAGNOSTIC_VIEW_PLAN.md`](./PR41_DIAGNOSTIC_VIEW_PLAN.md).
+
 ## Scale Profiles
 
 The source of truth is:

@@ -5,6 +5,8 @@
 
 PR41 should include a real test suite for the local medallion MVP. The suite must prove correctness, guardrails, reproducibility, and evidence integration without requiring every developer or CI runner to generate 10 GB, 100 GB, or 1 TB artifacts.
 
+The diagnostic UI state model and fixture expectations are documented in [`PR41_DIAGNOSTIC_VIEW_PLAN.md`](./PR41_DIAGNOSTIC_VIEW_PLAN.md).
+
 ## 1. Testing Goals
 
 PR41 testing should prove:
@@ -196,5 +198,6 @@ PR41 testing is done when:
 - profile guard negative tests exist,
 - manifest/control metadata contracts are covered,
 - metrics service fallback and verified-manifest paths are covered,
+- diagnostic state fixtures are planned or covered,
 - quality gate documentation names the lakehouse checks,
 - heavyweight scale/cloud tests are explicitly documented as manual or future scope.
