@@ -35,6 +35,8 @@ Use these rules when changing any Lakehouse documentation:
 | `docs/MEDALLION_ARCHITECTURE.md`         | PR40       | Bronze/Silver/Gold responsibilities and failure routing.         |
 | `docs/STORAGE_RESPONSIBILITIES.md`       | PR40       | Object-store authority versus analytical table responsibilities. |
 | `docs/REAL_DATA_SOURCES.md`              | PR40       | Provider-neutral public-source strategy.                         |
+| `docs/PUBLIC_DATASET_SCAN_2026_08_08.md` | PR40       | Dated scan of additional public archive/catalog candidates.      |
+| `docs/ACTIVE_DATASET_SELECTION_PLAN.md`  | PR40/PR41  | Source registry, activation states, include/exclude controls.    |
 | `docs/ESO_PROOF_SLICE_BRIEF.md`          | PR40       | ESO proof scaffold and first complete slice criteria.            |
 | `docs/ESO_INGESTION_ADAPTER_CONTRACT.md` | PR40       | Provider adapter contract.                                       |
 | `docs/PIPELINE_TELEMETRY_EVIDENCE.md`    | PR40/PR41  | Operator evidence labels and claim boundaries.                   |
@@ -59,6 +61,7 @@ Only the second and third tiers exist in the current repository work. The Databr
 
 Good candidates for follow-up documentation work:
 
+- Add a source-registry example and schema after the activation-state fields stabilize.
 - Add PR43 Databricks config-validator design once implementation begins.
 - Add explicit Databricks SQL query examples after schema names stabilize.
 - Add a migration note showing how PR41 local artifact fields map into Spark DataFrame schemas.

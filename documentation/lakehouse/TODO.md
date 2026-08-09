@@ -35,6 +35,8 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 - [x] Validate a live ESO ObsCore proof response locally with real upstream row count and non-stale freshness while medallion implementation remains zero.
 - [x] Validate the local Postgres evidence-persistence connection path without treating Postgres persistence as a Lakehouse-stage implementation claim.
 - [x] Replace or clearly distinguish illustrative/static visualization values from measured Lakehouse runtime evidence. `visualizations/eso-proof-slice-dashboard.html` and `sample-metrics.json` are now explicitly design/sample fixtures only.
+- [x] Capture a dated scan of additional public archive/catalog sources that can support future development bundles without assuming academic-only live records.
+- [x] Document a PR40 plan for source registry activation states, include/exclude controls, and active-record policy.
 
 > Stage 2 proves that real public astronomy metadata can reach a tested operator evidence surface and that evidence persistence/startup behavior is operational locally. It does **not** prove that Bronze, Silver, or Gold Delta tables exist.
 
@@ -59,6 +61,9 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 
 ### Source contract
 
+- [ ] Add a checked-in source-registry example and schema for public archive/catalog profiles.
+- [ ] Implement source-bundle selection for `core-proof`, `offline-fixture`, and at least one expanded development bundle.
+- [ ] Add deterministic include/exclude precedence rules for active Lakehouse development records.
 - [ ] Implement a reusable VO/TAP-style source adapter contract rather than coupling Lakehouse entities to ESO-specific field names.
 - [ ] Preserve the current ESO profile as the first working provider implementation.
 - [ ] Add an NRAO/VLA/VLASS provider profile when practical so the same contract is validated against the radio-astronomy domain that Cosmic primarily targets.

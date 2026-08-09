@@ -38,6 +38,8 @@ Files:
 - [MEDALLION_ARCHITECTURE.md](/documentation/lakehouse/docs/MEDALLION_ARCHITECTURE.md) — Bronze/Silver/Gold contracts plus RAW/CAL/SCI/DRV crosswalk and failure/quarantine semantics
 - [LAKEHOUSE_STORAGE_RESPONSIBILITIES.md](/documentation/lakehouse/docs/STORAGE_RESPONSIBILITIES.md) — authoritative object storage versus analytical table ownership
 - [REAL_DATA_SOURCES.md](/documentation/lakehouse/docs/REAL_DATA_SOURCES.md) — provider-neutral VO/TAP source strategy; ESO is the first working profile and NRAO/VLA/VLASS is the key radio-astronomy validation profile
+- [LAKEHOUSE_PUBLIC_DATASET_SCAN.md](/documentation/lakehouse/docs/PUBLIC_DATASET_SCAN_2026_08_08.md) — dated PR40 scan of additional official public archive/catalog sources for future Lakehouse development bundles
+- [LAKEHOUSE_ACTIVE_DATASET_SELECTION_PLAN.md](/documentation/lakehouse/docs/ACTIVE_DATASET_SELECTION_PLAN.md) — PR40 plan for source registry activation states, include/exclude controls, source bundles, and active-record policy
 - [ESO_PROOF_SLICE_BRIEF.md](/documentation/lakehouse/docs/ESO_PROOF_SLICE_BRIEF.md) — current ESO provider profile and path from the live evidence scaffold to the first complete Lakehouse vertical slice
 - [ESO_INGESTION_ADAPTER_CONTRACT.md](/documentation/lakehouse/docs/ESO_INGESTION_ADAPTER_CONTRACT.md) — provider-neutral source-to-Bronze contract documented through the current ESO profile
 - [PIPELINE_TELEMETRY_EVIDENCE.md](/documentation/lakehouse/docs/PIPELINE_TELEMETRY_EVIDENCE.md) — active evidence API, measured/configured/mock/unavailable source semantics, telemetry cadence, and the Bronze/Silver/Gold claim boundary

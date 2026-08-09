@@ -26,6 +26,8 @@ The first working profile in PR #40 is **ESO TAP / ObsCore** because the branch 
 
 For Cosmic's radio-astronomy/ngVLA alignment, **NRAO/VLA/VLASS remains the most important subsequent provider profile**.
 
+A broader dated scan of additional public archives and catalogs is captured in [`PUBLIC_DATASET_SCAN_2026_08_08.md`](./PUBLIC_DATASET_SCAN_2026_08_08.md). The corresponding include/exclude and active-record plan is captured in [`ACTIVE_DATASET_SELECTION_PLAN.md`](./ACTIVE_DATASET_SELECTION_PLAN.md).
+
 ## Provider profiles
 
 ### 1. ESO TAP / ObsCore — current working profile
@@ -133,6 +135,8 @@ Gold aggregate
 - Use metadata/object references first; large binary science products do not need to travel through broker messages or Delta tables merely to prove the architecture.
 - Preserve source attribution and reproducibility information from the first ingest step.
 - Tag real, simulated, replayed, and fault-injected data distinctly.
+- Keep the public-source registry separate from the active source set for any given development run.
+- Preserve explicit exclusion reasons for known public sources that are not active.
 - Do not treat ESO-specific field names as canonical Lakehouse fields.
 - Do not claim a provider profile proves ngVLA production behavior.
 - Validate the same contract against NRAO/VLA/VLASS as the initiative matures.

@@ -1,0 +1,13 @@
+flowchart TD
+  A[Discover official public source] --> B[Add registry entry]
+  B --> C[Classify access policy and source class]
+  C --> D[Define bounded query or fixture]
+  D --> E[Map provider payload to source envelope]
+  E --> F[Run adapter connectivity proof]
+  F --> G[Generate Bronze sample]
+  G --> H[Validate Silver mapping or quarantine]
+  H --> I[Record Gold usefulness if any]
+  I --> J{Promote activation state?}
+  J -->|yes| K[Included or sample-only]
+  J -->|no| L[Candidate, excluded, disabled, or reference-only]
+

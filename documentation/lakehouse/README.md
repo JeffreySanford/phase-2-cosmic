@@ -17,6 +17,8 @@ documentation/lakehouse/
 │   ├── MEDALLION_ARCHITECTURE.md
 │   ├── STORAGE_RESPONSIBILITIES.md
 │   ├── REAL_DATA_SOURCES.md
+│   ├── PUBLIC_DATASET_SCAN_2026_08_08.md
+│   ├── ACTIVE_DATASET_SELECTION_PLAN.md
 │   ├── ESO_PROOF_SLICE_BRIEF.md
 │   ├── ESO_INGESTION_ADAPTER_CONTRACT.md
 │   ├── PIPELINE_TELEMETRY_EVIDENCE.md
@@ -39,6 +41,8 @@ documentation/lakehouse/
 │   ├── failure-routing.mmd
 │   ├── storage-responsibility-topology.mmd
 │   ├── write-path-boundary.mmd
+│   ├── active-dataset-selection.mmd
+│   ├── public-dataset-onboarding.mmd
 │   ├── pr41-mvp-lakehouse.mmd
 │   └── pr42-databricks-sprint-plan.mmd
 └── visualizations/
@@ -101,6 +105,8 @@ For cross-PR documentation updates, use [`docs/PR40_PR42_ROADMAP.md`](./docs/PR4
 | Medallion contract              | Documented                        | Bronze, Silver, and Gold analytical responsibilities.                                                                                |
 | Storage responsibilities        | Documented                        | Object-store authority versus Lakehouse projections.                                                                                 |
 | Real-data source strategy       | Documented                        | Provider-neutral VO/TAP approach with ESO as the first working profile.                                                              |
+| Public dataset expansion scan   | Documented                        | Dated PR40 scan of additional official public archive/catalog sources and recommended activation defaults.                           |
+| Active dataset selection plan   | Documented                        | Planned registry, include/exclude controls, bundle profiles, and active-record policy for development datasets.                      |
 | ESO proof-slice fetch           | Implemented on PR #40             | Live public ObsCore metadata is used by the current evidence path.                                                                   |
 | Active Lakehouse evidence API   | Implemented and locally validated | `GET /api/v1/lakehouse/metrics`; returns live/stale/unavailable evidence without synthetic medallion readiness.                      |
 | Lakehouse evidence persistence  | Implemented on PR #40             | Postgres-backed summary persistence when available; in-memory support for tests. Persistence is not a Delta-stage claim.             |
@@ -150,6 +156,8 @@ Current and planned provider profiles are:
 | CADC/CAOM or other VO services | Cross-archive interoperability/profile validation                         |
 | ngVLA simulation output        | ngVLA-shaped scientific test data                                         |
 | Go generator / broker replay   | Deterministic operational load and fault injection                        |
+
+The expanded public-source catalog and activation model are documented in [`docs/PUBLIC_DATASET_SCAN_2026_08_08.md`](./docs/PUBLIC_DATASET_SCAN_2026_08_08.md) and [`docs/ACTIVE_DATASET_SELECTION_PLAN.md`](./docs/ACTIVE_DATASET_SELECTION_PLAN.md). The intended control model is to keep many public sources in a registry while activating only bounded, documented source bundles for a given development run.
 
 The preferred learning pattern remains **real science + synthetic operational failure**: preserve authentic observational metadata/content while deliberately injecting duplicates, late arrivals, schema variation, missing metadata, invalid checksums, or broker interruptions when needed for engineering tests.
 
@@ -262,6 +270,8 @@ Technology-specific topology edges remain **planned** until code, repeatable exe
 - [`docs/MEDALLION_ARCHITECTURE.md`](./docs/MEDALLION_ARCHITECTURE.md) — Bronze/Silver/Gold responsibilities, scientific-level crosswalk, and failure-routing semantics.
 - [`docs/STORAGE_RESPONSIBILITIES.md`](./docs/STORAGE_RESPONSIBILITIES.md) — authoritative object storage versus Lakehouse table responsibilities.
 - [`docs/REAL_DATA_SOURCES.md`](./docs/REAL_DATA_SOURCES.md) — VO/TAP source strategy and archive/provider profiles.
+- [`docs/PUBLIC_DATASET_SCAN_2026_08_08.md`](./docs/PUBLIC_DATASET_SCAN_2026_08_08.md) — dated scan of additional public archive/catalog sources not yet active in the Lakehouse plan.
+- [`docs/ACTIVE_DATASET_SELECTION_PLAN.md`](./docs/ACTIVE_DATASET_SELECTION_PLAN.md) — PR40 plan for source registry, include/exclude states, development bundles, and active-record controls.
 - [`docs/ESO_PROOF_SLICE_BRIEF.md`](./docs/ESO_PROOF_SLICE_BRIEF.md) — first implemented provider profile and path toward the full Lakehouse slice.
 - [`docs/ESO_INGESTION_ADAPTER_CONTRACT.md`](./docs/ESO_INGESTION_ADAPTER_CONTRACT.md) — provider-neutral source-to-Bronze contract documented using the ESO profile.
 - [`docs/PIPELINE_TELEMETRY_EVIDENCE.md`](./docs/PIPELINE_TELEMETRY_EVIDENCE.md) — operator evidence semantics, active API paths, source labels, and the Lakehouse implementation claim boundary.
