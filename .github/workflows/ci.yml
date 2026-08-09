@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload OpenAPI validation logs
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: openapi-validation-logs
           path: validation-output/**
@@ -138,7 +138,7 @@ jobs:
 
       - name: Archive JVM test reports
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: java-reports
           path: |
@@ -159,7 +159,7 @@ jobs:
 
       - name: Archive java-ingest reports
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: java-ingest-reports
           path: |
@@ -179,7 +179,7 @@ jobs:
 
       - name: Upload stress validation artifacts
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: stress-validation-artifacts
           path: validation-output/**
@@ -216,7 +216,7 @@ jobs:
             }
 
       - name: Run golangci-lint (Go static analysis)
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.1.6
           working-directory: tools/data-generator
@@ -237,6 +237,8 @@ jobs:
             --exclude "dist" \
             --exclude ".nx" \
             --exclude "coverage" \
+            --exclude "coverage-report" \
+            --exclude "gh-artifacts" \
             --jobs 4 \
             .
 
@@ -251,7 +253,7 @@ jobs:
 
       - name: Archive surefire reports
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: surefire-reports
           path: apps/java-governance/target/surefire-reports/**

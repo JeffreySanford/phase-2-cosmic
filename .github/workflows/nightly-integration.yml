@@ -29,7 +29,7 @@ jobs:
 
       - name: Upload surefire reports
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: integration-surefire-reports
           path: apps/java-governance/target/surefire-reports/**

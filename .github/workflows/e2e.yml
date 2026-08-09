@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload Cypress artifacts
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: e2e-artifacts
           path: dist/cypress
@@ -104,7 +104,7 @@ jobs:
 
       - name: Upload Playwright artifacts
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-artifacts
           path: playwright-report
