@@ -10,6 +10,8 @@ PR41 needs two separate concepts:
 
 The control view must be conservative. It should make the active profile visible across the platform, but it must not generate large data or switch the whole runtime to a large profile without explicit approval.
 
+The implementation sequence, storage budget, and profile verification matrix are defined in [`PR41_SCALE_IMPLEMENTATION_PLAN.md`](./PR41_SCALE_IMPLEMENTATION_PLAN.md).
+
 ## Scale Profiles
 
 The source of truth is:

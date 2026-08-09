@@ -46,6 +46,7 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 > See [`docs/PR41_MVP_LAKEHOUSE.md`](./docs/PR41_MVP_LAKEHOUSE.md).
 > Definition of Done: [`docs/PR41_MVP_LAKEHOUSE.md#definition-of-done`](./docs/PR41_MVP_LAKEHOUSE.md#definition-of-done).
 > Scale/control contract: [`docs/PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md`](./docs/PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md).
+> Scale implementation plan: [`docs/PR41_SCALE_IMPLEMENTATION_PLAN.md`](./docs/PR41_SCALE_IMPLEMENTATION_PLAN.md).
 
 ### PR41 MVP local reference runtime
 
@@ -59,6 +60,7 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 - [x] Document all PR41 MVP moving parts under `documentation/lakehouse/docs/PR41_MVP_LAKEHOUSE.md`.
 - [x] Define guarded Lakehouse scale profiles for `tiny`, `10gb`, `100gb`, and `1tb`.
 - [x] Document the platform control-view contract for selecting and reporting the active Lakehouse data profile.
+- [x] Document the large-profile implementation plan, storage budget, verification matrix, and Gold stress boundary.
 - [ ] Replace the local reference writer with Spark Structured Streaming or another selected Delta-capable runtime.
 - [ ] Route the MVP source envelope through Kafka before Bronze.
 - [x] Connect one verified Gold output to the existing Lakehouse evidence service when the local PR41 manifest exists.
