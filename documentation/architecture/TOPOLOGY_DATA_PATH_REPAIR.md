@@ -49,6 +49,7 @@ Kafka
     -> frontend API (/api/ingest/events)
       -> SSE (/api/ingest/stream)
         -> Angular IngestEventStreamService
+          -> hydrated Angular application
 ```
 
 ### Lakehouse
@@ -162,9 +163,11 @@ Rules:
 - [x] Replace best-effort-only forwarding with Kafka retry-topic -> DLT semantics after bounded HTTP attempts.
 - [x] Add process-local duplicate suppression in `java-ingest` keyed by immutable `eventId`.
 - [x] Add Angular `IngestEventStreamService` for the dedicated repaired ingest SSE contract and presentation replay dedupe.
+- [x] Activate `IngestEventStreamService` from the root Angular application so the browser subscribes after hydration.
+- [x] Add a hidden Angular acceptance marker populated only after the browser consumes a repaired-path event.
 - [x] Add cross-layer contract tests for identity/provenance preservation.
-- [x] Add runtime acceptance probe: `node scripts/verify-ingest-e2e.mjs`.
-- [~] Execute the runtime probe against the full geo compose stack and retain one passing event as PR evidence before merge.
+- [x] Add browser runtime acceptance probe: `node scripts/verify-ingest-e2e.mjs`.
+- [~] Execute the runtime probe against the full geo compose stack and retain one passing Angular-observed event as PR evidence before merge.
 
 ### Stage 3 — honest topology visualization
 
@@ -193,7 +196,7 @@ Rules:
 
 ## Runtime acceptance probe
 
-With the geo profile, `java-ingest`, and frontend server running:
+With the geo profile, `java-ingest`, frontend server, and Angular application running:
 
 ```bash
 node scripts/verify-ingest-e2e.mjs
@@ -202,22 +205,22 @@ node scripts/verify-ingest-e2e.mjs
 Optional overrides:
 
 ```bash
-INGEST_SSE_URL=http://127.0.0.1:4000/api/ingest/stream \
-INGEST_E2E_TIMEOUT_MS=30000 \
+INGEST_APP_URL=http://127.0.0.1:4000/ \
+INGEST_E2E_TIMEOUT_MS=45000 \
 node scripts/verify-ingest-e2e.mjs
 ```
 
-The probe does not manufacture an API event. It waits for a real repaired-path SSE event and passes only when:
+The probe does not manufacture an API event. It opens the real application with Playwright and waits for Angular's `IngestEventStreamService` to consume a repaired-path SSE event. It passes only when the hydrated Angular application exposes:
 
 - `broker === "kafka"`
-- `collectorRegion` is present
-- `source` is present
-- `payload.eventId` is present
+- non-empty `eventId`
+- non-empty collector region
+- non-empty source
 
-A passing event is the PR41 acceptance artifact for the transport/presentation repair.
+A passing browser-observed event is the PR41 acceptance artifact for the transport/presentation repair.
 
 ## Evidence boundary
 
 The transport and reliability code can be implemented without claiming the topology visualization is already evidence-backed. Until Stage 3 lands, synthetic confidence/throughput in the existing visualization remains a known defect and must not be cited as measured architecture evidence.
 
-Likewise, the new runtime acceptance probe is committed but is not considered executed evidence until a passing full-stack run is captured. The Lakehouse PR41 MVP remains a local reference proof; production Spark/Databricks streaming remains later scope.
+Likewise, the browser runtime acceptance probe is committed but is not considered executed evidence until a passing full-stack run is captured. The Lakehouse PR41 MVP remains a local reference proof; production Spark/Databricks streaming remains later scope.
