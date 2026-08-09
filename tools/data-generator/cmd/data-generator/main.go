@@ -39,6 +39,12 @@ var (
 		Name: "generator_records_produced_by_segment_total",
 		Help: "Total records produced by generator grouped by array segment",
 	}, []string{"array_segment"})
+	// Records that never reached the sink. Produced counters deliberately
+	// exclude these so measured throughput reflects delivered bytes only.
+	writeFailures = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "generator_write_failures_total",
+		Help: "Total records the generator failed to deliver, grouped by sink and array segment",
+	}, []string{"sink", "array_segment"})
 )
 
 func init() {
@@ -46,6 +52,7 @@ func init() {
 	prometheus.MustRegister(recordsProduced)
 	prometheus.MustRegister(bytesProducedBySegment)
 	prometheus.MustRegister(recordsProducedBySegment)
+	prometheus.MustRegister(writeFailures)
 }
 
 func main() {
@@ -55,7 +62,7 @@ func main() {
 		duration     = flag.Duration("duration", 0, "total duration (0 = run forever)")
 		metricsAddr  = flag.String("metrics-addr", ":9100", "metrics listen address")
 		noStdout     = flag.Bool("no-stdout", false, "if set, do not write raw payloads to stdout")
-		sinkFlag     = flag.String("sink", "", "sink target; supported: file:<path>")
+		sinkFlag     = flag.String("sink", "", "sink target; supported: file:<path>, kafka:<host>:<port>/<topic>, pulsar:<host>:<port>/<topic>")
 		auditEvery   = flag.Int("audit-every", 1, "write an audit log line every N records (1 = every record)")
 		rotateSizeMB = flag.Int("rotate-size-mb", 50, "rotate logs when they exceed this size in MB (0 to disable)")
 		segmentDist  = flag.String("segment-distribution", "main:48,lbl:24,sba:21", "comma-separated array segment weights such as main:48,lbl:24,sba:21")
@@ -101,6 +108,25 @@ func main() {
 	var recordCounter int64
 	var rotateThreshold int64
 	var kafkaWriter *kafka.Writer
+	var pulsarSink *PulsarSink
+
+	sinkTarget, err := parseSinkTarget(*sinkFlag)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+
+	if sinkTarget.Kind == "pulsar" {
+		ps, perr := newPulsarSink(sinkTarget)
+		if perr != nil {
+			fmt.Fprintf(os.Stderr, "failed to create pulsar sink: %v\n", perr)
+			os.Exit(1)
+		}
+		pulsarSink = ps
+		defer pulsarSink.Close()
+		log.Printf("Pulsar sink enabled: broker=%s topic=%s", sinkTarget.Address, sinkTarget.Topic)
+	}
+
 	if strings.HasPrefix(*sinkFlag, "file:") {
 		path := strings.TrimPrefix(*sinkFlag, "file:")
 		sinkPath = path
@@ -235,6 +261,7 @@ func main() {
 				jsonPayload := fmt.Sprintf(`{"source":"%s","eventType":"telemetry.batch","payloadBytes":%d,"traceId":"%s"}`,
 					segment, *payloadSize, traceId)
 				payloadBytes := []byte(jsonPayload)
+				delivered := true
 				if sinkWriter != nil {
 					_, _ = sinkWriter.Write(payloadBytes)
 					if auditWriter != nil {
@@ -246,15 +273,27 @@ func main() {
 							}
 						}
 					}
+				} else if pulsarSink != nil {
+					if err := pulsarSink.Send(context.Background(), payloadBytes); err != nil {
+						log.Printf("Pulsar write error: %v (segment: %s)", err, segment)
+						writeFailures.WithLabelValues("pulsar", segment).Inc()
+						delivered = false
+					}
 				} else if kafkaWriter != nil {
-					err := kafkaWriter.WriteMessages(context.Background(), kafka.Message{Value: payloadBytes})
-					if err != nil {
+					if err := kafkaWriter.WriteMessages(context.Background(), kafka.Message{Value: payloadBytes}); err != nil {
+						// Logged per failure only. Logging every success floods
+						// stdout at production rates and skews throughput.
 						log.Printf("Kafka write error: %v (segment: %s)", err, segment)
-					} else {
-						log.Printf("Kafka write success: %d bytes sent to topic (segment: %s)", len(payloadBytes), segment)
+						writeFailures.WithLabelValues("kafka", segment).Inc()
+						delivered = false
 					}
 				} else if !*noStdout {
 					_, _ = os.Stdout.Write(payloadBytes)
+				}
+				// Only count what actually reached the sink, so measured
+				// throughput is never inflated by failed deliveries.
+				if !delivered {
+					continue
 				}
 				bytesProduced.Add(float64(len(payloadBytes)))
 				recordsProduced.Inc()

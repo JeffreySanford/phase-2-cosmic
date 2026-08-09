@@ -57,13 +57,13 @@ jobs:
           java-version: "17"
 
       # Must satisfy the highest `go` directive across the scanned modules:
-      # tools/data-generator requires 1.21, apps/cosmic-forge-fits-renderer-go
-      # requires 1.24.2.
-      - name: Set up Go 1.24
+      # tools/data-generator requires 1.25.0 (pulled up by the Pulsar client)
+      # and apps/cosmic-forge-fits-renderer-go requires 1.24.2.
+      - name: Set up Go 1.25
         if: matrix.language == 'go'
         uses: actions/setup-go@v6
         with:
-          go-version: "1.24"
+          go-version: "1.25"
           cache-dependency-path: |
             tools/data-generator/go.sum
             apps/cosmic-forge-fits-renderer-go/go.sum
