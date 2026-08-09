@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -78,9 +80,43 @@ func newPulsarSink(target SinkTarget) (*PulsarSink, error) {
 
 // Send publishes one record. It blocks until the broker acknowledges so a
 // delivery failure is reported rather than silently counted as produced.
+//
+// event-id is generated once at the generator edge and carried as broker
+// metadata. The payload stays byte-for-byte unchanged, while downstream hops
+// can use event-id as the idempotency/deduplication key.
 func (s *PulsarSink) Send(ctx context.Context, payload []byte) error {
-	_, err := s.producer.Send(ctx, &pulsar.ProducerMessage{Payload: payload})
+	eventID, err := newEventID()
+	if err != nil {
+		return err
+	}
+
+	_, err = s.producer.Send(ctx, &pulsar.ProducerMessage{
+		Payload: payload,
+		Properties: map[string]string{
+			"event-id": eventID,
+		},
+	})
 	return err
+}
+
+func newEventID() (string, error) {
+	var raw [16]byte
+	if _, err := rand.Read(raw[:]); err != nil {
+		return "", fmt.Errorf("generate event-id: %w", err)
+	}
+
+	// UUID v4 variant/version bits. Keeping the implementation in the standard
+	// library avoids adding a dependency solely for event identity.
+	raw[6] = (raw[6] & 0x0f) | 0x40
+	raw[8] = (raw[8] & 0x3f) | 0x80
+	hexID := hex.EncodeToString(raw[:])
+	return fmt.Sprintf("%s-%s-%s-%s-%s",
+		hexID[0:8],
+		hexID[8:12],
+		hexID[12:16],
+		hexID[16:20],
+		hexID[20:32],
+	), nil
 }
 
 func (s *PulsarSink) Close() {
