@@ -75,12 +75,18 @@ func main() {
 	srv := startMetricsServer(cfg.MetricsAddr)
 	defer shutdownMetrics(srv)
 
-	if err := run(cfg); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if err := run(ctx, cfg); err != nil {
 		log.Fatalf("[collector/%s] %v", cfg.Region, err)
 	}
 }
 
-func run(cfg Config) error {
+// run owns the broker bridge lifecycle but not process signals. Injecting the
+// context keeps production shutdown behavior explicit and lets integration tests
+// terminate a real collector deterministically without sending OS signals.
+func run(ctx context.Context, cfg Config) error {
 	client, err := pulsar.NewClient(pulsar.ClientOptions{URL: cfg.PulsarURL})
 	if err != nil {
 		return err
@@ -109,9 +115,6 @@ func run(cfg Config) error {
 			log.Printf("[collector/%s] kafka writer close: %v", cfg.Region, cerr)
 		}
 	}()
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	log.Printf("[collector/%s] forwarding %s (%s) -> %v (%s)",
 		cfg.Region, cfg.PulsarURL, cfg.PulsarTopic, cfg.KafkaBrokers, cfg.KafkaTopic)
