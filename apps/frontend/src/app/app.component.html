@@ -3,3 +3,21 @@
 <app-sidebar [collapsed]="sidebarCollapsed" (navigate)="onNavigate($event)"></app-sidebar>
 <app-mainstage [class.collapsed]="sidebarCollapsed"></app-mainstage>
 <app-footer></app-footer>
+
+@if (ingestEvents$ | async; as ingestEvents) {
+  @if (ingestEvents[0]; as latestIngestEvent) {
+    <!--
+      Hidden runtime evidence marker for the PR41 full-path acceptance probe.
+      Values appear here only after the browser-side Angular service consumed a
+      real /api/ingest/stream event; the marker is not populated by SSR.
+    -->
+    <output
+      hidden
+      data-testid="ingest-pipeline-evidence"
+      [attr.data-event-id]="latestIngestEvent.payload?.eventId ?? ''"
+      [attr.data-region]="latestIngestEvent.collectorRegion ?? ''"
+      [attr.data-source]="latestIngestEvent.source ?? latestIngestEvent.payload?.source ?? ''"
+      [attr.data-broker]="latestIngestEvent.broker ?? ''"
+    ></output>
+  }
+}
