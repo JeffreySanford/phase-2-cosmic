@@ -12,6 +12,7 @@ pnpm-store/
 
 # Build outputs
 dist/
+storybook-static/
 build/
 coverage/
 apps/coverage/
@@ -57,6 +58,7 @@ pnpm-store/
 
 # Specific known log folder for data generator
 tools/data-generator/logs/
+tools/codeql/
 
 # Playwright report/artifacts
 playwright-report/

@@ -52,7 +52,7 @@ export class ForgeProxyService {
         }),
         map(({ body }) => body),
         catchError((error: unknown) => {
-          console.error("Error proxying to Forge API:", error);
+          this.logProxyError("Error proxying to Forge API:", error);
           recordMetrics(method, 502, 0, 0);
           res.status(502);
           return of({
@@ -99,7 +99,7 @@ export class ForgeProxyService {
         }),
         map(({ body }) => body),
         catchError((error: unknown) => {
-          console.error("Error proxying Forge GraphQL:", error);
+          this.logProxyError("Error proxying Forge GraphQL:", error);
           recordMetrics(method, 502, 0, 0);
           res.status(502);
           return of({
@@ -145,7 +145,7 @@ export class ForgeProxyService {
         }),
         map(({ body }) => body),
         catchError((error: unknown) => {
-          console.error("Error proxying Forge target resolution:", error);
+          this.logProxyError("Error proxying Forge target resolution:", error);
           recordMetrics(method, 502, 0, 0);
           res.status(502);
           return of({
@@ -199,7 +199,7 @@ export class ForgeProxyService {
         }),
         map(() => null),
         catchError((error: unknown) => {
-          console.error("Error proxying Forge artifact:", error);
+          this.logProxyError("Error proxying Forge artifact:", error);
           recordMetrics(method, 502, 0, 0);
           res.status(502).json({
             error: "forge_artifact_proxy_error",
@@ -275,5 +275,13 @@ export class ForgeProxyService {
     }
 
     return Array.from(new Set(out));
+  }
+
+  private logProxyError(message: string, error: unknown): void {
+    if (process.env["USE_EMBEDDED_E2E_BACKEND"] === "true") {
+      return;
+    }
+
+    console.error(message, error);
   }
 }

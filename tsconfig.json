@@ -4,6 +4,6 @@
     "ignoreDeprecations": "5.0"
   },
   "files": [],
-  "include": ["./.storybook/**/*.ts", "./apps/frontend/src/**/*.stories.ts"],
+  "include": ["./.storybook/preview.ts", "./apps/frontend/src/**/*.stories.ts"],
   "exclude": []
 }

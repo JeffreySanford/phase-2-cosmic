@@ -1,4 +1,7 @@
 const { spawnSync } = require("node:child_process");
+const path = require("node:path");
+
+process.setMaxListeners(50);
 
 // When invoked via `pnpm run nx -- ...`, pnpm passes a leading `--` as an arg.
 // Strip it to avoid passing extra `--` into `nx` itself.
@@ -15,6 +18,19 @@ const commandArgs =
   process.platform === "win32"
     ? ["/d", "/s", "/c", "pnpm", "nx", ...args]
     : ["nx", ...args];
+const maxListenersPreload = `--require=${path.resolve(
+  __dirname,
+  "node-max-listeners.cjs"
+)}`;
+const shouldPreloadMaxListeners =
+  args.includes("run-many") &&
+  args.some((arg) => arg === "--target=test" || arg === "-t=test");
+const nodeOptions = [
+  process.env.NODE_OPTIONS,
+  shouldPreloadMaxListeners ? maxListenersPreload : "",
+]
+  .filter(Boolean)
+  .join(" ");
 
 const result = spawnSync(command, commandArgs, {
   stdio: "inherit",
@@ -28,6 +44,8 @@ const result = spawnSync(command, commandArgs, {
     NX_CLOUD_DISABLE_METRICS_COLLECTION: "true",
     NX_DISABLE_ANALYTICS: "true",
     NX_CI: "true",
+    BROWSERSLIST_IGNORE_OLD_DATA: "true",
+    ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
   },
 });
 

@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import java.time.Instant;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.Set;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.cosmic.governance.api.util.RedisMarshaller;
 import jakarta.annotation.PostConstruct;
@@ -60,7 +63,16 @@ public class JobService {
     private final ConcurrentHashMap<String, Object> inMemoryStore = new ConcurrentHashMap<>();
 
     private final Map<String, JobExecutor> executorMap = new HashMap<>();
-    private final ScheduledExecutorService scanner = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService scanner = Executors.newScheduledThreadPool(1, task -> {
+        Thread thread = new Thread(task, "job-dispatch-scanner");
+        thread.setDaemon(true);
+        return thread;
+    });
+    private final ExecutorService recoveryExecutor = Executors.newSingleThreadExecutor(task -> {
+        Thread thread = new Thread(task, "job-recovery");
+        thread.setDaemon(true);
+        return thread;
+    });
     private volatile ScheduledFuture<?> scannerFuture;
     private volatile int scannerIntervalSeconds = 10;
     private final AtomicLong scannedCount = new AtomicLong(0);
@@ -205,7 +217,7 @@ public class JobService {
             }
         }
         Object o = inMemoryStore.get(key);
-        if (o instanceof java.util.List) {
+        if (o instanceof List<?>) {
             if (governanceRuntimeMetricsService != null) {
                 governanceRuntimeMetricsService.recordRedisRead(
                         "memory",
@@ -215,7 +227,7 @@ public class JobService {
                         Duration.between(startedAt, Instant.now())
                 );
             }
-            return (java.util.List<Object>) o;
+            return objectList(o);
         }
         return List.of();
     }
@@ -240,7 +252,7 @@ public class JobService {
     @PostConstruct
     public void recoverQueuedJobs() {
         // run an immediate recovery scan and schedule periodic scans for late arrivals
-        Executors.newSingleThreadExecutor().submit(() -> {
+        recoveryExecutor.submit(() -> {
             // dispatch any queued jobs first
             dispatchQueuedJobs();
             // convert any previously-running simulator jobs to completed so they don't hang
@@ -387,6 +399,7 @@ public class JobService {
     @PreDestroy
     public void shutdownScanner() {
         try {
+            recoveryExecutor.shutdownNow();
             scanner.shutdownNow();
         } catch (Exception ignored) {}
     }
@@ -556,9 +569,8 @@ public class JobService {
         Optional<JobStatusResponse> status = get(jobId);
         if (status.isEmpty()) return Optional.empty();
         Map<String, Object> params = status.get().parameters();
-        if (params != null && params.get("lineage") instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> lineage = (Map<String, Object>) params.get("lineage");
+        if (params != null && params.get("lineage") instanceof Map<?, ?> lineageMap) {
+            Map<String, Object> lineage = objectMap(lineageMap);
             if (governanceRuntimeMetricsService != null) {
                 governanceRuntimeMetricsService.recordOperatorRead("job_lineage", lineage);
             }
@@ -617,11 +629,11 @@ public class JobService {
             } else {
                 // in-memory fallback: maintain a List<Object>
                 Object o = inMemoryStore.get(key);
-                java.util.List<Object> list;
-                if (o instanceof java.util.List) {
-                    list = (java.util.List<Object>) o;
+                List<Object> list;
+                if (o instanceof List<?>) {
+                    list = new ArrayList<>(objectList(o));
                 } else {
-                    list = new java.util.ArrayList<>();
+                    list = new ArrayList<>();
                 }
                 list.add(artifact);
                 inMemoryStore.put(key, list);
@@ -650,15 +662,8 @@ public class JobService {
                     return List.of();
                 }
                 var artifacts = items.stream().map(it -> {
-                    if (it instanceof Map) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, String> m = (Map<String, String>) it;
-                        return m;
-                    }
                     try {
-                        @SuppressWarnings("unchecked")
-                        Map<String, String> m = objectMapper.convertValue(it, Map.class);
-                        return m;
+                        return stringMap(it);
                     } catch (Exception ex) {
                         return java.util.Collections.<String, String>emptyMap();
                     }
@@ -670,17 +675,10 @@ public class JobService {
                 return artifacts;
             } else {
                 Object o = inMemoryStore.get(key);
-                if (o instanceof java.util.List) {
-                    @SuppressWarnings("unchecked")
-                    java.util.List<Object> items = (java.util.List<Object>) o;
-                    var artifacts = items.stream().map(it -> {
-                        if (it instanceof Map) {
-                            @SuppressWarnings("unchecked")
-                            Map<String, String> m = (Map<String, String>) it;
-                            return m;
-                        }
-                        return java.util.Collections.<String, String>emptyMap();
-                    }).collect(Collectors.toList());
+                if (o instanceof List<?>) {
+                    var artifacts = objectList(o).stream()
+                            .map(this::stringMap)
+                            .collect(Collectors.toList());
                     if (governanceRuntimeMetricsService != null) {
                         governanceRuntimeMetricsService.recordOperatorRead("job_artifacts", artifacts);
                     }
@@ -998,10 +996,8 @@ public class JobService {
     private JobStatusResponse toResponse(JobRecord record) {
         // extract any lineage object from parameters
         Map<String,Object> lineage = null;
-        if (record.getParameters() != null && record.getParameters().get("lineage") instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String,Object> tmp = (Map<String,Object>) record.getParameters().get("lineage");
-            lineage = tmp;
+        if (record.getParameters() != null && record.getParameters().get("lineage") instanceof Map<?, ?> lineageMap) {
+            lineage = objectMap(lineageMap);
         }
         return new JobStatusResponse(
                 record.getJobId(),
@@ -1016,6 +1012,36 @@ public class JobService {
                 record.getRequestedBy(),
                 record.getVersion()
         );
+    }
+
+    private List<Object> objectList(Object value) {
+        if (value instanceof List<?> list) {
+            return new ArrayList<>(list);
+        }
+        return List.of();
+    }
+
+    private Map<String, Object> objectMap(Map<?, ?> value) {
+        Map<String, Object> out = new HashMap<>();
+        value.forEach((key, item) -> {
+            if (key != null) {
+                out.put(String.valueOf(key), item);
+            }
+        });
+        return out;
+    }
+
+    private Map<String, String> stringMap(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            Map<String, String> out = new HashMap<>();
+            map.forEach((key, item) -> {
+                if (key != null && item != null) {
+                    out.put(String.valueOf(key), String.valueOf(item));
+                }
+            });
+            return out;
+        }
+        return objectMapper.convertValue(value, new TypeReference<Map<String, String>>() {});
     }
 
     record SchedulerSnapshot(

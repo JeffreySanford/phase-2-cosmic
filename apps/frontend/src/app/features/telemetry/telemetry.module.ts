@@ -31,7 +31,9 @@ import { RabbitMQStatusComponent } from "./rabbitmq-status/rabbitmq-status.compo
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    RouterModule.forChild([{ path: "", component: PipelineTelemetryComponent }]),
+    RouterModule.forChild([
+      { path: "", component: PipelineTelemetryComponent },
+    ]),
     MatCardModule,
     MatFormFieldModule,
     MatSelectModule,

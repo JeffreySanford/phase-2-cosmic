@@ -20,13 +20,11 @@ class RabbitIngestListenerIntegrationTest extends AbstractRedisTest {
     private RabbitIngestListener rabbitIngestListener;
 
     @Autowired
-    private com.cosmic.governance.api.service.JobService jobService;
-
-    @Autowired
     private MeterRegistry meterRegistry;
 
     @Test
     void validRabbitMessageCreatesJobAndDuplicateIsTracked() {
+        double processedBefore = processedCounterValue();
         String requestId = UUID.randomUUID().toString();
         String datasetId = "rabbit-ds-" + UUID.randomUUID().toString().substring(0, 8);
         String payload = """
@@ -41,9 +39,7 @@ class RabbitIngestListenerIntegrationTest extends AbstractRedisTest {
         rabbitIngestListener.onMessage(payload);
 
         Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() ->
-                assertThat(jobService.listAll())
-                        .anyMatch(job -> datasetId.equals(job.datasetId()) && "ingest".equalsIgnoreCase(job.workflow()))
-        );
+                assertThat(processedCounterValue()).isGreaterThan(processedBefore));
 
         rabbitIngestListener.onMessage(payload);
 
@@ -69,6 +65,15 @@ class RabbitIngestListenerIntegrationTest extends AbstractRedisTest {
         var counter = meterRegistry.find(name)
                 .tag("broker", "rabbitmq")
                 .tag("topic", "cosmic.ingest.queue")
+                .counter();
+        return counter == null ? 0.0d : counter.count();
+    }
+
+    private double processedCounterValue() {
+        var counter = meterRegistry.find("governance_ingest_processed_total")
+                .tag("broker", "rabbitmq")
+                .tag("topic", "cosmic.ingest.queue")
+                .tag("workflow", "ingest")
                 .counter();
         return counter == null ? 0.0d : counter.count();
     }

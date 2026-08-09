@@ -10,6 +10,8 @@ import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
+import org.apache.pulsar.client.api.SubscriptionInitialPosition;
+import org.apache.pulsar.client.api.SubscriptionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,6 +72,8 @@ public class PulsarIngestListener {
             consumer = client.newConsumer(Schema.BYTES)
                     .topic(ingestTopic)
                     .subscriptionName(subscriptionName)
+                    .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+                    .subscriptionType(SubscriptionType.Shared)
                     .subscribe();
             dlqProducer = client.newProducer(Schema.BYTES)
                     .topic(dlqTopic)

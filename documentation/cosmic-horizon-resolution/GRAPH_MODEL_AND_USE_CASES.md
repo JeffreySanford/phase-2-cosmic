@@ -23,48 +23,48 @@ The first Phase 3 graph should therefore be a **software/data lineage and eviden
 
 ## 2. Initial node types
 
-| Node | Purpose | Likely source |
-| --- | --- | --- |
-| `Provider` | ESO, NRAO, HEASARC, etc. | source attribution / VO jobs |
+| Node             | Purpose                                              | Likely source                               |
+| ---------------- | ---------------------------------------------------- | ------------------------------------------- |
+| `Provider`       | ESO, NRAO, HEASARC, etc.                             | source attribution / VO jobs                |
 | `ExternalSource` | TAP/ObsCore/cone-search/DataLink endpoint or dataset | source attribution / external-call artifact |
-| `Target` | named sky target when explicitly known | job/source metadata |
-| `Observation` | canonical observation entity | Silver / ObsCore mapping |
-| `Dataset` | governed dataset identity | Governance / manifest / Silver |
-| `Job` | ingest/calibrate/image/catalog/etc. execution | Java Governance |
-| `Artifact` | output artifact metadata | job artifact manifests |
-| `StorageObject` | MinIO/S3/FITS/MS/archive reference | manifest / storage URI |
-| `BronzeRecord` | source-faithful analytical ingest identity | Delta Bronze |
-| `SilverEntity` | canonical analytical entity | Delta Silver |
-| `GoldProduct` | analytical aggregate/product | Delta Gold |
-| `QualityResult` | validation/quarantine result | Silver / quality subsystem |
-| `Service` | Java Ingest, Governance, Redis, MinIO, etc. | topology registry |
-| `Broker` | Kafka/Pulsar/RabbitMQ | topology / broker APIs |
-| `MetricEvidence` | bounded measured operational observation | telemetry evidence |
-| `Document` | architecture/operator/science text for optional RAG | documentation / notes |
+| `Target`         | named sky target when explicitly known               | job/source metadata                         |
+| `Observation`    | canonical observation entity                         | Silver / ObsCore mapping                    |
+| `Dataset`        | governed dataset identity                            | Governance / manifest / Silver              |
+| `Job`            | ingest/calibrate/image/catalog/etc. execution        | Java Governance                             |
+| `Artifact`       | output artifact metadata                             | job artifact manifests                      |
+| `StorageObject`  | MinIO/S3/FITS/MS/archive reference                   | manifest / storage URI                      |
+| `BronzeRecord`   | source-faithful analytical ingest identity           | Delta Bronze                                |
+| `SilverEntity`   | canonical analytical entity                          | Delta Silver                                |
+| `GoldProduct`    | analytical aggregate/product                         | Delta Gold                                  |
+| `QualityResult`  | validation/quarantine result                         | Silver / quality subsystem                  |
+| `Service`        | Java Ingest, Governance, Redis, MinIO, etc.          | topology registry                           |
+| `Broker`         | Kafka/Pulsar/RabbitMQ                                | topology / broker APIs                      |
+| `MetricEvidence` | bounded measured operational observation             | telemetry evidence                          |
+| `Document`       | architecture/operator/science text for optional RAG  | documentation / notes                       |
 
 ## 3. Initial edge types
 
-| Edge | Example |
-| --- | --- |
-| `PROVIDES` | Provider -> ExternalSource |
-| `DESCRIBES` | ExternalSource -> Observation |
-| `OBSERVES` | Observation -> Target |
-| `MATERIALIZED_AS` | Observation -> Dataset |
-| `INGESTED_AS` | Source/Observation -> BronzeRecord |
-| `CANONICALIZED_TO` | BronzeRecord -> SilverEntity |
-| `AGGREGATED_INTO` | SilverEntity -> GoldProduct |
-| `PRODUCED_BY` | Dataset/Artifact -> Job |
-| `CONSUMED` | Job -> Dataset |
-| `PRODUCED` | Job -> Dataset/Artifact |
-| `STORED_AT` | Artifact/Dataset -> StorageObject |
-| `DERIVED_FROM` | Dataset/Product -> Dataset/Entity |
-| `HAS_PROVENANCE` | Dataset/Product -> Provenance record/projection |
-| `HAS_QUALITY_RESULT` | Record/Dataset -> QualityResult |
-| `QUARANTINED_AS` | Silver candidate -> QualityResult/quarantine record |
-| `EXECUTED_ON` | Job -> Service |
-| `DEPENDS_ON` | Service -> Broker/Service |
-| `OBSERVED_BY` | Service/Broker -> MetricEvidence |
-| `CITES` | Dataset/Product/Answer -> ExternalSource/Document |
+| Edge                 | Example                                             |
+| -------------------- | --------------------------------------------------- |
+| `PROVIDES`           | Provider -> ExternalSource                          |
+| `DESCRIBES`          | ExternalSource -> Observation                       |
+| `OBSERVES`           | Observation -> Target                               |
+| `MATERIALIZED_AS`    | Observation -> Dataset                              |
+| `INGESTED_AS`        | Source/Observation -> BronzeRecord                  |
+| `CANONICALIZED_TO`   | BronzeRecord -> SilverEntity                        |
+| `AGGREGATED_INTO`    | SilverEntity -> GoldProduct                         |
+| `PRODUCED_BY`        | Dataset/Artifact -> Job                             |
+| `CONSUMED`           | Job -> Dataset                                      |
+| `PRODUCED`           | Job -> Dataset/Artifact                             |
+| `STORED_AT`          | Artifact/Dataset -> StorageObject                   |
+| `DERIVED_FROM`       | Dataset/Product -> Dataset/Entity                   |
+| `HAS_PROVENANCE`     | Dataset/Product -> Provenance record/projection     |
+| `HAS_QUALITY_RESULT` | Record/Dataset -> QualityResult                     |
+| `QUARANTINED_AS`     | Silver candidate -> QualityResult/quarantine record |
+| `EXECUTED_ON`        | Job -> Service                                      |
+| `DEPENDS_ON`         | Service -> Broker/Service                           |
+| `OBSERVED_BY`        | Service/Broker -> MetricEvidence                    |
+| `CITES`              | Dataset/Product/Answer -> ExternalSource/Document   |
 
 ## 4. Existing-data demonstrations
 

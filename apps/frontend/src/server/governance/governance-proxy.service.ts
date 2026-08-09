@@ -218,9 +218,10 @@ export class GovernanceProxyService {
     }
     if (path === "/api/v1/lakehouse/metrics" && method === "GET") {
       try {
-        const summary = await this.getLakehouseMetricsService().getPublicEvidenceSummary({
-          maxAgeMs: 15 * 60 * 1000,
-        });
+        const summary =
+          await this.getLakehouseMetricsService().getPublicEvidenceSummary({
+            maxAgeMs: 15 * 60 * 1000,
+          });
         res.status(200).json(summary);
       } catch (error) {
         res.status(503).json({

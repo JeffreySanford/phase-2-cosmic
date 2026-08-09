@@ -16,13 +16,13 @@ The current runtime path is measurable through Prometheus and authoritative admi
 
 ## Evidence labels
 
-| Label | Meaning |
-| --- | --- |
-| `Measured · Prometheus` | Value comes from a Prometheus query over a configured scrape target. |
-| `Measured · Admin API` | Value comes from an authoritative service/admin API. |
-| `Live source` | Live public-source evidence such as the current VO/TAP proof. |
-| `Fallback evidence` | A real proof/fallback source exists but is not the primary operational measurement. |
-| `Unavailable` | No trustworthy measurement is currently available. |
+| Label                   | Meaning                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `Measured · Prometheus` | Value comes from a Prometheus query over a configured scrape target.                                            |
+| `Measured · Admin API`  | Value comes from an authoritative service/admin API.                                                            |
+| `Live source`           | Live public-source evidence such as the current VO/TAP proof.                                                   |
+| `Fallback evidence`     | A real proof/fallback source exists but is not the primary operational measurement.                             |
+| `Unavailable`           | No trustworthy measurement is currently available.                                                              |
 | `Mock · test/demo only` | Synthetic values are allowed only in explicit test/demo mode and must never replace unavailable live telemetry. |
 
 ## Lakehouse evidence API

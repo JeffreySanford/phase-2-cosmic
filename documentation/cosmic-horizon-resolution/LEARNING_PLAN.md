@@ -157,20 +157,20 @@ Do not use it to replace deterministic graph construction for already-structured
 
 ## 9. Suggested project-driven sequence
 
-| Step | Study | Immediate Cosmic deliverable |
-| --- | --- | --- |
-| 1 | Databricks data engineering | ESO/VO DataFrame + Bronze schema |
-| 2 | Structured Streaming | Kafka -> Spark bounded stream |
-| 3 | Delta Lake | persisted Bronze + checkpoint/replay |
-| 4 | Silver transformations | canonical observation entity + quarantine |
-| 5 | Gold aggregation | one persisted consumer aggregate |
-| 6 | Neo4j fundamentals + Cypher | deterministic evidence graph projection |
-| 7 | Graph algorithms / GraphFrames | lineage, orphan, cycle, centrality analysis |
-| 8 | DeepLearning.AI KG-RAG | graph-grounded QA prototype |
-| 9 | Neo4j GraphRAG path | hybrid graph/vector retrievers |
-| 10 | Microsoft GraphRAG | unstructured documentation experiment |
-| 11 | CS224W | deeper theory and model selection reasoning |
-| 12 | PyTorch Geometric | controlled engineering GNN experiment |
+| Step | Study                          | Immediate Cosmic deliverable                |
+| ---- | ------------------------------ | ------------------------------------------- |
+| 1    | Databricks data engineering    | ESO/VO DataFrame + Bronze schema            |
+| 2    | Structured Streaming           | Kafka -> Spark bounded stream               |
+| 3    | Delta Lake                     | persisted Bronze + checkpoint/replay        |
+| 4    | Silver transformations         | canonical observation entity + quarantine   |
+| 5    | Gold aggregation               | one persisted consumer aggregate            |
+| 6    | Neo4j fundamentals + Cypher    | deterministic evidence graph projection     |
+| 7    | Graph algorithms / GraphFrames | lineage, orphan, cycle, centrality analysis |
+| 8    | DeepLearning.AI KG-RAG         | graph-grounded QA prototype                 |
+| 9    | Neo4j GraphRAG path            | hybrid graph/vector retrievers              |
+| 10   | Microsoft GraphRAG             | unstructured documentation experiment       |
+| 11   | CS224W                         | deeper theory and model selection reasoning |
+| 12   | PyTorch Geometric              | controlled engineering GNN experiment       |
 
 ## 10. Eight-week practical curriculum
 

@@ -8,7 +8,12 @@ coverage-report
 gh-artifacts
 logs
 dist
+storybook-static
+build
 tmp
+test-results
+validation-output
 pnpm-lock.yaml
 apps/**/target
 tools/**/target
+tools/codeql

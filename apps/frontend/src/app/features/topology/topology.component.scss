@@ -47,15 +47,35 @@
   margin: 8px 0 6px;
 }
 
-.input-fixed-160 { width: 160px; }
-.input-fixed-120 { width: 120px; }
-.input-full { width: 100%; }
-.monospace-text { font-family: monospace; }
-.mt-8 { margin-top: 8px; }
-.text-right { text-align: right; }
-.ml-8 { margin-left: 8px; }
-.icon-large { font-size: 1.2em; }
-.title-group { display: flex; align-items: center; gap: 12px; }
+.input-fixed-160 {
+  width: 160px;
+}
+.input-fixed-120 {
+  width: 120px;
+}
+.input-full {
+  width: 100%;
+}
+.monospace-text {
+  font-family: monospace;
+}
+.mt-8 {
+  margin-top: 8px;
+}
+.text-right {
+  text-align: right;
+}
+.ml-8 {
+  margin-left: 8px;
+}
+.icon-large {
+  font-size: 1.2em;
+}
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
 .toolbar h1 {
   margin: 0;
@@ -112,11 +132,26 @@
 }
 
 @keyframes node-core-pulse {
-  0% { fill-opacity: 1; stroke-width: 1; }
-  25% { fill-opacity: 0.82; stroke-width: 2.4; }
-  40% { fill-opacity: 0.72; stroke-width: 3.1; }
-  65% { fill-opacity: 0.86; stroke-width: 2; }
-  100% { fill-opacity: 1; stroke-width: 1; }
+  0% {
+    fill-opacity: 1;
+    stroke-width: 1;
+  }
+  25% {
+    fill-opacity: 0.82;
+    stroke-width: 2.4;
+  }
+  40% {
+    fill-opacity: 0.72;
+    stroke-width: 3.1;
+  }
+  65% {
+    fill-opacity: 0.86;
+    stroke-width: 2;
+  }
+  100% {
+    fill-opacity: 1;
+    stroke-width: 1;
+  }
 }
 
 :host ::ng-deep .node-core--pulse {
@@ -689,7 +724,10 @@
   font-weight: 700;
 }
 
-::ng-deep .topology-tabs .mdc-tab--active .mdc-tab-indicator__content--underline,
+::ng-deep
+  .topology-tabs
+  .mdc-tab--active
+  .mdc-tab-indicator__content--underline,
 ::ng-deep .topology-tabs .mat-mdc-tab-ink-bar {
   border-color: #40e0ff !important;
   background-color: #40e0ff !important;

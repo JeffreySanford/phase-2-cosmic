@@ -74,11 +74,11 @@ Java Governance maintains a background-refreshed topology snapshot. HTTP reads r
 
 Expected cache states:
 
-| State | Meaning |
-| --- | --- |
-| `warming` | The service is available but no complete topology refresh has finished yet. |
-| `ready` | A completed topology snapshot is available and current. |
-| `stale` | A previous completed snapshot is being served because a newer refresh failed or exceeded freshness expectations. |
+| State     | Meaning                                                                                                          |
+| --------- | ---------------------------------------------------------------------------------------------------------------- |
+| `warming` | The service is available but no complete topology refresh has finished yet.                                      |
+| `ready`   | A completed topology snapshot is available and current.                                                          |
+| `stale`   | A previous completed snapshot is being served because a newer refresh failed or exceeded freshness expectations. |
 
 A startup response can therefore legitimately look like:
 

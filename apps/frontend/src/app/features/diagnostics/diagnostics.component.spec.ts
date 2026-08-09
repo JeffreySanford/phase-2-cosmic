@@ -5,7 +5,10 @@ import {
   tick,
 } from "@angular/core/testing";
 import { Component, Input } from "@angular/core";
-import { DiagnosticsComponent } from "./diagnostics.component";
+import {
+  DatabaseBenchmarkMetrics,
+  DiagnosticsComponent,
+} from "./diagnostics.component";
 import { BehaviorSubject } from "rxjs";
 import { PulsarStatus } from "../../shared/types";
 
@@ -26,7 +29,11 @@ class RabbitMQStatusStubComponent {
   @Input() status?: unknown;
 }
 
-@Component({ selector: "app-disclaimer-banner", template: "", standalone: true })
+@Component({
+  selector: "app-disclaimer-banner",
+  template: "",
+  standalone: true,
+})
 class DisclaimerBannerStubComponent {
   @Input() dismissible?: boolean;
   @Input() type?: string;
@@ -34,7 +41,11 @@ class DisclaimerBannerStubComponent {
   @Input() ready?: boolean;
 }
 
-@Component({ selector: "app-trident-allocator", template: "", standalone: true })
+@Component({
+  selector: "app-trident-allocator",
+  template: "",
+  standalone: true,
+})
 class TridentAllocatorStubComponent {
   @Input() dismissible?: boolean;
   @Input() type?: string;
@@ -229,7 +240,9 @@ describe("DiagnosticsComponent", () => {
     settleView();
 
     const tabButtons = Array.from(
-      fixture.nativeElement.querySelectorAll(".mat-mdc-tab, [role='tab']") as NodeListOf<HTMLElement>
+      fixture.nativeElement.querySelectorAll(
+        ".mat-mdc-tab, [role='tab']"
+      ) as NodeListOf<HTMLElement>
     );
     const dbTab = tabButtons.find((button) =>
       button.textContent?.includes("Database & Benchmarks")
@@ -266,7 +279,7 @@ describe("DiagnosticsComponent", () => {
         available: true,
         queries: [{ query: "pg_up", label: "pg_up", value: 1 }],
       },
-    } as any;
+    } satisfies DatabaseBenchmarkMetrics;
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent ?? "";
@@ -309,11 +322,13 @@ describe("DiagnosticsComponent", () => {
         failureRatePerSec: 0,
         throughputMbPerSec: 1,
       },
-    } as any;
+    } satisfies DatabaseBenchmarkMetrics;
 
     comp.lastMetricsRefreshStatus = "refreshing";
     const tabButtons = Array.from(
-      fixture.nativeElement.querySelectorAll(".mat-mdc-tab, [role='tab']") as NodeListOf<HTMLElement>
+      fixture.nativeElement.querySelectorAll(
+        ".mat-mdc-tab, [role='tab']"
+      ) as NodeListOf<HTMLElement>
     );
     const dbTab = tabButtons.find((button) =>
       button.textContent?.includes("Database & Benchmarks")
@@ -325,7 +340,9 @@ describe("DiagnosticsComponent", () => {
 
     expect(fixture.nativeElement.textContent).toContain("Refreshing metrics…");
     expect(
-      fixture.nativeElement.querySelector(".refresh-status")?.getAttribute("title")
+      fixture.nativeElement
+        .querySelector(".refresh-status")
+        ?.getAttribute("title")
     ).toContain("Refresh in progress");
 
     comp.lastMetricsRefreshAt = new Date(Date.now() - 30_000);
@@ -445,7 +462,9 @@ describe("DiagnosticsComponent", () => {
     startComponent();
     httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
     httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
-    const initialMetricsReq = httpMock.expectOne("/api/diagnostics/database-benchmarks");
+    const initialMetricsReq = httpMock.expectOne(
+      "/api/diagnostics/database-benchmarks"
+    );
     initialMetricsReq.flush({
       generatedAt: new Date().toISOString(),
       source: "prometheus",
@@ -470,7 +489,9 @@ describe("DiagnosticsComponent", () => {
     });
 
     tick(5000);
-    const refreshedMetricsReq = httpMock.expectOne("/api/diagnostics/database-benchmarks");
+    const refreshedMetricsReq = httpMock.expectOne(
+      "/api/diagnostics/database-benchmarks"
+    );
     refreshedMetricsReq.flush({
       generatedAt: new Date().toISOString(),
       source: "postgres",

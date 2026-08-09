@@ -99,16 +99,16 @@ Purpose: controlled ground truth for graph and AI evaluation.
 
 Recommended measurements:
 
-| Metric | Meaning |
-| --- | --- |
-| Node identity precision | projected nodes mapped to the correct canonical identity |
-| Duplicate-node rate | canonical identities incorrectly split into multiple graph nodes |
-| Edge correctness | relationship exists and is supported by a source record |
-| Orphan rate | expected entities missing required parent/source relationships |
-| Lineage path coverage | known source-to-product paths reproduced by the graph |
-| Cycle violation count | invalid cycles in lineage/provenance relationships |
-| Projection freshness | delay between source/Lakehouse update and graph availability |
-| Rebuild determinism | same bounded input produces equivalent graph projection |
+| Metric                  | Meaning                                                          |
+| ----------------------- | ---------------------------------------------------------------- |
+| Node identity precision | projected nodes mapped to the correct canonical identity         |
+| Duplicate-node rate     | canonical identities incorrectly split into multiple graph nodes |
+| Edge correctness        | relationship exists and is supported by a source record          |
+| Orphan rate             | expected entities missing required parent/source relationships   |
+| Lineage path coverage   | known source-to-product paths reproduced by the graph            |
+| Cycle violation count   | invalid cycles in lineage/provenance relationships               |
+| Projection freshness    | delay between source/Lakehouse update and graph availability     |
+| Rebuild determinism     | same bounded input produces equivalent graph projection          |
 
 ## 7. Graph analytics evaluation
 

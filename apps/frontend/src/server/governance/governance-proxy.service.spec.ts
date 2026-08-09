@@ -92,7 +92,8 @@ describe("GovernanceProxyService", () => {
     const svc = new GovernanceProxyService(upstream);
     const summary = {
       source: "live" as const,
-      bronzeState: "Public source proof only (5 ESO ObsCore rows); Bronze Delta not implemented",
+      bronzeState:
+        "Public source proof only (5 ESO ObsCore rows); Bronze Delta not implemented",
       silverQuality: "Silver not implemented",
       goldReadiness: "Gold not implemented",
       evidence: "ESO ObsCore • image • ivo://example",

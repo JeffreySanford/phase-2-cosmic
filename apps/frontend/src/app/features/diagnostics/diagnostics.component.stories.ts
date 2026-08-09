@@ -52,8 +52,9 @@ class MockEventSource {
   }
 }
 
-(globalThis as typeof globalThis & { EventSource?: typeof EventSource }).EventSource =
-  MockEventSource as unknown as typeof EventSource;
+(
+  globalThis as typeof globalThis & { EventSource?: typeof EventSource }
+).EventSource = MockEventSource as unknown as typeof EventSource;
 
 const meta: Meta<DiagnosticsComponent> = {
   title: "Features/Diagnostics",
@@ -87,7 +88,10 @@ const meta: Meta<DiagnosticsComponent> = {
           provide: MockDataService,
           useValue: {
             diagnosticsIndex: () =>
-              of({ path: "/tmp", files: ["system-specs.txt", "payloads.log.20260807T100000Z"] }),
+              of({
+                path: "/tmp",
+                files: ["system-specs.txt", "payloads.log.20260807T100000Z"],
+              }),
             systemSpecsText: () => of("mock system specs"),
             mockDockerServices: () => of([]),
           },
@@ -123,7 +127,8 @@ const meta: Meta<DiagnosticsComponent> = {
                       database: "cosmic",
                       activeConnections: 7,
                       latencyMs: 3,
-                      details: "Prometheus-backed metrics surfaced in Storybook",
+                      details:
+                        "Prometheus-backed metrics surfaced in Storybook",
                     },
                     benchmarks: {
                       ingestRatePerSec: 132,
@@ -138,7 +143,11 @@ const meta: Meta<DiagnosticsComponent> = {
                       available: true,
                       queries: [
                         { query: "pg_up", label: "pg_up", value: 1 },
-                        { query: "pg_stat_activity_count", label: "Connections", value: 7 },
+                        {
+                          query: "pg_stat_activity_count",
+                          label: "Connections",
+                          value: 7,
+                        },
                       ],
                     },
                   });

@@ -312,9 +312,7 @@ export class PipelineTelemetryComponent implements OnInit, OnDestroy {
   }
 
   isMeasured(source?: EvidenceSource): boolean {
-    return (
-      source === "prometheus" || source === "admin" || source === "live"
-    );
+    return source === "prometheus" || source === "admin" || source === "live";
   }
 
   sourceLabel(source?: EvidenceSource): string {
@@ -360,9 +358,7 @@ export class PipelineTelemetryComponent implements OnInit, OnDestroy {
   formatPercent(value?: number): string {
     if (value == null) return "n/a";
     const v = Number(value);
-    return Number.isFinite(v)
-      ? `${v.toFixed(v < 1 ? 2 : 1)}%`
-      : "n/a";
+    return Number.isFinite(v) ? `${v.toFixed(v < 1 ? 2 : 1)}%` : "n/a";
   }
 
   trendPath(width = 760, height = 180): string {
@@ -373,9 +369,7 @@ export class PipelineTelemetryComponent implements OnInit, OnDestroy {
       .map((point, index) => {
         const x = index * step;
         const y = height - ((point.v - min) / span) * (height - 16) - 8;
-        return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(
-          1
-        )}`;
+        return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
       })
       .join(" ");
   }
@@ -474,8 +468,7 @@ export class PipelineTelemetryComponent implements OnInit, OnDestroy {
       return {
         name: segment.name,
         expectedPct: (segment.weight / totalWeight) * 100,
-        actualPct:
-          totalObserved > 0 ? (bytesPerSec / totalObserved) * 100 : 0,
+        actualPct: totalObserved > 0 ? (bytesPerSec / totalObserved) * 100 : 0,
         bytesPerSec,
       };
     });

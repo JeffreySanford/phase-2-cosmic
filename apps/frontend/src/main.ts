@@ -59,5 +59,4 @@ try {
 
 bootstrapApplication(AppComponent, {
   providers: [importProvidersFrom(AppModule)],
-})
-  .catch((err) => console.error(err));
+}).catch((err) => console.error(err));

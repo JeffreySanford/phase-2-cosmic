@@ -176,7 +176,11 @@
   margin-top: 0.75rem;
   padding: 0.8rem 0.95rem;
   border-radius: 14px;
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.12), rgba(99, 102, 241, 0.12));
+  background: linear-gradient(
+    90deg,
+    rgba(56, 189, 248, 0.12),
+    rgba(99, 102, 241, 0.12)
+  );
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -235,7 +239,11 @@
 
 .sparkline span {
   flex: 1;
-  background: linear-gradient(180deg, rgba(125, 211, 252, 0.95), rgba(56, 189, 248, 0.3));
+  background: linear-gradient(
+    180deg,
+    rgba(125, 211, 252, 0.95),
+    rgba(56, 189, 248, 0.3)
+  );
   border-radius: 999px;
   min-height: 0.25rem;
   transition: transform 180ms ease, opacity 180ms ease;
@@ -276,7 +284,8 @@
   background: rgba(255, 255, 255, 0.08);
   color: token(colors, muted);
   font-size: 0.82rem;
-  transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  transition: color 180ms ease, background-color 180ms ease,
+    transform 180ms ease;
 }
 
 .refresh-status:hover {

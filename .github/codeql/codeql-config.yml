@@ -1,0 +1,28 @@
+---
+name: phase-2-cosmic-codeql
+
+paths:
+  - apps
+  - libs
+  - scripts
+  - tools/data-generator
+  - tools/java-ingest
+  - tools/lakehouse-mvp
+  - tools/perf
+  - tools/playwright
+  - tools/telemetry-sidebar
+  - tools/trident-allocator
+
+paths-ignore:
+  - "**/node_modules/**"
+  - "**/target/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - ".nx/**"
+  - "coverage/**"
+  - "logs/**"
+  - "tmp/**"
+  - "test-results/**"
+  - "validation-output/**"
+  - "tools/codeql/**"
+  - "apps/frontend-e2e/profile-output/**"

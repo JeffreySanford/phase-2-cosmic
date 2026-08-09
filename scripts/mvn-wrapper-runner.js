@@ -43,11 +43,14 @@ function runCapture(cmd, cmdArgs) {
   }
 }
 
-function passthroughDockerEnv() {
+function dockerEnvArgs(defaults = {}) {
   const names = [
     "HOST_KAFKA_BOOTSTRAP",
     "KAFKA_BOOTSTRAP_SERVERS",
     "MAVEN_OPTS",
+    "PULSAR_ADMIN_URL",
+    "PULSAR_BROKER_URL",
+    "PULSAR_SERVICE_URL",
     "SPRING_KAFKA_BOOTSTRAP_SERVERS",
     "SPRING_RABBITMQ_HOST",
     "SPRING_RABBITMQ_PORT",
@@ -55,11 +58,15 @@ function passthroughDockerEnv() {
     "SPRING_REDIS_PORT",
     "USE_HOST_KAFKA",
   ];
-  return names.flatMap((name) =>
-    Object.prototype.hasOwnProperty.call(process.env, name)
-      ? ["-e", `${name}=${process.env[name]}`]
-      : []
-  );
+  return names.flatMap((name) => {
+    if (Object.prototype.hasOwnProperty.call(process.env, name)) {
+      return ["-e", `${name}=${process.env[name]}`];
+    }
+    if (Object.prototype.hasOwnProperty.call(defaults, name)) {
+      return ["-e", `${name}=${defaults[name]}`];
+    }
+    return [];
+  });
 }
 
 function firstComposeServiceContainerId(serviceNames) {
@@ -173,10 +180,24 @@ if (shouldRunInDocker) {
   const mvnCommand = `cd /workspace && mvn ${args
     .map((a) => (a.includes(" ") ? '"' + a.replace(/"/g, '\\"') + '"' : a))
     .join(" ")}`;
+  const composeEnvDefaults = networkArg
+    ? {
+        HOST_KAFKA_BOOTSTRAP: "kafka:9092",
+        KAFKA_BOOTSTRAP_SERVERS: "kafka:9092",
+        PULSAR_ADMIN_URL: "http://pulsar:8080",
+        PULSAR_BROKER_URL: "pulsar://pulsar:6650",
+        PULSAR_SERVICE_URL: "pulsar://pulsar:6650",
+        SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092",
+        SPRING_RABBITMQ_HOST: "rabbitmq",
+        SPRING_RABBITMQ_PORT: "5672",
+        SPRING_REDIS_HOST: "redis",
+        SPRING_REDIS_PORT: "6379",
+      }
+    : {};
   const dockerCmd = ["run", "--rm"];
   if (networkArg) dockerCmd.push(...networkArg);
   dockerCmd.push(...dockerSocketArgs());
-  dockerCmd.push(...passthroughDockerEnv());
+  dockerCmd.push(...dockerEnvArgs(composeEnvDefaults));
   dockerCmd.push(
     "-v",
     `${volPath}:/workspace`,

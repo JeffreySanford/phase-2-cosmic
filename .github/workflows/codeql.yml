@@ -38,8 +38,8 @@ jobs:
         include:
           - language: javascript-typescript
             build-mode: none
-          - language: java
-            build-mode: manual
+          - language: java-kotlin
+            build-mode: none
           - language: go
             build-mode: manual
 
@@ -50,7 +50,7 @@ jobs:
       # --- Language-specific setup ---
 
       - name: Set up JDK 17
-        if: matrix.language == 'java'
+        if: matrix.language == 'java-kotlin'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -68,6 +68,8 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          config-file: ./.github/codeql/codeql-config.yml
           # security-extended adds OWASP Top 10 and CWE-focused queries.
           # security-and-quality adds code hygiene rules
           # (unused vars, null dereferences, etc.).
@@ -76,7 +78,7 @@ jobs:
       # --- Build steps (CodeQL observes the build for compiled languages) ---
 
       - name: Build Java for CodeQL
-        if: matrix.language == 'java'
+        if: matrix.language == 'java-kotlin' && matrix.build-mode == 'manual'
         run: |
           mvn -f apps/java-governance/pom.xml clean compile -B -DskipTests
           mvn -f tools/java-ingest/pom.xml clean compile -B -DskipTests

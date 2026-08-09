@@ -178,7 +178,8 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
 
   databaseMetrics: DatabaseBenchmarkMetrics | null = null;
   lastMetricsRefreshAt: Date | null = null;
-  lastMetricsRefreshStatus: "idle" | "success" | "error" | "refreshing" = "idle";
+  lastMetricsRefreshStatus: "idle" | "success" | "error" | "refreshing" =
+    "idle";
   previousDatabaseMetrics: DatabaseBenchmarkMetrics | null = null;
   sparklinePulseKey = 0;
 
@@ -206,7 +207,11 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
     return this.previousDatabaseMetrics?.postgres?.activeConnections;
   }
 
-  get prometheusSignals(): Array<{ query: string; label: string; value: number }> {
+  get prometheusSignals(): Array<{
+    query: string;
+    label: string;
+    value: number;
+  }> {
     return this.databaseMetrics?.prometheus?.queries ?? [];
   }
 
@@ -227,7 +232,9 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
       case "live":
         return "Live";
       default:
-        return source ? source.replace(/\b\w/g, (char) => char.toUpperCase()) : "Unknown";
+        return source
+          ? source.replace(/\b\w/g, (char) => char.toUpperCase())
+          : "Unknown";
     }
   }
 
@@ -249,7 +256,10 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
       : "Waiting for first refresh…";
   }
 
-  getKpiTrend(value: number, previousValue: number | undefined): { symbol: string; className: string } {
+  getKpiTrend(
+    value: number,
+    previousValue: number | undefined
+  ): { symbol: string; className: string } {
     if (previousValue === undefined) {
       return value > 0
         ? { symbol: "▲", className: "positive" }
@@ -267,15 +277,31 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
     return { symbol: "●", className: "neutral" };
   }
 
-  getKpiHistoryBars(value: number, previousValue: number | undefined): string[] {
+  getKpiHistoryBars(
+    value: number,
+    previousValue: number | undefined
+  ): string[] {
     if (previousValue === undefined) {
       return ["40", "55", "45"];
     }
 
     const delta = value - previousValue;
-    const scale = Math.max(0.15, Math.min(1, Math.abs(delta) / Math.max(1, Math.abs(previousValue || value))));
-    const base = Math.max(20, Math.min(80, 45 + (delta > 0 ? scale * 20 : delta < 0 ? -scale * 20 : 0)));
-    return [Math.round(base - scale * 10).toString(), Math.round(base + scale * 4).toString(), Math.round(base + scale * 8).toString()];
+    const scale = Math.max(
+      0.15,
+      Math.min(
+        1,
+        Math.abs(delta) / Math.max(1, Math.abs(previousValue || value))
+      )
+    );
+    const base = Math.max(
+      20,
+      Math.min(80, 45 + (delta > 0 ? scale * 20 : delta < 0 ? -scale * 20 : 0))
+    );
+    return [
+      Math.round(base - scale * 10).toString(),
+      Math.round(base + scale * 4).toString(),
+      Math.round(base + scale * 8).toString(),
+    ];
   }
 
   private formatRefreshAge(timestamp: Date): string {
@@ -445,45 +471,47 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    this.http.get<DatabaseBenchmarkMetrics>("/api/diagnostics/database-benchmarks").subscribe(
-      (metrics) => {
-        this.deferUiUpdate(() => {
-          this.previousDatabaseMetrics = this.databaseMetrics;
-          this.databaseMetrics = metrics;
-          this.lastMetricsRefreshAt = new Date();
-          this.lastMetricsRefreshStatus = "success";
-          this.sparklinePulseKey += 1;
-        });
-      },
-      () => {
-        this.deferUiUpdate(() => {
-          this.databaseMetrics = {
-            generatedAt: new Date().toISOString(),
-            source: "fallback",
-            postgres: {
-              status: "offline",
-              connection: "unavailable",
-              host: "n/a",
-              database: "n/a",
-              activeConnections: 0,
-              latencyMs: 0,
-              details: "No benchmark payload available.",
-            },
-            benchmarks: {
-              ingestRatePerSec: 0,
-              ingestBytesPerSec: 0,
-              averageLatencyMs: 0,
-              queueDepth: 0,
-              activeJobs: 0,
-              failureRatePerSec: 0,
-              throughputMbPerSec: 0,
-            },
-          };
-          this.lastMetricsRefreshAt = new Date();
-          this.lastMetricsRefreshStatus = "error";
-        });
-      }
-    );
+    this.http
+      .get<DatabaseBenchmarkMetrics>("/api/diagnostics/database-benchmarks")
+      .subscribe(
+        (metrics) => {
+          this.deferUiUpdate(() => {
+            this.previousDatabaseMetrics = this.databaseMetrics;
+            this.databaseMetrics = metrics;
+            this.lastMetricsRefreshAt = new Date();
+            this.lastMetricsRefreshStatus = "success";
+            this.sparklinePulseKey += 1;
+          });
+        },
+        () => {
+          this.deferUiUpdate(() => {
+            this.databaseMetrics = {
+              generatedAt: new Date().toISOString(),
+              source: "fallback",
+              postgres: {
+                status: "offline",
+                connection: "unavailable",
+                host: "n/a",
+                database: "n/a",
+                activeConnections: 0,
+                latencyMs: 0,
+                details: "No benchmark payload available.",
+              },
+              benchmarks: {
+                ingestRatePerSec: 0,
+                ingestBytesPerSec: 0,
+                averageLatencyMs: 0,
+                queueDepth: 0,
+                activeJobs: 0,
+                failureRatePerSec: 0,
+                throughputMbPerSec: 0,
+              },
+            };
+            this.lastMetricsRefreshAt = new Date();
+            this.lastMetricsRefreshStatus = "error";
+          });
+        }
+      );
   }
 
   private fetchVoServices() {
