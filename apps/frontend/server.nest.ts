@@ -8,6 +8,7 @@ import {
   Controller,
   Get,
   Post,
+  Body,
   Req,
   Res,
   Injectable,
@@ -170,6 +171,69 @@ function sendSse(res: Response, event: string, data: unknown) {
   } catch {
     // ignore write failures
   }
+}
+
+// Event-backed SSE channel.
+//
+// Deliberately separate from the telemetry channel above. Telemetry is derived
+// from generator worker file sizes on disk; this channel carries real ingested
+// pipeline events forwarded by java-ingest:
+//
+//   generator -> Pulsar -> collector -> Kafka -> java-ingest -> here -> frontend
+const ingestSseClients = new Set<Response>();
+
+export interface IngestedEvent {
+  receivedAt: number;
+  source?: string;
+  eventType?: string;
+  traceId?: string;
+  collectorRegion?: string;
+  broker?: string;
+  payload?: unknown;
+}
+
+// Bounded ring buffer so a late subscriber sees recent activity without the
+// server retaining unbounded event history.
+const INGEST_EVENT_BUFFER_LIMIT = 50;
+const recentIngestEvents: IngestedEvent[] = [];
+let ingestEventsReceived = 0;
+
+function recordIngestEvent(event: IngestedEvent) {
+  ingestEventsReceived += 1;
+  recentIngestEvents.push(event);
+  if (recentIngestEvents.length > INGEST_EVENT_BUFFER_LIMIT) {
+    recentIngestEvents.shift();
+  }
+
+  for (const res of Array.from(ingestSseClients)) {
+    if (res.writableEnded || res.writableFinished) {
+      ingestSseClients.delete(res);
+      continue;
+    }
+    sendSse(res, "ingest-event", event);
+  }
+}
+
+export function getIngestEventStats() {
+  return {
+    received: ingestEventsReceived,
+    buffered: recentIngestEvents.length,
+    clientCount: ingestSseClients.size,
+    latest: recentIngestEvents[recentIngestEvents.length - 1] ?? null,
+  };
+}
+
+export function resetIngestEventsForTest() {
+  recentIngestEvents.length = 0;
+  ingestEventsReceived = 0;
+  ingestSseClients.clear();
+}
+
+// Forwarded events come from an external process, so field types are not
+// guaranteed. Anything that is not a usable string is dropped rather than
+// coerced into a misleading value.
+function asOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 const telemetryDebugEnabled = process.env["DEBUG_TELEMETRY"] === "true";
@@ -977,6 +1041,51 @@ export class AppController {
   @Get("api/telemetry/debug")
   telemetryDebug() {
     return getTelemetryDebugInfo();
+  }
+
+  // Receives events forwarded by java-ingest after it consumes them from Kafka.
+  // This is the hop that connects the broker pipeline to the frontend.
+  @Post("api/ingest/events")
+  receiveIngestEvent(@Body() body: Record<string, unknown>) {
+    const payload = (body?.["payload"] ?? body) as Record<string, unknown>;
+
+    const event: IngestedEvent = {
+      receivedAt: Date.now(),
+      source: asOptionalString(payload?.["source"]),
+      eventType: asOptionalString(payload?.["eventType"]),
+      traceId: asOptionalString(payload?.["traceId"]),
+      collectorRegion: asOptionalString(body?.["collectorRegion"]),
+      broker: asOptionalString(body?.["broker"]),
+      payload,
+    };
+
+    recordIngestEvent(event);
+    return { accepted: true, receivedAt: event.receivedAt };
+  }
+
+  @Get("api/ingest/stream")
+  streamIngestEvents(@Req() req: Request, @Res() res: Response) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    sendSse(res, "connected", { ts: Date.now() });
+    ingestSseClients.add(res);
+
+    // Replay the buffer so a subscriber joining mid-stream sees recent events
+    // rather than an empty panel until the next one arrives.
+    for (const buffered of recentIngestEvents) {
+      sendSse(res, "ingest-event", buffered);
+    }
+
+    req.on("close", () => {
+      ingestSseClients.delete(res);
+    });
+  }
+
+  @Get("api/ingest/debug")
+  ingestDebug() {
+    return getIngestEventStats();
   }
 
   @Get("api/lakehouse/metrics")

@@ -106,10 +106,13 @@ Rules:
 
 ### Stage 2 — complete the chain
 
-- [ ] Make `java-ingest` forward consumed events to the server API instead of
-      terminating at metrics.
-- [ ] Add an event-backed SSE channel fed by ingested events, leaving the existing
-      disk-derived telemetry channel unchanged.
+- [x] Make `java-ingest` forward consumed events to the server API instead of
+      terminating at metrics. Forwarding is best-effort with a bounded timeout:
+      Kafka stays the durable record, so a server outage is counted via
+      `java_ingest_forward_failures_total` rather than blocking the partition.
+- [x] Add an event-backed SSE channel (`/api/ingest/stream`) fed by ingested
+      events, with a bounded replay buffer, leaving the existing disk-derived
+      telemetry channel unchanged.
 - [ ] Prove the full path end to end with a test that follows one generated record
       from the generator to the frontend.
 

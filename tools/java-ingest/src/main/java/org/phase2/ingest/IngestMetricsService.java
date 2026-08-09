@@ -40,6 +40,14 @@ public class IngestMetricsService {
         durationTimer(topic, "failure", reason).record(duration.toNanos(), TimeUnit.NANOSECONDS);
     }
 
+    public void recordForwarded(String topic) {
+        counter("java_ingest_forwarded_total", topic, "success", "none").increment();
+    }
+
+    public void recordForwardFailure(String broker, String topic, String reason) {
+        counter("java_ingest_forward_failures_total", topic, "failure", reason).increment();
+    }
+
     private Counter counter(String metric, String topic, String result, String reason) {
         return Counter.builder(metric)
                 .description("Java ingest consumer telemetry")

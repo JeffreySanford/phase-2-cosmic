@@ -8,10 +8,14 @@ import java.time.Duration;
 
 @Component
 public class KafkaIngestListener {
-    private final IngestMetricsService metricsService;
+    private static final String BROKER = "kafka";
 
-    public KafkaIngestListener(IngestMetricsService metricsService) {
+    private final IngestMetricsService metricsService;
+    private final ServerApiForwarder forwarder;
+
+    public KafkaIngestListener(IngestMetricsService metricsService, ServerApiForwarder forwarder) {
         this.metricsService = metricsService;
+        this.forwarder = forwarder;
     }
 
     @KafkaListener(
@@ -40,7 +44,13 @@ public class KafkaIngestListener {
                     payload,
                     Duration.ofNanos(System.nanoTime() - startedAt)
             );
-            System.out.println("[java-ingest] received: " + payload);
+
+            // Forward to the server API so the event reaches the SSE channel and
+            // the frontend. Kafka remains the durable record, so a forwarding
+            // failure is counted rather than failing the consumer.
+            if (forwarder.forward(BROKER, topic, payload)) {
+                metricsService.recordForwarded(topic);
+            }
         } catch (RuntimeException ex) {
             metricsService.recordFailure(
                     topic,

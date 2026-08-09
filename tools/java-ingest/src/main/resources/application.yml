@@ -1,4 +1,13 @@
 ---
+ingest:
+  forward:
+    # Server API endpoint that receives consumed events and republishes them on
+    # the SSE channel. Unset means events are still consumed and measured but
+    # not forwarded, which is the pre-pipeline behavior.
+    url: ${INGEST_FORWARD_URL:}
+    enabled: ${INGEST_FORWARD_ENABLED:true}
+    timeout-ms: ${INGEST_FORWARD_TIMEOUT_MS:2000}
+
 spring:
   main:
     allow-bean-definition-overriding: true
