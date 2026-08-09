@@ -4,7 +4,13 @@
   "title": "PR41 Lakehouse Source Registry",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "defaultBundle", "profiles", "bundles"],
+  "required": [
+    "schemaVersion",
+    "defaultBundle",
+    "selectionPolicy",
+    "profiles",
+    "bundles"
+  ],
   "properties": {
     "schemaVersion": {
       "type": "string",
@@ -13,6 +19,41 @@
     "defaultBundle": {
       "type": "string",
       "minLength": 1
+    },
+    "selectionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activeStates", "inactiveStates", "precedence"],
+      "properties": {
+        "activeStates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": ["included", "fixture"]
+          },
+          "uniqueItems": true
+        },
+        "inactiveStates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": ["excluded", "planned"]
+          },
+          "uniqueItems": true
+        },
+        "precedence": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "string",
+            "enum": ["fixture", "included", "planned", "excluded"]
+          },
+          "uniqueItems": true
+        }
+      }
     },
     "profiles": {
       "type": "object",

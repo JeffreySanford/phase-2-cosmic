@@ -1,6 +1,11 @@
 {
   "schemaVersion": "lakehouse-source-registry.v1",
   "defaultBundle": "offline-fixture",
+  "selectionPolicy": {
+    "activeStates": ["fixture", "included"],
+    "inactiveStates": ["planned", "excluded"],
+    "precedence": ["fixture", "included", "planned", "excluded"]
+  },
   "profiles": {
     "deterministic-obscore-fixture": {
       "label": "Deterministic ObsCore Fixture",

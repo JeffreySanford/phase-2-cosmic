@@ -80,7 +80,7 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 
 - [x] Add a checked-in source-registry example and schema for public archive/catalog profiles.
 - [x] Implement source-bundle selection for `core-proof`, `offline-fixture`, and at least one expanded development bundle.
-- [ ] Add deterministic include/exclude precedence rules for active Lakehouse development records.
+- [x] Add deterministic include/exclude precedence rules for active Lakehouse development records.
 - [ ] Implement a reusable VO/TAP-style source adapter contract rather than coupling Lakehouse entities to ESO-specific field names.
 - [x] Preserve the current ESO profile as the first working provider implementation.
 - [ ] Add an NRAO/VLA/VLASS provider profile when practical so the same contract is validated against the radio-astronomy domain that Cosmic primarily targets.

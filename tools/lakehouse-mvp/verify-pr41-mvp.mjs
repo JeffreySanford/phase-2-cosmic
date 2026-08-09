@@ -131,6 +131,25 @@ for (const profileRef of manifest.sourceBundle?.profileRefs || []) {
     );
   }
 }
+if (!manifest.sourceBundle?.activeProfileRefs?.length) {
+  fail("manifest sourceBundle must include at least one activeProfileRef");
+}
+const activeStates = new Set(
+  sourceRegistry.selectionPolicy?.activeStates || []
+);
+for (const profileRef of manifest.sourceBundle.activeProfileRefs) {
+  const profile = sourceRegistry.profiles?.[profileRef];
+  if (!profile) {
+    fail(
+      `manifest sourceBundle activeProfileRefs references unknown profile ${profileRef}`
+    );
+  }
+  if (!activeStates.has(profile.activationState)) {
+    fail(
+      `manifest sourceBundle active profile ${profileRef} has inactive state ${profile.activationState}`
+    );
+  }
+}
 if (!registryProfiles[manifest.scaleProfile.name]) {
   fail(
     `manifest uses profile missing from registry: ${manifest.scaleProfile.name}`

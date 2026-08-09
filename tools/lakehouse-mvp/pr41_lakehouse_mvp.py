@@ -130,7 +130,20 @@ def resolve_source_bundle(bundle_value: str | None) -> tuple[str, dict[str, Any]
             f"Lakehouse source bundle {bundle_name!r} references unknown profile(s): {', '.join(missing_profiles)}"
         )
 
-    return bundle_name, bundles[bundle_name]
+    bundle = dict(bundles[bundle_name])
+    active_states = set(registry.get("selectionPolicy", {}).get("activeStates", []))
+    active_profile_refs = [
+        ref
+        for ref in bundle.get("profileRefs", [])
+        if profiles[ref].get("activationState") in active_states
+    ]
+    if not active_profile_refs:
+        raise ValueError(
+            f"Lakehouse source bundle {bundle_name!r} has no active fixture/included profile"
+        )
+    bundle["activeProfileRefs"] = active_profile_refs
+
+    return bundle_name, bundle
 
 
 def resolve_profile(profile_value: str | None, allow_large: bool) -> tuple[str, dict[str, Any]]:
@@ -373,6 +386,7 @@ def write_manifest(
             "name": source_bundle_name,
             "label": source_bundle.get("label"),
             "profileRefs": source_bundle.get("profileRefs", []),
+            "activeProfileRefs": source_bundle.get("activeProfileRefs", []),
             "intendedUse": source_bundle.get("intendedUse"),
         },
         "scaleProfile": {

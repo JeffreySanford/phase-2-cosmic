@@ -69,6 +69,14 @@ class LakehouseMvpRunnerTests(unittest.TestCase):
 
         self.assertEqual(name, "offline-fixture")
         self.assertEqual(bundle["profileRefs"], ["deterministic-obscore-fixture"])
+        self.assertEqual(bundle["activeProfileRefs"], ["deterministic-obscore-fixture"])
+
+    def test_source_bundle_selection_excludes_planned_profiles(self) -> None:
+        name, bundle = mvp.resolve_source_bundle("expanded-development")
+
+        self.assertEqual(name, "expanded-development")
+        self.assertIn("nrao-vlass-development", bundle["profileRefs"])
+        self.assertNotIn("nrao-vlass-development", bundle["activeProfileRefs"])
 
     def test_unknown_source_bundle_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "Unknown Lakehouse source bundle"):
@@ -160,6 +168,10 @@ class LakehouseMvpRunnerTests(unittest.TestCase):
             self.assertEqual(manifest["evidenceSource"], "pr41-local-manifest")
             self.assertEqual(manifest["scaleProfile"]["name"], "tiny")
             self.assertEqual(manifest["sourceBundle"]["name"], "offline-fixture")
+            self.assertEqual(
+                manifest["sourceBundle"]["activeProfileRefs"],
+                ["deterministic-obscore-fixture"],
+            )
             self.assertGreater(manifest["bytesByLayer"]["bronze"], 0)
             self.assertEqual(
                 manifest["tables"]["bronze.observation_events"]["rows"], 5

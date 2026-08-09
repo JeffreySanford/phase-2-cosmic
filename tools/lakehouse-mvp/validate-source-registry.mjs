@@ -41,15 +41,32 @@ if (!validate(registry)) {
 }
 
 const profileNames = new Set(Object.keys(registry.profiles));
+const activeStates = new Set(registry.selectionPolicy.activeStates);
+const inactiveStates = new Set(registry.selectionPolicy.inactiveStates);
 if (!registry.bundles[registry.defaultBundle]) {
   fail(`defaultBundle ${registry.defaultBundle} is not defined in bundles`);
 }
 
+for (const state of activeStates) {
+  if (inactiveStates.has(state)) {
+    fail(`selectionPolicy state ${state} cannot be both active and inactive`);
+  }
+}
+
 for (const [bundleName, bundle] of Object.entries(registry.bundles)) {
+  const activeProfileRefs = [];
   for (const profileRef of bundle.profileRefs) {
     if (!profileNames.has(profileRef)) {
       fail(`bundle ${bundleName} references unknown profile ${profileRef}`);
     }
+    const profile = registry.profiles[profileRef];
+    if (activeStates.has(profile.activationState)) {
+      activeProfileRefs.push(profileRef);
+    }
+  }
+
+  if (!activeProfileRefs.length) {
+    fail(`bundle ${bundleName} has no active fixture/included profile`);
   }
 }
 
