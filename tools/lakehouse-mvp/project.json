@@ -20,6 +20,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
+          "python tools/lakehouse-mvp/test_pr41_lakehouse_mvp.py",
           "python tools/lakehouse-mvp/pr41_lakehouse_mvp.py",
           "node tools/lakehouse-mvp/verify-pr41-mvp.mjs"
         ],

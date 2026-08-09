@@ -66,6 +66,7 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 - [x] Document the PR41 testing-suite plan for unit, integration, contract, API/service, quality-gate, and guarded large-profile validation.
 - [x] Document the PR41 diagnostic view plan for evidence state, profile state, medallion layer state, guard state, and safe operation boundaries.
 - [x] Add byte-aware PR41 manifest entries and profile-aware verifier contract checks.
+- [x] Add PR41 runner unit coverage for profile guards, safe output paths, medallion transforms, and manifest diagnostics.
 - [x] Add PR41 Lakehouse diagnostics state to the metrics payload and existing diagnostics UI.
 - [x] Add PR41 diagnostics Storybook fixture coverage.
 - [x] Add `lakehouse:pr41:mvp` to the local `quality:ci` gate.

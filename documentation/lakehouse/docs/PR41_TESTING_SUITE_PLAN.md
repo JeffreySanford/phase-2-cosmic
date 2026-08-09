@@ -47,6 +47,7 @@ If the workspace has a single quality-gate command, PR41 should add `lakehouse-m
 Minimum automated assertions:
 
 - `tiny` profile is selected by default.
+- profile guard unit tests reject unapproved large profiles.
 - `lakehouse-mvp:run` creates a fresh local artifact root.
 - Bronze, Silver, Silver quarantine, and Gold directories exist.
 - Each table has Parquet data and Delta transaction metadata.
@@ -198,6 +199,7 @@ PR41 testing is done when:
 - `lakehouse-mvp:test` is automated and green,
 - profile guard negative tests exist,
 - manifest/control metadata contracts are covered,
+- runner unit tests cover profile resolution, safe output paths, Bronze/Silver/Gold transforms, and manifest diagnostics,
 - metrics service fallback and verified-manifest paths are covered,
 - diagnostic state fixtures are planned or covered,
 - quality gate documentation names the lakehouse checks,

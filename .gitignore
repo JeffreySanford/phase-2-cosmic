@@ -16,6 +16,7 @@ storybook-static/
 build/
 coverage/
 apps/coverage/
+validation-output/
 
 # Logs
 logs/
@@ -37,6 +38,11 @@ dist/cypress/
 # Java/Maven
 **/target/
 !apps/java-governance/pom.xml.env
+
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
 .env.prod
 .env.local
 .env.*.local
