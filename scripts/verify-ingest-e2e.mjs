@@ -1,139 +1,111 @@
 #!/usr/bin/env node
 
 /**
- * PR41 topology-repair acceptance probe.
+ * PR41 full-path acceptance probe.
  *
- * Run this while the geo collector profile, java-ingest, and frontend server are
- * active. It waits for one real SSE event and verifies that identity and
- * attribution generated upstream survived the complete repaired path:
+ * Run this while the geo collector profile, java-ingest, frontend server, and
+ * Angular application are active. The probe opens the real application in a
+ * headless browser and waits until Angular itself has consumed one repaired-path
+ * event through IngestEventStreamService.
+ *
+ * No event is manufactured at the API boundary. A pass therefore proves the
+ * browser observed the identity/provenance that originated upstream:
  *
  * generator -> regional Pulsar -> collector -> Kafka -> java-ingest
- *   -> frontend API -> SSE -> Angular-facing contract
- *
- * The probe deliberately does not manufacture an event at the API boundary.
- * It only accepts an event that already carries the generator eventId, collector
- * region, Kafka broker attribution, and source payload.
+ *   -> frontend API -> SSE -> Angular -> DOM acceptance marker
  */
 
-const endpoint =
-  process.env.INGEST_SSE_URL ?? "http://127.0.0.1:4000/api/ingest/stream";
-const timeoutMs = Number(process.env.INGEST_E2E_TIMEOUT_MS ?? 30000);
+import { chromium } from "playwright";
 
-const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), timeoutMs);
+const appUrl = process.env.INGEST_APP_URL ?? "http://127.0.0.1:4000/";
+const timeoutMs = Number(process.env.INGEST_E2E_TIMEOUT_MS ?? 45000);
+const selector = '[data-testid="ingest-pipeline-evidence"]';
 
 function fail(message) {
   console.error(`[ingest-e2e] FAIL: ${message}`);
   process.exitCode = 1;
 }
 
-function validate(event) {
-  const payload = event?.payload;
-  const eventId = payload?.eventId;
-  const source = event?.source ?? payload?.source;
-
-  if (event?.broker !== "kafka") {
-    return `expected broker=kafka, got ${JSON.stringify(event?.broker)}`;
+function validate(evidence) {
+  if (evidence.broker !== "kafka") {
+    return `expected broker=kafka, got ${JSON.stringify(evidence.broker)}`;
   }
-  if (typeof event?.collectorRegion !== "string" || !event.collectorRegion) {
-    return "collectorRegion is missing";
+  if (!evidence.eventId) {
+    return "eventId is missing from Angular evidence";
   }
-  if (typeof source !== "string" || !source) {
-    return "source is missing";
+  if (!evidence.region) {
+    return "collector region is missing from Angular evidence";
   }
-  if (typeof eventId !== "string" || !eventId) {
-    return "payload.eventId is missing";
-  }
-  if (payload?.source !== undefined && payload.source !== source) {
-    return `source changed across the frontend boundary: ${payload.source} != ${source}`;
+  if (!evidence.source) {
+    return "source is missing from Angular evidence";
   }
   return null;
 }
 
 async function main() {
-  console.log(`[ingest-e2e] waiting for one repaired-path event at ${endpoint}`);
+  console.log(`[ingest-e2e] opening Angular application at ${appUrl}`);
 
-  let response;
+  let browser;
   try {
-    response = await fetch(endpoint, {
-      headers: { Accept: "text/event-stream" },
-      signal: controller.signal,
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    await page.goto(appUrl, {
+      waitUntil: "domcontentloaded",
+      timeout: timeoutMs,
     });
-  } catch (error) {
-    fail(`could not connect to SSE endpoint: ${error}`);
-    return;
-  }
 
-  if (!response.ok || !response.body) {
-    fail(`SSE endpoint returned HTTP ${response.status}`);
-    return;
-  }
+    console.log(
+      "[ingest-e2e] waiting for Angular to consume one repaired-path event"
+    );
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      let separator;
-      while ((separator = buffer.indexOf("\n\n")) >= 0) {
-        const frame = buffer.slice(0, separator);
-        buffer = buffer.slice(separator + 2);
-
-        const lines = frame.split("\n");
-        const eventName = lines.find((line) => line.startsWith("event:"))?.slice(6).trim();
-        const data = lines
-          .filter((line) => line.startsWith("data:"))
-          .map((line) => line.slice(5).trimStart())
-          .join("\n");
-
-        if (eventName !== "ingest-event" || !data) continue;
-
-        let event;
-        try {
-          event = JSON.parse(data);
-        } catch {
-          continue;
-        }
-
-        const error = validate(event);
-        if (error) {
-          console.warn(`[ingest-e2e] ignored non-conforming event: ${error}`);
-          continue;
-        }
-
-        console.log(
-          JSON.stringify(
-            {
-              result: "PASS",
-              eventId: event.payload.eventId,
-              region: event.collectorRegion,
-              source: event.source ?? event.payload.source,
-              broker: event.broker,
-              traceId: event.traceId ?? event.payload.traceId ?? null,
-            },
-            null,
-            2
-          )
+    await page.waitForFunction(
+      (evidenceSelector) => {
+        const element = document.querySelector(evidenceSelector);
+        if (!element) return false;
+        return Boolean(
+          element.getAttribute("data-event-id") &&
+            element.getAttribute("data-region") &&
+            element.getAttribute("data-source") &&
+            element.getAttribute("data-broker") === "kafka"
         );
-        return;
-      }
-    }
+      },
+      selector,
+      { timeout: timeoutMs }
+    );
 
-    fail("SSE stream ended before a conforming repaired-path event arrived");
-  } catch (error) {
-    if (error?.name === "AbortError") {
-      fail(`timed out after ${timeoutMs} ms waiting for a repaired-path event`);
+    const evidence = await page.locator(selector).evaluate((element) => ({
+      eventId: element.getAttribute("data-event-id") ?? "",
+      region: element.getAttribute("data-region") ?? "",
+      source: element.getAttribute("data-source") ?? "",
+      broker: element.getAttribute("data-broker") ?? "",
+    }));
+
+    const error = validate(evidence);
+    if (error) {
+      fail(error);
       return;
     }
-    fail(`SSE read failed: ${error}`);
+
+    console.log(
+      JSON.stringify(
+        {
+          result: "PASS",
+          observedAt: "Angular",
+          ...evidence,
+        },
+        null,
+        2
+      )
+    );
+  } catch (error) {
+    const message =
+      error?.name === "TimeoutError"
+        ? `timed out after ${timeoutMs} ms waiting for Angular pipeline evidence`
+        : String(error);
+    fail(message);
   } finally {
-    clearTimeout(timeout);
-    controller.abort();
+    await browser?.close();
   }
 }
 
