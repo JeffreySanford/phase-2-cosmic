@@ -4,6 +4,47 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 export type LakehouseSource = "live" | "fallback";
+export type LakehouseDiagnosticState =
+  | "unavailable"
+  | "proof_only_live"
+  | "proof_only_stale"
+  | "local_mvp_verified"
+  | "local_mvp_incomplete"
+  | "generated_stress"
+  | "databricks_planned"
+  | "databricks_connected"
+  | "databricks_verified";
+
+export interface LakehouseDiagnosticLayer {
+  exists: boolean;
+  verified: boolean;
+  rows: number;
+  bytes?: number | null;
+}
+
+export interface LakehouseDiagnosticSummary {
+  state: LakehouseDiagnosticState;
+  evidenceSource:
+    | "pr40-public-source"
+    | "pr41-local-manifest"
+    | "generated-stress-manifest"
+    | "databricks"
+    | "fallback";
+  activeProfile?: string;
+  artifactRoot?: string;
+  generatedAt?: string;
+  stale: boolean;
+  largeProfilesAllowed: boolean;
+  reproductionCommand?: string;
+  medallionLayers?: {
+    bronze: LakehouseDiagnosticLayer;
+    silver: LakehouseDiagnosticLayer;
+    quarantine: LakehouseDiagnosticLayer;
+    gold: LakehouseDiagnosticLayer;
+  };
+  warnings: string[];
+  nextAction: string;
+}
 
 export interface LakehouseMetricsSummary {
   source: LakehouseSource;
@@ -28,6 +69,7 @@ export interface LakehouseMetricsSummary {
     lastUpdatedAt?: string;
     stale: boolean;
   };
+  diagnostic?: LakehouseDiagnosticSummary;
 }
 
 export interface LakehouseRepository {
@@ -39,7 +81,26 @@ export interface LakehouseRepository {
 interface Pr41MvpManifest {
   generatedAt?: string;
   outputRoot?: string;
-  tables?: Record<string, { path: string; rows: number }>;
+  diagnosticState?: LakehouseDiagnosticState;
+  evidenceSource?: string;
+  artifactKind?: string;
+  largeProfilesAllowed?: boolean;
+  reproductionCommand?: string;
+  scaleProfile?: {
+    name?: string;
+    requiresExplicitApproval?: boolean;
+  };
+  tables?: Record<
+    string,
+    {
+      path: string;
+      rows: number;
+      bytes?: number;
+      parquetPath?: string;
+      deltaLogPath?: string;
+    }
+  >;
+  bytesByLayer?: Record<string, number>;
   evidence?: {
     hasBronzeSourceFidelity?: boolean;
     hasSilverCanonicalEntity?: boolean;
@@ -47,6 +108,7 @@ interface Pr41MvpManifest {
     hasGoldAggregate?: boolean;
     lineage?: string;
   };
+  warnings?: string[];
 }
 
 class InMemoryLakehouseRepository implements LakehouseRepository {
@@ -436,6 +498,17 @@ export class LakehouseMetricsService {
           lastUpdatedAt: undefined,
           stale: true,
         },
+        diagnostic: {
+          state: "unavailable",
+          evidenceSource: "fallback",
+          stale: true,
+          largeProfilesAllowed: false,
+          warnings: [
+            "No live, persisted, or PR41 local evidence is available.",
+          ],
+          nextAction:
+            "Run pnpm nx run lakehouse-mvp:test or restore public-source evidence connectivity.",
+        },
       };
     }
   }
@@ -479,6 +552,11 @@ export class LakehouseMetricsService {
           ? Math.round((quarantineRows / bronzeRows) * 1000) / 10
           : 0;
       const generatedAt = manifest.generatedAt ?? new Date().toISOString();
+      const activeProfile = manifest.scaleProfile?.name ?? "tiny";
+      const isGeneratedStress = activeProfile !== "tiny";
+      const diagnosticState: LakehouseDiagnosticState = isGeneratedStress
+        ? "generated_stress"
+        : "local_mvp_verified";
 
       return {
         source: "live",
@@ -504,6 +582,54 @@ export class LakehouseMetricsService {
           maxAgeMs,
           lastUpdatedAt: generatedAt,
           stale: false,
+        },
+        diagnostic: {
+          state: diagnosticState,
+          evidenceSource: isGeneratedStress
+            ? "generated-stress-manifest"
+            : "pr41-local-manifest",
+          activeProfile,
+          artifactRoot: root,
+          generatedAt,
+          stale: false,
+          largeProfilesAllowed:
+            manifest.largeProfilesAllowed ??
+            Boolean(manifest.scaleProfile?.requiresExplicitApproval),
+          reproductionCommand:
+            manifest.reproductionCommand ??
+            `pnpm nx run lakehouse-mvp:test -- --profile ${activeProfile}`,
+          medallionLayers: {
+            bronze: {
+              exists: bronzeRows > 0,
+              verified: Boolean(manifest.evidence?.hasBronzeSourceFidelity),
+              rows: bronzeRows,
+              bytes: tables["bronze.observation_events"]?.bytes ?? null,
+            },
+            silver: {
+              exists: silverRows > 0,
+              verified: Boolean(manifest.evidence?.hasSilverCanonicalEntity),
+              rows: silverRows,
+              bytes: tables["silver.observations"]?.bytes ?? null,
+            },
+            quarantine: {
+              exists: quarantineRows > 0,
+              verified: Boolean(manifest.evidence?.hasSilverQuarantine),
+              rows: quarantineRows,
+              bytes: tables["silver.quarantine"]?.bytes ?? null,
+            },
+            gold: {
+              exists: goldRows > 0,
+              verified: Boolean(manifest.evidence?.hasGoldAggregate),
+              rows: goldRows,
+              bytes: tables["gold.observation_summary"]?.bytes ?? null,
+            },
+          },
+          warnings: manifest.warnings ?? [
+            "PR41 local artifacts are not Databricks evidence.",
+          ],
+          nextAction: isGeneratedStress
+            ? "Record machine, runtime, bytes, verifier result, and cleanup result for this manual stress run."
+            : "Use PR41 local MVP evidence for contract validation; Databricks remains future PR42+ scope.",
         },
       };
     } catch (error) {
@@ -561,6 +687,18 @@ export class LakehouseMetricsService {
         endpoint,
         query,
         rowCount: rows.length,
+      },
+      diagnostic: {
+        state: "proof_only_live",
+        evidenceSource: "pr40-public-source",
+        activeProfile: "n/a",
+        stale: false,
+        largeProfilesAllowed: false,
+        warnings: [
+          "PR40 public-source proof is not Bronze/Silver/Gold Delta evidence.",
+        ],
+        nextAction:
+          "Run pnpm nx run lakehouse-mvp:test to generate PR41 local MVP evidence.",
       },
     };
   }

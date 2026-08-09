@@ -2,6 +2,7 @@
 
 > Label: **Lakehouse Initiative / PR41**
 > Scope: diagnostic UI/API contract for local MVP state, profile state, evidence state, and operational readiness.
+> Implementation: PR41 now includes the first read-only diagnostics tab backed by the Lakehouse metrics payload.
 
 The Lakehouse needs a diagnostic view that explains what the platform is actually using, what evidence exists, which runtime path produced it, and which operations are safe. This view should plug into the existing frontend diagnostics area instead of creating a separate operational surface.
 
@@ -172,4 +173,4 @@ PR41 planning is sufficient when:
 - safe operation boundaries are explicit,
 - test fixtures for the diagnostic states are planned.
 
-PR41 implementation may start with the API/service state model and a compact read-only UI section. Databricks operations and browser-triggered large-profile generation stay out of scope until later PRs.
+PR41 implementation now starts with the API/service state model and a compact read-only UI section. Databricks operations and browser-triggered large-profile generation stay out of scope until later PRs.

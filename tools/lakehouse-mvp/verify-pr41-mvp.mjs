@@ -6,6 +6,16 @@ const __filename = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(__filename), "../..");
 const outputRoot = path.join(repoRoot, "tmp", "lakehouse", "pr41-delta");
 const manifestPath = path.join(outputRoot, "manifest.json");
+const scaleProfilesPath = path.join(
+  repoRoot,
+  "tools",
+  "lakehouse-mvp",
+  "scale-profiles.json"
+);
+const args = process.argv.slice(2);
+const profileArgIndex = args.indexOf("--profile");
+const expectedProfile =
+  profileArgIndex >= 0 ? args[profileArgIndex + 1] : "tiny";
 
 function fail(message) {
   console.error(`[lakehouse-pr41] ${message}`);
@@ -28,17 +38,23 @@ function assertTable(name, expectedMinRows) {
   }
 
   const tablePath = path.join(outputRoot, table.path);
-  const deltaLog = path.join(
-    tablePath,
-    "_delta_log",
-    "00000000000000000000.json"
-  );
-  const parquet = path.join(tablePath, "part-00000.parquet");
+  const deltaLog = path.join(outputRoot, table.deltaLogPath || "");
+  const parquet = path.join(outputRoot, table.parquetPath || "");
   if (!fs.existsSync(deltaLog)) {
     fail(`${name} missing Delta log ${deltaLog}`);
   }
   if (!fs.existsSync(parquet)) {
     fail(`${name} missing Parquet file ${parquet}`);
+  }
+  if (!fs.existsSync(tablePath)) {
+    fail(`${name} missing table directory ${tablePath}`);
+  }
+  if (!Number.isFinite(table.bytes) || table.bytes <= 0) {
+    fail(`${name} manifest has invalid byte count ${table.bytes}`);
+  }
+  const actualBytes = fs.statSync(parquet).size;
+  if (actualBytes !== table.bytes) {
+    fail(`${name} manifest bytes ${table.bytes} did not match ${actualBytes}`);
   }
 
   const actions = fs
@@ -63,13 +79,60 @@ if (!fs.existsSync(manifestPath)) {
   );
 }
 
+if (!expectedProfile) {
+  fail("--profile was provided without a profile value");
+}
+
+const registry = readJson(scaleProfilesPath);
+const registryProfiles = registry.profiles || {};
+if (registry.defaultProfile !== "tiny") {
+  fail(
+    `scale registry defaultProfile must be tiny, found ${registry.defaultProfile}`
+  );
+}
+for (const profileName of ["tiny", "10gb", "100gb", "1tb"]) {
+  if (!registryProfiles[profileName]) {
+    fail(`scale registry missing required profile ${profileName}`);
+  }
+}
+for (const profileName of ["10gb", "100gb", "1tb"]) {
+  if (!registryProfiles[profileName].requiresExplicitApproval) {
+    fail(`large profile ${profileName} must require explicit approval`);
+  }
+}
+
 const manifest = readJson(manifestPath);
 
-if (manifest.scaleProfile?.name !== "tiny") {
+if (manifest.scaleProfile?.name !== expectedProfile) {
   fail(
-    `default PR41 verifier expects tiny profile artifacts, found ${
+    `PR41 verifier expected ${expectedProfile} profile artifacts, found ${
       manifest.scaleProfile?.name || "unknown"
     }`
+  );
+}
+if (!registryProfiles[manifest.scaleProfile.name]) {
+  fail(
+    `manifest uses profile missing from registry: ${manifest.scaleProfile.name}`
+  );
+}
+if (manifest.diagnosticState !== "local_mvp_verified") {
+  fail(
+    `manifest diagnosticState must be local_mvp_verified, found ${manifest.diagnosticState}`
+  );
+}
+if (manifest.evidenceSource !== "pr41-local-manifest") {
+  fail(
+    `manifest evidenceSource must be pr41-local-manifest, found ${manifest.evidenceSource}`
+  );
+}
+if (manifest.artifactKind !== "generated-local-mvp") {
+  fail(
+    `manifest artifactKind must be generated-local-mvp, found ${manifest.artifactKind}`
+  );
+}
+if (!manifest.reproductionCommand?.includes("lakehouse-mvp:test")) {
+  fail(
+    "manifest reproductionCommand must describe the lakehouse MVP test command"
   );
 }
 
@@ -77,6 +140,12 @@ assertTable("bronze.observation_events", 5);
 assertTable("silver.observations", 3);
 assertTable("silver.quarantine", 2);
 assertTable("gold.observation_summary", 1);
+
+for (const layerName of ["bronze", "silver", "gold"]) {
+  if (!Number.isFinite(manifest.bytesByLayer?.[layerName])) {
+    fail(`manifest missing bytesByLayer.${layerName}`);
+  }
+}
 
 if (
   !manifest.evidence?.hasSilverQuarantine ||

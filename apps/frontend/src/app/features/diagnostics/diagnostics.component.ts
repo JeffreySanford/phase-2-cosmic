@@ -10,6 +10,11 @@ import { HttpClient } from "@angular/common/http";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
 import { LoadProfileService } from "../../services/load-profile.service";
+import {
+  LakehouseMetricsService,
+  type LakehouseDiagnosticLayer,
+  type LakehouseMetricsSummary,
+} from "../../services/lakehouse-metrics.service";
 import { RequestCacheService } from "../../services/request-cache.service";
 import { DisclaimerBannerModule } from "../../shared/disclaimer-banner/disclaimer-banner.module";
 import { Subscription } from "rxjs";
@@ -91,6 +96,7 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
   private dataSource = inject(DataSourceService);
   private mock = inject(MockDataService);
   private loadProfile = inject(LoadProfileService);
+  private lakehouse = inject(LakehouseMetricsService);
   private cache = inject(RequestCacheService);
 
   private eventStream?: EventSource;
@@ -177,6 +183,9 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
   }
 
   databaseMetrics: DatabaseBenchmarkMetrics | null = null;
+  lakehouseSummary: LakehouseMetricsSummary | null = null;
+  lakehouseDiagnosticsStatus: "idle" | "success" | "error" | "refreshing" =
+    "idle";
   lastMetricsRefreshAt: Date | null = null;
   lastMetricsRefreshStatus: "idle" | "success" | "error" | "refreshing" =
     "idle";
@@ -236,6 +245,36 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
           ? source.replace(/\b\w/g, (char) => char.toUpperCase())
           : "Unknown";
     }
+  }
+
+  get lakehouseLayerEntries(): Array<{
+    name: string;
+    label: string;
+    layer: LakehouseDiagnosticLayer;
+  }> {
+    const layers = this.lakehouseSummary?.diagnostic?.medallionLayers;
+    if (!layers) {
+      return [];
+    }
+
+    return [
+      { name: "bronze", label: "Bronze", layer: layers.bronze },
+      { name: "silver", label: "Silver", layer: layers.silver },
+      { name: "quarantine", label: "Quarantine", layer: layers.quarantine },
+      { name: "gold", label: "Gold", layer: layers.gold },
+    ];
+  }
+
+  getLakehouseStateLabel(): string {
+    const state = this.lakehouseSummary?.diagnostic?.state;
+    if (!state) {
+      return "Unknown";
+    }
+
+    return state
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
   }
 
   get metricsRefreshBadgeText(): string {
@@ -349,6 +388,7 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
       this.fetchRabbitMQStatus();
       this.fetchTimingMetrics();
       this.fetchDatabaseBenchmarks();
+      this.fetchLakehouseDiagnostics();
       this.fetchCommissioningScenarios();
       this.startPolling();
       this.startBrokerPolling();
@@ -512,6 +552,24 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
           });
         }
       );
+  }
+
+  fetchLakehouseDiagnostics(): void {
+    this.lakehouseDiagnosticsStatus = "refreshing";
+    this.lakehouse.getSummary().subscribe({
+      next: (summary) => {
+        this.deferUiUpdate(() => {
+          this.lakehouseSummary = summary;
+          this.lakehouseDiagnosticsStatus = "success";
+        });
+      },
+      error: () => {
+        this.deferUiUpdate(() => {
+          this.lakehouseSummary = null;
+          this.lakehouseDiagnosticsStatus = "error";
+        });
+      },
+    });
   }
 
   private fetchVoServices() {

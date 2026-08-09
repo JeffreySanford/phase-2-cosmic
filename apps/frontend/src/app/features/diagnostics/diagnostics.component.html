@@ -141,13 +141,22 @@
           </p>
           <div class="monitoring-strip" *ngIf="databaseMetrics">
             <div class="source-badge">
-              <span class="source-chip" [attr.data-source]="databaseMetrics.source">
+              <span
+                class="source-chip"
+                [attr.data-source]="databaseMetrics.source"
+              >
                 {{ getSourceLabel(databaseMetrics.source) }}
               </span>
               <span
                 class="refresh-status"
                 [attr.data-status]="lastMetricsRefreshStatus"
-                [attr.title]="lastMetricsRefreshStatus === 'refreshing' ? 'Refresh in progress' : lastMetricsRefreshAt ? 'Last refresh: ' + lastMetricsRefreshAt.toISOString() : 'Awaiting first refresh'"
+                [attr.title]="
+                  lastMetricsRefreshStatus === 'refreshing'
+                    ? 'Refresh in progress'
+                    : lastMetricsRefreshAt
+                    ? 'Last refresh: ' + lastMetricsRefreshAt.toISOString()
+                    : 'Awaiting first refresh'
+                "
               >
                 <span class="refresh-dot"></span>
                 <span>{{ metricsRefreshBadgeText }}</span>
@@ -157,42 +166,120 @@
               <div class="kpi-pill">
                 <span class="kpi-label">Throughput</span>
                 <strong>
-                  <span class="trend-indicator" [ngClass]="getKpiTrend(throughputMbPerSecValue, previousThroughputMbPerSecValue).className">
-                    {{ getKpiTrend(throughputMbPerSecValue, previousThroughputMbPerSecValue).symbol }}
+                  <span
+                    class="trend-indicator"
+                    [ngClass]="
+                      getKpiTrend(
+                        throughputMbPerSecValue,
+                        previousThroughputMbPerSecValue
+                      ).className
+                    "
+                  >
+                    {{
+                      getKpiTrend(
+                        throughputMbPerSecValue,
+                        previousThroughputMbPerSecValue
+                      ).symbol
+                    }}
                   </span>
-                  {{ throughputMbPerSecValue | number: '1.2-2' }} MB/s
+                  {{ throughputMbPerSecValue | number : "1.2-2" }} MB/s
                 </strong>
-                <div class="sparkline" [attr.data-pulse]="sparklinePulseKey" aria-hidden="true">
-                  <span *ngFor="let bar of getKpiHistoryBars(throughputMbPerSecValue, previousThroughputMbPerSecValue)" [style.height.%]="bar"></span>
+                <div
+                  class="sparkline"
+                  [attr.data-pulse]="sparklinePulseKey"
+                  aria-hidden="true"
+                >
+                  <span
+                    *ngFor="
+                      let bar of getKpiHistoryBars(
+                        throughputMbPerSecValue,
+                        previousThroughputMbPerSecValue
+                      )
+                    "
+                    [style.height.%]="bar"
+                  ></span>
                 </div>
               </div>
               <div class="kpi-pill">
                 <span class="kpi-label">Latency</span>
                 <strong>
-                  <span class="trend-indicator" [ngClass]="getKpiTrend(averageLatencyMsValue, previousAverageLatencyMsValue).className">
-                    {{ getKpiTrend(averageLatencyMsValue, previousAverageLatencyMsValue).symbol }}
+                  <span
+                    class="trend-indicator"
+                    [ngClass]="
+                      getKpiTrend(
+                        averageLatencyMsValue,
+                        previousAverageLatencyMsValue
+                      ).className
+                    "
+                  >
+                    {{
+                      getKpiTrend(
+                        averageLatencyMsValue,
+                        previousAverageLatencyMsValue
+                      ).symbol
+                    }}
                   </span>
                   {{ averageLatencyMsValue }} ms
                 </strong>
-                <div class="sparkline" [attr.data-pulse]="sparklinePulseKey" aria-hidden="true">
-                  <span *ngFor="let bar of getKpiHistoryBars(averageLatencyMsValue, previousAverageLatencyMsValue)" [style.height.%]="bar"></span>
+                <div
+                  class="sparkline"
+                  [attr.data-pulse]="sparklinePulseKey"
+                  aria-hidden="true"
+                >
+                  <span
+                    *ngFor="
+                      let bar of getKpiHistoryBars(
+                        averageLatencyMsValue,
+                        previousAverageLatencyMsValue
+                      )
+                    "
+                    [style.height.%]="bar"
+                  ></span>
                 </div>
               </div>
               <div class="kpi-pill">
                 <span class="kpi-label">Connections</span>
                 <strong>
-                  <span class="trend-indicator" [ngClass]="getKpiTrend(activeConnectionsValue, previousActiveConnectionsValue).className">
-                    {{ getKpiTrend(activeConnectionsValue, previousActiveConnectionsValue).symbol }}
+                  <span
+                    class="trend-indicator"
+                    [ngClass]="
+                      getKpiTrend(
+                        activeConnectionsValue,
+                        previousActiveConnectionsValue
+                      ).className
+                    "
+                  >
+                    {{
+                      getKpiTrend(
+                        activeConnectionsValue,
+                        previousActiveConnectionsValue
+                      ).symbol
+                    }}
                   </span>
                   {{ activeConnectionsValue }}
                 </strong>
-                <div class="sparkline" [attr.data-pulse]="sparklinePulseKey" aria-hidden="true">
-                  <span *ngFor="let bar of getKpiHistoryBars(activeConnectionsValue, previousActiveConnectionsValue)" [style.height.%]="bar"></span>
+                <div
+                  class="sparkline"
+                  [attr.data-pulse]="sparklinePulseKey"
+                  aria-hidden="true"
+                >
+                  <span
+                    *ngFor="
+                      let bar of getKpiHistoryBars(
+                        activeConnectionsValue,
+                        previousActiveConnectionsValue
+                      )
+                    "
+                    [style.height.%]="bar"
+                  ></span>
                 </div>
               </div>
             </div>
           </div>
-          <div class="tiles-grid" *ngIf="databaseMetrics; else databaseMetricsLoading">
+          <div
+            class="tiles-grid"
+            *ngIf="databaseMetrics; else databaseMetricsLoading"
+          >
             <mat-card class="tile tile-db">
               <div class="tile-head">
                 <div class="tile-title">
@@ -201,14 +288,33 @@
                 </div>
               </div>
               <div class="tile-body">
-                <p class="metric-value">{{ databaseMetrics.postgres.status | titlecase }}</p>
-                <p class="muted">Connection: {{ databaseMetrics.postgres.connection }} · {{ databaseMetrics.postgres.host }}</p>
-                <p class="muted">Metric source: {{ databaseMetrics.source === 'postgres' ? 'PostgreSQL-native' : databaseMetrics.source === 'prometheus' ? 'Prometheus' : databaseMetrics.source }}</p>
+                <p class="metric-value">
+                  {{ databaseMetrics.postgres.status | titlecase }}
+                </p>
+                <p class="muted">
+                  Connection: {{ databaseMetrics.postgres.connection }} ·
+                  {{ databaseMetrics.postgres.host }}
+                </p>
+                <p class="muted">
+                  Metric source:
+                  {{
+                    databaseMetrics.source === "postgres"
+                      ? "PostgreSQL-native"
+                      : databaseMetrics.source === "prometheus"
+                      ? "Prometheus"
+                      : databaseMetrics.source
+                  }}
+                </p>
                 <ul class="metric-list">
                   <li>Database: {{ databaseMetrics.postgres.database }}</li>
-                  <li>Active connections: {{ databaseMetrics.postgres.activeConnections }}</li>
+                  <li>
+                    Active connections:
+                    {{ databaseMetrics.postgres.activeConnections }}
+                  </li>
                   <li>Latency: {{ databaseMetrics.postgres.latencyMs }} ms</li>
-                  <li *ngIf="databaseMetrics.postgres.version">Version: {{ databaseMetrics.postgres.version }}</li>
+                  <li *ngIf="databaseMetrics.postgres.version">
+                    Version: {{ databaseMetrics.postgres.version }}
+                  </li>
                 </ul>
               </div>
             </mat-card>
@@ -220,19 +326,52 @@
                 </div>
               </div>
               <div class="tile-body">
-                <p class="metric-value">{{ getSourceLabel(databaseMetrics.source) }}</p>
+                <p class="metric-value">
+                  {{ getSourceLabel(databaseMetrics.source) }}
+                </p>
                 <div class="source-summary-row">
-                  <span class="source-chip" [attr.data-source]="databaseMetrics.source">{{ databaseMetrics.source }}</span>
-                  <span class="source-status-chip" [attr.data-state]="databaseMetrics.postgres.status === 'healthy' ? 'healthy' : databaseMetrics.postgres.status === 'degraded' ? 'degraded' : 'fallback'">{{ databaseMetrics.postgres.status }}</span>
-                  <span class="mini-badge" *ngIf="hasPrometheusSignals">Prometheus</span>
-                  <span class="mini-badge" *ngIf="databaseMetrics.postgres.version">PG version</span>
+                  <span
+                    class="source-chip"
+                    [attr.data-source]="databaseMetrics.source"
+                    >{{ databaseMetrics.source }}</span
+                  >
+                  <span
+                    class="source-status-chip"
+                    [attr.data-state]="
+                      databaseMetrics.postgres.status === 'healthy'
+                        ? 'healthy'
+                        : databaseMetrics.postgres.status === 'degraded'
+                        ? 'degraded'
+                        : 'fallback'
+                    "
+                    >{{ databaseMetrics.postgres.status }}</span
+                  >
+                  <span class="mini-badge" *ngIf="hasPrometheusSignals"
+                    >Prometheus</span
+                  >
+                  <span
+                    class="mini-badge"
+                    *ngIf="databaseMetrics.postgres.version"
+                    >PG version</span
+                  >
                 </div>
                 <div class="legend-row">
-                  <span class="legend-item"><span class="legend-dot healthy"></span>Healthy</span>
-                  <span class="legend-item"><span class="legend-dot degraded"></span>Degraded</span>
-                  <span class="legend-item"><span class="legend-dot fallback"></span>Fallback</span>
+                  <span class="legend-item"
+                    ><span class="legend-dot healthy"></span>Healthy</span
+                  >
+                  <span class="legend-item"
+                    ><span class="legend-dot degraded"></span>Degraded</span
+                  >
+                  <span class="legend-item"
+                    ><span class="legend-dot fallback"></span>Fallback</span
+                  >
                 </div>
-                <p class="muted">{{ databaseMetrics.postgres.details || 'No extra source detail available.' }}</p>
+                <p class="muted">
+                  {{
+                    databaseMetrics.postgres.details ||
+                      "No extra source detail available."
+                  }}
+                </p>
                 <ul class="metric-list" *ngIf="hasPrometheusSignals">
                   <li>Prometheus signals: {{ prometheusSignals.length }}</li>
                   <li *ngFor="let query of prometheusSignals">
@@ -249,15 +388,48 @@
                 </div>
               </div>
               <div class="tile-body">
-                <p class="metric-value">{{ databaseMetrics.benchmarks.throughputMbPerSec | number: '1.2-2' }} MB/s</p>
-                <p class="muted">Generated {{ databaseMetrics.generatedAt | date:'medium' }} via {{ databaseMetrics.source }} metrics.</p>
+                <p class="metric-value">
+                  {{
+                    databaseMetrics.benchmarks.throughputMbPerSec
+                      | number : "1.2-2"
+                  }}
+                  MB/s
+                </p>
+                <p class="muted">
+                  Generated
+                  {{ databaseMetrics.generatedAt | date : "medium" }} via
+                  {{ databaseMetrics.source }} metrics.
+                </p>
                 <ul class="metric-list">
-                  <li>Ingest rate: {{ databaseMetrics.benchmarks.ingestRatePerSec | number: '1.0-0' }} req/s</li>
-                  <li>Bytes/s: {{ databaseMetrics.benchmarks.ingestBytesPerSec | number: '1.0-0' }}</li>
-                  <li>Avg latency: {{ databaseMetrics.benchmarks.averageLatencyMs }} ms</li>
-                  <li>Queue depth: {{ databaseMetrics.benchmarks.queueDepth }}</li>
-                  <li>Active jobs: {{ databaseMetrics.benchmarks.activeJobs }}</li>
-                  <li>Failure rate: {{ databaseMetrics.benchmarks.failureRatePerSec }} /s</li>
+                  <li>
+                    Ingest rate:
+                    {{
+                      databaseMetrics.benchmarks.ingestRatePerSec
+                        | number : "1.0-0"
+                    }}
+                    req/s
+                  </li>
+                  <li>
+                    Bytes/s:
+                    {{
+                      databaseMetrics.benchmarks.ingestBytesPerSec
+                        | number : "1.0-0"
+                    }}
+                  </li>
+                  <li>
+                    Avg latency:
+                    {{ databaseMetrics.benchmarks.averageLatencyMs }} ms
+                  </li>
+                  <li>
+                    Queue depth: {{ databaseMetrics.benchmarks.queueDepth }}
+                  </li>
+                  <li>
+                    Active jobs: {{ databaseMetrics.benchmarks.activeJobs }}
+                  </li>
+                  <li>
+                    Failure rate:
+                    {{ databaseMetrics.benchmarks.failureRatePerSec }} /s
+                  </li>
                 </ul>
                 <div class="prometheus-signals" *ngIf="hasPrometheusSignals">
                   <p class="muted">Prometheus signals</p>
@@ -275,7 +447,9 @@
               <mat-card class="tile tile-db">
                 <div class="tile-body">
                   <p class="metric-value">Loading…</p>
-                  <p class="muted">Requesting the latest PostgreSQL and benchmark payload.</p>
+                  <p class="muted">
+                    Requesting the latest PostgreSQL and benchmark payload.
+                  </p>
                 </div>
               </mat-card>
             </div>
@@ -298,13 +472,16 @@
               </div>
               <div class="tile-body">
                 <div class="live-events-list scrollable">
-                  <ng-container *ngFor="let event of (jobEvents$ | async)">
+                  <ng-container *ngFor="let event of jobEvents$ | async">
                     <div class="event-json">
                       <span>{{ formatEvent(event) }}</span>
                     </div>
                   </ng-container>
                 </div>
-                <p class="muted">Real-time WebSocket events from the broker. Showing {{ (jobEvents$ | async)?.length || 0 }} events.</p>
+                <p class="muted">
+                  Real-time WebSocket events from the broker. Showing
+                  {{ (jobEvents$ | async)?.length || 0 }} events.
+                </p>
               </div>
             </mat-card>
             <mat-card class="tile tile-files" *ngIf="index">
@@ -317,20 +494,32 @@
               <div class="tile-body">
                 <div class="files-header">
                   <span>Show:</span>
-                  <select class="count-select" [(ngModel)]="visibleFileCount" (change)="setVisibleFileCount(visibleFileCount)">
-                    <option *ngFor="let count of fileCountOptions" [value]="count">
-                      {{ count < 0 ? 'All' : count }}
+                  <select
+                    class="count-select"
+                    [(ngModel)]="visibleFileCount"
+                    (change)="setVisibleFileCount(visibleFileCount)"
+                  >
+                    <option
+                      *ngFor="let count of fileCountOptions"
+                      [value]="count"
+                    >
+                      {{ count < 0 ? "All" : count }}
                     </option>
                   </select>
                 </div>
                 <ul class="recent-files scrollable">
                   <li *ngFor="let f of visibleFiles">
-                    <span class="badge badge-file" [ngClass]="getFileBadgeClass(f)">{{ getFileType(f) }}</span>
+                    <span
+                      class="badge badge-file"
+                      [ngClass]="getFileBadgeClass(f)"
+                      >{{ getFileType(f) }}</span
+                    >
                     <span class="file-name">{{ f }}</span>
                   </li>
                 </ul>
                 <p class="muted">
-                  Showing {{ visibleFiles.length }} of {{ sortedFiles.length }} files.
+                  Showing {{ visibleFiles.length }} of
+                  {{ sortedFiles.length }} files.
                 </p>
                 <p class="muted">Storage location: {{ index.path }}</p>
               </div>
@@ -357,6 +546,190 @@
       </div>
     </mat-tab>
 
+    <mat-tab label="Lakehouse">
+      <div class="tab-content">
+        <section class="lakehouse-diagnostics-section">
+          <div class="brokers-header">
+            <h2>Lakehouse Diagnostics</h2>
+            <div class="brokers-controls">
+              <button mat-stroked-button (click)="fetchLakehouseDiagnostics()">
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="tiles-grid"
+            *ngIf="lakehouseSummary; else lakehouseUnavailable"
+          >
+            <mat-card class="tile tile-source">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>hub</mat-icon>
+                  Evidence State
+                </div>
+                <div class="tile-status">
+                  {{ getLakehouseStateLabel() }}
+                </div>
+              </div>
+              <div class="tile-body">
+                <p class="metric-value">
+                  {{
+                    lakehouseSummary.diagnostic?.evidenceSource ||
+                      lakehouseSummary.upstream?.kind ||
+                      "fallback"
+                  }}
+                </p>
+                <p class="muted">{{ lakehouseSummary.evidence }}</p>
+                <ul class="metric-list">
+                  <li>Bronze: {{ lakehouseSummary.bronzeState }}</li>
+                  <li>Silver: {{ lakehouseSummary.silverQuality }}</li>
+                  <li>Gold: {{ lakehouseSummary.goldReadiness }}</li>
+                  <li>
+                    Freshness:
+                    {{ lakehouseSummary.freshness?.stale ? "stale" : "fresh" }}
+                  </li>
+                </ul>
+              </div>
+            </mat-card>
+
+            <mat-card class="tile tile-source">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>tune</mat-icon>
+                  Active Profile
+                </div>
+                <div class="tile-status">
+                  {{ lakehouseSummary.diagnostic?.activeProfile || "n/a" }}
+                </div>
+              </div>
+              <div class="tile-body">
+                <ul class="metric-list">
+                  <li>
+                    Artifact root:
+                    {{
+                      lakehouseSummary.diagnostic?.artifactRoot ||
+                        lakehouseSummary.upstream?.endpoint ||
+                        "n/a"
+                    }}
+                  </li>
+                  <li>
+                    Large profiles:
+                    {{
+                      lakehouseSummary.diagnostic?.largeProfilesAllowed
+                        ? "allowed"
+                        : "guarded"
+                    }}
+                  </li>
+                  <li>
+                    Generated:
+                    {{
+                      lakehouseSummary.diagnostic?.generatedAt ||
+                        lakehouseSummary.persistedAt ||
+                        "n/a"
+                    }}
+                  </li>
+                  <li>
+                    Command:
+                    {{
+                      lakehouseSummary.diagnostic?.reproductionCommand ||
+                        "pnpm nx run lakehouse-mvp:test"
+                    }}
+                  </li>
+                </ul>
+              </div>
+            </mat-card>
+
+            <mat-card class="tile tile-benchmark">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>account_tree</mat-icon>
+                  Medallion Layers
+                </div>
+              </div>
+              <div class="tile-body">
+                <ul
+                  class="metric-list"
+                  *ngIf="lakehouseLayerEntries.length; else lakehouseNoLayers"
+                >
+                  <li *ngFor="let entry of lakehouseLayerEntries">
+                    {{ entry.label }}:
+                    {{
+                      entry.layer.verified
+                        ? "verified"
+                        : entry.layer.exists
+                        ? "present"
+                        : "missing"
+                    }}
+                    · {{ entry.layer.rows }} rows
+                    <span
+                      *ngIf="
+                        entry.layer.bytes !== null &&
+                        entry.layer.bytes !== undefined
+                      "
+                    >
+                      · {{ entry.layer.bytes | number }} bytes
+                    </span>
+                  </li>
+                </ul>
+                <ng-template #lakehouseNoLayers>
+                  <p class="muted">
+                    No PR41 medallion manifest layers are available.
+                  </p>
+                </ng-template>
+              </div>
+            </mat-card>
+
+            <mat-card class="tile tile-files">
+              <div class="tile-head">
+                <div class="tile-title">
+                  <mat-icon>fact_check</mat-icon>
+                  Guardrails
+                </div>
+                <div class="tile-status">
+                  {{ lakehouseDiagnosticsStatus }}
+                </div>
+              </div>
+              <div class="tile-body">
+                <p class="muted">
+                  {{
+                    lakehouseSummary.diagnostic?.nextAction ||
+                      "Lakehouse diagnostics are waiting for PR41 manifest evidence."
+                  }}
+                </p>
+                <ul
+                  class="metric-list"
+                  *ngIf="lakehouseSummary.diagnostic?.warnings?.length"
+                >
+                  <li
+                    *ngFor="
+                      let warning of lakehouseSummary.diagnostic?.warnings
+                    "
+                  >
+                    {{ warning }}
+                  </li>
+                </ul>
+              </div>
+            </mat-card>
+          </div>
+
+          <ng-template #lakehouseUnavailable>
+            <div class="tiles-grid">
+              <mat-card class="tile tile-offline">
+                <div class="tile-body">
+                  <p class="metric-value">Unavailable</p>
+                  <p class="muted">
+                    Lakehouse diagnostics have not returned a usable evidence
+                    payload.
+                  </p>
+                </div>
+              </mat-card>
+            </div>
+          </ng-template>
+        </section>
+      </div>
+    </mat-tab>
+
     <mat-tab label="Mission Gates">
       <div class="tab-content">
         <section class="commissioning-section">
@@ -373,7 +746,9 @@
           </div>
           <div
             class="tiles-grid"
-            *ngIf="(commissioningLoading$ | async) === false && !commissioningError"
+            *ngIf="
+              (commissioningLoading$ | async) === false && !commissioningError
+            "
           >
             <mat-card
               class="tile tile-online"

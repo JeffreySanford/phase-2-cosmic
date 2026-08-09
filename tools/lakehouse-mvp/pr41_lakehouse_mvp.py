@@ -250,7 +250,9 @@ def pyarrow_type(value: Any) -> pa.DataType:
     return pa.string()
 
 
-def write_table(table_path: Path, rows: list[dict[str, Any]], table_name: str) -> None:
+def write_table(
+    table_path: Path, rows: list[dict[str, Any]], table_name: str
+) -> dict[str, Any]:
     if not rows:
         raise ValueError(f"{table_name} has no rows")
 
@@ -299,20 +301,41 @@ def write_table(table_path: Path, rows: list[dict[str, Any]], table_name: str) -
         for action in [delta_entry, protocol, metadata, add]:
             handle.write(json.dumps(action, sort_keys=True) + "\n")
 
+    output_root = table_path.parents[1]
+    return {
+        "path": str(table_path.relative_to(output_root)),
+        "parquetPath": str((table_path / parquet_name).relative_to(output_root)),
+        "deltaLogPath": str(log_path.relative_to(output_root)),
+        "rows": len(rows),
+        "bytes": parquet_path.stat().st_size,
+    }
+
 
 def write_manifest(
     output: Path,
     profile_name: str,
     profile: dict[str, Any],
-    bronze_rows: list[dict[str, Any]],
-    silver_rows: list[dict[str, Any]],
-    quarantine_rows: list[dict[str, Any]],
-    gold_rows: list[dict[str, Any]],
+    table_entries: dict[str, dict[str, Any]],
 ) -> None:
+    bronze_rows = table_entries["bronze.observation_events"]["rows"]
+    silver_rows = table_entries["silver.observations"]["rows"]
+    quarantine_rows = table_entries["silver.quarantine"]["rows"]
+    gold_rows = table_entries["gold.observation_summary"]["rows"]
+    bytes_by_layer = {
+        "bronze": table_entries["bronze.observation_events"]["bytes"],
+        "silver": table_entries["silver.observations"]["bytes"]
+        + table_entries["silver.quarantine"]["bytes"],
+        "gold": table_entries["gold.observation_summary"]["bytes"],
+    }
     manifest = {
         "label": "Lakehouse Initiative PR41 MVP",
         "generatedAt": now_iso(),
         "runtime": "local pyarrow parquet writer with Delta transaction metadata",
+        "diagnosticState": "local_mvp_verified",
+        "evidenceSource": "pr41-local-manifest",
+        "artifactKind": "generated-local-mvp",
+        "largeProfilesAllowed": profile.get("requiresExplicitApproval", False),
+        "reproductionCommand": f"pnpm nx run lakehouse-mvp:test -- --profile {profile_name}",
         "scaleProfile": {
             "name": profile_name,
             "label": profile.get("label"),
@@ -321,31 +344,19 @@ def write_manifest(
             "requiresExplicitApproval": profile.get("requiresExplicitApproval", False),
         },
         "outputRoot": str(output),
-        "tables": {
-            "bronze.observation_events": {
-                "path": "bronze/observation_events",
-                "rows": len(bronze_rows),
-            },
-            "silver.observations": {
-                "path": "silver/observations",
-                "rows": len(silver_rows),
-            },
-            "silver.quarantine": {
-                "path": "silver/quarantine",
-                "rows": len(quarantine_rows),
-            },
-            "gold.observation_summary": {
-                "path": "gold/observation_summary",
-                "rows": len(gold_rows),
-            },
-        },
+        "tables": table_entries,
+        "bytesByLayer": bytes_by_layer,
         "evidence": {
             "hasBronzeSourceFidelity": True,
-            "hasSilverCanonicalEntity": len(silver_rows) > 0,
-            "hasSilverQuarantine": len(quarantine_rows) > 0,
-            "hasGoldAggregate": len(gold_rows) > 0,
+            "hasSilverCanonicalEntity": silver_rows > 0,
+            "hasSilverQuarantine": quarantine_rows > 0,
+            "hasGoldAggregate": gold_rows > 0,
             "lineage": "gold.lineage_bronze_event_ids -> bronze.bronze_event_id",
         },
+        "warnings": [
+            "PR41 local artifacts are not Databricks evidence.",
+            "Generated stress profiles are not real public-source evidence.",
+        ],
     }
     (output / "manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
@@ -375,22 +386,23 @@ def main() -> None:
     silver_rows, quarantine_rows = build_silver(bronze_rows)
     gold_rows = build_gold(silver_rows, quarantine_rows)
 
-    write_table(
+    table_entries = {}
+    table_entries["bronze.observation_events"] = write_table(
         output / "bronze" / "observation_events",
         bronze_rows,
         "bronze.observation_events",
     )
-    write_table(
+    table_entries["silver.observations"] = write_table(
         output / "silver" / "observations",
         silver_rows,
         "silver.observations",
     )
-    write_table(
+    table_entries["silver.quarantine"] = write_table(
         output / "silver" / "quarantine",
         quarantine_rows,
         "silver.quarantine",
     )
-    write_table(
+    table_entries["gold.observation_summary"] = write_table(
         output / "gold" / "observation_summary",
         gold_rows,
         "gold.observation_summary",
@@ -399,10 +411,7 @@ def main() -> None:
         output,
         profile_name,
         profile,
-        bronze_rows,
-        silver_rows,
-        quarantine_rows,
-        gold_rows,
+        table_entries,
     )
 
     print(f"[lakehouse-pr41] wrote MVP lakehouse artifacts to {output}")

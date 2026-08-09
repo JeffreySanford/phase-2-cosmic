@@ -155,6 +155,7 @@ PR41 should extend the local quality gate with:
 - `git diff --check`,
 - `pnpm nx run lakehouse-mvp:test`,
 - frontend/server tests that cover the Lakehouse metrics service,
+- diagnostics UI tests that cover the read-only Lakehouse diagnostic state,
 - existing Storybook additions if the evidence surface changes,
 - existing e2e checks for the operator evidence page when affected.
 

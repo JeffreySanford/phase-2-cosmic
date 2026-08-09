@@ -231,6 +231,22 @@ describe("DiagnosticsComponent", () => {
     } catch {
       // ignore absence
     }
+    try {
+      httpMock.expectOne("/api/v1/lakehouse/metrics").flush({
+        source: "fallback",
+        bronzeState: "Lakehouse metrics unavailable",
+        silverQuality: "Unavailable",
+        goldReadiness: "Unavailable",
+        evidence: "Live Lakehouse evidence endpoint unavailable",
+        bronzePercent: 0,
+        silverPercent: 0,
+        goldPercent: 0,
+        qualityFailureRate: 0,
+        transferTimeEstimate: "n/a",
+      });
+    } catch {
+      // ignore absence
+    }
     httpMock.verify();
     logSpy.mockRestore();
   });
@@ -289,6 +305,97 @@ describe("DiagnosticsComponent", () => {
     expect(text).toContain("Source details");
     expect(text).toContain("Prometheus signals");
     expect(text).toContain("pg_up");
+  }));
+
+  it("renders Lakehouse diagnostic state and medallion layers", fakeAsync(() => {
+    startComponent();
+    httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
+    httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
+    httpMock.expectOne("/api/diagnostics/database-benchmarks").flush({
+      generatedAt: new Date().toISOString(),
+      source: "mock",
+      postgres: {
+        status: "healthy",
+        connection: "mock",
+        host: "local-postgres",
+        database: "mock",
+        activeConnections: 3,
+        latencyMs: 2,
+        details: "mock",
+      },
+      benchmarks: {
+        ingestRatePerSec: 128,
+        ingestBytesPerSec: 1048576,
+        averageLatencyMs: 9,
+        queueDepth: 4,
+        activeJobs: 2,
+        failureRatePerSec: 0,
+        throughputMbPerSec: 1,
+      },
+    });
+    httpMock.expectOne("/api/v1/lakehouse/metrics").flush({
+      source: "live",
+      bronzeState: "PR41 MVP Bronze table verified (5 records)",
+      silverQuality: "PR41 MVP Silver verified (3 accepted, 2 quarantined)",
+      goldReadiness: "PR41 MVP Gold aggregate verified (1 rows)",
+      evidence: "Lakehouse Initiative PR41 MVP",
+      bronzePercent: 100,
+      silverPercent: 100,
+      goldPercent: 100,
+      qualityFailureRate: 40,
+      transferTimeEstimate: "n/a",
+      diagnostic: {
+        state: "local_mvp_verified",
+        evidenceSource: "pr41-local-manifest",
+        activeProfile: "tiny",
+        artifactRoot: "tmp/lakehouse/pr41-delta",
+        generatedAt: "2026-08-09T00:00:00Z",
+        stale: false,
+        largeProfilesAllowed: false,
+        reproductionCommand: "pnpm nx run lakehouse-mvp:test",
+        medallionLayers: {
+          bronze: { exists: true, verified: true, rows: 5, bytes: 100 },
+          silver: { exists: true, verified: true, rows: 3, bytes: 80 },
+          quarantine: { exists: true, verified: true, rows: 2, bytes: 60 },
+          gold: { exists: true, verified: true, rows: 1, bytes: 40 },
+        },
+        warnings: ["PR41 local artifacts are not Databricks evidence."],
+        nextAction: "Use PR41 local MVP evidence for contract validation.",
+      },
+    });
+    httpMock.expectOne("/api/metrics/topology").flush({});
+    httpMock
+      .expectOne("/api/v1/pulsar/status")
+      .flush({ brokers: 0, topics: 0, partitions: 0 });
+    httpMock
+      .expectOne("/api/v1/rabbitmq/status")
+      .flush({ status: "unavailable", connection: "none" });
+    httpMock.expectOne("/api/v1/commissioning/scenarios").flush([]);
+    settleView();
+
+    const tabButtons = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        ".mat-mdc-tab, [role='tab']"
+      ) as NodeListOf<HTMLElement>
+    );
+    const lakehouseTab = tabButtons.find((button) =>
+      button.textContent?.includes("Lakehouse")
+    );
+
+    expect(lakehouseTab).toBeTruthy();
+    lakehouseTab?.click();
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent ?? "";
+    expect(text).toContain("Lakehouse Diagnostics");
+    expect(text).toContain("Local Mvp Verified");
+    expect(text).toContain("pr41-local-manifest");
+    expect(text).toContain("tiny");
+    expect(text).toContain("Bronze:");
+    expect(text).toContain("5 rows");
+    expect(text).toContain("PR41 local artifacts are not Databricks evidence.");
   }));
 
   it("formats diagnostics source labels for the monitoring dashboard", () => {

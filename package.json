@@ -45,7 +45,7 @@
     "codeql:local:java": "bash ./scripts/local-codeql.sh java-kotlin",
     "codeql:local:js": "bash ./scripts/local-codeql.sh javascript-typescript",
     "codeql:local:go": "bash ./scripts/local-codeql.sh go",
-    "quality:ci": "pnpm run lint && pnpm run lint:go && pnpm run format:check:changed && pnpm run coverage:clean && pnpm run unit-test:coverage && pnpm run ci:integration && pnpm run test:java && pnpm run test:go && pnpm run openapi-validate && pnpm run codeql:local:java && pnpm run docs:validate && pnpm run coverage:check && pnpm run e2e-smoke",
+    "quality:ci": "pnpm run lint && pnpm run lint:go && pnpm run format:check:changed && pnpm run coverage:clean && pnpm run unit-test:coverage && pnpm run ci:integration && pnpm run test:java && pnpm run test:go && pnpm run openapi-validate && pnpm run lakehouse:pr41:mvp && pnpm run codeql:local:java && pnpm run docs:validate && pnpm run coverage:check && pnpm run e2e-smoke",
     "test:all": "pnpm run quality:ci && pnpm run test:java:it && pnpm run analyze:semgrep",
     "playwright:install": "pnpm exec playwright install --with-deps",
     "docs:validate": "bash scripts/check-docs.sh",

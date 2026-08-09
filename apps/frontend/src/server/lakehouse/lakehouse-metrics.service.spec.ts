@@ -130,10 +130,87 @@ describe("LakehouseMetricsService", () => {
       expect(result.goldPercent).toBe(100);
       expect(result.qualityFailureRate).toBe(40);
       expect(result.upstream?.kind).toBe("pr41-local-mvp");
+      expect(result.diagnostic?.state).toBe("local_mvp_verified");
+      expect(result.diagnostic?.evidenceSource).toBe("pr41-local-manifest");
+      expect(result.diagnostic?.activeProfile).toBe("tiny");
+      expect(result.diagnostic?.medallionLayers?.bronze.rows).toBe(5);
+      expect(result.diagnostic?.medallionLayers?.silver.rows).toBe(3);
+      expect(result.diagnostic?.medallionLayers?.quarantine.rows).toBe(2);
+      expect(result.diagnostic?.medallionLayers?.gold.rows).toBe(1);
       expect(result.bronzeState).toContain("PR41 MVP Bronze table verified");
       expect(result.goldReadiness).toContain(
         "PR41 MVP Gold aggregate verified"
       );
+    } finally {
+      if (previousRoot === undefined) {
+        delete process.env["LAKEHOUSE_MVP_ROOT"];
+      } else {
+        process.env["LAKEHOUSE_MVP_ROOT"] = previousRoot;
+      }
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("labels guarded large-profile manifests as generated stress diagnostics", async () => {
+    const root = mkdtempSync(join(tmpdir(), "lakehouse-pr41-stress-"));
+    const previousRoot = process.env["LAKEHOUSE_MVP_ROOT"];
+    process.env["LAKEHOUSE_MVP_ROOT"] = root;
+
+    try {
+      writeFileSync(
+        join(root, "manifest.json"),
+        JSON.stringify({
+          generatedAt: "2026-08-08T22:00:00Z",
+          outputRoot: root,
+          scaleProfile: {
+            name: "10gb",
+            requiresExplicitApproval: true,
+          },
+          largeProfilesAllowed: true,
+          reproductionCommand:
+            "LAKEHOUSE_ALLOW_LARGE_SAMPLE=true pnpm nx run lakehouse-mvp:run -- --profile 10gb",
+          tables: {
+            "bronze.observation_events": {
+              path: "bronze/observation_events",
+              rows: 5,
+              bytes: 1024,
+            },
+            "silver.observations": {
+              path: "silver/observations",
+              rows: 3,
+              bytes: 512,
+            },
+            "silver.quarantine": {
+              path: "silver/quarantine",
+              rows: 2,
+              bytes: 256,
+            },
+            "gold.observation_summary": {
+              path: "gold/observation_summary",
+              rows: 1,
+              bytes: 128,
+            },
+          },
+          evidence: {
+            hasBronzeSourceFidelity: true,
+            hasSilverCanonicalEntity: true,
+            hasSilverQuarantine: true,
+            hasGoldAggregate: true,
+          },
+        })
+      );
+
+      const service = new LakehouseMetricsService({ useMemory: true });
+      const result = await service.getPublicEvidenceSummary();
+
+      expect(result.diagnostic?.state).toBe("generated_stress");
+      expect(result.diagnostic?.evidenceSource).toBe(
+        "generated-stress-manifest"
+      );
+      expect(result.diagnostic?.activeProfile).toBe("10gb");
+      expect(result.diagnostic?.largeProfilesAllowed).toBe(true);
+      expect(result.diagnostic?.medallionLayers?.bronze.bytes).toBe(1024);
+      expect(result.diagnostic?.nextAction).toContain("manual stress run");
     } finally {
       if (previousRoot === undefined) {
         delete process.env["LAKEHOUSE_MVP_ROOT"];

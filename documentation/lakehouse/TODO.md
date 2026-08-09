@@ -65,6 +65,10 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 - [x] Document the large-profile implementation plan, storage budget, verification matrix, and Gold stress boundary.
 - [x] Document the PR41 testing-suite plan for unit, integration, contract, API/service, quality-gate, and guarded large-profile validation.
 - [x] Document the PR41 diagnostic view plan for evidence state, profile state, medallion layer state, guard state, and safe operation boundaries.
+- [x] Add byte-aware PR41 manifest entries and profile-aware verifier contract checks.
+- [x] Add PR41 Lakehouse diagnostics state to the metrics payload and existing diagnostics UI.
+- [x] Add PR41 diagnostics Storybook fixture coverage.
+- [x] Add `lakehouse:pr41:mvp` to the local `quality:ci` gate.
 - [ ] Replace the local reference writer with Spark Structured Streaming or another selected Delta-capable runtime.
 - [ ] Route the MVP source envelope through Kafka before Bronze.
 - [x] Connect one verified Gold output to the existing Lakehouse evidence service when the local PR41 manifest exists.

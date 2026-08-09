@@ -151,6 +151,61 @@ const meta: Meta<DiagnosticsComponent> = {
                       ],
                     },
                   });
+                case "/api/v1/lakehouse/metrics":
+                  return of({
+                    source: "live",
+                    bronzeState: "PR41 MVP Bronze table verified (5 records)",
+                    silverQuality:
+                      "PR41 MVP Silver verified (3 accepted, 2 quarantined)",
+                    goldReadiness: "PR41 MVP Gold aggregate verified (3 rows)",
+                    evidence: "Lakehouse Initiative PR41 MVP",
+                    bronzePercent: 100,
+                    silverPercent: 100,
+                    goldPercent: 100,
+                    qualityFailureRate: 40,
+                    transferTimeEstimate: "n/a",
+                    diagnostic: {
+                      state: "local_mvp_verified",
+                      evidenceSource: "pr41-local-manifest",
+                      activeProfile: "tiny",
+                      artifactRoot: "tmp/lakehouse/pr41-delta",
+                      generatedAt: "2026-08-09T00:00:00.000Z",
+                      stale: false,
+                      largeProfilesAllowed: false,
+                      reproductionCommand: "pnpm nx run lakehouse-mvp:test",
+                      medallionLayers: {
+                        bronze: {
+                          exists: true,
+                          verified: true,
+                          rows: 5,
+                          bytes: 4096,
+                        },
+                        silver: {
+                          exists: true,
+                          verified: true,
+                          rows: 3,
+                          bytes: 3072,
+                        },
+                        quarantine: {
+                          exists: true,
+                          verified: true,
+                          rows: 2,
+                          bytes: 2048,
+                        },
+                        gold: {
+                          exists: true,
+                          verified: true,
+                          rows: 3,
+                          bytes: 1024,
+                        },
+                      },
+                      warnings: [
+                        "PR41 local artifacts are not Databricks evidence.",
+                      ],
+                      nextAction:
+                        "Use PR41 local MVP evidence for contract validation.",
+                    },
+                  });
                 case "/api/v1/pulsar/status":
                   return of({ brokers: 3, topics: 14, partitions: 42 });
                 case "/api/v1/rabbitmq/status":

@@ -54,6 +54,7 @@ The PR41 diagnostic UI plan is documented in [`PR41_DIAGNOSTIC_VIEW_PLAN.md`](./
 | Nx project        | `tools/lakehouse-mvp/project.json`                                | Provides `run`, `verify`, and `test` targets.                                                                             |
 | Generated root    | `tmp/lakehouse/pr41-delta/`                                       | Local artifact root for PR41 MVP output.                                                                                  |
 | Evidence service  | `apps/frontend/src/server/lakehouse/lakehouse-metrics.service.ts` | Reads the PR41 manifest when present and returns verified medallion evidence through the existing Lakehouse metrics path. |
+| Diagnostics view  | `apps/frontend/src/app/features/diagnostics/`                     | Displays read-only Lakehouse evidence state, active profile, artifact root, medallion layer state, and guard warnings.    |
 | Bronze table      | `bronze/observation_events`                                       | Source-faithful event rows with provider, schema version, event hash, source payload, and ingest run metadata.            |
 | Silver table      | `silver/observations`                                             | Canonical observation rows accepted from Bronze.                                                                          |
 | Silver quarantine | `silver/quarantine`                                               | Records retained in Bronze but rejected by Silver validation with deterministic reason codes.                             |
@@ -147,12 +148,14 @@ PR41 is done only when the repository proves a reproducible local medallion MVP 
 - Gold produces at least one observation summary aggregate with lineage back to Silver and Bronze.
 - The existing Lakehouse evidence service reports verified PR41 medallion evidence when `tmp/lakehouse/pr41-delta/manifest.json` exists.
 - The generated manifest records the selected scale profile.
+- The existing diagnostics UI includes a read-only Lakehouse section for PR41 evidence/profile/layer/guard state.
 
 ### Required verification
 
 - `pnpm nx run lakehouse-mvp:test` passes.
 - `pnpm nx run lakehouse-mvp:verify` passes against artifacts produced by the runner.
 - Relevant frontend/server tests for `GET /api/v1/lakehouse/metrics` pass with and without a PR41 manifest.
+- Relevant diagnostics UI tests cover the PR41 read-only evidence/profile/layer state.
 - Generated runtime artifacts remain out of git.
 - Documentation lint and formatting checks pass.
 - The PR CI quality gate is green before merge.
