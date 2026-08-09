@@ -12,6 +12,12 @@ const scaleProfilesPath = path.join(
   "lakehouse-mvp",
   "scale-profiles.json"
 );
+const sourceRegistryPath = path.join(
+  repoRoot,
+  "tools",
+  "lakehouse-mvp",
+  "source-registry.example.json"
+);
 const args = process.argv.slice(2);
 const profileArgIndex = args.indexOf("--profile");
 const expectedProfile =
@@ -84,6 +90,7 @@ if (!expectedProfile) {
 }
 
 const registry = readJson(scaleProfilesPath);
+const sourceRegistry = readJson(sourceRegistryPath);
 const registryProfiles = registry.profiles || {};
 if (registry.defaultProfile !== "tiny") {
   fail(
@@ -109,6 +116,20 @@ if (manifest.scaleProfile?.name !== expectedProfile) {
       manifest.scaleProfile?.name || "unknown"
     }`
   );
+}
+if (!sourceRegistry.bundles?.[manifest.sourceBundle?.name]) {
+  fail(
+    `manifest sourceBundle ${
+      manifest.sourceBundle?.name || "unknown"
+    } is missing from source registry`
+  );
+}
+for (const profileRef of manifest.sourceBundle?.profileRefs || []) {
+  if (!sourceRegistry.profiles?.[profileRef]) {
+    fail(
+      `manifest sourceBundle references unknown source profile ${profileRef}`
+    );
+  }
 }
 if (!registryProfiles[manifest.scaleProfile.name]) {
   fail(

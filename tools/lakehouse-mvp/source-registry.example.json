@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "lakehouse-source-registry.v1",
+  "defaultBundle": "offline-fixture",
+  "profiles": {
+    "deterministic-obscore-fixture": {
+      "label": "Deterministic ObsCore Fixture",
+      "provider": "PR41 fixture",
+      "kind": "fixture",
+      "activationState": "fixture",
+      "includeByDefault": true,
+      "evidenceRole": "offline-fixture",
+      "notes": "Built-in bounded records used by the local PR41 runner and CI-safe MVP tests."
+    },
+    "eso-obscore-core-proof": {
+      "label": "ESO TAP ObsCore Core Proof",
+      "provider": "ESO",
+      "kind": "vo-tap",
+      "activationState": "included",
+      "includeByDefault": false,
+      "endpoint": "https://archive.eso.org/tap_obs",
+      "query": "SELECT TOP 5 obs_publisher_did, obs_collection, dataproduct_type, s_ra, s_dec, access_url FROM ivoa.ObsCore",
+      "evidenceRole": "public-proof",
+      "notes": "PR40 public-source proof profile; PR41 keeps this as a registry contract without requiring live network access for the local MVP."
+    },
+    "nrao-vlass-development": {
+      "label": "NRAO VLASS Development Candidate",
+      "provider": "NRAO",
+      "kind": "planned",
+      "activationState": "planned",
+      "includeByDefault": false,
+      "endpoint": "https://archive-new.nrao.edu/",
+      "evidenceRole": "development-candidate",
+      "notes": "Radio-astronomy-aligned profile for later validation; not active in the PR41 local MVP."
+    }
+  },
+  "bundles": {
+    "offline-fixture": {
+      "label": "Offline Fixture",
+      "profileRefs": ["deterministic-obscore-fixture"],
+      "intendedUse": "Default local and CI-safe PR41 source bundle."
+    },
+    "core-proof": {
+      "label": "Core Public Proof",
+      "profileRefs": ["eso-obscore-core-proof"],
+      "intendedUse": "Bounded public-source profile inherited from PR40 proof work."
+    },
+    "expanded-development": {
+      "label": "Expanded Development",
+      "profileRefs": [
+        "deterministic-obscore-fixture",
+        "eso-obscore-core-proof",
+        "nrao-vlass-development"
+      ],
+      "intendedUse": "Planning bundle for wider source-contract validation without making every profile active by default."
+    }
+  }
+}

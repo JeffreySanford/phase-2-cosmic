@@ -70,17 +70,19 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 - [x] Add PR41 Lakehouse diagnostics state to the metrics payload and existing diagnostics UI.
 - [x] Add PR41 diagnostics Storybook fixture coverage.
 - [x] Add `lakehouse:pr41:mvp` to the local `quality:ci` gate.
+- [x] Add a checked-in source-registry example and schema for public archive/catalog profiles.
+- [x] Implement source-bundle selection for `core-proof`, `offline-fixture`, and at least one expanded development bundle.
 - [ ] Replace the local reference writer with Spark Structured Streaming or another selected Delta-capable runtime.
 - [ ] Route the MVP source envelope through Kafka before Bronze.
 - [x] Connect one verified Gold output to the existing Lakehouse evidence service when the local PR41 manifest exists.
 
 ### Source contract
 
-- [ ] Add a checked-in source-registry example and schema for public archive/catalog profiles.
-- [ ] Implement source-bundle selection for `core-proof`, `offline-fixture`, and at least one expanded development bundle.
+- [x] Add a checked-in source-registry example and schema for public archive/catalog profiles.
+- [x] Implement source-bundle selection for `core-proof`, `offline-fixture`, and at least one expanded development bundle.
 - [ ] Add deterministic include/exclude precedence rules for active Lakehouse development records.
 - [ ] Implement a reusable VO/TAP-style source adapter contract rather than coupling Lakehouse entities to ESO-specific field names.
-- [ ] Preserve the current ESO profile as the first working provider implementation.
+- [x] Preserve the current ESO profile as the first working provider implementation.
 - [ ] Add an NRAO/VLA/VLASS provider profile when practical so the same contract is validated against the radio-astronomy domain that Cosmic primarily targets.
 - [ ] Map source attribution into existing Phase 2 event/manifest/provenance semantics rather than creating a second domain model.
 

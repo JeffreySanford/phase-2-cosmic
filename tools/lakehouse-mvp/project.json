@@ -16,10 +16,17 @@
         "command": "node tools/lakehouse-mvp/verify-pr41-mvp.mjs"
       }
     },
+    "validate-source-registry": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/lakehouse-mvp/validate-source-registry.mjs"
+      }
+    },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
+          "node tools/lakehouse-mvp/validate-source-registry.mjs",
           "python tools/lakehouse-mvp/test_pr41_lakehouse_mvp.py",
           "python tools/lakehouse-mvp/pr41_lakehouse_mvp.py",
           "node tools/lakehouse-mvp/verify-pr41-mvp.mjs"

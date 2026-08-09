@@ -33,6 +33,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT = REPO_ROOT / "tmp" / "lakehouse" / "pr41-delta"
 SAFE_OUTPUT_ROOT = REPO_ROOT / "tmp" / "lakehouse"
 SCALE_PROFILES_PATH = REPO_ROOT / "tools" / "lakehouse-mvp" / "scale-profiles.json"
+SOURCE_REGISTRY_PATH = (
+    REPO_ROOT / "tools" / "lakehouse-mvp" / "source-registry.example.json"
+)
 
 
 SOURCE_ROWS: list[dict[str, Any]] = [
@@ -102,6 +105,34 @@ def load_scale_profiles() -> dict[str, Any]:
     return json.loads(SCALE_PROFILES_PATH.read_text(encoding="utf-8"))
 
 
+def load_source_registry() -> dict[str, Any]:
+    return json.loads(SOURCE_REGISTRY_PATH.read_text(encoding="utf-8"))
+
+
+def resolve_source_bundle(bundle_value: str | None) -> tuple[str, dict[str, Any]]:
+    registry = load_source_registry()
+    default_bundle = registry.get("defaultBundle", "offline-fixture")
+    bundle_name = (
+        bundle_value or os.environ.get("LAKEHOUSE_SOURCE_BUNDLE") or default_bundle
+    )
+    bundles = registry.get("bundles", {})
+
+    if bundle_name not in bundles:
+        raise ValueError(
+            f"Unknown Lakehouse source bundle {bundle_name!r}; expected one of {', '.join(sorted(bundles))}"
+        )
+
+    profile_refs = bundles[bundle_name].get("profileRefs", [])
+    profiles = registry.get("profiles", {})
+    missing_profiles = [ref for ref in profile_refs if ref not in profiles]
+    if missing_profiles:
+        raise ValueError(
+            f"Lakehouse source bundle {bundle_name!r} references unknown profile(s): {', '.join(missing_profiles)}"
+        )
+
+    return bundle_name, bundles[bundle_name]
+
+
 def resolve_profile(profile_value: str | None, allow_large: bool) -> tuple[str, dict[str, Any]]:
     registry = load_scale_profiles()
     default_profile = registry.get("defaultProfile", "tiny")
@@ -131,7 +162,7 @@ def reset_output(output: Path) -> None:
     output.mkdir(parents=True, exist_ok=True)
 
 
-def build_bronze_rows() -> list[dict[str, Any]]:
+def build_bronze_rows(source_bundle_name: str = "offline-fixture") -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     ingest_run_id = f"pr41-mvp-{now_iso()}"
     for index, source in enumerate(SOURCE_ROWS, start=1):
@@ -139,7 +170,7 @@ def build_bronze_rows() -> list[dict[str, Any]]:
             {
                 "bronze_event_id": f"bronze-{index:04d}",
                 "source_provider": "ESO",
-                "source_profile": "eso-obscore-pr41-mvp",
+                "source_profile": source_bundle_name,
                 "schema_version": "obs-event.v1",
                 "source_identifier": source.get("obs_publisher_did") or None,
                 "event_hash": stable_hash(source),
@@ -315,6 +346,8 @@ def write_manifest(
     output: Path,
     profile_name: str,
     profile: dict[str, Any],
+    source_bundle_name: str,
+    source_bundle: dict[str, Any],
     table_entries: dict[str, dict[str, Any]],
 ) -> None:
     bronze_rows = table_entries["bronze.observation_events"]["rows"]
@@ -336,6 +369,12 @@ def write_manifest(
         "artifactKind": "generated-local-mvp",
         "largeProfilesAllowed": profile.get("requiresExplicitApproval", False),
         "reproductionCommand": f"pnpm nx run lakehouse-mvp:test -- --profile {profile_name}",
+        "sourceBundle": {
+            "name": source_bundle_name,
+            "label": source_bundle.get("label"),
+            "profileRefs": source_bundle.get("profileRefs", []),
+            "intendedUse": source_bundle.get("intendedUse"),
+        },
         "scaleProfile": {
             "name": profile_name,
             "label": profile.get("label"),
@@ -376,13 +415,18 @@ def main() -> None:
         action="store_true",
         help="Allow guarded large profiles when intentionally generating large local samples",
     )
+    parser.add_argument(
+        "--source-bundle",
+        help="Lakehouse source bundle from tools/lakehouse-mvp/source-registry.example.json",
+    )
     args = parser.parse_args()
 
     output = resolve_output(args.output)
     profile_name, profile = resolve_profile(args.profile, args.allow_large)
+    source_bundle_name, source_bundle = resolve_source_bundle(args.source_bundle)
     reset_output(output)
 
-    bronze_rows = build_bronze_rows()
+    bronze_rows = build_bronze_rows(source_bundle_name)
     silver_rows, quarantine_rows = build_silver(bronze_rows)
     gold_rows = build_gold(silver_rows, quarantine_rows)
 
@@ -411,11 +455,14 @@ def main() -> None:
         output,
         profile_name,
         profile,
+        source_bundle_name,
+        source_bundle,
         table_entries,
     )
 
     print(f"[lakehouse-pr41] wrote MVP lakehouse artifacts to {output}")
     print(f"[lakehouse-pr41] scale-profile={profile_name}")
+    print(f"[lakehouse-pr41] source-bundle={source_bundle_name}")
     print(
         "[lakehouse-pr41] bronze=%d silver=%d quarantine=%d gold=%d"
         % (len(bronze_rows), len(silver_rows), len(quarantine_rows), len(gold_rows))

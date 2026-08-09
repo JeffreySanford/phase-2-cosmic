@@ -32,6 +32,7 @@ Runtime data stays out of git. The committed source and docs define how to recre
 pnpm nx run lakehouse-mvp:run
 pnpm nx run lakehouse-mvp:verify
 pnpm nx run lakehouse-mvp:test
+pnpm nx run lakehouse-mvp:validate-source-registry
 ```
 
 The runner requires Python with `pyarrow` available. It does not require Spark for the MVP.
@@ -51,6 +52,8 @@ The PR41 diagnostic UI plan is documented in [`PR41_DIAGNOSTIC_VIEW_PLAN.md`](./
 | MVP runner        | `tools/lakehouse-mvp/pr41_lakehouse_mvp.py`                       | Builds source rows, writes Parquet table files, writes Delta transaction metadata, and emits `manifest.json`.             |
 | MVP verifier      | `tools/lakehouse-mvp/verify-pr41-mvp.mjs`                         | Confirms each medallion table has a manifest entry, Parquet file, and Delta log actions.                                  |
 | Scale registry    | `tools/lakehouse-mvp/scale-profiles.json`                         | Defines `tiny`, `10gb`, `100gb`, and `1tb` profiles and large-profile guard requirements.                                 |
+| Source registry   | `tools/lakehouse-mvp/source-registry.example.json`                | Defines PR41 source profiles and `offline-fixture`, `core-proof`, and `expanded-development` bundles.                     |
+| Source schema     | `tools/lakehouse-mvp/source-registry.schema.json`                 | Validates the checked-in source registry shape.                                                                           |
 | Nx project        | `tools/lakehouse-mvp/project.json`                                | Provides `run`, `verify`, and `test` targets.                                                                             |
 | Generated root    | `tmp/lakehouse/pr41-delta/`                                       | Local artifact root for PR41 MVP output.                                                                                  |
 | Evidence service  | `apps/frontend/src/server/lakehouse/lakehouse-metrics.service.ts` | Reads the PR41 manifest when present and returns verified medallion evidence through the existing Lakehouse metrics path. |
@@ -148,12 +151,14 @@ PR41 is done only when the repository proves a reproducible local medallion MVP 
 - Gold produces at least one observation summary aggregate with lineage back to Silver and Bronze.
 - The existing Lakehouse evidence service reports verified PR41 medallion evidence when `tmp/lakehouse/pr41-delta/manifest.json` exists.
 - The generated manifest records the selected scale profile.
+- The generated manifest records the selected source bundle.
 - The existing diagnostics UI includes a read-only Lakehouse section for PR41 evidence/profile/layer/guard state.
 
 ### Required verification
 
 - `pnpm nx run lakehouse-mvp:test` passes.
 - `pnpm nx run lakehouse-mvp:verify` passes against artifacts produced by the runner.
+- `pnpm nx run lakehouse-mvp:validate-source-registry` passes.
 - Relevant frontend/server tests for `GET /api/v1/lakehouse/metrics` pass with and without a PR41 manifest.
 - Relevant diagnostics UI tests cover the PR41 read-only evidence/profile/layer state.
 - Generated runtime artifacts remain out of git.

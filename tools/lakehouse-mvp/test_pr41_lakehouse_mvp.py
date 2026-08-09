@@ -53,16 +53,26 @@ class LakehouseMvpRunnerTests(unittest.TestCase):
             mvp.resolve_output(str(mvp.REPO_ROOT / "dist" / "bad-lakehouse"))
 
     def test_bronze_rows_preserve_source_fidelity(self) -> None:
-        bronze_rows = mvp.build_bronze_rows()
+        bronze_rows = mvp.build_bronze_rows("offline-fixture")
 
         self.assertEqual(len(bronze_rows), 5)
         self.assertEqual(bronze_rows[0]["source_provider"], "ESO")
-        self.assertEqual(bronze_rows[0]["schema_version"], "obs-event.v1")
+        self.assertEqual(bronze_rows[0]["source_profile"], "offline-fixture")
         self.assertIn("obs_publisher_did", bronze_rows[0]["source_payload_json"])
         self.assertEqual(
             bronze_rows[0]["event_hash"],
             mvp.stable_hash(mvp.SOURCE_ROWS[0]),
         )
+
+    def test_source_bundle_resolution_uses_registry_default(self) -> None:
+        name, bundle = mvp.resolve_source_bundle(None)
+
+        self.assertEqual(name, "offline-fixture")
+        self.assertEqual(bundle["profileRefs"], ["deterministic-obscore-fixture"])
+
+    def test_unknown_source_bundle_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Unknown Lakehouse source bundle"):
+            mvp.resolve_source_bundle("not-a-bundle")
 
     def test_silver_promotes_canonical_rows_and_quarantines_failures(self) -> None:
         bronze_rows = mvp.build_bronze_rows()
@@ -132,13 +142,24 @@ class LakehouseMvpRunnerTests(unittest.TestCase):
                 ),
             }
             _, profile = mvp.resolve_profile("tiny", allow_large=False)
+            source_bundle_name, source_bundle = mvp.resolve_source_bundle(
+                "offline-fixture"
+            )
 
-            mvp.write_manifest(output, "tiny", profile, table_entries)
+            mvp.write_manifest(
+                output,
+                "tiny",
+                profile,
+                source_bundle_name,
+                source_bundle,
+                table_entries,
+            )
             manifest = mvp.json.loads((output / "manifest.json").read_text())
 
             self.assertEqual(manifest["diagnosticState"], "local_mvp_verified")
             self.assertEqual(manifest["evidenceSource"], "pr41-local-manifest")
             self.assertEqual(manifest["scaleProfile"]["name"], "tiny")
+            self.assertEqual(manifest["sourceBundle"]["name"], "offline-fixture")
             self.assertGreater(manifest["bytesByLayer"]["bronze"], 0)
             self.assertEqual(
                 manifest["tables"]["bronze.observation_events"]["rows"], 5

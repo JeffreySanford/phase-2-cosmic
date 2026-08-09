@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phase-2-cosmic.local/schemas/lakehouse-pr41-source-registry.json",
+  "title": "PR41 Lakehouse Source Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "defaultBundle", "profiles", "bundles"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "lakehouse-source-registry.v1"
+    },
+    "defaultBundle": {
+      "type": "string",
+      "minLength": 1
+    },
+    "profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/profile"
+      }
+    },
+    "bundles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/bundle"
+      }
+    }
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "provider",
+        "kind",
+        "activationState",
+        "includeByDefault",
+        "evidenceRole"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["vo-tap", "fixture", "planned"]
+        },
+        "activationState": {
+          "type": "string",
+          "enum": ["included", "excluded", "planned", "fixture"]
+        },
+        "includeByDefault": {
+          "type": "boolean"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        },
+        "evidenceRole": {
+          "type": "string",
+          "enum": ["public-proof", "offline-fixture", "development-candidate"]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "profileRefs", "intendedUse"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profileRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "intendedUse": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

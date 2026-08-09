@@ -48,6 +48,7 @@ Minimum automated assertions:
 
 - `tiny` profile is selected by default.
 - profile guard unit tests reject unapproved large profiles.
+- source registry validation confirms profile and bundle contract consistency.
 - `lakehouse-mvp:run` creates a fresh local artifact root.
 - Bronze, Silver, Silver quarantine, and Gold directories exist.
 - Each table has Parquet data and Delta transaction metadata.
@@ -107,6 +108,8 @@ The integration suite should avoid hard-coded row counts except where the `tiny`
 PR41 should treat these files as contracts:
 
 - `tools/lakehouse-mvp/scale-profiles.json`,
+- `tools/lakehouse-mvp/source-registry.example.json`,
+- `tools/lakehouse-mvp/source-registry.schema.json`,
 - `tmp/lakehouse/pr41-delta/manifest.json`,
 - Delta log action shape under each generated table,
 - `GET /api/v1/lakehouse/metrics` lakehouse evidence fields.
@@ -116,6 +119,8 @@ Contract tests should fail if:
 - a required profile is removed,
 - `tiny` is no longer the default,
 - a large profile no longer requires a guard,
+- a source bundle references an unknown source profile,
+- the default source bundle is removed,
 - manifest profile metadata is absent,
 - table entries omit required paths or counts,
 - reason codes drift without documentation updates,
