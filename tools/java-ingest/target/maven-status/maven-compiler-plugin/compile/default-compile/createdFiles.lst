@@ -1,5 +1,0 @@
-org/phase2/ingest/Application$HealthController.class
-org/phase2/ingest/KafkaIngestListener.class
-org/phase2/ingest/Application.class
-org/phase2/ingest/IngestMetricsService.class
-org/phase2/ingest/ServerApiForwarder.class
