@@ -1,6 +1,7 @@
 package org.phase2.ingest;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -23,9 +24,10 @@ import org.springframework.web.client.RestTemplate;
  * generator -&gt; Pulsar -&gt; collector -&gt; Kafka -&gt; java-ingest -&gt; server API -&gt; SSE -&gt; frontend
  * </pre>
  *
- * <p>Forwarding is best-effort by design. Kafka remains the durable record, so a
- * server API outage must not stop consumption or block the partition. Failures
- * are counted rather than retried in-line.
+ * <p>Each HTTP attempt is bounded by a timeout. The listener owns durable retry
+ * semantics: a failed attempt is thrown into Kafka retry topics and, after the
+ * configured attempts are exhausted, into the forward DLT. Kafka therefore
+ * remains the durable record rather than an in-memory HTTP retry queue.
  */
 @Component
 public class ServerApiForwarder {
@@ -42,10 +44,6 @@ public class ServerApiForwarder {
             @Value("${ingest.forward.url:}") String endpoint,
             @Value("${ingest.forward.enabled:true}") boolean enabled,
             @Value("${ingest.forward.timeout-ms:2000}") long timeoutMs) {
-        // Timeouts are set on the request factory rather than through
-        // RestTemplateBuilder, whose timeout setters have moved across Spring
-        // Boot versions. A bounded timeout matters here: the consumer thread
-        // must not block on an unresponsive server API.
         var requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofMillis(timeoutMs));
         requestFactory.setReadTimeout(Duration.ofMillis(timeoutMs));
@@ -62,14 +60,24 @@ public class ServerApiForwarder {
 
     /** @return true when the event was accepted by the server API. */
     public boolean forward(String broker, String topic, String payload) {
+        return forward(broker, topic, payload, Collections.emptyMap());
+    }
+
+    /**
+     * Forwards one event with transport attribution preserved as explicit
+     * envelope fields. eventId is also copied into a structured JSON payload so
+     * the SSE/Angular boundary can deduplicate without depending on Kafka headers.
+     */
+    public boolean forward(
+            String broker,
+            String topic,
+            String payload,
+            Map<String, String> attribution) {
         if (!isConfigured()) {
             return false;
         }
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("broker", broker);
-        body.put("topic", topic);
-        body.put("payload", parseOrRaw(payload));
+        Map<String, Object> body = buildBody(broker, topic, payload, attribution);
 
         try {
             var headers = new org.springframework.http.HttpHeaders();
@@ -77,16 +85,54 @@ public class ServerApiForwarder {
             restTemplate.postForEntity(endpoint, new org.springframework.http.HttpEntity<>(body, headers), String.class);
             return true;
         } catch (RestClientException ex) {
-            // Kafka still holds the durable record, so a forwarding failure is
-            // recorded and the consumer continues rather than blocking ingest.
             metricsService.recordForwardFailure(broker, topic, ex.getClass().getSimpleName());
             log.warn("Failed to forward event to server API {}: {}", endpoint, ex.toString());
             return false;
         }
     }
 
+    Map<String, Object> buildBody(
+            String broker,
+            String topic,
+            String payload,
+            Map<String, String> attribution) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("broker", broker);
+        body.put("topic", topic);
+
+        Object parsedPayload = parseOrRaw(payload);
+        body.put("payload", enrichPayloadWithEventId(parsedPayload, attribution.get("eventId")));
+
+        putIfPresent(body, "eventId", attribution.get("eventId"));
+        putIfPresent(body, "collectorRegion", attribution.get("collectorRegion"));
+        putIfPresent(body, "pulsarMessageId", attribution.get("pulsarMessageId"));
+        putIfPresent(body, "collectorForwardedAt", attribution.get("collectorForwardedAt"));
+        return body;
+    }
+
     public boolean isConfigured() {
         return enabled && endpoint != null && !endpoint.isBlank();
+    }
+
+    private Object enrichPayloadWithEventId(Object payload, String eventId) {
+        if (!(payload instanceof Map<?, ?> sourceMap) || eventId == null || eventId.isBlank()) {
+            return payload;
+        }
+
+        Map<String, Object> enriched = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : sourceMap.entrySet()) {
+            if (entry.getKey() instanceof String key) {
+                enriched.put(key, entry.getValue());
+            }
+        }
+        enriched.putIfAbsent("eventId", eventId);
+        return enriched;
+    }
+
+    private void putIfPresent(Map<String, Object> target, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            target.put(key, value);
+        }
     }
 
     /**
