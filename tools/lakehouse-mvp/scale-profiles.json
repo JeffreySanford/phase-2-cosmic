@@ -1,0 +1,33 @@
+{
+  "defaultProfile": "tiny",
+  "profiles": {
+    "tiny": {
+      "label": "Tiny MVP",
+      "targetBytesPerMedallionLayer": 1048576,
+      "guard": "none",
+      "intendedUse": "CI, documentation, unit tests, and local smoke validation",
+      "requiresExplicitApproval": false
+    },
+    "10gb": {
+      "label": "10 GB development sample",
+      "targetBytesPerMedallionLayer": 10737418240,
+      "guard": "LAKEHOUSE_ALLOW_LARGE_SAMPLE=true",
+      "intendedUse": "Local development scale test before moving to 100 GB",
+      "requiresExplicitApproval": true
+    },
+    "100gb": {
+      "label": "100 GB workstation stress sample",
+      "targetBytesPerMedallionLayer": 107374182400,
+      "guard": "LAKEHOUSE_ALLOW_LARGE_SAMPLE=true",
+      "intendedUse": "Partitioning, file sizing, and local throughput validation",
+      "requiresExplicitApproval": true
+    },
+    "1tb": {
+      "label": "1 TB workstation stress sample",
+      "targetBytesPerMedallionLayer": 1099511627776,
+      "guard": "LAKEHOUSE_ALLOW_LARGE_SAMPLE=true",
+      "intendedUse": "Explicit large-run validation only; not CI or default local development",
+      "requiresExplicitApproval": true
+    }
+  }
+}

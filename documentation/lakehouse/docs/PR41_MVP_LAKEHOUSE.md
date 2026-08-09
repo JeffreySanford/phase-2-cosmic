@@ -36,12 +36,15 @@ pnpm nx run lakehouse-mvp:test
 
 The runner requires Python with `pyarrow` available. It does not require Spark for the MVP.
 
+The default run uses the guarded `tiny` scale profile. Larger profiles are registered but require explicit local approval. See [`PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md`](./PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md).
+
 ## Moving Parts
 
 | Part              | File or path                                                      | Responsibility                                                                                                            |
 | ----------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | MVP runner        | `tools/lakehouse-mvp/pr41_lakehouse_mvp.py`                       | Builds source rows, writes Parquet table files, writes Delta transaction metadata, and emits `manifest.json`.             |
 | MVP verifier      | `tools/lakehouse-mvp/verify-pr41-mvp.mjs`                         | Confirms each medallion table has a manifest entry, Parquet file, and Delta log actions.                                  |
+| Scale registry    | `tools/lakehouse-mvp/scale-profiles.json`                         | Defines `tiny`, `10gb`, `100gb`, and `1tb` profiles and large-profile guard requirements.                                 |
 | Nx project        | `tools/lakehouse-mvp/project.json`                                | Provides `run`, `verify`, and `test` targets.                                                                             |
 | Generated root    | `tmp/lakehouse/pr41-delta/`                                       | Local artifact root for PR41 MVP output.                                                                                  |
 | Evidence service  | `apps/frontend/src/server/lakehouse/lakehouse-metrics.service.ts` | Reads the PR41 manifest when present and returns verified medallion evidence through the existing Lakehouse metrics path. |
@@ -127,6 +130,8 @@ PR41 is done only when the repository proves a reproducible local medallion MVP 
 ### Required implementation
 
 - A committed Nx project exposes `lakehouse-mvp:run`, `lakehouse-mvp:verify`, and `lakehouse-mvp:test`.
+- A committed scale-profile registry defines `tiny`, `10gb`, `100gb`, and `1tb`, with `tiny` as the safe default.
+- Large profiles require explicit local approval before artifact generation.
 - `pnpm nx run lakehouse-mvp:run` creates a fresh local artifact root under `tmp/lakehouse/pr41-delta/`.
 - The generated artifact root contains Bronze, Silver, Silver quarantine, and Gold table directories.
 - Each MVP table has Parquet-backed data and Delta transaction metadata sufficient for the verifier to inspect.
@@ -135,6 +140,7 @@ PR41 is done only when the repository proves a reproducible local medallion MVP 
 - Silver quarantine retains at least one Bronze-retained record that failed the canonical analytical contract and records a deterministic reason code.
 - Gold produces at least one observation summary aggregate with lineage back to Silver and Bronze.
 - The existing Lakehouse evidence service reports verified PR41 medallion evidence when `tmp/lakehouse/pr41-delta/manifest.json` exists.
+- The generated manifest records the selected scale profile.
 
 ### Required verification
 
@@ -148,6 +154,7 @@ PR41 is done only when the repository proves a reproducible local medallion MVP 
 ### Required documentation
 
 - This document remains the authoritative PR41 moving-parts guide.
+- [`PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md`](./PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md) remains the authoritative PR41 profile/control-view contract.
 - `documentation/lakehouse/TODO.md` reflects which PR41 MVP items are complete and which items move to later PRs.
 - The PR description states that PR41 is a **local reference MVP**, not a production Spark/Kafka/Databricks implementation.
 - Any dashboard, metric, or evidence text distinguishes PR41 verified local medallion evidence from PR40 public-source proof and PR42 Databricks planning.

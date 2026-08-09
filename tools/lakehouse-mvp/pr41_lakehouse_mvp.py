@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 from collections import Counter
 from datetime import UTC, datetime
@@ -31,6 +32,7 @@ import pyarrow.parquet as pq
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT = REPO_ROOT / "tmp" / "lakehouse" / "pr41-delta"
 SAFE_OUTPUT_ROOT = REPO_ROOT / "tmp" / "lakehouse"
+SCALE_PROFILES_PATH = REPO_ROOT / "tools" / "lakehouse-mvp" / "scale-profiles.json"
 
 
 SOURCE_ROWS: list[dict[str, Any]] = [
@@ -94,6 +96,33 @@ def resolve_output(path_value: str | None) -> Path:
     if safe_root not in output.parents and output != safe_root:
         raise ValueError(f"Refusing to write outside {safe_root}: {output}")
     return output
+
+
+def load_scale_profiles() -> dict[str, Any]:
+    return json.loads(SCALE_PROFILES_PATH.read_text(encoding="utf-8"))
+
+
+def resolve_profile(profile_value: str | None, allow_large: bool) -> tuple[str, dict[str, Any]]:
+    registry = load_scale_profiles()
+    default_profile = registry.get("defaultProfile", "tiny")
+    profile_name = profile_value or os.environ.get("LAKEHOUSE_SCALE_PROFILE") or default_profile
+    profiles = registry.get("profiles", {})
+
+    if profile_name not in profiles:
+        raise ValueError(
+            f"Unknown Lakehouse scale profile {profile_name!r}; expected one of {', '.join(sorted(profiles))}"
+        )
+
+    profile = profiles[profile_name]
+    large_allowed = allow_large or os.environ.get("LAKEHOUSE_ALLOW_LARGE_SAMPLE") == "true"
+    if profile.get("requiresExplicitApproval") and not large_allowed:
+        guard = profile.get("guard", "LAKEHOUSE_ALLOW_LARGE_SAMPLE=true")
+        raise ValueError(
+            f"Refusing to run Lakehouse scale profile {profile_name!r} without {guard}. "
+            "Large profiles can generate tens of GB to TB per medallion layer."
+        )
+
+    return profile_name, profile
 
 
 def reset_output(output: Path) -> None:
@@ -273,6 +302,8 @@ def write_table(table_path: Path, rows: list[dict[str, Any]], table_name: str) -
 
 def write_manifest(
     output: Path,
+    profile_name: str,
+    profile: dict[str, Any],
     bronze_rows: list[dict[str, Any]],
     silver_rows: list[dict[str, Any]],
     quarantine_rows: list[dict[str, Any]],
@@ -282,6 +313,13 @@ def write_manifest(
         "label": "Lakehouse Initiative PR41 MVP",
         "generatedAt": now_iso(),
         "runtime": "local pyarrow parquet writer with Delta transaction metadata",
+        "scaleProfile": {
+            "name": profile_name,
+            "label": profile.get("label"),
+            "targetBytesPerMedallionLayer": profile.get("targetBytesPerMedallionLayer"),
+            "intendedUse": profile.get("intendedUse"),
+            "requiresExplicitApproval": profile.get("requiresExplicitApproval", False),
+        },
         "outputRoot": str(output),
         "tables": {
             "bronze.observation_events": {
@@ -318,9 +356,19 @@ def write_manifest(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", help="Output directory under tmp/lakehouse")
+    parser.add_argument(
+        "--profile",
+        help="Lakehouse scale profile from tools/lakehouse-mvp/scale-profiles.json",
+    )
+    parser.add_argument(
+        "--allow-large",
+        action="store_true",
+        help="Allow guarded large profiles when intentionally generating large local samples",
+    )
     args = parser.parse_args()
 
     output = resolve_output(args.output)
+    profile_name, profile = resolve_profile(args.profile, args.allow_large)
     reset_output(output)
 
     bronze_rows = build_bronze_rows()
@@ -347,9 +395,18 @@ def main() -> None:
         gold_rows,
         "gold.observation_summary",
     )
-    write_manifest(output, bronze_rows, silver_rows, quarantine_rows, gold_rows)
+    write_manifest(
+        output,
+        profile_name,
+        profile,
+        bronze_rows,
+        silver_rows,
+        quarantine_rows,
+        gold_rows,
+    )
 
     print(f"[lakehouse-pr41] wrote MVP lakehouse artifacts to {output}")
+    print(f"[lakehouse-pr41] scale-profile={profile_name}")
     print(
         "[lakehouse-pr41] bronze=%d silver=%d quarantine=%d gold=%d"
         % (len(bronze_rows), len(silver_rows), len(quarantine_rows), len(gold_rows))

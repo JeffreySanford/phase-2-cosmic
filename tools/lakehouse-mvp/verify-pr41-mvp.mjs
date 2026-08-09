@@ -65,6 +65,14 @@ if (!fs.existsSync(manifestPath)) {
 
 const manifest = readJson(manifestPath);
 
+if (manifest.scaleProfile?.name !== "tiny") {
+  fail(
+    `default PR41 verifier expects tiny profile artifacts, found ${
+      manifest.scaleProfile?.name || "unknown"
+    }`
+  );
+}
+
 assertTable("bronze.observation_events", 5);
 assertTable("silver.observations", 3);
 assertTable("silver.quarantine", 2);
