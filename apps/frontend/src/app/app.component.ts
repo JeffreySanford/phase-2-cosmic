@@ -1,3 +1,4 @@
+import { AsyncPipe } from "@angular/common";
 import { Component, inject } from "@angular/core";
 import { Router } from "@angular/router";
 import { SidebarService } from "./base/sidebar/sidebar.service";
@@ -11,13 +12,15 @@ import { StatusBandModule } from "./shared/status-band/status-band.module";
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.scss"],
   standalone: true,
-  imports: [ShellModule, StatusBandModule],
+  imports: [AsyncPipe, ShellModule, StatusBandModule],
 })
 export class AppComponent {
   private router = inject(Router);
   private sidebarService = inject(SidebarService);
   private startupWarm = inject(StartupWarmService);
   private ingestEventStream = inject(IngestEventStreamService);
+
+  readonly ingestEvents$ = this.ingestEventStream.events$;
 
   title = "frontend";
   sidebarCollapsed = false;
