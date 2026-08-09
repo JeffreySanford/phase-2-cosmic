@@ -31,7 +31,7 @@ jobs:
       - name: Set up Node 22
         uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version-file: .node-version
           package-manager-cache: false
 
       - name: Enable corepack (pnpm)
@@ -86,7 +86,7 @@ jobs:
       - name: Set up Node 22
         uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version-file: .node-version
           package-manager-cache: false
 
       - name: Enable corepack (pnpm)
@@ -216,7 +216,7 @@ jobs:
             }
 
       - name: Run golangci-lint (Go static analysis)
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1.6
           working-directory: tools/data-generator
@@ -267,7 +267,7 @@ jobs:
       - name: Set up Node 22
         uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version-file: .node-version
           package-manager-cache: false
 
       - name: Enable corepack (pnpm)

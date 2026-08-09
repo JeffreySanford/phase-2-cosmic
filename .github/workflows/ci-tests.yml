@@ -50,6 +50,12 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
 
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
       - name: Cache pnpm store (node deps)
         uses: actions/cache@v6
         with:
