@@ -6,7 +6,9 @@ set -euo pipefail
 # waits for them to become ready, then runs the stress validation scripts.
 
 COMPOSE_FILE="${COMPOSE_FILE:-docker/dev-compose.yml}"
-SSR_URL="${SSR_URL:-http://localhost:4000}"
+SSR_PORT="${SSR_PORT:-4000}"
+SSR_URL="${SSR_URL:-http://localhost:${SSR_PORT}}"
+SSR_READY_RETRIES="${SSR_READY_RETRIES:-90}"
 PROM_READY_URL="${PROM_READY_URL:-http://localhost:9090/-/ready}"
 
 # If you want to re-use an already-running compose/SSR stack (e.g. local dev),
@@ -112,18 +114,18 @@ fi
 # 2) Start SSR (server-side render API) if not already up.
 if [ "$SKIP_SSR" != "true" ]; then
   log "Waiting for SSR to be reachable at $SSR_URL"
-  if ! wait_for_url "$SSR_URL/api/load-profile" 60 2; then
+  if ! wait_for_url "$SSR_URL/api/load-profile" "$SSR_READY_RETRIES" 2; then
     log "SSR not responding; starting via pnpm run serve:ssr"
     if ! command -v pnpm >/dev/null 2>&1; then
       fail "pnpm not found; cannot start SSR"
     fi
 
-    # Start SSR in the background and wait for it to become responsive
-    pnpm run serve:ssr > /tmp/ssr.log 2>&1 &
+    # Start SSR on the same port this script probes.
+    FRONTEND_PORT="${FRONTEND_PORT:-$SSR_PORT}" pnpm run serve:ssr > /tmp/ssr.log 2>&1 &
     SSR_PID=$!
 
     log "SSR started (pid=$SSR_PID); waiting for readiness"
-    if ! wait_for_url "$SSR_URL/api/load-profile" 60 2; then
+    if ! wait_for_url "$SSR_URL/api/load-profile" "$SSR_READY_RETRIES" 2; then
       log "--- SSR log (tail) ---"
       tail -n 50 /tmp/ssr.log || true
       fail "SSR did not become ready in time"
