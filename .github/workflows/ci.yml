@@ -187,7 +187,7 @@ jobs:
           script: |
             const issueTitle = `Stress validation failed (run ${process.env.GITHUB_RUN_ID})`;
             const issueBody = `Stress validation step failed in workflow [${process.env.GITHUB_WORKFLOW}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}).\n\nArtifacts are available as **stress-validation-artifacts** in the workflow run.\n\n**Branch**: ${process.env.GITHUB_REF} \n**Commit**: ${process.env.GITHUB_SHA}`;
-            const existing = await github.issues.listForRepo({
+            const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
@@ -198,7 +198,7 @@ jobs:
             if (already) {
               console.log('Issue already exists:', already.html_url);
             } else {
-              const issue = await github.issues.create({
+              const issue = await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: issueTitle,
