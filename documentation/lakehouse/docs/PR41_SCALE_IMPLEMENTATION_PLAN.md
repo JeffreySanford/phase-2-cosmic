@@ -5,6 +5,8 @@
 
 This plan expands PR41 beyond the tiny medallion MVP by defining how larger local Bronze/Silver/Gold datasets can be generated, controlled, verified, and cleaned up without exhausting a workstation or confusing generated stress evidence with real public-source evidence.
 
+The PR41 testing-suite plan is documented separately in [`PR41_TESTING_SUITE_PLAN.md`](./PR41_TESTING_SUITE_PLAN.md).
+
 ## 1. Profile Goals
 
 | Profile | Role                                     | Merge requirement | Expected operator         |

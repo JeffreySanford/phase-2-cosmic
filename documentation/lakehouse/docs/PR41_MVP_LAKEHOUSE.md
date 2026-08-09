@@ -40,6 +40,8 @@ The default run uses the guarded `tiny` scale profile. Larger profiles are regis
 
 The large-profile implementation plan is documented in [`PR41_SCALE_IMPLEMENTATION_PLAN.md`](./PR41_SCALE_IMPLEMENTATION_PLAN.md).
 
+The PR41 testing-suite plan is documented in [`PR41_TESTING_SUITE_PLAN.md`](./PR41_TESTING_SUITE_PLAN.md).
+
 ## Moving Parts
 
 | Part              | File or path                                                      | Responsibility                                                                                                            |
@@ -158,6 +160,7 @@ PR41 is done only when the repository proves a reproducible local medallion MVP 
 - This document remains the authoritative PR41 moving-parts guide.
 - [`PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md`](./PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md) remains the authoritative PR41 profile/control-view contract.
 - [`PR41_SCALE_IMPLEMENTATION_PLAN.md`](./PR41_SCALE_IMPLEMENTATION_PLAN.md) remains the authoritative PR41 large-profile implementation plan.
+- [`PR41_TESTING_SUITE_PLAN.md`](./PR41_TESTING_SUITE_PLAN.md) remains the authoritative PR41 MVP testing-suite plan.
 - `documentation/lakehouse/TODO.md` reflects which PR41 MVP items are complete and which items move to later PRs.
 - The PR description states that PR41 is a **local reference MVP**, not a production Spark/Kafka/Databricks implementation.
 - Any dashboard, metric, or evidence text distinguishes PR41 verified local medallion evidence from PR40 public-source proof and PR42 Databricks planning.
