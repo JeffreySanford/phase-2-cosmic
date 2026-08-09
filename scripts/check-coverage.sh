@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-THRESHOLD=${1:-90}
+THRESHOLD="${1:-90}"
 FAILED=0
 STRICT=${COVERAGE_ENFORCE_STRICT:-0}
 
@@ -33,7 +33,7 @@ NODE
     if [[ $total -gt 0 ]]; then
       cov=$((100 * pct / total))
       echo "Java instruction coverage: ${cov}%"
-      if [[ $cov -lt $THRESHOLD ]]; then
+      if [[ "$cov" -lt "$THRESHOLD" ]]; then
         echo "Coverage below threshold ($THRESHOLD%)"
         FAILED=1
       fi
@@ -57,7 +57,7 @@ check_node() {
     cov=$(node -e "const summary = require('./${summary}'); console.log(Math.trunc(summary.total.lines.pct));")
     cov=${cov//$'\r'/}
     echo "Node lines coverage: ${cov}% (from $summary)"
-    if [[ $cov -lt $THRESHOLD ]]; then
+    if [[ "$cov" -lt "$THRESHOLD" ]]; then
       echo "Coverage below threshold ($THRESHOLD%)"
       FAILED=1
     fi
@@ -70,10 +70,10 @@ check_node() {
 check_jacoco
 check_node
 
-if [[ $FAILED -ne 0 && $STRICT -eq 1 ]]; then
+if [[ "$FAILED" -ne 0 && "$STRICT" -eq 1 ]]; then
   exit 1
 fi
 
-if [[ $FAILED -ne 0 ]]; then
+if [[ "$FAILED" -ne 0 ]]; then
   echo "Coverage check is informational in the current policy. Set COVERAGE_ENFORCE_STRICT=1 to fail on threshold misses."
 fi
