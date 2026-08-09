@@ -120,6 +120,49 @@ The manifest root can be overridden for local testing:
 LAKEHOUSE_MVP_ROOT=/path/to/pr41-delta pnpm nx run frontend:test
 ```
 
+## Definition of Done
+
+PR41 is done only when the repository proves a reproducible local medallion MVP and clearly labels the remaining production-runtime work as future scope.
+
+### Required implementation
+
+- A committed Nx project exposes `lakehouse-mvp:run`, `lakehouse-mvp:verify`, and `lakehouse-mvp:test`.
+- `pnpm nx run lakehouse-mvp:run` creates a fresh local artifact root under `tmp/lakehouse/pr41-delta/`.
+- The generated artifact root contains Bronze, Silver, Silver quarantine, and Gold table directories.
+- Each MVP table has Parquet-backed data and Delta transaction metadata sufficient for the verifier to inspect.
+- Bronze preserves source-faithful observation event payloads, source attribution, schema version, event hashes, ingest run metadata, and stable Bronze event IDs.
+- Silver promotes at least one canonical observation derived from Bronze and retains lineage to the source Bronze event.
+- Silver quarantine retains at least one Bronze-retained record that failed the canonical analytical contract and records a deterministic reason code.
+- Gold produces at least one observation summary aggregate with lineage back to Silver and Bronze.
+- The existing Lakehouse evidence service reports verified PR41 medallion evidence when `tmp/lakehouse/pr41-delta/manifest.json` exists.
+
+### Required verification
+
+- `pnpm nx run lakehouse-mvp:test` passes.
+- `pnpm nx run lakehouse-mvp:verify` passes against artifacts produced by the runner.
+- Relevant frontend/server tests for `GET /api/v1/lakehouse/metrics` pass with and without a PR41 manifest.
+- Generated runtime artifacts remain out of git.
+- Documentation lint and formatting checks pass.
+- The PR CI quality gate is green before merge.
+
+### Required documentation
+
+- This document remains the authoritative PR41 moving-parts guide.
+- `documentation/lakehouse/TODO.md` reflects which PR41 MVP items are complete and which items move to later PRs.
+- The PR description states that PR41 is a **local reference MVP**, not a production Spark/Kafka/Databricks implementation.
+- Any dashboard, metric, or evidence text distinguishes PR41 verified local medallion evidence from PR40 public-source proof and PR42 Databricks planning.
+
+### Explicitly Out Of Scope For PR41
+
+These items are not required for PR41 merge unless the PR scope is intentionally expanded:
+
+- Spark Structured Streaming production jobs.
+- Kafka-to-Bronze streaming ingestion.
+- Databricks workspace connectivity, Unity Catalog tables, or scheduled Databricks jobs.
+- Production object-storage table locations.
+- Large-scale throughput, recovery, compaction, or checkpoint benchmarks.
+- Full source-registry bundle management beyond the local MVP input used by the runner.
+
 ## Boundary
 
 This MVP is not a production Spark deployment. It is a local, inspectable medallion reference runtime that proves the table contracts and transformation behavior before adding Spark Structured Streaming, Kafka consumption, catalog integration, and production storage.

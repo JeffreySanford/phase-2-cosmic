@@ -44,6 +44,7 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 
 > PR41 label: **Lakehouse Initiative / PR41 MVP**.
 > See [`docs/PR41_MVP_LAKEHOUSE.md`](./docs/PR41_MVP_LAKEHOUSE.md).
+> Definition of Done: [`docs/PR41_MVP_LAKEHOUSE.md#definition-of-done`](./docs/PR41_MVP_LAKEHOUSE.md#definition-of-done).
 
 ### PR41 MVP local reference runtime
 
