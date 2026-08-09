@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"regexp"
+	"testing"
+)
 
 func TestParseSinkTarget(t *testing.T) {
 	cases := []struct {
@@ -72,5 +75,28 @@ func TestParseSinkTarget(t *testing.T) {
 				t.Fatalf("parseSinkTarget(%q) = %+v, want %+v", tc.raw, got, tc.want)
 			}
 		})
+	}
+}
+
+func TestNewEventIDIsUuidV4AndUnique(t *testing.T) {
+	idPattern := regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
+
+	first, err := newEventID()
+	if err != nil {
+		t.Fatalf("newEventID() first call: %v", err)
+	}
+	second, err := newEventID()
+	if err != nil {
+		t.Fatalf("newEventID() second call: %v", err)
+	}
+
+	if !idPattern.MatchString(first) {
+		t.Fatalf("newEventID() = %q, want UUID v4", first)
+	}
+	if !idPattern.MatchString(second) {
+		t.Fatalf("newEventID() second = %q, want UUID v4", second)
+	}
+	if first == second {
+		t.Fatalf("newEventID() returned duplicate IDs: %q", first)
 	}
 }
