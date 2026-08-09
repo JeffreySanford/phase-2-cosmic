@@ -6,31 +6,23 @@
 // so it never runs in the default unit gate and never fails a machine that has
 // no brokers running.
 //
-// Run against the geo profile:
+// Run against the geo profile from tools/pulsar-collector:
 //
-//	docker compose -f docker/dev-compose.yml -f docker/geo-collectors-compose.yml \
+//	docker compose -f ../../docker/dev-compose.yml -f ../../docker/geo-collectors-compose.yml \
 //	  --profile geo up -d
 //	PULSAR_URL=pulsar://localhost:6651 \
-//	KAFKA_BOOTSTRAP_SERVERS=localhost:9093 \
+//	KAFKA_BOOTSTRAP_SERVERS=localhost:9094 \
 //	  go test -tags=integration ./... -run TestCollectorForwards -v
 //
-// KNOWN LIMITATION: this test does not yet pass when run from the host.
-// Kafka advertises its partition leaders on the in-network listener
-// (`kafka:9092`), so a host-side client connected on 9093 gets metadata it
-// cannot route to and fails with "unexpected EOF". The containerized collectors
-// are unaffected because they use the in-network listener.
-//
-// This test therefore needs to run INSIDE the compose network — as a sidecar
-// service on the geo profile or through the existing test-runner container —
-// before it can be trusted. It is committed with its assertions complete so the
-// remaining work is wiring, not authorship.
+// dev-compose exposes Kafka's dedicated HOST listener on 9094 and advertises
+// localhost:9094 back to host clients, so this test can run outside the compose
+// network without receiving unroutable `kafka:9092` partition metadata.
 package main
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -48,17 +40,18 @@ func requireEnv(t *testing.T, name string) string {
 }
 
 // TestCollectorForwardsPulsarToKafkaWithRegionAttribution proves the real bridge:
-// a record produced to Pulsar arrives on Kafka with its payload intact, the
-// collector's region recorded, and the generator event identity unchanged.
+// one uniquely identified record produced to Pulsar arrives on Kafka with its
+// payload intact, collector region recorded, and generator identity unchanged.
 func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 	pulsarURL := requireEnv(t, "PULSAR_URL")
 	kafkaBrokers := requireEnv(t, "KAFKA_BOOTSTRAP_SERVERS")
 
-	// Use the standing topic rather than a throwaway one. Creating a topic
-	// requires the Kafka controller's ADVERTISED address, which is the in-network
-	// hostname and is not reachable from a host-side test. Isolation comes from a
-	// unique marker in the payload instead.
-	topic := "phase2-events"
+	marker := fmt.Sprintf("%d", time.Now().UnixNano())
+	pulsarTopic := "phase2-events-it-" + marker
+	kafkaTopic := "phase2-events-it-" + marker
+	eventID := "e2e-" + marker
+	traceID := "trace-it-" + marker
+
 	expectedRegion := os.Getenv("COLLECTOR_REGION")
 	if expectedRegion == "" {
 		expectedRegion = "it-region"
@@ -67,15 +60,18 @@ func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
-	// Run a real collector in-process against the same topic the deployed
-	// collectors use, on its own subscription so it does not steal their traffic.
+	collectorCtx, stopCollector := context.WithCancel(ctx)
+	defer stopCollector()
+
+	// Unique topics isolate the test from standing regional generators and remove
+	// the need for a fragile "attach to topic tail" pre-read.
 	cfg := Config{
 		Region:       expectedRegion,
 		PulsarURL:    pulsarURL,
-		PulsarTopic:  topic,
-		Subscription: "collector-it",
+		PulsarTopic:  pulsarTopic,
+		Subscription: "collector-it-" + marker,
 		KafkaBrokers: parseBrokers(kafkaBrokers),
-		KafkaTopic:   topic,
+		KafkaTopic:   kafkaTopic,
 		MetricsAddr:  ":0",
 	}
 	if err := cfg.Validate(); err != nil {
@@ -83,7 +79,7 @@ func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 	}
 
 	collectorDone := make(chan error, 1)
-	go func() { collectorDone <- run(cfg) }()
+	go func() { collectorDone <- run(collectorCtx, cfg) }()
 
 	client, err := pulsar.NewClient(pulsar.ClientOptions{URL: pulsarURL})
 	if err != nil {
@@ -91,31 +87,15 @@ func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 	}
 	defer client.Close()
 
-	producer, err := client.CreateProducer(pulsar.ProducerOptions{Topic: topic})
+	producer, err := client.CreateProducer(pulsar.ProducerOptions{Topic: pulsarTopic})
 	if err != nil {
 		t.Fatalf("pulsar producer: %v", err)
 	}
 	defer producer.Close()
 
-	marker := fmt.Sprintf("it-%d", time.Now().UnixNano())
-	eventID := "e2e-" + marker
 	payload := []byte(fmt.Sprintf(
 		`{"source":"main","eventType":"telemetry.batch","payloadBytes":512,"traceId":"%s"}`,
-		marker))
-
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     parseBrokers(kafkaBrokers),
-		Topic:       topic,
-		MinBytes:    1,
-		MaxBytes:    10e6,
-		StartOffset: kafka.LastOffset,
-	})
-	defer func() { _ = reader.Close() }()
-
-	// Attach to the tail before producing so the record cannot be missed.
-	if _, err := reader.FetchMessage(ctx); err != nil && ctx.Err() != nil {
-		t.Fatalf("could not attach to the Kafka topic tail: %v", err)
-	}
+		traceID))
 
 	if _, err := producer.Send(ctx, &pulsar.ProducerMessage{
 		Payload: payload,
@@ -126,17 +106,20 @@ func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 		t.Fatalf("pulsar send: %v", err)
 	}
 
-	// Other producers share this topic, so scan for our marker.
-	var msg kafka.Message
-	for {
-		candidate, err := reader.FetchMessage(ctx)
-		if err != nil {
-			t.Fatalf("did not receive the forwarded record on Kafka: %v", err)
-		}
-		if strings.Contains(string(candidate.Value), marker) {
-			msg = candidate
-			break
-		}
+	// The collector creates this Kafka topic on first forward. Starting from the
+	// first offset is deterministic because this topic is unique to the test.
+	reader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:     parseBrokers(kafkaBrokers),
+		Topic:       kafkaTopic,
+		MinBytes:    1,
+		MaxBytes:    10e6,
+		StartOffset: kafka.FirstOffset,
+	})
+	defer func() { _ = reader.Close() }()
+
+	msg, err := reader.FetchMessage(ctx)
+	if err != nil {
+		t.Fatalf("did not receive the forwarded record on Kafka: %v", err)
 	}
 
 	if string(msg.Value) != string(payload) {
@@ -153,8 +136,8 @@ func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 	if got := headers["event-id"]; got != eventID {
 		t.Errorf("event-id header = %q, want %q", got, eventID)
 	}
-	if got := headers["collector-kafka-topic"]; got != topic {
-		t.Errorf("collector-kafka-topic header = %q, want %q", got, topic)
+	if got := headers["collector-kafka-topic"]; got != kafkaTopic {
+		t.Errorf("collector-kafka-topic header = %q, want %q", got, kafkaTopic)
 	}
 	if headers["collector-pulsar-message-id"] == "" {
 		t.Error("expected collector-pulsar-message-id header to be recorded")
@@ -163,9 +146,12 @@ func TestCollectorForwardsPulsarToKafkaWithRegionAttribution(t *testing.T) {
 		t.Error("expected collector-forwarded-at header to be recorded")
 	}
 
-	cancel()
+	stopCollector()
 	select {
-	case <-collectorDone:
+	case err := <-collectorDone:
+		if err != nil {
+			t.Errorf("collector returned an error during shutdown: %v", err)
+		}
 	case <-time.After(10 * time.Second):
 		t.Error("collector did not shut down after context cancellation")
 	}
