@@ -38,11 +38,17 @@ export class IngestEventStreamService implements OnDestroy {
   readonly events$ = this.eventsSubject.asObservable();
 
   connect(url = "/api/ingest/stream"): void {
-    if (this.source || typeof EventSource === "undefined") {
+    if (this.source) {
       return;
     }
 
-    this.source = this.eventSourceFactory(url);
+    try {
+      this.source = this.eventSourceFactory(url);
+    } catch {
+      // EventSource is not available during SSR/non-browser execution.
+      return;
+    }
+
     this.source.addEventListener("ingest-event", (raw) => {
       const message = raw as MessageEvent<string>;
       try {
