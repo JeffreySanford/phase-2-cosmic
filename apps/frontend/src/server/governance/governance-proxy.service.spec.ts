@@ -84,6 +84,64 @@ describe("GovernanceProxyService", () => {
     expect(deps.recordFrontendApiMetrics).toHaveBeenCalled();
   });
 
+  it("serves proof-only Lakehouse evidence locally on the versioned route", async () => {
+    const upstream = {
+      governanceBaseCandidates: jest.fn(() => ["http://governance.test"]),
+      fetchWithFallback: jest.fn(),
+    } as unknown as GovernanceUpstreamService;
+    const svc = new GovernanceProxyService(upstream);
+    const summary = {
+      source: "live" as const,
+      bronzeState:
+        "Public source proof only (5 ESO ObsCore rows); Bronze Delta not implemented",
+      silverQuality: "Silver not implemented",
+      goldReadiness: "Gold not implemented",
+      evidence: "ESO ObsCore • image • ivo://example",
+      bronzePercent: 0,
+      silverPercent: 0,
+      goldPercent: 0,
+      qualityFailureRate: 0,
+      transferTimeEstimate: "n/a",
+      upstream: {
+        kind: "eso-obscore" as const,
+        endpoint: "https://archive.eso.org/tap_obs",
+        query: "SELECT TOP 5 ... FROM ivoa.ObsCore",
+        rowCount: 5,
+      },
+      freshness: {
+        maxAgeMs: 900000,
+        lastUpdatedAt: new Date().toISOString(),
+        stale: false,
+      },
+    };
+    (
+      svc as unknown as {
+        lakehouseMetricsService: {
+          getPublicEvidenceSummary: jest.Mock;
+        };
+      }
+    ).lakehouseMetricsService = {
+      getPublicEvidenceSummary: jest.fn().mockResolvedValue(summary),
+    };
+
+    const req = {
+      path: "/api/v1/lakehouse/metrics",
+      method: "GET",
+    } as Request;
+    const res = new FakeResponse() as unknown as Response;
+    const deps = createDeps();
+
+    await svc.handle(req, res, deps);
+
+    expect((res as unknown as FakeResponse).statusCode).toBe(200);
+    expect((res as unknown as FakeResponse).body).toEqual(summary);
+    expect(summary.bronzePercent).toBe(0);
+    expect(summary.silverPercent).toBe(0);
+    expect(summary.goldPercent).toBe(0);
+    expect(upstream.fetchWithFallback).not.toHaveBeenCalled();
+    expect(deps.recordFrontendApiMetrics).toHaveBeenCalled();
+  });
+
   it("proxies generic governance requests upstream and records metrics", async () => {
     const upstream = {
       governanceBaseCandidates: jest.fn(() => ["http://governance.test"]),

@@ -1,0 +1,24 @@
+flowchart LR
+  subgraph SCIENCE[Scientific processing level]
+    RAW[RAW]
+    CAL[CAL]
+    SCI[SCI]
+    DRV[DRV]
+  end
+
+  subgraph ANALYTICS[Analytical refinement]
+    BR[Bronze]
+    SI[Silver]
+    GO[Gold]
+    BR --> SI --> GO
+  end
+
+  RAW -. may project into .-> BR
+  CAL -. may project into .-> BR
+  SCI -. may project into .-> BR
+  DRV -. may project into .-> BR
+
+  SI -. canonical analytical views can describe .-> RAW
+  SI -. canonical analytical views can describe .-> CAL
+  SI -. canonical analytical views can describe .-> SCI
+  SI -. canonical analytical views can describe .-> DRV

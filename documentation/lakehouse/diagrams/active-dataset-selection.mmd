@@ -1,0 +1,13 @@
+flowchart LR
+  A[Public archive or fixture] --> B[Source registry]
+  B --> C{Activation state}
+  C -->|included| D[Active dev ingest]
+  C -->|sample-only| E[Bounded fixture path]
+  C -->|candidate| F[Adapter backlog]
+  C -->|excluded| G[Documented exclusion reason]
+  C -->|disabled| H[Quarantine from active runs]
+  D --> I[Bronze source-faithful records]
+  E --> I
+  I --> J[Silver canonical mapping]
+  J --> K[Gold evidence products]
+

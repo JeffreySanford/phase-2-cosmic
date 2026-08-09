@@ -104,6 +104,23 @@
         "staticFilePath": "dist/apps/frontend/browser",
         "spa": true
       }
+    },
+    "storybook": {
+      "executor": "@storybook/angular:start-storybook",
+      "options": {
+        "ci": false,
+        "port": 6006,
+        "configDir": ".storybook",
+        "browserTarget": "frontend:build"
+      }
+    },
+    "build-storybook": {
+      "executor": "@storybook/angular:build-storybook",
+      "options": {
+        "outputDir": "dist/storybook/frontend",
+        "configDir": ".storybook",
+        "browserTarget": "frontend:build"
+      }
     }
   }
 }

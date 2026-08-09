@@ -185,6 +185,84 @@ describe("AppController diagnostics endpoints", () => {
     expect(kafka).toHaveProperty("icon", "stream");
   });
 
+  it("marks slow but reachable services as degraded", async () => {
+    const { ctrl, governanceUpstreamService } = makeController();
+    (
+      governanceUpstreamService as unknown as { fetchWithTimeout: jest.Mock }
+    ).fetchWithTimeout = jest.fn().mockImplementation(async () => ({
+      ok: true,
+    }));
+
+    const res = createMockResponse();
+    const originalNet = jest.requireMock("net");
+    const originalSocket = originalNet.Socket;
+    originalNet.Socket = class extends originalSocket {
+      connect(port: number, host: string, cb?: () => void) {
+        setTimeout(() => {
+          this.emit("connect");
+          if (cb) cb();
+        }, 1100);
+        return this;
+      }
+    };
+
+    try {
+      await ctrl.getDockerServices(res);
+      const result = res.json.mock.calls[0][0] as ServiceResult[];
+      const kafka = result.find((s: ServiceResult) => s.name === "Kafka");
+      expect(kafka?.status).toBe("degraded");
+    } finally {
+      originalNet.Socket = originalSocket;
+    }
+  });
+
+  it("prefers Prometheus-backed diagnostics when query results are available", async () => {
+    const ctrl = new AppController(
+      {} as ConstructorParameters<typeof AppController>[0],
+      {} as ConstructorParameters<typeof AppController>[1]
+    );
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: {
+          result: [{ value: [1, "1"] }],
+        },
+      }),
+    } as Response);
+
+    try {
+      const result = await ctrl.getDatabaseBenchmarks();
+      expect(result.source).toBe("prometheus");
+      expect(result.prometheus.available).toBe(true);
+      expect(result.postgres.details).toContain("Prometheus-backed");
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it("returns a deterministic fallback payload when no native or Prometheus metrics are available", async () => {
+    const ctrl = new AppController(
+      {} as ConstructorParameters<typeof AppController>[0],
+      {} as ConstructorParameters<typeof AppController>[1]
+    );
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ data: { result: [] } }),
+    } as Response);
+
+    try {
+      const result = await ctrl.getDatabaseBenchmarks();
+      expect(result.source).toBe("fallback");
+      expect(result.prometheus.available).toBe(false);
+      expect(result.benchmarks.throughputMbPerSec).toBe(0);
+      expect(result.postgres.details).toContain("No native Postgres");
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
   it("returns single service detail by name with latency", async () => {
     const { ctrl, governanceUpstreamService } = makeController();
     (

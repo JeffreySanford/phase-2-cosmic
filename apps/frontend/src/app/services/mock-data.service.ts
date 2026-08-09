@@ -122,6 +122,57 @@ export class MockDataService {
     });
   }
 
+  lakehouseMetrics(): Observable<{
+    source: "live" | "fallback";
+    bronzeState: string;
+    silverQuality: string;
+    goldReadiness: string;
+    evidence: string;
+    bronzePercent: number;
+    silverPercent: number;
+    goldPercent: number;
+    qualityFailureRate: number;
+    transferTimeEstimate: string;
+    upstream: {
+      kind: "eso-obscore" | "pr41-local-mvp" | "fallback";
+      endpoint: string;
+      query: string;
+      rowCount: number;
+    };
+    persistedAt: string;
+    freshness: {
+      maxAgeMs: number;
+      lastUpdatedAt: string;
+      stale: boolean;
+    };
+  }> {
+    return of({
+      source: "live",
+      bronzeState: "Public source proof only; Bronze Delta not implemented",
+      silverQuality:
+        "Evidence state only; Silver quality tables not implemented",
+      goldReadiness: "Gold readiness not implemented",
+      evidence: "ESO ObsCore proof slice",
+      bronzePercent: 0,
+      silverPercent: 0,
+      goldPercent: 0,
+      qualityFailureRate: 0,
+      transferTimeEstimate: "~3.2 min",
+      upstream: {
+        kind: "eso-obscore",
+        endpoint: "https://archive.eso.org/tap_obs",
+        query: "SELECT TOP 5 ... FROM ivoa.ObsCore",
+        rowCount: 5,
+      },
+      persistedAt: new Date().toISOString(),
+      freshness: {
+        maxAgeMs: 15 * 60 * 1000,
+        lastUpdatedAt: new Date().toISOString(),
+        stale: false,
+      },
+    });
+  }
+
   // Diagnostics index mock
   diagnosticsIndex(): Observable<{ path: string; files: string[] }> {
     const now = new Date();

@@ -7,7 +7,7 @@ describe("UiThemeComponent", () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [UiThemeComponent],
+      imports: [UiThemeComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(UiThemeComponent);

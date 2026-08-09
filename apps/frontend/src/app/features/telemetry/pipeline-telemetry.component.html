@@ -1,0 +1,348 @@
+<section class="pipeline-shell">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Operational evidence</p>
+      <h1>Pipeline Telemetry</h1>
+      <p class="subtitle">Generator → Kafka → Ingest → Governance → Lakehouse</p>
+    </div>
+    <div class="header-actions">
+      <span class="evidence-chip" [ngClass]="statusClass(infra?.source)">{{ sourceLabel(infra?.source) }}</span>
+      <button mat-stroked-button type="button" (click)="refreshAll()" [disabled]="refreshing">
+        <mat-icon>refresh</mat-icon>
+        {{ refreshing ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="truth-banner" [class.truth-banner--warning]="telemetryState !== 'ready'">
+    <mat-icon>{{ telemetryState === 'ready' ? 'verified' : 'warning_amber' }}</mat-icon>
+    <div>
+      <strong>Evidence state: {{ telemetryState | titlecase }}</strong>
+      <span *ngIf="telemetryAgeSec !== null"> · snapshot age {{ telemetryAgeSec }}s</span>
+      <span *ngIf="infra?.cache?.collectionDurationMs != null"> · collection {{ infra?.cache?.collectionDurationMs }}ms</span>
+      <span *ngIf="infra?.cache?.lastError"> · last error {{ infra?.cache?.lastError }}</span>
+      <div class="truth-note">Measured sources are labeled explicitly. Missing stages stay unavailable or “Not implemented”; live mode does not substitute synthetic telemetry.</div>
+    </div>
+  </div>
+
+  <div class="error-banner" *ngIf="loadError">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ loadError }}</span>
+  </div>
+
+  <mat-tab-group dynamicHeight>
+    <mat-tab label="Overview">
+      <div class="tab-body">
+        <div class="kpi-grid">
+          <article class="metric-card">
+            <span class="metric-label">Configured target</span>
+            <strong>{{ formatRate(generatorTargetBytesPerSec) }}</strong>
+            <small>Container default · payload target {{ generatorPayloadBytes }} B</small>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Actual generator output</span>
+            <strong>{{ formatRate(actualBytesPerSec) }}</strong>
+            <small>{{ sourceLabel(generator.source) }}</small>
+          </article>
+          <article class="metric-card" [class.metric-card--warn]="targetAttainmentPct < 90">
+            <span class="metric-label">Target attainment</span>
+            <strong>{{ formatPercent(targetAttainmentPct) }}</strong>
+            <small>Actual ÷ configured target</small>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Records / second</span>
+            <strong>{{ formatNumber(actualRecordsPerSec) }}</strong>
+            <small>{{ sourceLabel(generator.source) }}</small>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Kafka consumer lag</span>
+            <strong>{{ formatNumber(kafka.consumerLag) }}</strong>
+            <small>{{ sourceLabel(kafka.source) }}</small>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Ingest processed / second</span>
+            <strong>{{ formatNumber(javaIngest.processedRatePerSec) }}</strong>
+            <small>{{ sourceLabel(javaIngest.source) }}</small>
+          </article>
+        </div>
+
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Live path</p>
+              <h2>Pipeline health</h2>
+            </div>
+            <span class="evidence-chip" [class.measured]="pipelineHealthy" [class.unavailable]="!pipelineHealthy">
+              {{ pipelineHealthy ? 'Measured path available' : 'Partial / unavailable' }}
+            </span>
+          </div>
+
+          <div class="pipeline-row">
+            <div class="stage stage--measured">
+              <span class="stage-name">Generator</span>
+              <strong>{{ formatRate(actualBytesPerSec) }}</strong>
+              <small>{{ formatNumber(actualRecordsPerSec) }} rec/s</small>
+              <span class="source-dot" [ngClass]="statusClass(generator.source)">{{ sourceLabel(generator.source) }}</span>
+            </div>
+            <span class="arrow">→</span>
+            <div class="stage stage--measured">
+              <span class="stage-name">Kafka</span>
+              <strong>Lag {{ formatNumber(kafka.consumerLag) }}</strong>
+              <small>{{ formatNumber(kafka.brokers) }} broker(s) · {{ formatNumber(kafka.topics) }} topics</small>
+              <span class="source-dot" [ngClass]="statusClass(kafka.source)">{{ sourceLabel(kafka.source) }}</span>
+            </div>
+            <span class="arrow">→</span>
+            <div class="stage stage--measured">
+              <span class="stage-name">Java ingest</span>
+              <strong>{{ formatNumber(javaIngest.processedRatePerSec) }} rec/s</strong>
+              <small>received {{ formatNumber(javaIngest.receiveRatePerSec) }} · failed {{ formatNumber(javaIngest.failureRatePerSec) }}</small>
+              <span class="source-dot" [ngClass]="statusClass(javaIngest.source)">{{ sourceLabel(javaIngest.source) }}</span>
+            </div>
+            <span class="arrow">→</span>
+            <div class="stage stage--measured">
+              <span class="stage-name">Governance</span>
+              <strong>{{ formatNumber(governance.kafkaIngestSuccessRatePerSec) }} accepted/s</strong>
+              <small>DLQ {{ formatNumber(governance.kafkaIngestDlqRatePerSec) }} /s</small>
+              <span class="source-dot" [ngClass]="statusClass(governance.source)">{{ sourceLabel(governance.source) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card evidence-key">
+          <h2>Evidence labels</h2>
+          <div class="key-grid">
+            <div><span class="source-dot measured">Measured</span><p>Prometheus or an authoritative admin API.</p></div>
+            <div><span class="source-dot fallback">Fallback</span><p>Real source proof exists, but the requested operational measurement is not primary.</p></div>
+            <div><span class="source-dot unavailable">Unavailable</span><p>No trustworthy measurement is currently available.</p></div>
+            <div><span class="source-dot mock">Mock</span><p>Explicit test/demo mode only; never a substitute for live evidence.</p></div>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Throughput">
+      <div class="tab-body">
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Last 5 minutes</p>
+              <h2>Generator throughput vs configured target</h2>
+            </div>
+            <div class="metric-pair">
+              <span>Actual <strong>{{ formatRate(actualBytesPerSec) }}</strong></span>
+              <span>Target <strong>{{ formatRate(generatorTargetBytesPerSec) }}</strong></span>
+            </div>
+          </div>
+
+          <div class="chart-frame" *ngIf="trend.length > 1; else noTrend">
+            <svg viewBox="0 0 760 180" role="img" aria-label="Generator throughput trend for the last five minutes">
+              <line x1="0" [attr.y1]="targetY()" x2="760" [attr.y2]="targetY()" class="target-line"></line>
+              <path [attr.d]="trendPath()" class="trend-line"></path>
+            </svg>
+          </div>
+          <ng-template #noTrend>
+            <p class="empty-state">No measured throughput series is available yet.</p>
+          </ng-template>
+
+          <div class="chart-legend">
+            <span><i class="legend-line legend-line--actual"></i> Prometheus rate(generator_bytes_produced_total[1m])</span>
+            <span><i class="legend-line legend-line--target"></i> Configured target (container default)</span>
+          </div>
+
+          <div class="callout" *ngIf="targetAttainmentPct < 90 && isMeasured(generator.source)">
+            <mat-icon>troubleshoot</mat-icon>
+            <div>
+              <strong>Measured output is below configured intent.</strong>
+              <p>The dashboard keeps this discrepancy visible instead of treating a low but non-zero rate as success. It is evidence for the next generator/Kafka throughput investigation.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Segments">
+      <div class="tab-body">
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Generator distribution</p>
+              <h2>Expected vs observed array segments</h2>
+            </div>
+            <span class="source-dot" [ngClass]="statusClass(generator.source)">{{ sourceLabel(generator.source) }}</span>
+          </div>
+
+          <div class="segment-table">
+            <div class="segment-row segment-row--header">
+              <span>Segment</span><span>Expected</span><span>Observed</span><span>Measured rate</span>
+            </div>
+            <div class="segment-row" *ngFor="let segment of segments">
+              <strong>{{ segment.name | uppercase }}</strong>
+              <span>{{ formatPercent(segment.expectedPct) }}</span>
+              <span>{{ formatPercent(segment.actualPct) }}</span>
+              <span>{{ formatRate(segment.bytesPerSec) }}</span>
+              <div class="distribution-bar distribution-bar--expected" [style.width.%]="segment.expectedPct"></div>
+              <div class="distribution-bar distribution-bar--actual" [style.width.%]="segment.actualPct"></div>
+            </div>
+          </div>
+          <p class="fine-print">Expected weights come from the generator configuration main:48, lbl:24, sba:21. Observed values come from Prometheus segment counters.</p>
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Pipeline">
+      <div class="tab-body">
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">End-to-end evidence</p>
+              <h2>Measured path and Lakehouse boundary</h2>
+            </div>
+          </div>
+
+          <div class="vertical-pipeline">
+            <article class="pipeline-step">
+              <div class="step-number">1</div>
+              <div><strong>Generator</strong><p>{{ formatRate(actualBytesPerSec) }} · {{ formatNumber(actualRecordsPerSec) }} records/s</p></div>
+              <span class="source-dot" [ngClass]="statusClass(generator.source)">{{ sourceLabel(generator.source) }}</span>
+            </article>
+            <article class="pipeline-step">
+              <div class="step-number">2</div>
+              <div><strong>Kafka</strong><p>Consumer lag {{ formatNumber(kafka.consumerLag) }} · ingress {{ formatRate(kafka.ingressBytesPerSec) }}</p></div>
+              <span class="source-dot" [ngClass]="statusClass(kafka.source)">{{ sourceLabel(kafka.source) }}</span>
+            </article>
+            <article class="pipeline-step">
+              <div class="step-number">3</div>
+              <div><strong>Java ingest</strong><p>Received {{ formatNumber(javaIngest.receiveRatePerSec) }}/s · processed {{ formatNumber(javaIngest.processedRatePerSec) }}/s · validation failures {{ formatNumber(javaIngest.validationFailureRatePerSec) }}/s</p></div>
+              <span class="source-dot" [ngClass]="statusClass(javaIngest.source)">{{ sourceLabel(javaIngest.source) }}</span>
+            </article>
+            <article class="pipeline-step">
+              <div class="step-number">4</div>
+              <div><strong>Governance</strong><p>Kafka accepted {{ formatNumber(governance.kafkaIngestSuccessRatePerSec) }}/s · Kafka DLQ {{ formatNumber(governance.kafkaIngestDlqRatePerSec) }}/s</p></div>
+              <span class="source-dot" [ngClass]="statusClass(governance.source)">{{ sourceLabel(governance.source) }}</span>
+            </article>
+          </div>
+
+          <div class="lakehouse-boundary">
+            <div class="boundary-title">
+              <mat-icon>layers</mat-icon>
+              <div>
+                <strong>Lakehouse analytical plane</strong>
+                <p>Stage 3 of PR #40. These stages remain visibly incomplete until real Delta evidence exists.</p>
+              </div>
+            </div>
+            <div class="lakehouse-stage-grid">
+              <article class="lakehouse-stage" *ngFor="let stage of lakehouseStages">
+                <span>{{ stage.name }}</span>
+                <strong>{{ stage.status }}</strong>
+                <small>{{ stage.detail }}</small>
+              </article>
+            </div>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Science Source">
+      <div class="tab-body">
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Public astronomy proof</p>
+              <h2>Science source evidence</h2>
+            </div>
+            <span class="evidence-chip" [ngClass]="statusClass(lakehouse?.source)">{{ sourceLabel(lakehouse?.source) }}</span>
+          </div>
+
+          <div class="source-grid">
+            <div><span>Provider profile</span><strong>{{ lakehouse?.upstream?.kind || 'Unavailable' }}</strong></div>
+            <div><span>Rows received</span><strong>{{ lakehouse?.upstream?.rowCount ?? 0 }}</strong></div>
+            <div><span>Evidence</span><strong>{{ lakehouse?.evidence || 'Unavailable' }}</strong></div>
+            <div><span>Freshness</span><strong>{{ lakehouse?.freshness?.stale ? 'Stale' : 'Current' }}</strong></div>
+            <div class="source-grid--wide"><span>Endpoint</span><code>{{ lakehouse?.upstream?.endpoint || 'Unavailable' }}</code></div>
+            <div class="source-grid--wide"><span>Query</span><code>{{ lakehouse?.upstream?.query || 'Unavailable' }}</code></div>
+          </div>
+
+          <div class="callout callout--info">
+            <mat-icon>science</mat-icon>
+            <div>
+              <strong>Science data and operational telemetry are intentionally separated.</strong>
+              <p>VO/TAP proves the public astronomy source boundary. Prometheus proves operational behavior. Neither is presented as Bronze/Silver/Gold until the real Delta path exists.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Alert SLO">
+      <div class="tab-body">
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Resilience</p>
+              <h2>Alert service-level evidence</h2>
+            </div>
+            <button mat-stroked-button type="button" (click)="refreshAll()"><mat-icon>refresh</mat-icon>Refresh</button>
+          </div>
+
+          <div class="kpi-grid" *ngIf="alertSlo; else noSlo">
+            <article class="metric-card"><span class="metric-label">Ingested total</span><strong>{{ formatNumber(alertSlo.alertIngestedTotal) }}</strong></article>
+            <article class="metric-card"><span class="metric-label">Latency p50</span><strong>{{ formatNumber(alertSlo.alertLatencyMsP50) }} ms</strong></article>
+            <article class="metric-card"><span class="metric-label">Latency p95</span><strong>{{ formatNumber(alertSlo.alertLatencyMsP95) }} ms</strong></article>
+            <article class="metric-card"><span class="metric-label">Latency p99</span><strong>{{ formatNumber(alertSlo.alertLatencyMsP99) }} ms</strong></article>
+            <article class="metric-card" [class.metric-card--warn]="(alertSlo.dlqDepth ?? 0) > 0"><span class="metric-label">DLQ depth</span><strong>{{ formatNumber(alertSlo.dlqDepth) }}</strong></article>
+            <article class="metric-card"><span class="metric-label">Replays total</span><strong>{{ formatNumber(alertSlo.replaysTotal) }}</strong></article>
+          </div>
+          <ng-template #noSlo><p class="empty-state">Alert SLO metrics are unavailable.</p></ng-template>
+
+          <div class="dlq-list" *ngIf="dlq.length">
+            <h3>Dead letter queue</h3>
+            <article class="dlq-row" *ngFor="let alert of dlq">
+              <div>
+                <strong>{{ alert.eventType || 'Unknown event' }}</strong>
+                <small>{{ alert.severity || 'UNKNOWN' }} · {{ alert.sourceSystem || 'unknown source' }} · {{ alert.issuedAt || '' }}</small>
+                <p>{{ alert.message }}</p>
+              </div>
+              <button mat-stroked-button type="button" (click)="replayAlert(alert.id)"><mat-icon>replay</mat-icon>Replay</button>
+            </article>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Raw Samples">
+      <div class="tab-body">
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Engineering detail</p>
+              <h2>Raw Prometheus evaluation samples</h2>
+            </div>
+          </div>
+
+          <div class="raw-meta">
+            <div><span>Metric</span><code>rate(generator_bytes_produced_total[1m])</code></div>
+            <div><span>Prometheus scrape interval</span><strong>{{ prometheusScrapeIntervalSec }} seconds</strong></div>
+            <div><span>Query evaluation step</span><strong>{{ prometheusScrapeIntervalSec }} seconds</strong></div>
+            <div><span>Samples shown</span><strong>{{ trend.length }}</strong></div>
+          </div>
+
+          <p class="fine-print">The UI intentionally queries at the same 15-second cadence as Prometheus scraping. This avoids presenting repeated two-second evaluation timestamps as if they were independent physical measurements.</p>
+
+          <div class="sample-list" *ngIf="trend.length; else noRawSamples">
+            <div class="sample-row sample-row--header"><span>Timestamp</span><span>Evaluated rate</span></div>
+            <div class="sample-row" *ngFor="let point of trend.slice().reverse()">
+              <span>{{ point.t | date:'mediumTime' }}</span>
+              <strong>{{ formatRate(point.v) }}</strong>
+            </div>
+          </div>
+          <ng-template #noRawSamples><p class="empty-state">No Prometheus samples are available yet.</p></ng-template>
+        </section>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <footer class="page-footer">
+    <span *ngIf="lastRefreshAt">UI refreshed {{ lastRefreshAt | date:'mediumTime' }}</span>
+    <span>Evidence-first telemetry · PR #40</span>
+  </footer>
+</section>

@@ -1,0 +1,31 @@
+flowchart LR
+  SRC[Kafka / Pulsar / Object Metadata]
+
+  subgraph BRONZE[Bronze - Source Fidelity]
+    B1[Raw broker events]
+    B2[Event envelopes]
+    B3[Object URIs + checksums]
+    B4[Raw manifests / metadata]
+  end
+
+  subgraph SILVER[Silver - Canonical + Trusted]
+    S1[Validated observations]
+    S2[Deduplicated datasets]
+    S3[Canonical jobs / manifests]
+    S4[Quality + quarantine results]
+    S5[Lineage references]
+  end
+
+  subgraph GOLD[Gold - Consumer Optimized]
+    G1[Observation summaries]
+    G2[Ingest health]
+    G3[Dataset quality rollups]
+    G4[Processing metrics]
+    G5[AI-ready / query-ready products]
+  end
+
+  SRC --> BRONZE --> SILVER --> GOLD
+
+  style BRONZE fill:#fff0e6,stroke:#ff7f00
+  style SILVER fill:#f0fff4,stroke:#20a86a
+  style GOLD fill:#fff6e6,stroke:#d18b2b

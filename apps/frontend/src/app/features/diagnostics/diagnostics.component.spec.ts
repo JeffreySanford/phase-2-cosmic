@@ -5,28 +5,35 @@ import {
   tick,
 } from "@angular/core/testing";
 import { Component, Input } from "@angular/core";
-import { DiagnosticsComponent } from "./diagnostics.component";
+import {
+  DatabaseBenchmarkMetrics,
+  DiagnosticsComponent,
+} from "./diagnostics.component";
 import { BehaviorSubject } from "rxjs";
 import { PulsarStatus } from "../../shared/types";
 
-@Component({ selector: "app-promql-card", template: "" })
+@Component({ selector: "app-promql-card", template: "", standalone: true })
 class PromqlCardStubComponent {
   @Input() query?: string;
   @Input() title?: string;
   @Input() tone?: string;
 }
 
-@Component({ selector: "app-pulsar-status", template: "" })
+@Component({ selector: "app-pulsar-status", template: "", standalone: true })
 class PulsarStatusStubComponent {
   @Input() status?: Partial<PulsarStatus>;
 }
 
-@Component({ selector: "app-rabbitmq-status", template: "" })
+@Component({ selector: "app-rabbitmq-status", template: "", standalone: true })
 class RabbitMQStatusStubComponent {
   @Input() status?: unknown;
 }
 
-@Component({ selector: "app-disclaimer-banner", template: "" })
+@Component({
+  selector: "app-disclaimer-banner",
+  template: "",
+  standalone: true,
+})
 class DisclaimerBannerStubComponent {
   @Input() dismissible?: boolean;
   @Input() type?: string;
@@ -34,7 +41,11 @@ class DisclaimerBannerStubComponent {
   @Input() ready?: boolean;
 }
 
-@Component({ selector: "app-trident-allocator", template: "" })
+@Component({
+  selector: "app-trident-allocator",
+  template: "",
+  standalone: true,
+})
 class TridentAllocatorStubComponent {
   @Input() dismissible?: boolean;
   @Input() type?: string;
@@ -42,7 +53,7 @@ class TridentAllocatorStubComponent {
   @Input() ready?: boolean;
 }
 
-@Component({ selector: "app-job-events", template: "" })
+@Component({ selector: "app-job-events", template: "", standalone: true })
 class JobEventsStubComponent {}
 import {
   HttpClientTestingModule,
@@ -57,6 +68,9 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatTabsModule } from "@angular/material/tabs";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { LoadProfileService } from "../../services/load-profile.service";
+import { DisclaimerBannerModule } from "../../shared/disclaimer-banner/disclaimer-banner.module";
+import { TelemetryModule } from "../telemetry/telemetry.module";
+import { DiagnosticsModule } from "./diagnostics.module";
 
 describe("DiagnosticsComponent", () => {
   let fixture: ComponentFixture<DiagnosticsComponent>;
@@ -89,14 +103,8 @@ describe("DiagnosticsComponent", () => {
         MatIconModule,
         MatTabsModule,
         NoopAnimationsModule,
-        PromqlCardStubComponent,
-        PulsarStatusStubComponent,
-        RabbitMQStatusStubComponent,
-        DisclaimerBannerStubComponent,
-        TridentAllocatorStubComponent,
-        JobEventsStubComponent,
+        DiagnosticsComponent,
       ],
-      declarations: [DiagnosticsComponent],
       providers: [
         // Prevent real MockDataService construction which would call LoadProfileService
         {
@@ -126,7 +134,23 @@ describe("DiagnosticsComponent", () => {
           },
         },
       ],
-    }).compileComponents();
+    })
+      .overrideComponent(DiagnosticsComponent, {
+        remove: {
+          imports: [DisclaimerBannerModule, TelemetryModule, DiagnosticsModule],
+        },
+        add: {
+          imports: [
+            PromqlCardStubComponent,
+            PulsarStatusStubComponent,
+            RabbitMQStatusStubComponent,
+            DisclaimerBannerStubComponent,
+            TridentAllocatorStubComponent,
+            JobEventsStubComponent,
+          ],
+        },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(DiagnosticsComponent);
     comp = fixture.componentInstance;
@@ -181,9 +205,153 @@ describe("DiagnosticsComponent", () => {
     } catch {
       // ignore absence
     }
+    try {
+      httpMock.expectOne("/api/diagnostics/database-benchmarks").flush({
+        generatedAt: new Date().toISOString(),
+        source: "mock",
+        postgres: {
+          status: "healthy",
+          connection: "mock",
+          host: "local-postgres",
+          database: "mock",
+          activeConnections: 3,
+          latencyMs: 2,
+          details: "mock",
+        },
+        benchmarks: {
+          ingestRatePerSec: 128,
+          ingestBytesPerSec: 1048576,
+          averageLatencyMs: 9,
+          queueDepth: 4,
+          activeJobs: 2,
+          failureRatePerSec: 0,
+          throughputMbPerSec: 1,
+        },
+      });
+    } catch {
+      // ignore absence
+    }
     httpMock.verify();
     logSpy.mockRestore();
   });
+
+  it("renders the database and benchmarks tab", fakeAsync(() => {
+    startComponent();
+    settleView();
+
+    const tabButtons = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        ".mat-mdc-tab, [role='tab']"
+      ) as NodeListOf<HTMLElement>
+    );
+    const dbTab = tabButtons.find((button) =>
+      button.textContent?.includes("Database & Benchmarks")
+    );
+
+    expect(dbTab).toBeTruthy();
+    dbTab?.click();
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    comp.databaseMetrics = {
+      generatedAt: new Date().toISOString(),
+      source: "prometheus",
+      postgres: {
+        status: "healthy",
+        connection: "configured",
+        host: "postgres",
+        database: "cosmic",
+        activeConnections: 2,
+        latencyMs: 3,
+        details: "ready",
+      },
+      benchmarks: {
+        ingestRatePerSec: 128,
+        ingestBytesPerSec: 1048576,
+        averageLatencyMs: 9,
+        queueDepth: 4,
+        activeJobs: 2,
+        failureRatePerSec: 0,
+        throughputMbPerSec: 1,
+      },
+      prometheus: {
+        available: true,
+        queries: [{ query: "pg_up", label: "pg_up", value: 1 }],
+      },
+    } satisfies DatabaseBenchmarkMetrics;
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent ?? "";
+    expect(text).toContain("Database & Benchmarks");
+    expect(text).toContain("Postgres");
+    expect(text).toContain("Benchmarks");
+    expect(text).toContain("Source details");
+    expect(text).toContain("Prometheus signals");
+    expect(text).toContain("pg_up");
+  }));
+
+  it("formats diagnostics source labels for the monitoring dashboard", () => {
+    expect(comp.getSourceLabel("postgres")).toBe("PostgreSQL native");
+    expect(comp.getSourceLabel("prometheus")).toBe("Prometheus");
+    expect(comp.getSourceLabel("mock")).toBe("Mock");
+    expect(comp.getSourceLabel("fallback")).toBe("Fallback");
+    expect(comp.getSourceLabel("live")).toBe("Live");
+  });
+
+  it("uses distinct copy for refreshing and refreshed states", fakeAsync(() => {
+    startComponent();
+    comp.databaseMetrics = {
+      generatedAt: new Date().toISOString(),
+      source: "mock",
+      postgres: {
+        status: "healthy",
+        connection: "mock",
+        host: "local-postgres",
+        database: "mock",
+        activeConnections: 3,
+        latencyMs: 2,
+        details: "mock",
+      },
+      benchmarks: {
+        ingestRatePerSec: 128,
+        ingestBytesPerSec: 1048576,
+        averageLatencyMs: 9,
+        queueDepth: 4,
+        activeJobs: 2,
+        failureRatePerSec: 0,
+        throughputMbPerSec: 1,
+      },
+    } satisfies DatabaseBenchmarkMetrics;
+
+    comp.lastMetricsRefreshStatus = "refreshing";
+    const tabButtons = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        ".mat-mdc-tab, [role='tab']"
+      ) as NodeListOf<HTMLElement>
+    );
+    const dbTab = tabButtons.find((button) =>
+      button.textContent?.includes("Database & Benchmarks")
+    );
+    dbTab?.click();
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain("Refreshing metrics…");
+    expect(
+      fixture.nativeElement
+        .querySelector(".refresh-status")
+        ?.getAttribute("title")
+    ).toContain("Refresh in progress");
+
+    comp.lastMetricsRefreshAt = new Date(Date.now() - 30_000);
+    comp.lastMetricsRefreshStatus = "success";
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain("Last refreshed");
+    expect(fixture.nativeElement.textContent).toContain("just now");
+    expect(fixture.nativeElement.textContent).toContain("▲");
+  }));
 
   it("fetches index and system-specs", fakeAsync(() => {
     startComponent();
@@ -288,6 +456,68 @@ describe("DiagnosticsComponent", () => {
       .flush({ status: "unavailable", connection: "none" });
     httpMock.expectOne("/api/metrics/topology").flush({});
     settleView();
+  }));
+
+  it("refreshes database metrics on the polling cadence", fakeAsync(() => {
+    startComponent();
+    httpMock.expectOne("/api/diagnostics").flush({ path: "/tmp", files: [] });
+    httpMock.expectOne("/api/diagnostics/docker-services").flush([]);
+    const initialMetricsReq = httpMock.expectOne(
+      "/api/diagnostics/database-benchmarks"
+    );
+    initialMetricsReq.flush({
+      generatedAt: new Date().toISOString(),
+      source: "prometheus",
+      postgres: {
+        status: "healthy",
+        connection: "configured",
+        host: "postgres",
+        database: "cosmic",
+        activeConnections: 2,
+        latencyMs: 3,
+        details: "ready",
+      },
+      benchmarks: {
+        ingestRatePerSec: 111,
+        ingestBytesPerSec: 222,
+        averageLatencyMs: 4,
+        queueDepth: 5,
+        activeJobs: 6,
+        failureRatePerSec: 0.2,
+        throughputMbPerSec: 7,
+      },
+    });
+
+    tick(5000);
+    const refreshedMetricsReq = httpMock.expectOne(
+      "/api/diagnostics/database-benchmarks"
+    );
+    refreshedMetricsReq.flush({
+      generatedAt: new Date().toISOString(),
+      source: "postgres",
+      postgres: {
+        status: "healthy",
+        connection: "configured",
+        host: "postgres",
+        database: "cosmic",
+        activeConnections: 4,
+        latencyMs: 6,
+        details: "ready",
+      },
+      benchmarks: {
+        ingestRatePerSec: 333,
+        ingestBytesPerSec: 444,
+        averageLatencyMs: 8,
+        queueDepth: 9,
+        activeJobs: 10,
+        failureRatePerSec: 0.4,
+        throughputMbPerSec: 11,
+      },
+    });
+
+    settleView();
+    expect(comp.databaseMetrics?.source).toBe("postgres");
+    expect(comp.databaseMetrics?.benchmarks.ingestRatePerSec).toBe(333);
   }));
 
   it("fetches timing/rfi metrics on init", fakeAsync(() => {

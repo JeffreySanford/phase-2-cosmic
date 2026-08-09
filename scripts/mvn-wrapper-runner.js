@@ -43,6 +43,57 @@ function runCapture(cmd, cmdArgs) {
   }
 }
 
+function dockerEnvArgs(defaults = {}) {
+  const names = [
+    "HOST_KAFKA_BOOTSTRAP",
+    "KAFKA_BOOTSTRAP_SERVERS",
+    "MAVEN_OPTS",
+    "PULSAR_ADMIN_URL",
+    "PULSAR_BROKER_URL",
+    "PULSAR_SERVICE_URL",
+    "SPRING_KAFKA_BOOTSTRAP_SERVERS",
+    "SPRING_RABBITMQ_HOST",
+    "SPRING_RABBITMQ_PORT",
+    "SPRING_REDIS_HOST",
+    "SPRING_REDIS_PORT",
+    "USE_HOST_KAFKA",
+  ];
+  return names.flatMap((name) => {
+    if (Object.prototype.hasOwnProperty.call(process.env, name)) {
+      return ["-e", `${name}=${process.env[name]}`];
+    }
+    if (Object.prototype.hasOwnProperty.call(defaults, name)) {
+      return ["-e", `${name}=${defaults[name]}`];
+    }
+    return [];
+  });
+}
+
+function firstComposeServiceContainerId(serviceNames) {
+  for (const serviceName of serviceNames) {
+    const containerIds = runCapture("docker", [
+      "ps",
+      "--filter",
+      `label=com.docker.compose.service=${serviceName}`,
+      "--format",
+      "{{.ID}}",
+    ]);
+    if (containerIds) {
+      const first = containerIds.split(/\s+/)[0];
+      if (first) return first;
+    }
+  }
+  return null;
+}
+
+function dockerSocketArgs() {
+  const socketPath = "/var/run/docker.sock";
+  if (process.platform !== "win32" && exists(socketPath)) {
+    return ["-v", `${socketPath}:${socketPath}`];
+  }
+  return [];
+}
+
 // Prepare a platform-friendly volume path for Docker (used below if we need Docker)
 let volPath = cwd.replace(/\\/g, "/");
 if (/^[A-Za-z]:\//.test(volPath)) {
@@ -93,27 +144,32 @@ const isJavaModuleWorkspace =
   cwdPath.includes("/tools/java-ingest") ||
   cwdPath.endsWith("/java-governance") ||
   cwdPath.endsWith("/java-ingest");
-const isJavaBuildCommand = args.some((arg) => ["test", "verify", "package", "compile", "install"].includes(arg));
-const shouldRunInDocker = dockerOnly || useCompose || ((isJavaModuleInvocation || isJavaModuleWorkspace) && isJavaBuildCommand);
+const isJavaBuildCommand = args.some((arg) =>
+  ["test", "verify", "package", "compile", "install"].includes(arg)
+);
+const shouldRunInDocker =
+  dockerOnly ||
+  useCompose ||
+  ((isJavaModuleInvocation || isJavaModuleWorkspace) && isJavaBuildCommand);
 if (shouldRunInDocker) {
   console.log(
     "Running Maven in Docker for Java module so tests execute in the same environment as CI"
   );
-  // try to discover the compose network by inspecting the running redis container
-  let redisContainerId = runCapture("docker", [
-    "ps",
-    "--filter",
-    "name=redis",
-    "--format",
-    "{{.ID}}",
+  // Try to discover the compose network by inspecting any running dependency
+  // service. Not every workflow starts the same subset.
+  const composeContainerId = firstComposeServiceContainerId([
+    "redis",
+    "kafka",
+    "rabbitmq",
+    "zookeeper",
   ]);
   let networkArg = null;
-  if (redisContainerId) {
+  if (composeContainerId) {
     const netnames = runCapture("docker", [
       "inspect",
       "-f",
       "{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}",
-      redisContainerId,
+      composeContainerId,
     ]);
     if (netnames) {
       const firstNet = netnames.split(/\s+/)[0];
@@ -124,8 +180,24 @@ if (shouldRunInDocker) {
   const mvnCommand = `cd /workspace && mvn ${args
     .map((a) => (a.includes(" ") ? '"' + a.replace(/"/g, '\\"') + '"' : a))
     .join(" ")}`;
+  const composeEnvDefaults = networkArg
+    ? {
+        HOST_KAFKA_BOOTSTRAP: "kafka:9092",
+        KAFKA_BOOTSTRAP_SERVERS: "kafka:9092",
+        PULSAR_ADMIN_URL: "http://pulsar:8080",
+        PULSAR_BROKER_URL: "pulsar://pulsar:6650",
+        PULSAR_SERVICE_URL: "pulsar://pulsar:6650",
+        SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092",
+        SPRING_RABBITMQ_HOST: "rabbitmq",
+        SPRING_RABBITMQ_PORT: "5672",
+        SPRING_REDIS_HOST: "redis",
+        SPRING_REDIS_PORT: "6379",
+      }
+    : {};
   const dockerCmd = ["run", "--rm"];
   if (networkArg) dockerCmd.push(...networkArg);
+  dockerCmd.push(...dockerSocketArgs());
+  dockerCmd.push(...dockerEnvArgs(composeEnvDefaults));
   dockerCmd.push(
     "-v",
     `${volPath}:/workspace`,

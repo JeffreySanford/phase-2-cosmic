@@ -1,13 +1,21 @@
+import { CommonModule } from "@angular/common";
 import { AfterViewInit, Component, OnDestroy, inject } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { MatButtonModule } from "@angular/material/button";
+import { MatCardModule } from "@angular/material/card";
+import { MatIconModule } from "@angular/material/icon";
+import { MatTabsModule } from "@angular/material/tabs";
 import { BehaviorSubject } from "rxjs";
 import { HttpClient } from "@angular/common/http";
 import { DataSourceService } from "../../services/data-source.service";
 import { MockDataService } from "../../services/mock-data.service";
 import { LoadProfileService } from "../../services/load-profile.service";
 import { RequestCacheService } from "../../services/request-cache.service";
+import { DisclaimerBannerModule } from "../../shared/disclaimer-banner/disclaimer-banner.module";
 import { Subscription } from "rxjs";
 import { switchMap } from "rxjs/operators";
 import { interval } from "rxjs";
+import { TelemetryModule } from "../telemetry/telemetry.module";
 import {
   CommissioningScenario,
   DiagnosticsIndex,
@@ -15,6 +23,7 @@ import {
   PulsarStatus,
   RabbitMQStatus,
 } from "../../shared/types";
+import { DiagnosticsModule } from "./diagnostics.module";
 
 /** Live event interface for diagnostics */
 export interface JobEvent {
@@ -28,11 +37,54 @@ export interface JobEvent {
   };
 }
 
+export interface DatabaseBenchmarkMetrics {
+  generatedAt: string;
+  source: "live" | "mock" | "fallback" | "postgres" | "prometheus";
+  postgres: {
+    status: string;
+    connection: string;
+    host: string;
+    database: string;
+    activeConnections: number;
+    latencyMs: number;
+    version?: string;
+    details?: string;
+  };
+  benchmarks: {
+    ingestRatePerSec: number;
+    ingestBytesPerSec: number;
+    averageLatencyMs: number;
+    queueDepth: number;
+    activeJobs: number;
+    failureRatePerSec: number;
+    throughputMbPerSec: number;
+  };
+  prometheus?: {
+    available: boolean;
+    queries: Array<{
+      query: string;
+      label: string;
+      value: number;
+    }>;
+  };
+}
+
 @Component({
   selector: "app-diagnostics",
   templateUrl: "./diagnostics.component.html",
   styleUrls: ["./diagnostics.component.scss"],
-  standalone: false,
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatTabsModule,
+    DisclaimerBannerModule,
+    TelemetryModule,
+    DiagnosticsModule,
+  ],
 })
 export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
   private http = inject(HttpClient);
@@ -124,6 +176,156 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
     return this.initialLoadSettled$.value;
   }
 
+  databaseMetrics: DatabaseBenchmarkMetrics | null = null;
+  lastMetricsRefreshAt: Date | null = null;
+  lastMetricsRefreshStatus: "idle" | "success" | "error" | "refreshing" =
+    "idle";
+  previousDatabaseMetrics: DatabaseBenchmarkMetrics | null = null;
+  sparklinePulseKey = 0;
+
+  get throughputMbPerSecValue(): number {
+    return this.databaseMetrics?.benchmarks?.throughputMbPerSec ?? 0;
+  }
+
+  get previousThroughputMbPerSecValue(): number | undefined {
+    return this.previousDatabaseMetrics?.benchmarks?.throughputMbPerSec;
+  }
+
+  get averageLatencyMsValue(): number {
+    return this.databaseMetrics?.benchmarks?.averageLatencyMs ?? 0;
+  }
+
+  get previousAverageLatencyMsValue(): number | undefined {
+    return this.previousDatabaseMetrics?.benchmarks?.averageLatencyMs;
+  }
+
+  get activeConnectionsValue(): number {
+    return this.databaseMetrics?.postgres?.activeConnections ?? 0;
+  }
+
+  get previousActiveConnectionsValue(): number | undefined {
+    return this.previousDatabaseMetrics?.postgres?.activeConnections;
+  }
+
+  get prometheusSignals(): Array<{
+    query: string;
+    label: string;
+    value: number;
+  }> {
+    return this.databaseMetrics?.prometheus?.queries ?? [];
+  }
+
+  get hasPrometheusSignals(): boolean {
+    return this.databaseMetrics?.prometheus?.available ?? false;
+  }
+
+  getSourceLabel(source: string | undefined): string {
+    switch (source) {
+      case "postgres":
+        return "PostgreSQL native";
+      case "prometheus":
+        return "Prometheus";
+      case "mock":
+        return "Mock";
+      case "fallback":
+        return "Fallback";
+      case "live":
+        return "Live";
+      default:
+        return source
+          ? source.replace(/\b\w/g, (char) => char.toUpperCase())
+          : "Unknown";
+    }
+  }
+
+  get metricsRefreshBadgeText(): string {
+    if (this.lastMetricsRefreshStatus === "refreshing") {
+      return "Refreshing metrics…";
+    }
+
+    if (this.lastMetricsRefreshAt) {
+      const prefix =
+        this.lastMetricsRefreshStatus === "error"
+          ? "Last refresh failed"
+          : "Last refreshed";
+      return `${prefix} ${this.formatRefreshAge(this.lastMetricsRefreshAt)}`;
+    }
+
+    return this.lastMetricsRefreshStatus === "error"
+      ? "Last refresh failed"
+      : "Waiting for first refresh…";
+  }
+
+  getKpiTrend(
+    value: number,
+    previousValue: number | undefined
+  ): { symbol: string; className: string } {
+    if (previousValue === undefined) {
+      return value > 0
+        ? { symbol: "▲", className: "positive" }
+        : { symbol: "•", className: "neutral" };
+    }
+
+    if (value > previousValue) {
+      return { symbol: "▲", className: "positive" };
+    }
+
+    if (value < previousValue) {
+      return { symbol: "▼", className: "negative" };
+    }
+
+    return { symbol: "●", className: "neutral" };
+  }
+
+  getKpiHistoryBars(
+    value: number,
+    previousValue: number | undefined
+  ): string[] {
+    if (previousValue === undefined) {
+      return ["40", "55", "45"];
+    }
+
+    const delta = value - previousValue;
+    const scale = Math.max(
+      0.15,
+      Math.min(
+        1,
+        Math.abs(delta) / Math.max(1, Math.abs(previousValue || value))
+      )
+    );
+    const base = Math.max(
+      20,
+      Math.min(80, 45 + (delta > 0 ? scale * 20 : delta < 0 ? -scale * 20 : 0))
+    );
+    return [
+      Math.round(base - scale * 10).toString(),
+      Math.round(base + scale * 4).toString(),
+      Math.round(base + scale * 8).toString(),
+    ];
+  }
+
+  private formatRefreshAge(timestamp: Date): string {
+    const diffMs = Date.now() - timestamp.getTime();
+    const diffSeconds = Math.floor(diffMs / 1000);
+
+    if (diffSeconds < 60) {
+      return "just now";
+    }
+
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60) {
+      return `${diffMinutes}m ago`;
+    }
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    }
+
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  }
+
   // VO services
   // external-source preview removed from diagnostics; see Datasets / Viewer instead
   commissioningScenarios: CommissioningScenario[] = [];
@@ -146,6 +348,7 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
       this.fetchPulsarStatus();
       this.fetchRabbitMQStatus();
       this.fetchTimingMetrics();
+      this.fetchDatabaseBenchmarks();
       this.fetchCommissioningScenarios();
       this.startPolling();
       this.startBrokerPolling();
@@ -195,7 +398,10 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
     if (this.pollSubscription) return;
     this.pollSubscription = this.loadProfile.pollingMs$
       .pipe(switchMap((ms) => interval(ms)))
-      .subscribe(() => this.fetchDockerServices(true));
+      .subscribe(() => {
+        this.fetchDockerServices(true);
+        this.fetchDatabaseBenchmarks();
+      });
   }
 
   startBrokerPolling(): void {
@@ -230,6 +436,80 @@ export class DiagnosticsComponent implements AfterViewInit, OnDestroy {
         },
         () => {
           // ignore errors; diagnostics already shows other failures
+        }
+      );
+  }
+
+  private fetchDatabaseBenchmarks(): void {
+    this.lastMetricsRefreshStatus = "refreshing";
+
+    if (this.dataSource.mode === "mock") {
+      this.deferUiUpdate(() => {
+        this.databaseMetrics = {
+          generatedAt: new Date().toISOString(),
+          source: "mock",
+          postgres: {
+            status: "healthy",
+            connection: "mock",
+            host: "local-postgres",
+            database: "mock",
+            activeConnections: 3,
+            latencyMs: 2,
+            details: "Mock diagnostics payload",
+          },
+          benchmarks: {
+            ingestRatePerSec: 128,
+            ingestBytesPerSec: 1048576,
+            averageLatencyMs: 9,
+            queueDepth: 4,
+            activeJobs: 2,
+            failureRatePerSec: 0,
+            throughputMbPerSec: 1,
+          },
+        };
+      });
+      return;
+    }
+
+    this.http
+      .get<DatabaseBenchmarkMetrics>("/api/diagnostics/database-benchmarks")
+      .subscribe(
+        (metrics) => {
+          this.deferUiUpdate(() => {
+            this.previousDatabaseMetrics = this.databaseMetrics;
+            this.databaseMetrics = metrics;
+            this.lastMetricsRefreshAt = new Date();
+            this.lastMetricsRefreshStatus = "success";
+            this.sparklinePulseKey += 1;
+          });
+        },
+        () => {
+          this.deferUiUpdate(() => {
+            this.databaseMetrics = {
+              generatedAt: new Date().toISOString(),
+              source: "fallback",
+              postgres: {
+                status: "offline",
+                connection: "unavailable",
+                host: "n/a",
+                database: "n/a",
+                activeConnections: 0,
+                latencyMs: 0,
+                details: "No benchmark payload available.",
+              },
+              benchmarks: {
+                ingestRatePerSec: 0,
+                ingestBytesPerSec: 0,
+                averageLatencyMs: 0,
+                queueDepth: 0,
+                activeJobs: 0,
+                failureRatePerSec: 0,
+                throughputMbPerSec: 0,
+              },
+            };
+            this.lastMetricsRefreshAt = new Date();
+            this.lastMetricsRefreshStatus = "error";
+          });
         }
       );
   }

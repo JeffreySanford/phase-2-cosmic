@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-empty */
 import "zone.js/node";
-import { platformServer } from "@angular/platform-server";
+import { bootstrapApplication } from "@angular/platform-browser";
 import { AppModule } from "./app/app.module";
-import { ApplicationRef } from "@angular/core";
+import { AppComponent } from "./app/app.component";
+import { ApplicationRef, importProvidersFrom } from "@angular/core";
 import { from, of, lastValueFrom } from "rxjs";
 import { switchMap, map, catchError } from "rxjs/operators";
 import { readFile, readdir } from "fs/promises";
@@ -96,8 +97,9 @@ const bootstrap = async (): Promise<ApplicationRef> => {
     console.warn("SSR resolver setup failed:", e);
   }
 
-  const mod = await platformServer().bootstrapModule(AppModule);
-  return mod.injector.get(ApplicationRef);
+  return bootstrapApplication(AppComponent, {
+    providers: [importProvidersFrom(AppModule)],
+  }) as Promise<ApplicationRef>;
 };
 
 export default bootstrap;

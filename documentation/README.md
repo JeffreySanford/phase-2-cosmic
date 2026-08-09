@@ -32,6 +32,36 @@ Files:
 - [EXECUTION_LAYER_API_SKETCH.md](/docuentation/architecture/EXECUTION_LAYER_API_SKETCH.md) — minimal execution-layer API evolved from the original remote-compute gateway idea
 - [EVENT_ENVELOPE_AND_BROKER_ROLES.md](/docuentation/messaging/EVENT_ENVELOPE_AND_BROKER_ROLES.md) — canonical event envelope and RabbitMQ/Kafka/Pulsar role partitioning
 
+- [LAKEHOUSE_INITIATIVE.md](/documentation/lakehouse/README.md) — active PR #40 Lakehouse initiative: architecture, validated public-data evidence scaffold, staged Bronze/Silver/Gold implementation plan, and guardrails
+- [LAKEHOUSE_TODO.md](/documentation/lakehouse/TODO.md) — current PR #40 execution stages and evidence gates
+- [LAKEHOUSE_TOPOLOGY.md](/documentation/lakehouse/docs/LAKEHOUSE_TOPOLOGY.md) — integrated physical/logical topology for streaming, governance, object storage, and Bronze/Silver/Gold analytics
+- [MEDALLION_ARCHITECTURE.md](/documentation/lakehouse/docs/MEDALLION_ARCHITECTURE.md) — Bronze/Silver/Gold contracts plus RAW/CAL/SCI/DRV crosswalk and failure/quarantine semantics
+- [LAKEHOUSE_STORAGE_RESPONSIBILITIES.md](/documentation/lakehouse/docs/STORAGE_RESPONSIBILITIES.md) — authoritative object storage versus analytical table ownership
+- [REAL_DATA_SOURCES.md](/documentation/lakehouse/docs/REAL_DATA_SOURCES.md) — provider-neutral VO/TAP source strategy; ESO is the first working profile and NRAO/VLA/VLASS is the key radio-astronomy validation profile
+- [LAKEHOUSE_PUBLIC_DATASET_SCAN.md](/documentation/lakehouse/docs/PUBLIC_DATASET_SCAN_2026_08_08.md) — dated PR40 scan of additional official public archive/catalog sources for future Lakehouse development bundles
+- [LAKEHOUSE_ACTIVE_DATASET_SELECTION_PLAN.md](/documentation/lakehouse/docs/ACTIVE_DATASET_SELECTION_PLAN.md) — PR40 plan for source registry activation states, include/exclude controls, source bundles, and active-record policy
+- [ESO_PROOF_SLICE_BRIEF.md](/documentation/lakehouse/docs/ESO_PROOF_SLICE_BRIEF.md) — current ESO provider profile and path from the live evidence scaffold to the first complete Lakehouse vertical slice
+- [ESO_INGESTION_ADAPTER_CONTRACT.md](/documentation/lakehouse/docs/ESO_INGESTION_ADAPTER_CONTRACT.md) — provider-neutral source-to-Bronze contract documented through the current ESO profile
+- [PIPELINE_TELEMETRY_EVIDENCE.md](/documentation/lakehouse/docs/PIPELINE_TELEMETRY_EVIDENCE.md) — active evidence API, measured/configured/mock/unavailable source semantics, telemetry cadence, and the Bronze/Silver/Gold claim boundary
+- [LAKEHOUSE_MERMAID_SOURCES.md](/documentation/lakehouse/diagrams/README.md) — reusable `.mmd` topology source catalog, including processing-level and failure-routing views
+
+### Future product phase — Cosmic Horizon: Resolution
+
+The following package is intentionally captured in PR #40 as **future Phase 3 planning only** so the Phase 2 Lakehouse and provenance architecture can preserve a clean handoff:
+
+- [COSMIC_HORIZON_RESOLUTION.md](/documentation/cosmic-horizon-resolution/README.md) — Phase 3 product vision and documentation map
+- [PHASE_3_EVIDENCE_GRAPH_AND_SCIENTIFIC_INTELLIGENCE.md](/documentation/cosmic-horizon-resolution/PHASE_3_EVIDENCE_GRAPH_AND_SCIENTIFIC_INTELLIGENCE.md) — proposed Evidence Graph & Scientific Intelligence gates
+- [RESOLUTION_ARCHITECTURE.md](/documentation/cosmic-horizon-resolution/ARCHITECTURE.md) — authoritative-plane, Lakehouse, evidence-graph, and GraphRAG boundaries
+- [RESOLUTION_GRAPH_MODEL_AND_USE_CASES.md](/documentation/cosmic-horizon-resolution/GRAPH_MODEL_AND_USE_CASES.md) — initial graph model and bounded ESO/M87/3C 273/VLASS-style engineering use cases
+- [RESOLUTION_EVALUATION_AND_GUARDRAILS.md](/documentation/cosmic-horizon-resolution/EVALUATION_AND_GUARDRAILS.md) — software/data-engineering evidence criteria and scientific-claim boundaries
+- [RESOLUTION_LEARNING_PLAN.md](/documentation/cosmic-horizon-resolution/LEARNING_PLAN.md) — current Databricks/Spark, Neo4j/GraphRAG, Stanford CS224W, GraphFrames, PyTorch Geometric, and Microsoft GraphRAG learning path
+- [RESOLUTION_NAMING_AND_REALITY_MODEL.md](/documentation/cosmic-horizon-resolution/NAMING_AND_REALITY_MODEL.md) — naming alternatives, selected Resolution rationale, and Data Reality/System Reality framing
+- [RESOLUTION_DEPENDENCY_SECURITY_TRIAGE.md](/documentation/cosmic-horizon-resolution/DEPENDENCY_SECURITY_TRIAGE.md) — dependency-alert interpretation, triage candidates, and future security evidence direction
+- [RESOLUTION_TODO.md](/documentation/cosmic-horizon-resolution/TODO.md) — future P3.1-P3.7 execution gates
+- [RESOLUTION_MERMAID_SOURCES.md](/documentation/cosmic-horizon-resolution/diagrams/README.md) — reusable Phase 3 architecture and learning-roadmap diagrams
+
+**Terminology warning:** Lakehouse `Stage 3` in PR #40 is the Phase 2 real vertical-slice gate. Product `Phase 3 — Resolution` is a future build and is not implemented by this PR.
+
 - [OPERATIONAL_STREAMING_PLANE.md](/docuentation/infra/OPERATIONAL_STREAMING_PLANE.md) — Go-based streaming plane design and flows
 
 - [GOVERNANCE_CONTROL_PLANE.md](/docuentation/governance/GOVERNANCE_CONTROL_PLANE.md) — Java-based governance plane design and workflows
@@ -58,7 +88,7 @@ Files:
 - [TESTING_REQUIREMENTS.md](/docuentation/testing/TESTING_REQUIREMENTS.md) — CI, coverage and runbook
 - [TESTING_FRAMEWORK_ARCHITECTURE.md](/docuentation/testing/TESTING_FRAMEWORK_ARCHITECTURE.md) — verbose testing architecture with Mermaid diagrams
 - [TRIDENT_EXECUTION_TEST_MATRIX.md](/docuentation/testing/TRIDENT_EXECUTION_TEST_MATRIX.md) — execution-layer validation matrix for Trident-style planning, apply, and backend orchestration
-- [EXECUTION_LAYER_THREAT_MODEL.md](/docuentation/security/EXECUTION_LAYER_THREAT_MODEL.md) — security and safety risks for hardware-adjacent execution orchestration
+- [EXECUTION_LAYER_THREAT_MODEL.md](/docuentation/security/EXECUTION_LAYER_THREAT_MODEL.md) — security and safety risks for execution-layer and operator-facing workflows
 
 - [TODO.md](/docuentation/planning/TODO.md) — simulation harness and implementation backlog
 
@@ -77,6 +107,10 @@ Grouped folders (new):
 - `generators/` — data generators and simulation runbooks
 
 - `provenance/` — provenance and lineage docs
+
+- `lakehouse/` — self-contained PR #40 Lakehouse Initiative package; `docs/` contains narrative architecture/proof documentation, `diagrams/` contains standalone Mermaid sources, and `visualizations/` contains explicitly illustrative proof/design artifacts unless a file states a measured runtime source
+
+- `cosmic-horizon-resolution/` — future Phase 3 planning package for Evidence Graph & Scientific Intelligence; planning/learning/diagram artifacts only in PR #40
 
 - `trident/` — ngVLA Trident research notes and execution-layer integration planning
 

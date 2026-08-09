@@ -343,6 +343,7 @@
               [class.forge-queue__item--selected]="
                 isSelectedJob(vm.selectedJobId, item.id)
               "
+              [attr.data-job-id]="item.id"
               [attr.data-state]="item.status.toLowerCase()"
               role="button"
               tabindex="0"
@@ -437,6 +438,7 @@
               [class.forge-queue__item--selected]="
                 isSelectedJob(vm.selectedJobId, item.id)
               "
+              [attr.data-job-id]="item.id"
               [attr.data-state]="item.status.toLowerCase()"
               role="button"
               tabindex="0"
@@ -512,8 +514,18 @@
                   'Preview for ' +
                   (vm.selectedJob?.targetName || vm.formValue.target)
                 "
-                (load)="handlePreviewLoaded(vm.selectedImage.id, vm.selectedImage.previewUrl)"
-                (error)="handlePreviewFailed(vm.selectedImage.id, vm.selectedImage.previewUrl)"
+                (load)="
+                  handlePreviewLoaded(
+                    vm.selectedImage.id,
+                    vm.selectedImage.previewUrl
+                  )
+                "
+                (error)="
+                  handlePreviewFailed(
+                    vm.selectedImage.id,
+                    vm.selectedImage.previewUrl
+                  )
+                "
               />
               <ng-template #previewPlaceholder>
                 <span
@@ -523,7 +535,9 @@
                   Preview artifact is not currently loading directly from the
                   provider. Forge is attempting to cache a local copy so it can
                   be served through the Forge proxy for reliable viewing.
-                  <br /><strong>Please wait a moment and refresh the preview.</strong>
+                  <br /><strong
+                    >Please wait a moment and refresh the preview.</strong
+                  >
                 </span>
                 <span
                   *ngIf="
@@ -571,8 +585,8 @@
                 >
                   open preview URL
                 </a>
-                <span *ngIf="vm.selectedImage.artifactMode === 'cached'"
-                  > (cached by Forge)</span
+                <span *ngIf="vm.selectedImage.artifactMode === 'cached'">
+                  (cached by Forge)</span
                 >
               </p>
               <div class="forge-results__actions">

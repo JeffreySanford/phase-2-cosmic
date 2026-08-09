@@ -223,9 +223,9 @@
               <p>Artifacts: <strong>{{ diagnosticsSummary.artifactCount }}</strong></p>
               <p>fio logs: <strong>{{ diagnosticsSummary.fioCount }}</strong></p>
               <p>iperf3 logs: <strong>{{ diagnosticsSummary.iperfCount }}</strong></p>
-              <p>Latest: <strong>{{ diagnosticsSummary.latestArtifact }}</strong></p>
+              <p>Latest artifact: <strong>{{ diagnosticsSummary.latestArtifact }}</strong></p>
               <p class="tile-source">source: {{ diagnosticsSummary.source }}</p>
-              <a routerLink="/diagnostics">Open diagnostics</a>
+              <a class="diagnostics-link" routerLink="/diagnostics">Open diagnostics workspace</a>
             </article>
 
             <article class="panel-card">
@@ -248,6 +248,11 @@
               <p class="tile-source">source: {{ governanceSummary.source }}</p>
               <a routerLink="/telemetry">Inspect governance telemetry</a>
             </article>
+          </section>
+
+          <section class="panel">
+            <h2>Lakehouse</h2>
+            <app-lakehouse-panel [summary]="lakehouseSummary"></app-lakehouse-panel>
           </section>
 
           <section class="panel">

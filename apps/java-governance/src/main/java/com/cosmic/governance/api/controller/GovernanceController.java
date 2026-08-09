@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -187,23 +188,23 @@ public class GovernanceController {
             @GetMapping("/jobs/{id}/artifacts/{name}")
             public ResponseEntity<String> artifactContent(@PathVariable("id") String id, @PathVariable("name") String name) {
                 Instant startedAt = Instant.now();
-                // try to serve a file from local artifact store
-                try {
-                    String safeId = safeArtifactPathSegment(id);
-                    String safeName = safeArtifactPathSegment(name);
-                    java.nio.file.Path artifactRoot = java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "governance-artifacts").toAbsolutePath().normalize();
-                    java.nio.file.Path base = artifactRoot.resolve(safeId).normalize();
-                    java.nio.file.Path file = base.resolve(safeName).normalize();
-                    if (java.nio.file.Files.exists(file) && file.startsWith(base)) {
-                        String content = java.nio.file.Files.readString(file);
+                String safeName = safeArtifactPathSegment(name);
+                for (Map<String, String> artifact : jobService.getArtifacts(id)) {
+                    String artifactName = artifact.getOrDefault("name", artifact.getOrDefault("type", ""));
+                    if (safeName.equals(artifactName) && artifact.containsKey("content")) {
+                        String content = artifact.get("content");
                         jobService.recordArtifactDelivery("content", content, true, java.time.Duration.between(startedAt, Instant.now()));
-                        return ResponseEntity.ok(content);
+                        return ResponseEntity.ok()
+                                .contentType(MediaType.TEXT_PLAIN)
+                                .body(content);
                     }
-                } catch (Exception ignored) {}
+                }
                 // fallback to simulated artifact content for dev/testing
-                String content = "Simulated artifact for job " + id + " - " + name + "\nResult: OK";
+                String content = "Simulated artifact content\nResult: OK";
                 jobService.recordArtifactDelivery("content", content, true, java.time.Duration.between(startedAt, Instant.now()));
-                return ResponseEntity.ok(content);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .body(content);
             }
 
             private static String safeArtifactPathSegment(String value) {

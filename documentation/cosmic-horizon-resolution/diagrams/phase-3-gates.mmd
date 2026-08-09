@@ -1,0 +1,19 @@
+flowchart LR
+  H[Phase 2 handoff\nreal source -> Kafka -> Bronze -> Silver -> Gold\nreplay + quarantine + lineage]
+  P31[P3.1\nCanonical Rectification]
+  P32[P3.2\nLakehouse Handoff]
+  P33[P3.3\nEvidence Graph]
+  P34[P3.4\nGraph Analytics]
+  P35[P3.5\nAsk Cosmic / GraphRAG]
+  P36[P3.6\nEvaluation Harness]
+  P37[P3.7 optional\nGraph ML / GNN research]
+  Done[Resolution acceptance\nanswer + evidence path + citations + limitations]
+
+  H --> P31 --> P32 --> P33
+  P33 --> P34
+  P33 --> P35
+  P34 --> P36
+  P35 --> P36
+  P36 --> Done
+  P36 --> P37
+  P37 -. optional research .-> Done

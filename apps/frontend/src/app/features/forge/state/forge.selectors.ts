@@ -144,17 +144,29 @@ export const selectForgeSelectedImage = createSelector(
   selectForgeImageProducts,
   selectForgeImageEntities,
   (selectedJob, imageProducts, imageEntities) => {
-    const imageId = selectedJob?.resultImageIds[0];
-    if (imageId && imageEntities[imageId]) {
-      return imageEntities[imageId];
-    }
-
     if (!selectedJob) {
       return null;
     }
 
+    const selectedJobImages = imageProducts.filter(
+      (image) => image.jobId === selectedJob.id
+    );
+    const cachedImage = selectedJobImages.find(
+      (image) => image.artifactMode === "cached"
+    );
+    if (cachedImage) {
+      return cachedImage;
+    }
+
+    const imageId = selectedJob.resultImageIds[0];
+    if (imageId && imageEntities[imageId]) {
+      return imageEntities[imageId];
+    }
+
     return (
-      imageProducts.find((image) => image.jobId === selectedJob.id) ?? null
+      selectedJobImages.find((image) => image.artifactMode === "external") ??
+      selectedJobImages[0] ??
+      null
     );
   }
 );

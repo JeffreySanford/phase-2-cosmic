@@ -1,181 +1,168 @@
 # Topology — Phase 2 Cosmic
 
-Alignment anchors
-
-- Frontend UX source of truth: [../../FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
-- Execution backlog: [../../../TODO.md](/docuentation/planning/TODO.md)
-- Delivery plan: [../../../ROADMAP.md](/ROADMAP.md)
-
-This document contains higher-fidelity topology diagrams (containers + components) and a security-boundary variant for the local development stack.
-
-Files added:
-
-- `docuentation/frontend/features/topology-containers.mmd` — container-level Mermaid diagram
-- `docuentation/frontend/features/topology-security.mmd` — security-boundary variant
-
-You can preview these diagrams directly on GitHub (Mermaid blocks are supported) or render them to PNG/SVG using the `@mermaid-js/mermaid-cli` (`mmdc`) tool.
-
-## Container diagram (high-level)
-
-```mmd
-%% topology-containers.mmd
-flowchart LR
-  subgraph Infra [Infrastructure Services]
-    direction TB
-    ZK[Zookeeper]
-    Kafka[Kafka]
-    Rabbit[RabbitMQ]
-    MinIO[MinIO (S3 API)]
-    Prom[Prometheus]
-  end
-
-  subgraph App [Application Stack]
-    direction TB
-    DG[Data Generator (container)]
-    Backend[Nest SSR & API\n`apps/frontend/server.nest.ts`]
-    Frontend[Angular Frontend\n(dev / static)]
-    TestRunner[CI / Test Runner\n(Playwright / Cypress)]
-  end
-
-  subgraph Client [Client / External]
-    direction TB
-    Browser[Browser]
-    Aladin[Aladin-lite viewer]
-    ExternalIRSA[External HiPS / IRSA]
-  end
-
-  Logs[Payload logs\n`tools/data-generator/logs`]
-
-  DG -->|writes events| Kafka
-  Kafka -->|ingest consumer| Backend
-  DG -->|writes payload files| Logs
-  DG -->|uploads artifacts| MinIO
-  DG -->|exposes metrics| Prom
-
-  Prom -->|scraped by| Prom
-  Backend -->|serves `/api` & Prometheus proxy| Frontend
-  Frontend -->|requests `/api/proxy/prometheus`| Backend
-  Frontend -->|renders viewer| Aladin
-  TestRunner -->|runs e2e against| Frontend
-  TestRunner -->|calls APIs| Backend
-
-  Backend -->|serves `system-specs.json`| Frontend
-  ExternalIRSA -->|tiles| Frontend
-
-```
-
-## Security-boundary variant
-
-```mmd
-%% topology-security.mmd
-flowchart LR
-  subgraph Internal [Internal Network]
-    direction TB
-    DG[Data Generator]
-    Kafka[Kafka]
-    MinIO[MinIO]
-    Backend[Nest SSR + API]
-    Prom[Prometheus]
-  end
-
-  subgraph Exposed [Developer Host / Browser]
-    direction TB
-    Browser[Developer Browser]
-    Frontend[Angular Dev Server]
-  end
-
-  subgraph External [Third-party / Public]
-    direction TB
-    ExternalIRSA[IRSA / HiPS Tiles]
-  end
-
-  Browser -->|HTTP(S) requests| Frontend
-  Frontend -->|proxied `/api`| Backend
-  Backend -->|internal metrics queries| Prom
-  Backend -->|reads/writes| MinIO
-  DG -->|push metrics| Prom
-
-  classDef internal fill:#f3f4f6,stroke:#cbd5e1
-  classDef exposed fill:#fff7ed,stroke:#f59e0b
-  class Internal internal
-  class Exposed exposed
-
-```
-
-## How to render to PNG/SVG
-
-Install Mermaid CLI and render (requires Node.js):
-
-```bash
-pnpm add -D @mermaid-js/mermaid-cli
-npx mmdc -i docuentation/frontend/features/topology-containers.mmd -o docuentation/frontend/features/topology-containers.svg
-npx mmdc -i docuentation/frontend/features/topology-security.mmd -o docuentation/frontend/features/topology-security.svg
-```
-
-Alternatively paste the `.mmd` contents into <https://mermaid.live> to preview and export.
-
-## Notes
-
-- The container diagram shows runtime relationships for the local dev stack (docker-compose services + dev servers).
-- The security diagram highlights which components run inside your local network and which are exposed to the developer browser or external services.
-- If you want a PNG/SVG generated and committed, I can run `mmdc` here (if the environment has Node + pnpm available) and commit the generated assets.
-
----
-
-Path: `docuentation/frontend/features/TOPOLOGY.md`
-
-## Topology
-
-The Topology page visualizes the system and network topology: nodes, services, and connections. It helps operators understand dataflows and locate components that may be implicated in incidents.
+The Topology page visualizes the current system and network topology: services, messaging/storage relationships, and link-level operational evidence. It is an operator view of the existing runtime architecture; Lakehouse context may be overlaid as evidence, but it does not replace the topology metrics contract.
 
 ## Purpose
 
-- Show an interactive map of services and hosts, their relationships, and basic health indicators.
-- Must include messaging fabric nodes for `Kafka`, `RabbitMQ`, and `Pulsar` (not Kafka-only) when corresponding backends are enabled.
+- Show an interactive map of services and their relationships.
+- Keep Kafka, RabbitMQ, and Pulsar visible when the corresponding runtime services are enabled.
+- Surface link throughput, latency/error context, provenance/source labels, and node activity without blocking the UI on expensive metrics collection.
+- Distinguish temporary startup/warming state from unavailable or stale measurements.
 
-## Primary features
+## Current local architecture
 
-- **Node & link visualization**: nodes represent services/hosts; links represent network or logical connections.
-- **Node details**: on-click panels display node metadata, recent diagnostics (if available), and key metrics.
-- **Filtering & layout**: filter by type (generator, storage, ingress), searchable nodes, and alternate layout options (force-directed, grid).
-- **Live updates**: optional live refresh of link weights / status driven by Prometheus metrics or heartbeats.
+The local runtime is hybrid:
 
-## Data sources & integration
+- Docker hosts infrastructure and Java services.
+- Nest SSR/API runs on the developer host at `http://127.0.0.1:4000`.
+- Angular development UI runs at `http://127.0.0.1:4200`.
+- Prometheus and service/admin APIs provide operational evidence.
 
-- Topology metadata is expected from application APIs or a topology index. Telemetry metrics can be joined to nodes via labels (e.g. `instance` or `job`).
-- Use Prometheus to surface node-level metrics and the SSR diagnostics endpoints for associated artifacts.
-- Required broker metrics:
-  - Kafka: consumer lag, broker availability
-  - RabbitMQ: queue depth, ack/nack rate
-  - Pulsar: backlog, publish/dispatch rate
+High-level flow:
+
+```mermaid
+flowchart LR
+  Browser[Developer Browser] --> Angular[Angular dev server :4200]
+  Angular --> SSR[Nest SSR / API :4000]
+
+  subgraph Docker[Docker local runtime]
+    Generator[Data Generator]
+    Kafka[Kafka]
+    Pulsar[Pulsar]
+    Rabbit[RabbitMQ]
+    Ingest[Java Ingest]
+    Governance[Java Governance]
+    MinIO[MinIO]
+    Redis[Redis]
+    Prom[Prometheus]
+  end
+
+  Generator --> Kafka
+  Generator --> Pulsar
+  Kafka --> Ingest
+  Kafka --> Governance
+  Pulsar --> Governance
+  Rabbit --> Governance
+  Governance --> MinIO
+  Governance --> Redis
+  Prom --> Governance
+  SSR --> Governance
+  SSR --> Prom
+```
 
 ## Frontend topology UI
 
-- The repository includes a lightweight interactive topology page served by the frontend at the route `/topology`.
-- It renders a force-directed graph using D3 and fetches topology metadata from the Nest SSR shim at `/api/topology`.
-- Link metrics are fetched from `/api/metrics/topology`, which proxies governance topology metrics in live mode.
-- If the app is switched to mock mode, the UI falls back to a local mocked topology.
+The frontend route is:
 
-How to use locally:
-
-```bash
-# start the Nest SSR server (API) on port 3000
-pnpm nx serve frontend --configuration=development:ssr
-# start the frontend dev server (Vite) on 4200
-pnpm nx serve frontend
-# open the topology page in your browser:
-http://localhost:4200/topology
+```text
+/topology
 ```
 
-The page provides a `Refresh` button to re-query `/api/topology` and re-render. Node clicks currently log node details to the browser console; the component can be extended to show a details panel or integrate Prometheus metrics per-node.
+The current component:
 
-## Implementation note (2026-03-06)
+- renders the topology graph with D3,
+- fetches topology structure from `GET /api/topology`,
+- fetches live link metrics from `GET /api/metrics/topology`,
+- polls link metrics according to the selected runtime profile,
+- uses explicit mock topology/metrics only when the application is intentionally in mock mode.
 
-- The live topology structure is served by the Nest SSR shim to reflect the current hybrid developer environment.
-- The fallback topology includes Kafka, RabbitMQ, and Pulsar nodes so broker presence stays consistent between live and mock modes.
-- The local runtime remains hybrid: Docker for infra and Java services, host-side Nest SSR plus Angular dev server for frontend iteration.
+## Topology metrics cache contract
+
+`GET /api/metrics/topology` no longer requires an HTTP request to synchronously execute the full Java Governance metrics fan-out.
+
+Java Governance maintains a background-refreshed topology snapshot. HTTP reads return the last completed snapshot immediately and expose cache state so startup and stale-data conditions are visible rather than becoming proxy timeouts.
+
+Expected cache states:
+
+| State     | Meaning                                                                                                          |
+| --------- | ---------------------------------------------------------------------------------------------------------------- |
+| `warming` | The service is available but no complete topology refresh has finished yet.                                      |
+| `ready`   | A completed topology snapshot is available and current.                                                          |
+| `stale`   | A previous completed snapshot is being served because a newer refresh failed or exceeded freshness expectations. |
+
+A startup response can therefore legitimately look like:
+
+```json
+{
+  "links": {},
+  "source": "warming",
+  "cache": {
+    "state": "warming"
+  }
+}
+```
+
+After background collection completes, a normal response includes the canonical links and a timestamped cache record, for example:
+
+```json
+{
+  "source": "governance-registry",
+  "diagnostics": {
+    "canonicalLinkCount": 26,
+    "linksMissingFromSnapshot": []
+  },
+  "cache": {
+    "state": "ready",
+    "refreshedAt": "2026-08-08T19:24:25.620Z"
+  }
+}
+```
+
+During a Java Governance restart, the host-side governance upstream layer treats temporary topology unavailability as a startup/warming condition instead of logging the old long-running topology proxy timeout.
+
+## Evidence and provenance semantics
+
+Topology is an operational evidence surface, not a capacity claim generator.
+
+- `currentMBps` should represent observed/current behavior when a trustworthy measurement exists.
+- `maxMBps` is capacity/configuration context and is not itself measured throughput.
+- Link `source` and `measurementPath` identify where the link record was assembled (for example Prometheus and/or an infrastructure snapshot).
+- `diagnostics.measuredLinks`, `adminLinks`, `fallbackDerivedLinks`, and related counts expose the snapshot's evidence composition.
+- A zero measurement must not automatically be interpreted as a missing measurement.
+- The current topology contract still has field-level provenance refinement to do: a link-level `source` can describe the dominant record source while individual latency/error fields may still be derived or fallback values. Do not treat every field in a `source: "prometheus"` link as independently measured until field-level provenance is implemented.
+
+Lakehouse Bronze/Silver/Gold implementation state is separate from topology operational metrics. Topology may display Lakehouse boundary/context, but it must not convert public-source proof or illustrative values into claims that Delta stages exist.
+
+## Required broker evidence
+
+Where available, the topology/diagnostics system should surface:
+
+- Kafka: broker availability, consumer lag, throughput.
+- RabbitMQ: queue depth, publish/delivery/ack context.
+- Pulsar: broker/topic status, backlog, publish/dispatch context.
+
+Unavailable values should remain unavailable or stale; explicit test/mock values are allowed only in intentional mock/test mode.
+
+## Local usage
+
+Use the supported stack entrypoint:
+
+```bash
+pnpm start:all
+```
+
+Then open:
+
+```text
+http://127.0.0.1:4200/topology
+```
+
+Useful direct checks:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:4000/api/metrics/topology |
+  ConvertTo-Json -Depth 8
+```
+
+A newly started stack may return `warming` first. A healthy background refresh should subsequently transition the cache to `ready` without requiring the HTTP request itself to wait for the expensive collection.
+
+## Security boundary
+
+The topology page is a developer/operator surface. Local infrastructure endpoints should be exposed only as required for development. In particular, the Cosmic Forge PostgreSQL sidecar is bound to loopback only and is not intended to be a LAN-facing service.
 
 ## UX and performance
 
-- For large topologies, implement progressive loading and clustering to keep the UI responsive.
-- Use canvas/WebGL rendering for very large graphs or provide summarized cluster views.
+- Keep expensive collection work off interactive request paths.
+- Preserve the last completed trustworthy snapshot when refresh work is slow or fails.
+- Use progressive loading/clustering for significantly larger topologies.
+- Consider canvas/WebGL or summarized cluster views when SVG/D3 node counts become too large for responsive interaction.

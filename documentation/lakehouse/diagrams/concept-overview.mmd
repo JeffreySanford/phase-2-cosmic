@@ -1,0 +1,16 @@
+flowchart TB
+  SRC[Scientific metadata / events]
+  OBJ[Authoritative science objects]
+  BR[Bronze\nraw ingest + lineage]
+  SI[Silver\ncanonical entities + quarantine]
+  GO[Gold\naggregates + operator views]
+  CONS[Consumers\nAPI / UI / analytics / AI]
+
+  SRC --> BR
+  OBJ --> BR
+  BR --> SI
+  SI --> GO
+  GO --> CONS
+
+  OBJ -. authoritative storage boundary .-> BR
+  SI -. governance / quality rules .-> GO

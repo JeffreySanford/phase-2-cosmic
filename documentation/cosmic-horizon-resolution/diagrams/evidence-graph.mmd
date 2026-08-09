@@ -1,0 +1,37 @@
+flowchart LR
+  Provider[Provider]
+  Source[External Source]
+  Target[Target]
+  Obs[Observation]
+  Dataset[Dataset]
+  Job[Job]
+  Artifact[Artifact]
+  Object[Storage Object]
+  Bronze[Bronze Record]
+  Silver[Silver Entity]
+  Gold[Gold Product]
+  Quality[Quality Result]
+  Service[Service]
+  Broker[Broker]
+  Metric[Metric Evidence]
+
+  Provider -->|PROVIDES| Source
+  Source -->|DESCRIBES| Obs
+  Obs -->|OBSERVES| Target
+  Obs -->|MATERIALIZED_AS| Dataset
+
+  Source -->|INGESTED_AS| Bronze
+  Bronze -->|CANONICALIZED_TO| Silver
+  Silver -->|AGGREGATED_INTO| Gold
+  Dataset -->|DERIVED_FROM| Silver
+
+  Dataset -->|PRODUCED_BY| Job
+  Job -->|PRODUCED| Artifact
+  Artifact -->|STORED_AT| Object
+  Dataset -->|HAS_QUALITY_RESULT| Quality
+  Silver -->|HAS_QUALITY_RESULT| Quality
+
+  Job -->|EXECUTED_ON| Service
+  Service -->|DEPENDS_ON| Broker
+  Service -->|OBSERVED_BY| Metric
+  Broker -->|OBSERVED_BY| Metric

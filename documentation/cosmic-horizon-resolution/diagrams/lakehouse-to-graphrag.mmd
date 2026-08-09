@@ -1,0 +1,36 @@
+flowchart TB
+  Sources[ESO / NRAO / VO / simulation / platform events]
+  Adapter[Canonical source adapter]
+  Kafka[Kafka]
+  Spark[Spark / streaming processing]
+  Bronze[Bronze Delta]
+  Silver[Silver canonical + quarantine]
+  Gold[Gold aggregates]
+
+  Graph[Evidence Graph\ndeterministic relationship projection]
+  GraphAnalytics[Graph analytics\npaths / components / centrality / cycles]
+  GraphRetriever[Graph retriever]
+  LakeRetriever[Structured Lakehouse retriever]
+  VectorRetriever[Vector / document retriever]
+  Bundle[Evidence bundle\nentities + paths + facts + citations + evidence state]
+  LLM[LLM explanation layer]
+  Ask[Ask Cosmic\nanswer + graph + citations + limitations]
+
+  Sources --> Adapter --> Kafka --> Spark --> Bronze --> Silver --> Gold
+  Silver --> Graph
+  Gold --> Graph
+  Graph --> GraphAnalytics
+  Graph --> GraphRetriever
+  Silver --> LakeRetriever
+  Gold --> LakeRetriever
+  Sources -. unstructured descriptions/docs .-> VectorRetriever
+
+  GraphRetriever --> Bundle
+  LakeRetriever --> Bundle
+  VectorRetriever --> Bundle
+  GraphAnalytics --> Bundle
+  Bundle --> LLM --> Ask
+
+  Authority[Rule: AI is not authority; evidence is]
+  Authority -. governs .-> Bundle
+  Authority -. governs .-> LLM

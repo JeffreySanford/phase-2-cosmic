@@ -68,10 +68,7 @@ class TopologyMetricsRegistryTest {
 
     @Test
     void snapshotPromotesInfrastructureBackedAppPlaneLinksWhenDirectQueriesAreUnavailable() {
-        Map<String, Object> infrastructureSnapshot = Map.of(
-                "services",
-                buildInfrastructureServicesSnapshot()
-        );
+        Map<String, Object> infrastructureSnapshot = buildInfrastructureServicesSnapshot();
 
         TopologyMetricsRegistry registry = createRegistry(infrastructureSnapshot);
 
@@ -102,10 +99,7 @@ class TopologyMetricsRegistryTest {
 
     @Test
     void monitoredInfrastructureLinksBecomePrometheusWhenInfrastructureIsObserved() {
-        Map<String, Object> infrastructureSnapshot = Map.of(
-                "services",
-                buildMonitoredInfrastructureServicesSnapshot()
-        );
+        Map<String, Object> infrastructureSnapshot = buildMonitoredInfrastructureServicesSnapshot();
 
         TopologyMetricsRegistry registry = createRegistry(infrastructureSnapshot);
 
@@ -122,10 +116,7 @@ class TopologyMetricsRegistryTest {
 
     @Test
     void diagnosticsFallbackDerivedLinksIsEmptyWhenAllPromotableLinksAreInfrastructureBacked() {
-        Map<String, Object> infrastructureSnapshot = Map.of(
-                "services",
-                buildFallbackInfrastructureServicesSnapshot()
-        );
+        Map<String, Object> infrastructureSnapshot = buildFallbackInfrastructureServicesSnapshot();
 
         TopologyMetricsRegistry registry = createRegistry(infrastructureSnapshot);
 

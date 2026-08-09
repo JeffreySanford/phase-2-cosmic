@@ -1,0 +1,18 @@
+flowchart LR
+  BROKER[Broker delivery / consumer]
+  DLQ[Broker DLQ]
+  OBJECT[Science object / checksum validation]
+  OQ[Object quarantine]
+  BR[Bronze source truth]
+  SV{Silver validation}
+  SILVER[Silver canonical entity]
+  SQ[Silver analytical quarantine]
+  GOLD[Gold product]
+
+  BROKER -->|transport or consumer failure| DLQ
+  OBJECT -->|integrity / object-quality failure| OQ
+  BROKER -->|successfully ingested record| BR
+  BR --> SV
+  SV -->|canonical contract satisfied| SILVER --> GOLD
+  SV -->|analytical contract / quality failure| SQ
+  SQ -. corrected / replayed .-> SV

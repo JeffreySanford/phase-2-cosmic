@@ -1,0 +1,25 @@
+flowchart LR
+  SRC[Provider extract / replay]
+  K[Kafka baseline]
+  DBX[Databricks Workflows]
+  SPARK[Spark Structured Streaming]
+  UC[Unity Catalog]
+  BR[bronze.observation_events]
+  SI[silver.observations]
+  QUAR[silver.quarantine]
+  GO[gold.observation_summary]
+  GOV[Java Governance]
+  OBJ[MinIO / S3 object archive]
+  API[Lakehouse evidence API]
+  UI[Operator UI]
+
+  SRC --> K --> SPARK
+  DBX --> SPARK
+  SPARK --> BR --> SI --> GO
+  BR --> QUAR
+  SI --> UC
+  QUAR --> UC
+  GO --> UC
+  GOV -. metadata / policy refs .-> UC
+  OBJ -. object URI / checksum refs .-> BR
+  GO --> API --> UI

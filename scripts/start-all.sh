@@ -46,25 +46,35 @@ log "[start-all] cumulative log: ${LOG_FILE}"
 log "[start-all] session log: ${SESSION_LOG_FILE}"
 
 COMPOSE_FILE=docker/dev-compose.yml
+FORGE_COMPOSE_FILE=docker/cosmic-forge-compose.yml
 DEFAULT_BUILD_SERVICES="java-governance data-generator java-ingest"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$REPO_ROOT/.env"
 ENV_SAMPLE="$REPO_ROOT/.env.sample"
+COMPOSE_ENV_FILE=""
 stage "Environment Setup"
 # Load environment variables from .env (private) or .env.sample (fallback)
 if [ -f "$ENV_FILE" ]; then
 	log "[start-all] Loading environment from $ENV_FILE"
+	COMPOSE_ENV_FILE="$ENV_FILE"
  	set -a
  	# shellcheck disable=SC1090
  	. "$ENV_FILE"
  	set +a
 elif [ -f "$ENV_SAMPLE" ]; then
 	log "[start-all] Loading environment from $ENV_SAMPLE"
+	COMPOSE_ENV_FILE="$ENV_SAMPLE"
  	set -a
  	# shellcheck disable=SC1090
  	. "$ENV_SAMPLE"
  	set +a
+fi
+
+COMPOSE_ENV_ARGS=()
+if [ -n "$COMPOSE_ENV_FILE" ]; then
+	COMPOSE_ENV_ARGS=(--env-file "$COMPOSE_ENV_FILE")
+	log "[start-all] Docker Compose env file: $COMPOSE_ENV_FILE"
 fi
 
 is_placeholder_value() {
@@ -162,16 +172,16 @@ else
 	if [ -n "${BUILD_SERVICES_EFFECTIVE:-}" ]; then
 		log "[start-all] Building only services: ${BUILD_SERVICES_EFFECTIVE}"
 		if [ "$NO_PULL_EFFECTIVE" = "true" ]; then
-			docker compose -f "$COMPOSE_FILE" build --parallel $BUILD_SERVICES_EFFECTIVE
+			docker compose "${COMPOSE_ENV_ARGS[@]}" -f "$COMPOSE_FILE" build --parallel $BUILD_SERVICES_EFFECTIVE
 		else
-			docker compose -f "$COMPOSE_FILE" build --pull --parallel $BUILD_SERVICES_EFFECTIVE
+			docker compose "${COMPOSE_ENV_ARGS[@]}" -f "$COMPOSE_FILE" build --pull --parallel $BUILD_SERVICES_EFFECTIVE
 		fi
 	else
 		log "[start-all] Building all services"
 		if [ "$NO_PULL_EFFECTIVE" = "true" ]; then
-			docker compose -f "$COMPOSE_FILE" build --parallel
+			docker compose "${COMPOSE_ENV_ARGS[@]}" -f "$COMPOSE_FILE" build --parallel
 		else
-			docker compose -f "$COMPOSE_FILE" build --pull --parallel
+			docker compose "${COMPOSE_ENV_ARGS[@]}" -f "$COMPOSE_FILE" build --pull --parallel
 		fi
 	fi
 fi
@@ -179,23 +189,30 @@ fi
 stage "Compose Startup"
 log "[start-all] Bringing up compose stack (detached)..."
 if [ "$NO_PULL_EFFECTIVE" = "true" ]; then
-	docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --pull never
+	docker compose "${COMPOSE_ENV_ARGS[@]}" -f "$COMPOSE_FILE" up -d --remove-orphans --pull never
 else
-	docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+	docker compose "${COMPOSE_ENV_ARGS[@]}" -f "$COMPOSE_FILE" up -d --remove-orphans
+fi
+
+ENABLE_FORGE_POSTGRES_SIDECAR="${ENABLE_FORGE_POSTGRES_SIDECAR:-true}"
+if [ "$ENABLE_FORGE_POSTGRES_SIDECAR" = "true" ]; then
+	stage "Forge Postgres Sidecar"
+	log "[start-all] Starting forge postgres sidecar from $FORGE_COMPOSE_FILE"
+	docker compose "${COMPOSE_ENV_ARGS[@]}" -f "$FORGE_COMPOSE_FILE" up -d postgres || log "[start-all] forge postgres sidecar start failed (continuing without native postgres metrics)"
+else
+	log "[start-all] ENABLE_FORGE_POSTGRES_SIDECAR=false; skipping forge postgres sidecar"
 fi
 
 stage "Redis Precache"
 log "[start-all] Ensuring Redis is ready and precaching sample data..."
-if [ -x "$(command -v bash)" ]; then
-	# run precache (script handles locating/starting redis)
-	log "[start-all] running redis-precache.sh"
-	(
-		cd "$REPO_ROOT"
-		bash ./scripts/redis-precache.sh
-	) || log "[start-all] redis-precache step failed (ignored)"
-else
-	log "[start-all] bash not available; skipping redis precache"
-fi
+# Run precache in the current shell context. Using `bash` here can resolve to
+# WSL bash when launched from PowerShell, which switches Docker to unix socket
+# mode and breaks Desktop/npipe access.
+log "[start-all] running redis-precache.sh"
+(
+	cd "$REPO_ROOT"
+	sh ./scripts/redis-precache.sh
+) || log "[start-all] redis-precache step failed (ignored)"
 
 stage "Local Dev Runtime"
 log "[start-all] Compose started. Launching local dev servers (SSR + frontend dev server)."
@@ -206,6 +223,16 @@ export PORT=${PORT:-$FRONTEND_PORT}
 export ALLOCATOR_PORT=${ALLOCATOR_PORT:-7777}
 export FORGE_API_HOST_PORT=${FORGE_API_HOST_PORT:-4101}
 export FORGE_WORKER_HOST_PORT=${FORGE_WORKER_HOST_PORT:-4102}
+export FORGE_POSTGRES_HOST_PORT=${FORGE_POSTGRES_HOST_PORT:-55432}
+export FORGE_POSTGRES_DB=${FORGE_POSTGRES_DB:-cosmic_forge}
+export FORGE_POSTGRES_USER=${FORGE_POSTGRES_USER:-cosmic_forge}
+if [ -z "${FORGE_POSTGRES_PASSWORD:-}" ]; then
+  log "[start-all] Set FORGE_POSTGRES_PASSWORD in .env or .env.sample"
+  exit 1
+fi
+export FORGE_POSTGRES_PASSWORD
+export POSTGRES_PASSWORD="$FORGE_POSTGRES_PASSWORD"
+export PGPASSWORD="$FORGE_POSTGRES_PASSWORD"
 export REDIS_HOST=${REDIS_HOST:-127.0.0.1}
 export REDIS_PORT=${REDIS_PORT:-6379}
 export REDIS_URL=${REDIS_URL:-redis://${REDIS_HOST}:${REDIS_PORT}}
@@ -405,6 +432,7 @@ log "[start-all] Expected endpoints: SSR=$FRONTEND_PORT forge-api=$FORGE_API_HOS
 wait_for_tcp_listener "127.0.0.1" "$ALLOCATOR_PORT" "allocator" 30 || true
 wait_for_tcp_listener "127.0.0.1" "$FORGE_API_HOST_PORT" "forge-api" 30 || true
 wait_for_tcp_listener "127.0.0.1" "$FORGE_WORKER_HOST_PORT" "forge-worker" 30 || true
+wait_for_tcp_listener "127.0.0.1" "$FORGE_POSTGRES_HOST_PORT" "forge-postgres" 30 || true
 wait_for_tcp_listener "127.0.0.1" "$FRONTEND_PORT" "SSR" 30 || true
 wait_for_tcp_listener "127.0.0.1" "4200" "frontend-dev" 60 || true
 

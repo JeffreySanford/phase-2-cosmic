@@ -1,0 +1,36 @@
+flowchart LR
+  subgraph OBJECTS[Authoritative Object Storage]
+    MS[Measurement Sets]
+    FITS[FITS Images / Cubes]
+    CAL[Calibration Products]
+    CAT[Catalog / VO Files]
+    ARC[Archive Bundles]
+  end
+
+  subgraph LAKE[Lakehouse Analytical Tables]
+    OBS[Observation Metadata]
+    DATASET[Dataset Records]
+    EVENTS[Broker / Processing Events]
+    QUALITY[Quality Results]
+    PROV[Lineage / Provenance References]
+    GOLD[Aggregates / Gold Products]
+  end
+
+  MS --> OBS
+  MS --> DATASET
+  MS --> PROV
+  FITS --> DATASET
+  FITS --> QUALITY
+  CAL --> QUALITY
+  CAL --> PROV
+  CAT --> DATASET
+  ARC --> PROV
+
+  EVENTS --> GOLD
+  OBS --> GOLD
+  DATASET --> GOLD
+  QUALITY --> GOLD
+  PROV --> GOLD
+
+  style OBJECTS fill:#fff0e6,stroke:#ff7f00
+  style LAKE fill:#f0fff4,stroke:#20a86a

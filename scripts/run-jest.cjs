@@ -3,6 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 
+process.setMaxListeners(50);
+
 const originalFindNodeModule = jestResolve.default.findNodeModule;
 const originalResolveModule = jestResolve.default.prototype.resolveModule;
 const originalResolveModuleAsync = jestResolve.default.prototype.resolveModuleAsync;

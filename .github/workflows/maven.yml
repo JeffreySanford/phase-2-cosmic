@@ -13,31 +13,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: "temurin"
           java-version: "17"
           cache: "maven"
 
+      - name: Start Java test dependencies
+        run: docker compose -f docker/dev-compose.yml up -d zookeeper kafka rabbitmq redis
+
       - name: Run tests for `apps/java-governance`
-        working-directory: ./apps/java-governance
-        run: node ../../scripts/mvn-wrapper-runner.js --use-compose -f pom.xml -B test
+        env:
+          USE_HOST_KAFKA: "true"
+          HOST_KAFKA_BOOTSTRAP: "kafka:9092"
+          KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_REDIS_HOST: "redis"
+          SPRING_RABBITMQ_HOST: "rabbitmq"
+        run: node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml -B test
 
       - name: Run tests for `tools/java-ingest`
-        working-directory: ./tools/java-ingest
-        run: node ../../scripts/mvn-wrapper-runner.js --use-compose -f pom.xml -B test || true
+        run: node ./scripts/mvn-wrapper-runner.js --use-compose -f tools/java-ingest/pom.xml -B test || true
 
       - name: Upload Surefire reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: surefire-reports
           path: |
             apps/java-governance/target/surefire-reports
             tools/java-ingest/target/surefire-reports
+
+      - name: Tear down compose
+        if: always()
+        run: docker compose -f docker/dev-compose.yml down --remove-orphans
 
   maven-build:
     name: Build Java modules with Maven
@@ -45,19 +57,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: "temurin"
           java-version: "17"
           cache: "maven"
 
+      - name: Start Java build dependencies
+        run: docker compose -f docker/dev-compose.yml up -d zookeeper kafka rabbitmq redis
+
       - name: Build `apps/java-governance`
-        working-directory: ./apps/java-governance
-        run: node ../../scripts/mvn-wrapper-runner.js --use-compose -f pom.xml -B package
+        env:
+          USE_HOST_KAFKA: "true"
+          HOST_KAFKA_BOOTSTRAP: "kafka:9092"
+          KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_REDIS_HOST: "redis"
+          SPRING_RABBITMQ_HOST: "rabbitmq"
+        run: node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml -B package
 
       - name: Build `tools/java-ingest`
-        working-directory: ./tools/java-ingest
-        run: node ../../scripts/mvn-wrapper-runner.js --use-compose -f pom.xml -B package
+        run: node ./scripts/mvn-wrapper-runner.js --use-compose -f tools/java-ingest/pom.xml -B package
+
+      - name: Tear down compose
+        if: always()
+        run: docker compose -f docker/dev-compose.yml down --remove-orphans

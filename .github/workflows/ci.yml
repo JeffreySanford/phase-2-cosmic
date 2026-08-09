@@ -6,17 +6,21 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   openapi-validate:
     name: OpenAPI Validate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Detect changed paths
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             openapi:
@@ -25,9 +29,10 @@ jobs:
               - 'documentation/**'
 
       - name: Set up Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version-file: .node-version
+          package-manager-cache: false
 
       - name: Enable corepack (pnpm)
         run: |
@@ -54,7 +59,7 @@ jobs:
 
       - name: Upload OpenAPI validation logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: openapi-validation-logs
           path: validation-output/**
@@ -64,23 +69,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Go 1.21
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "1.21"
+          cache-dependency-path: tools/data-generator/go.sum
 
       - name: Set up Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version-file: .node-version
+          package-manager-cache: false
 
       - name: Enable corepack (pnpm)
         run: |
@@ -99,11 +106,31 @@ jobs:
       - name: Run frontend unit tests with coverage
         run: pnpm exec cross-env NX_NO_CLOUD=true pnpm nx run-many --target=test --projects=frontend,ui-theme --configuration=ci --parallel=false
 
+      - name: Storybook smoke
+        run: pnpm exec nx run frontend:storybook --smoke-test
+
+      - name: Start Java test dependencies
+        run: docker compose -f docker/dev-compose.yml up -d zookeeper kafka rabbitmq redis
+
       - name: Run java-governance verify (unit + IT)
+        env:
+          USE_HOST_KAFKA: "true"
+          HOST_KAFKA_BOOTSTRAP: "kafka:9092"
+          KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_REDIS_HOST: "redis"
+          SPRING_RABBITMQ_HOST: "rabbitmq"
         run: |
           node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml clean verify -Pwith-containers -B
 
       - name: Generate JaCoCo report
+        env:
+          USE_HOST_KAFKA: "true"
+          HOST_KAFKA_BOOTSTRAP: "kafka:9092"
+          KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+          SPRING_REDIS_HOST: "redis"
+          SPRING_RABBITMQ_HOST: "rabbitmq"
         run: node ./scripts/mvn-wrapper-runner.js --use-compose -f apps/java-governance/pom.xml jacoco:report
 
       - name: Run coverage enforcement
@@ -111,7 +138,7 @@ jobs:
 
       - name: Archive JVM test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: java-reports
           path: |
@@ -126,9 +153,13 @@ jobs:
       - name: Run java-ingest verify (container integration)
         run: node ./scripts/mvn-wrapper-runner.js --use-compose -f tools/java-ingest/pom.xml clean verify -Pwith-containers -B
 
+      - name: Tear down compose
+        if: always()
+        run: docker compose -f docker/dev-compose.yml down --remove-orphans
+
       - name: Archive java-ingest reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: java-ingest-reports
           path: |
@@ -136,7 +167,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Run Go unit tests (data-generator)
-        run: sh ./scripts/test-go.sh
+        run: bash ./scripts/test-go.sh
 
       - name: Run stress-mode validation (CI)
         run: pnpm run validate:ci:stress
@@ -148,22 +179,22 @@ jobs:
 
       - name: Upload stress validation artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: stress-validation-artifacts
           path: validation-output/**
           if-no-files-found: ignore
 
       - name: Create GitHub issue on stress validation failure
-        if: failure()
+        if: failure() && github.event_name != 'pull_request'
         continue-on-error: true
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const issueTitle = `Stress validation failed (run ${process.env.GITHUB_RUN_ID})`;
             const issueBody = `Stress validation step failed in workflow [${process.env.GITHUB_WORKFLOW}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}).\n\nArtifacts are available as **stress-validation-artifacts** in the workflow run.\n\n**Branch**: ${process.env.GITHUB_REF} \n**Commit**: ${process.env.GITHUB_SHA}`;
-            const existing = await github.issues.listForRepo({
+            const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
@@ -174,7 +205,7 @@ jobs:
             if (already) {
               console.log('Issue already exists:', already.html_url);
             } else {
-              const issue = await github.issues.create({
+              const issue = await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: issueTitle,
@@ -185,7 +216,7 @@ jobs:
             }
 
       - name: Run golangci-lint (Go static analysis)
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.1.6
           working-directory: tools/data-generator
@@ -206,6 +237,8 @@ jobs:
             --exclude "dist" \
             --exclude ".nx" \
             --exclude "coverage" \
+            --exclude "coverage-report" \
+            --exclude "gh-artifacts" \
             --jobs 4 \
             .
 
@@ -214,13 +247,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Run docs validation
         run: bash scripts/check-docs.sh
 
       - name: Archive surefire reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: surefire-reports
           path: apps/java-governance/target/surefire-reports/**
@@ -231,12 +264,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version-file: .node-version
+          package-manager-cache: false
 
       - name: Enable corepack (pnpm)
         run: |

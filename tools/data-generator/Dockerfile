@@ -12,4 +12,6 @@ RUN chmod +x /usr/local/bin/data-generator /usr/local/bin/collect-system-specs.s
 WORKDIR /var/lib/data-generator
 VOLUME ["/var/lib/data-generator/logs"]
 EXPOSE 9100
-CMD ["bash","-lc","/usr/local/bin/collect-system-specs.sh || true; /usr/local/bin/data-generator --metrics-addr=:9100 --no-stdout --sink=kafka:kafka:9092/phase2-events"]
+ENV GENERATOR_TARGET_BYTES_PER_SEC=125000 \
+    GENERATOR_TARGET_PAYLOAD_BYTES=512
+CMD ["bash","-lc","/usr/local/bin/collect-system-specs.sh || true; /usr/local/bin/data-generator --rate=${GENERATOR_TARGET_BYTES_PER_SEC} --payload-size=${GENERATOR_TARGET_PAYLOAD_BYTES} --metrics-addr=:9100 --no-stdout --sink=kafka:kafka:9092/phase2-events"]

@@ -4,6 +4,24 @@ const { spawnSync } = require("child_process");
 const { join } = require("path");
 const fs = require("fs");
 
+const ignoredDirs = new Set([
+  ".git",
+  ".nx",
+  "coverage",
+  "dist",
+  "logs",
+  "node_modules",
+  "test-results",
+  "tmp",
+  "tools/codeql",
+  "validation-output",
+]);
+
+function shouldSkipDir(dir) {
+  const rel = require("path").relative(process.cwd(), dir).replace(/\\/g, "/");
+  return ignoredDirs.has(rel) || ignoredDirs.has(rel.split("/")[0]);
+}
+
 function findYamls() {
   const { execSync } = require("child_process");
   try {
@@ -17,7 +35,7 @@ function findYamls() {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const p = join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name === "node_modules" || entry.name === ".git") continue;
+        if (shouldSkipDir(p)) continue;
         res = res.concat(walk(p));
       } else if (
         entry.isFile() &&

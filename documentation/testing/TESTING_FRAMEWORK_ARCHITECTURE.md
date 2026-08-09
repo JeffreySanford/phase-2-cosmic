@@ -294,6 +294,10 @@ The `gh` CLI is authenticated in this repo (`gh auth status` confirms `JeffreySa
 | `pnpm run ci:codeql`         | Download CodeQL SARIF from the latest CodeQL run; print findings report |
 | `pnpm run ci:codeql:list`    | List recent CodeQL workflow runs                                        |
 | `pnpm run ci:codeql:trigger` | Manually dispatch the CodeQL workflow (`codeql.yml`)                    |
+| `pnpm run codeql:local`      | Run local CodeQL database creation and SARIF analysis                   |
+| `pnpm run codeql:local:java` | Run the local Java/Kotlin CodeQL leg only                               |
+| `pnpm run codeql:local:js`   | Run the local JavaScript/TypeScript CodeQL leg only                     |
+| `pnpm run codeql:local:go`   | Run the local Go CodeQL leg only                                        |
 
 ### Output files
 
@@ -333,6 +337,8 @@ git push  -->  repeat until green
 ### CodeQL iterative loop
 
 ```bash
+pnpm run codeql:local:java     # verify Java/Kotlin CodeQL locally first
+pnpm run codeql:local          # optional full local CodeQL pass
 pnpm run ci:codeql:trigger      # dispatch workflow (or wait for next push)
 pnpm run ci:logs:watch          # watch it run
 pnpm run ci:codeql              # download SARIF + parse findings to logs/codeql/
@@ -340,6 +346,24 @@ pnpm run ci:codeql              # download SARIF + parse findings to logs/codeql
 pnpm run quality:ci             # verify locally
 git push                        # triggers fresh CodeQL scan
 ```
+
+The local runner downloads the CodeQL bundle into `tools/codeql/` when `codeql`
+is not already on `PATH`. Local databases and SARIF reports are written under
+`logs/codeql/local/`; both locations are ignored by Git.
+
+The Java/Kotlin leg intentionally uses CodeQL `build-mode=none`. The repo's
+normal Java test path can run Maven through Docker so tests match CI service
+networking, but CodeQL's compiler tracer cannot reliably observe Java compiler
+processes that run inside a separate container. Build-free Java scanning avoids
+the GitHub Actions failure where CodeQL finalization reports that Java/Kotlin
+source was present but no compiler activity was processed.
+
+On Windows/WSL workstations the local Java CodeQL wrapper runs the scan in a
+`maven:3.9-eclipse-temurin-17` container when Java is not available on the
+Linux `PATH`. This avoids mixing Linux CodeQL with `java.exe`, and it gives
+CodeQL Maven plus a JDK for dependency graph extraction. The application Java
+tests still use the repo Maven test container path; the CodeQL container is only
+for static analysis.
 
 ### CodeQL — free vs paid
 

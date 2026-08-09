@@ -1,0 +1,15 @@
+flowchart TB
+  REAL[Real VLA / VLASS Records]
+  SIM[ngVLA Simulation Records]
+  REPLAY[Replay Engine]
+  FAULT[Fault Injection]
+  BROKER[Kafka / Pulsar]
+
+  REAL --> REPLAY
+  SIM --> REPLAY
+  REPLAY --> FAULT --> BROKER
+
+  FAULT --> DUP[Duplicate Events]
+  FAULT --> LATE[Late / Out-of-order Events]
+  FAULT --> SCHEMA[Schema Variation]
+  FAULT --> BAD[Missing Metadata / Bad Checksum]

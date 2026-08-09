@@ -25,9 +25,6 @@ linters:
     - ineffassign
     # reports unused code
     - unused
-    # Style / formatting (must match gofmt + goimports in CODING-STANDARDS.md)
-    - gofmt
-    - goimports
     # Safety patterns
     # checks HTTP response body is closed after use
     - bodyclose
@@ -35,32 +32,39 @@ linters:
     - nilerr
     # OWASP-aligned security checks
     - gosec
-    # Simplification
-    - gosimple
-
-linters-settings:
-  goimports:
-    local-prefixes: github.com/cosmic-horizon
-  govet:
-    enable:
-      - shadow
-  gosec:
-    excludes:
-      - G104
-      - G304
+  settings:
+    govet:
+      enable:
+        - shadow
+    gosec:
+      excludes:
+        - G104
+        - G304
+        - G404
+  exclusions:
+    rules:
+      # Exclude test files from gosec and errcheck
+      # (test code intentionally uses hardcoded values)
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+      # Exclude YAML files from all linters (handled by trunk)
+      - path: '.*\.(yaml|yml)$'
+        linters:
+          - "*"
 
 issues:
   # Do not limit output — show all findings
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    # Exclude test files from gosec and errcheck
-    # (test code intentionally uses hardcoded values)
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
-    # Exclude YAML files from all linters (handled by trunk)
-    - path: '.*\.(yaml|yml)$'
-      linters:
-        - "*"
+
+formatters:
+  # Style / formatting (must match gofmt + goimports in CODING-STANDARDS.md)
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/cosmic-horizon
