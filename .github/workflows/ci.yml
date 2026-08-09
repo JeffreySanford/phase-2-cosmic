@@ -225,6 +225,13 @@ jobs:
           working-directory: tools/data-generator
           args: --timeout=5m
 
+      - name: Run golangci-lint (pulsar-collector)
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.1.6
+          working-directory: tools/pulsar-collector
+          args: --timeout=5m
+
       - name: Run golangci-lint (fits-renderer)
         uses: golangci/golangci-lint-action@v9
         with:

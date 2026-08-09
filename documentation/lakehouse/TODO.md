@@ -156,7 +156,22 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 - [ ] Establish a stable Kafka baseline before adding comparison paths.
 - [ ] Compare the Kafka baseline with a Pulsar-direct or Pulsar-to-Kafka bridged path.
 - [ ] Measure contract differences, backlog/recovery behavior, duplicate behavior, and operational complexity.
-- [ ] Decide whether Pulsar should become a second Lakehouse ingest target or remain an edge-buffer/bridge path.
+- [x] Decide whether Pulsar should become a second Lakehouse ingest target or remain an edge-buffer/bridge path.
+
+> **Decision (2026-08-09): Pulsar is the edge-collection tier, bridged to Kafka.**
+>
+> Generated and field data is produced to geographically distributed Pulsar
+> clusters, which act as edge collectors close to the data source. Collectors
+> forward to Kafka, which remains the single analytical/ingest backbone.
+>
+> Rationale: edge buffering must survive an unreliable link to the core without
+> making every downstream consumer Pulsar-aware, and keeping one backbone avoids
+> a second competing ingest contract.
+>
+> This decision was made by product direction rather than by the measured
+> comparison above. The comparison items stay open: the bridged path still needs
+> measured backlog, recovery, and duplicate behavior before it is trusted at
+> scale, and the measurements may still change how the bridge is operated.
 
 ## Stage 6 — performance evidence
 

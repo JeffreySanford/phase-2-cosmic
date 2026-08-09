@@ -95,6 +95,7 @@ jobs:
         if: matrix.language == 'go'
         run: |
           (cd tools/data-generator && go build ./...)
+          (cd tools/pulsar-collector && go build ./...)
           (cd apps/cosmic-forge-fits-renderer-go && go build ./...)
 
       # --- Analysis ---
