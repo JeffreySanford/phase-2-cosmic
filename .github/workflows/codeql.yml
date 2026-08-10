@@ -22,6 +22,12 @@ on:
     # Run weekly on Monday at 03:00 UTC to catch new vulnerability disclosures
     - cron: "0 3 * * 1"
 
+concurrency:
+  # Supersede in-flight runs for the same PR so pushes do not stack a full
+  # matrix each time. Never cancels main: a push to main must complete.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
