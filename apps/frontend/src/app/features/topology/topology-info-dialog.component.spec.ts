@@ -146,4 +146,54 @@ describe("TopologyInfoDialogComponent", () => {
 
     expect(component.confidenceLabel()).toBe("Mock data");
   });
+
+  it("shows no percentage when confidence is absent", async () => {
+    await configure({
+      type: "link",
+      source: "a",
+      target: "b",
+      stats: { confidencePct: null, state: "declared" },
+    });
+
+    // Number(null) is 0, which is finite, so an absent confidence would render
+    // as "(0%)" if this were coerced rather than type-checked.
+    expect(component.hasConfidenceScore()).toBe(false);
+  });
+
+  it("shows a percentage when a real measurement backs it", async () => {
+    await configure({
+      type: "link",
+      source: "a",
+      target: "b",
+      stats: { confidencePct: 95, state: "measured" },
+    });
+
+    expect(component.hasConfidenceScore()).toBe(true);
+  });
+
+  it("reports measurement age so a stale value cannot read as current", async () => {
+    await configure({
+      type: "link",
+      source: "a",
+      target: "b",
+      stats: {
+        confidencePct: 45,
+        state: "stale",
+        measuredAt: Date.now() - 5 * 60 * 1000,
+      },
+    });
+
+    expect(component.measurementAgeLabel()).toBe("5m ago");
+  });
+
+  it("shows no age when nothing was measured", async () => {
+    await configure({
+      type: "link",
+      source: "a",
+      target: "b",
+      stats: { confidencePct: null, state: "declared" },
+    });
+
+    expect(component.measurementAgeLabel()).toBe("");
+  });
 });

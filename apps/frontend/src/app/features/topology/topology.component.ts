@@ -591,9 +591,26 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         this.linkSourceData(this.statsRef(l)._stats?.source),
       getLinkStats: (l: TopoLink) => this.statsRef(l)._stats,
       getLinkStroke: (l: TopoLink, stats?: LinkStats) => ({
-        stroke: "rgba(148, 163, 184, 0.34)",
+        // Evidence state drives the stroke. An unmeasured link is dimmed and
+        // long-dashed so the graph shows the architecture without implying a
+        // measurement exists for that edge.
+        stroke:
+          stats?.state === "declared"
+            ? "rgba(148, 163, 184, 0.16)"
+            : stats?.state === "stale"
+            ? "rgba(251, 191, 36, 0.30)"
+            : "rgba(148, 163, 184, 0.34)",
         dasharray:
-          stats?.source === "prometheus"
+          stats?.state === "measured"
+            ? "0"
+            : stats?.state === "stale"
+            ? "6 3"
+            : stats?.state === "mock"
+            ? "4 3"
+            : stats?.state === "declared"
+            ? "10 6"
+            : // No evidence state supplied: fall back to the provenance filter.
+            stats?.source === "prometheus"
             ? "0"
             : stats?.source === "admin"
             ? "2 2"

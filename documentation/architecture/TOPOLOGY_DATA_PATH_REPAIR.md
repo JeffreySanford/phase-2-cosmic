@@ -295,9 +295,11 @@ Metric bindings per edge (all already scraped, so no new exporters are required)
 #### 3d. Presentation
 
 - [x] Expose the backing series in the dialog via `measurementSourceLabel()`.
-- [ ] Render unmeasured links dimmed/dashed in the graph.
-- [ ] Show measurement age alongside the series name.
-- [ ] Add a legend distinguishing measured / stale / declared.
+- [x] Render unmeasured links dimmed and long-dashed, and stale links amber, so
+      stroke reflects evidence state rather than only provenance.
+- [x] Show measurement age alongside the series name, and show a percentage only
+      when a real measurement backs it.
+- [x] Add a legend distinguishing measured / stale / no-measurement.
 
 #### 3e. Tests that pin honesty
 

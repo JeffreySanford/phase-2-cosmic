@@ -134,6 +134,35 @@ export class TopologyInfoDialogComponent {
     return this.data.stats?.measurementSource ?? "none";
   }
 
+  /**
+   * A percentage is only shown when a real measurement backs it.
+   *
+   * The null check is explicit because `Number(null)` is 0, which is finite —
+   * coercing here would render an absent confidence as "(0%)".
+   */
+  hasConfidenceScore(): boolean {
+    if (this.data.type !== "link") return false;
+    const value = this.data.stats?.confidencePct;
+    return typeof value === "number" && Number.isFinite(value);
+  }
+
+  /** How old the measurement is, so a stale value cannot read as current. */
+  measurementAgeLabel(): string {
+    if (this.data.type !== "link") return "";
+
+    const measuredAt = this.data.stats?.measuredAt;
+    if (typeof measuredAt !== "number" || !Number.isFinite(measuredAt)) {
+      return "";
+    }
+
+    const ageSeconds = Math.max(
+      0,
+      Math.round((Date.now() - measuredAt) / 1000)
+    );
+    if (ageSeconds < 60) return `${ageSeconds}s ago`;
+    return `${Math.round(ageSeconds / 60)}m ago`;
+  }
+
   measurementPathLabel(): string {
     if (this.data.type !== "link") return "";
     const path = this.data.stats?.measurementPath;
