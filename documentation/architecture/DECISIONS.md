@@ -27,6 +27,7 @@ flowchart TD
   ADR1[ADR-001 Mission Alignment Docs]
   ADR2[ADR-002 Job Control Contract Choice]
   ADR6[ADR-006 Streaming Roles and Reliability Boundary]
+  ADR7[ADR-007 Discovery Stays on Existing Contracts]
 
   O1[Observatory continuity]
   O2[Reproducible science]
@@ -47,6 +48,9 @@ flowchart TD
   ADR6 --> O3
   ADR6 --> O4
   ADR6 --> O5
+  ADR7 --> O2
+  ADR7 --> O3
+  ADR7 -.revisit on trigger.-> O5
 ```
 
 ---
@@ -208,3 +212,36 @@ flowchart TD
   - [BROKER_SAFETY_RUNBOOK.md](../BROKER_SAFETY_RUNBOOK.md)
   - [07-messaging.md](../development/coding-standards/07-messaging.md)
   - [Lakehouse README](../lakehouse/README.md)
+
+---
+
+## 2026-08-10 | ADR-007 | accepted
+
+- Date: 2026-08-10
+- Decision ID: ADR-007
+- Status: accepted
+- Context:
+  Discovery and search across petabyte-scale holdings was evaluated, prompted by the repository-platform pattern common in this space: a DSpace-style repository fronted by Solr or OpenSearch as the indexed, faceted discovery layer. The question is recurrent and the tooling is the obvious reach, so the reasoning for declining it is recorded here rather than left to be re-derived.
+- Decision:
+  1. **No Solr, OpenSearch or DSpace is adopted.** Discovery remains on the contracts the platform already owns.
+  2. **`vo-tap-obscore.v1` is the discovery schema.** Its canonical fields — `sourceIdentifier`, `collection`, `dataProductType`, `ra`, `dec`, `accessUri` — already carry stable identity, two natural facets, sky position, and the pointer to the bytes. Any proposal for a new "artifact" or "item" model starts by explaining what this schema cannot express. DSpace would replace a domain-native IVOA standard with a generic one and lose the positional fields in the process.
+  3. **`accessUri` is the index boundary.** What gets indexed is the metadata projection; archived bytes are never indexed. Index size therefore scales with record count, not byte volume, which is why the `tiny`/`10gb`/`100gb`/`1tb` scale profiles do not constrain discovery.
+  4. **TAP is the federated remote query protocol.** Multi-archive and remote discovery extend the existing adapter contract and source registry; they do not require a new search tier.
+  5. **A search backend, if one is ever added, is contract-shaped.** It follows the source-registry pattern already in use — a declared contract with one implementation and inactive alternatives named — rather than a direct dependency reaching out of UI or API code.
+  6. **A result cache, when built, expires at write.** Any cached result set carries a TTL set at write time and a bounded stored size, and is never the system of record. Recorded because the governance service was taken down by ~896k unexpiring Redis keys on a hot path; a 24-hour result cache is the same shape of object.
+- Mission outcome impact:
+  Keeps entity modelling aligned to an instrument-domain standard instead of a document-repository one, avoids operating a second stateful search tier alongside an already large local stack, and preserves the option to add one later without re-modelling entities or re-mapping providers.
+- Tradeoffs:
+  - No full-text relevance ranking and no semantic similarity. Retrieval is exact-match and range over canonical fields.
+  - Facet counts are computed in the relational store; cost grows with cardinality and will need measuring, not assuming.
+  - Cone search over `ra`/`dec` needs astronomy-aware indexing such as q3c or pgSphere. Generic geospatial types are not a substitute: sky coordinates are not latitude/longitude, and RA wraparound and pole behaviour are wrong under a naive mapping.
+  - Deferring means an eventual migration if a trigger below fires. That is accepted as cheaper than running a search cluster whose capabilities are currently unused.
+- Validation plan:
+  - This decision is falsifiable, not permanent. It is revisited when either trigger fires, and an adoption proposal must state which one and cite the measurement.
+  - **Trigger 1 — a prose corpus exists.** Abstracts, notebooks, discovery notes or analysis summaries in volume. Semantic and full-text retrieval over six structured metadata fields does not repay a search tier; over prose it does.
+  - **Trigger 2 — measured latency exceeds the interactive budget.** Facet or cone-search latency at the active scale profile, measured against real record counts. Measure before adopting, not after.
+  - Until then, discovery work is validated by the existing source-registry and lakehouse gates rather than by search-engine benchmarks.
+- Links:
+  - [source-registry.example.json](../../tools/lakehouse-mvp/source-registry.example.json)
+  - [PR41_MVP_LAKEHOUSE.md](../lakehouse/docs/PR41_MVP_LAKEHOUSE.md)
+  - [ARCHITECTURE.md](./ARCHITECTURE.md)
