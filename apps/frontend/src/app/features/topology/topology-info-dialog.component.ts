@@ -20,7 +20,7 @@ export type TopologyLinkEvidenceState =
 export interface TopologyLinkStats {
   throughput?: number | string; // MB/s or human-readable
   throughputPct?: string; // e.g. "82%"
-  latencyMs?: number;
+  latencyMs?: number | null;
   errorRate?: number | string; // percentage or fraction or string
   /** Null/absent means nothing measured this link. Never defaulted to a grade. */
   confidencePct?: number | null;

@@ -99,7 +99,7 @@ export type LinkEvidenceState =
 export type LinkStats = {
   throughput?: string;
   throughputPct?: string;
-  latencyMs?: number;
+  latencyMs?: number | null;
   errorRate?: string;
   /** Null/absent means nothing measured this link; never defaulted to a grade. */
   confidencePct?: number | null;
@@ -108,7 +108,8 @@ export type LinkStats = {
   /** Prometheus series behind the value, so a reader can verify it. */
   measurementSource?: string | null;
   measuredAt?: number | null;
-  throughputMBpsCurrent?: number;
+  /** Null when unmeasured. Rendered as "no measurement", never as 0 MB/s. */
+  throughputMBpsCurrent?: number | null;
   throughputMBpsMax?: number;
   throughputPctNumeric?: number;
   source?: LinkDataSource;
@@ -133,12 +134,18 @@ export type NodeSummary = {
 };
 
 export type TopologyMetricPoint = {
-  currentMBps: number;
+  /** Null when no measurement backs this edge. Never synthesized. */
+  currentMBps: number | null;
   maxMBps?: number;
   source?: LinkDataSource;
-  latencyMs?: number;
-  errorRatePct?: number;
-  confidencePct?: number;
+  latencyMs?: number | null;
+  errorRatePct?: number | null;
+  /** Null for `declared` and `mock`; absence is not a percentage. */
+  confidencePct?: number | null;
+  /** Evidence claim, kept separate from the `source` visibility filter. */
+  state?: LinkEvidenceState;
+  measurementSource?: string | null;
+  measuredAt?: number | null;
   measurementPath?: string;
 };
 
