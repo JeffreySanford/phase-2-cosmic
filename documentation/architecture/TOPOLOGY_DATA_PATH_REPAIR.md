@@ -370,6 +370,18 @@ The probe does not manufacture an API event. It opens the real application with 
 
 A passing browser-observed event is the PR41 acceptance artifact for the transport/presentation repair.
 
+## Known test-environment sensitivity
+
+`PulsarIngestListenerIntegrationTest` in `java-governance` is resource-sensitive.
+It starts its own Pulsar container and takes roughly 160 seconds. Running it
+while the geo profile is up fails its metric assertion; running it with the geo
+stack stopped passes.
+
+This is contention, not a defect, and it predates PR41 — no PR41 commit touches
+`java-governance`. It is the most likely cause of the intermittent `quality`
+workflow failures, which surface as `Connection refused` against Pulsar and
+Kafka. Do not run the geo profile and the Java integration suite concurrently.
+
 ## Evidence boundary
 
 The transport and reliability code can be implemented without claiming the topology visualization is already evidence-backed. Until Stage 3 lands, synthetic confidence/throughput in the existing visualization remains a known defect and must not be cited as measured architecture evidence.
