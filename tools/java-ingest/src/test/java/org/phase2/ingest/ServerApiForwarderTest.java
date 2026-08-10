@@ -1,6 +1,7 @@
 package org.phase2.ingest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -17,19 +18,19 @@ class ServerApiForwarderTest {
     }
 
     @Test
-    void isNotConfiguredWhenUrlIsMissing() {
+    void failsClosedWhenForwardingIsEnabledButUrlIsMissing() {
         var metrics = mock(IngestMetricsService.class);
 
-        var forwarder = forwarder("", true, metrics);
-
-        assertThat(forwarder.isConfigured()).isFalse();
+        assertThatThrownBy(() -> forwarder("", true, metrics))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ingest.forward.url");
     }
 
     @Test
     void isNotConfiguredWhenExplicitlyDisabled() {
         var metrics = mock(IngestMetricsService.class);
 
-        var forwarder = forwarder("http://localhost:4000/api/ingest/events", false, metrics);
+        var forwarder = forwarder("", false, metrics);
 
         assertThat(forwarder.isConfigured()).isFalse();
     }
@@ -44,9 +45,9 @@ class ServerApiForwarderTest {
     }
 
     @Test
-    void forwardIsSkippedAndSilentWhenNotConfigured() {
+    void forwardIsSkippedAndSilentWhenExplicitlyDisabled() {
         var metrics = mock(IngestMetricsService.class);
-        var forwarder = forwarder("", true, metrics);
+        var forwarder = forwarder("", false, metrics);
 
         boolean forwarded = forwarder.forward("kafka", "phase2-events", "{\"source\":\"main\"}");
 
