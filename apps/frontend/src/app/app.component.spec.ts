@@ -1,5 +1,6 @@
 import { TestBed } from "@angular/core/testing";
 import { Component } from "@angular/core";
+import { AsyncPipe } from "@angular/common";
 import { AppComponent } from "./app.component";
 import { Router } from "@angular/router";
 import { SidebarService } from "./base/sidebar/sidebar.service";
@@ -43,7 +44,11 @@ describe("AppComponent", () => {
     })
       .overrideComponent(AppComponent, {
         set: {
+          // `set` replaces the component's imports wholesale, so everything the
+          // template needs must be repeated here. AsyncPipe is required because
+          // the shell renders the repaired ingest stream with `| async`.
           imports: [
+            AsyncPipe,
             HeaderStubComponent,
             StatusBandStubComponent,
             SidebarStubComponent,
