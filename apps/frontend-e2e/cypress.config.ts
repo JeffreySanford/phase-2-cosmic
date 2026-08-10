@@ -16,7 +16,10 @@ export default defineConfig({
         production: `cross-env FRONTEND_PORT=${e2eBackendPort} pnpm run serve:ssr`,
       },
       webServerConfig: {
-        timeout: 180000,
+        // The dev server plus SSR boot measured 2m32s on CI against the old
+        // 180s budget — a ~28s margin that any build-time growth breaks. 300s
+        // restores headroom without masking a genuinely hung server.
+        timeout: 300000,
       },
       ciWebServerCommand: e2eConcurrentCommand,
       ciBaseUrl: "http://127.0.0.1:4200",
