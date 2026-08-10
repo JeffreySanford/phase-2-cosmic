@@ -15,6 +15,7 @@ import {
   All,
   Inject,
   Optional,
+  BadRequestException,
 } from "@nestjs/common";
 import { ExecutionPlansController } from "./src/app/controllers/execution-plans.controller";
 import { RuntimeLoadProfileService } from "./src/app/services/runtime-load-profile.service";
@@ -106,7 +107,11 @@ type RedisClientOps = {
   on(event: "error", listener: (err: unknown) => void): unknown;
   connect(): Promise<unknown>;
   get(key: string): Promise<string | null>;
-  set(key: string, value: string, options: { EX: number }): Promise<unknown>;
+  set(
+    key: string,
+    value: string,
+    options: { EX: number; NX?: boolean }
+  ): Promise<unknown>;
 };
 
 const REDIS_CACHE_DURATION_BUCKETS = [
@@ -184,6 +189,7 @@ const ingestSseClients = new Set<Response>();
 
 export interface IngestedEvent {
   receivedAt: number;
+  eventId?: string;
   source?: string;
   eventType?: string;
   traceId?: string;
@@ -195,8 +201,64 @@ export interface IngestedEvent {
 // Bounded ring buffer so a late subscriber sees recent activity without the
 // server retaining unbounded event history.
 const INGEST_EVENT_BUFFER_LIMIT = 50;
+const INGEST_EVENT_IDEMPOTENCY_MAX_ENTRIES = Math.max(
+  1,
+  Number(process.env["INGEST_EVENT_IDEMPOTENCY_MAX_ENTRIES"]) || 10_000
+);
+const INGEST_EVENT_IDEMPOTENCY_TTL_SECONDS = Math.max(
+  60,
+  Number(process.env["INGEST_EVENT_IDEMPOTENCY_TTL_SECONDS"]) || 86_400
+);
 const recentIngestEvents: IngestedEvent[] = [];
+const acceptedIngestEventIds = new Map<string, number>();
 let ingestEventsReceived = 0;
+let ingestDuplicatesSuppressed = 0;
+
+function rememberIngestEventId(eventId: string): void {
+  if (acceptedIngestEventIds.has(eventId)) {
+    acceptedIngestEventIds.delete(eventId);
+  }
+  acceptedIngestEventIds.set(eventId, Date.now());
+  while (acceptedIngestEventIds.size > INGEST_EVENT_IDEMPOTENCY_MAX_ENTRIES) {
+    const oldest = acceptedIngestEventIds.keys().next().value as string | undefined;
+    if (!oldest) break;
+    acceptedIngestEventIds.delete(oldest);
+  }
+}
+
+async function claimIngestEventId(eventId: string): Promise<boolean> {
+  if (redisClient) {
+    try {
+      const result = await redisClient.set(
+        `frontend:ingest:event:${eventId}`,
+        "1",
+        { EX: INGEST_EVENT_IDEMPOTENCY_TTL_SECONDS, NX: true }
+      );
+      if (result === "OK") {
+        rememberIngestEventId(eventId);
+        return true;
+      }
+
+      ingestDuplicatesSuppressed += 1;
+      rememberIngestEventId(eventId);
+      return false;
+    } catch (error) {
+      console.warn(
+        "Redis ingest idempotency claim failed; using bounded in-memory fallback:",
+        error
+      );
+    }
+  }
+
+  if (acceptedIngestEventIds.has(eventId)) {
+    ingestDuplicatesSuppressed += 1;
+    rememberIngestEventId(eventId);
+    return false;
+  }
+
+  rememberIngestEventId(eventId);
+  return true;
+}
 
 function recordIngestEvent(event: IngestedEvent) {
   ingestEventsReceived += 1;
@@ -217,6 +279,8 @@ function recordIngestEvent(event: IngestedEvent) {
 export function getIngestEventStats() {
   return {
     received: ingestEventsReceived,
+    duplicatesSuppressed: ingestDuplicatesSuppressed,
+    idempotencyEntries: acceptedIngestEventIds.size,
     buffered: recentIngestEvents.length,
     clientCount: ingestSseClients.size,
     latest: recentIngestEvents[recentIngestEvents.length - 1] ?? null,
@@ -225,7 +289,9 @@ export function getIngestEventStats() {
 
 export function resetIngestEventsForTest() {
   recentIngestEvents.length = 0;
+  acceptedIngestEventIds.clear();
   ingestEventsReceived = 0;
+  ingestDuplicatesSuppressed = 0;
   ingestSseClients.clear();
 }
 
@@ -668,6 +734,15 @@ function renderPrometheusMetrics(): string {
     );
   }
 
+  lines.push(
+    "# HELP frontend_ingest_events_received_total Unique repaired-path events accepted by the frontend ingest API.",
+    "# TYPE frontend_ingest_events_received_total counter",
+    `frontend_ingest_events_received_total ${ingestEventsReceived}`,
+    "# HELP frontend_ingest_duplicates_suppressed_total Duplicate event IDs suppressed before SSE broadcast.",
+    "# TYPE frontend_ingest_duplicates_suppressed_total counter",
+    `frontend_ingest_duplicates_suppressed_total ${ingestDuplicatesSuppressed}`
+  );
+
   // Runtime load profile metrics (stress mode workers + bytes written)
   lines.push(
     "# HELP frontend_ssr_runtime_load_profile_pct Current runtime load profile percentage.",
@@ -712,7 +787,7 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
       radius: 0.5,
       format: "votable",
       liveMode: true,
-      _description: "Cone search around Orion Nebula (M42), radius 0.5\u00b0",
+      _description: "Cone search around Orion Nebula (M42), radius 0.5°",
     },
     "vo.adql.query": {
       provider: "HEASARC",
@@ -732,7 +807,7 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
       limit: 20,
       liveMode: true,
       _description:
-        "ESO ObsCore image search around quasar 3C 273 (r=0.5\u00b0)",
+        "ESO ObsCore image search around quasar 3C 273 (r=0.5°)",
     },
     "vo.votable.fetch": {
       provider: "HEASARC",
@@ -757,7 +832,7 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
       expectedMimeType: "application/fits",
       liveMode: true,
       _description:
-        "Chandra ACIS event file \u2014 Cas A supernova remnant (obs 21843)",
+        "Chandra ACIS event file — Cas A supernova remnant (obs 21843)",
     },
     "vo.soda.cutout": {
       provider: "CADC",
@@ -769,7 +844,7 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
       outputFormat: "fits",
       liveMode: true,
       _description:
-        "CADC SODA cutout centered on 3C 273 (r=0.1\u00b0, CFHT obs 2459817)",
+        "CADC SODA cutout centered on 3C 273 (r=0.1°, CFHT obs 2459817)",
     },
     "vo.preview.fetch": {
       provider: "ESASky",
@@ -1044,13 +1119,29 @@ export class AppController {
   }
 
   // Receives events forwarded by java-ingest after it consumes them from Kafka.
-  // This is the hop that connects the broker pipeline to the frontend.
+  // This is the side-effect boundary for the live presentation projection.
   @Post("api/ingest/events")
-  receiveIngestEvent(@Body() body: Record<string, unknown>) {
-    const payload = (body?.["payload"] ?? body) as Record<string, unknown>;
+  async receiveIngestEvent(@Body() body: Record<string, unknown>) {
+    const rawPayload = body?.["payload"] ?? body;
+    const payload =
+      rawPayload !== null && typeof rawPayload === "object"
+        ? (rawPayload as Record<string, unknown>)
+        : ({ value: rawPayload } as Record<string, unknown>);
+    const eventId =
+      asOptionalString(body?.["eventId"]) ??
+      asOptionalString(payload?.["eventId"]);
+
+    if (!eventId) {
+      throw new BadRequestException("eventId is required for ingest projection");
+    }
+
+    if (!(await claimIngestEventId(eventId))) {
+      return { accepted: true, duplicate: true, eventId };
+    }
 
     const event: IngestedEvent = {
       receivedAt: Date.now(),
+      eventId,
       source: asOptionalString(payload?.["source"]),
       eventType: asOptionalString(payload?.["eventType"]),
       traceId: asOptionalString(payload?.["traceId"]),
@@ -1060,7 +1151,12 @@ export class AppController {
     };
 
     recordIngestEvent(event);
-    return { accepted: true, receivedAt: event.receivedAt };
+    return {
+      accepted: true,
+      duplicate: false,
+      eventId,
+      receivedAt: event.receivedAt,
+    };
   }
 
   @Get("api/ingest/stream")
@@ -2983,7 +3079,8 @@ async function bootstrap() {
   const nestPort = process.env["PORT"] || process.env["FRONTEND_PORT"] || 3000;
   const runtimeLoad = app.get(RuntimeLoadProfileService);
   app.enableShutdownHooks();
-  // initialize optional Redis client used for caching VO samples
+  // initialize optional Redis client used for caching VO samples and durable
+  // ingest idempotency claims when Redis is available.
   await initRedisClient();
   await app.listen(nestPort);
   console.log("Nest SSR server listening on", nestPort);
