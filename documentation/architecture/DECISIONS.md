@@ -173,7 +173,7 @@ flowchart TD
 - Decision ID: ADR-006
 - Status: accepted
 - Context:
-  PR41 exposed documentation/runtime drift in the platform topology. The visualization implied a direct Pulsar-to-Kafka link, `java-ingest` terminated at metrics, broker roles were ambiguous, and frontend forwarding had no durable retry or duplicate contract. The Lakehouse Initiative also needed one stable ingestion boundary rather than inheriting every operational broker.
+  PR41 exposed documentation/runtime drift in the platform topology. The visualization implied a direct Pulsar-to-Kafka link, `java-ingest` terminated at metrics, broker roles were ambiguous, and frontend forwarding had no durable retry, poison-message, or duplicate contract. The Lakehouse Initiative also needed one stable ingestion boundary rather than inheriting every operational broker.
 - Decision:
   1. **Pulsar is the regional/edge ingestion tier.** Each geographic region owns an independent Pulsar cluster and a colocated `pulsar-collector`.
   2. **Kafka is the central durable streaming backbone.** Regional collectors forward source-faithful payloads to Kafka only after successful Kafka acknowledgement.
@@ -181,21 +181,27 @@ flowchart TD
   4. **Kafka is the boundary into the lakehouse.** The analytical path is `Kafka -> Bronze -> Silver/quarantine -> Gold -> query/consumer`.
   5. **The presentation projection is `Kafka -> java-ingest -> frontend API -> SSE -> Angular`.** Kafka remains durable; the frontend is a projection, not a system of record.
   6. **Every repaired-path event has immutable identity.** The data generator creates one UUID-v4 `event-id`; collectors preserve it in Kafka headers together with region and Pulsar attribution; `java-ingest` projects it into the frontend envelope.
-  7. **Delivery is at-least-once plus explicit idempotency.** Collector failures are negative-acked in Pulsar. Java-to-frontend failures use Kafka retry topics and a forward DLT. `java-ingest` and Angular use bounded duplicate suppression keyed by `eventId`. No component may describe this as global exactly-once delivery.
+  7. **Delivery is at-least-once plus explicit idempotency.** Collector failures are negative-acked in Pulsar. `java-ingest`, the frontend ingest API, and Angular suppress duplicate projection by immutable `eventId`. No component may describe this as global exactly-once delivery.
+  8. **Transient delivery failure and invalid-data failure are different domains.** Frontend/API network failures use Spring Kafka non-blocking retry topics and terminate in `.forward-dlt`. Contract-invalid records such as missing payload or missing `event-id` bypass HTTP retries and are copied to `phase2-events.validation-dlt` with a validation reason.
+  9. **Forwarding configuration fails closed.** `ingest.forward.enabled=true` requires a non-empty `ingest.forward.url` at application startup. Kafka-only/metrics operation must be selected explicitly with `ingest.forward.enabled=false`.
+  10. **Retry infrastructure must be executable evidence, not annotation-only intent.** `java-ingest` explicitly enables Kafka retry-topic infrastructure; container-backed integration coverage must prove an unreachable frontend traverses retry listeners and arrives in `.forward-dlt`.
 - Mission outcome impact:
-  Establishes a traceable, replayable and diagnosable event path from geographically distributed acquisition through operator presentation and analytical ingestion. It reduces topology ambiguity, preserves regional provenance, and makes failure/replay behavior testable.
+  Establishes a traceable, replayable and diagnosable event path from geographically distributed acquisition through operator presentation and analytical ingestion. It reduces topology ambiguity, preserves regional provenance, separates poison data from transient outages, and makes failure/replay behavior testable.
 - Tradeoffs:
-  - Additional Kafka retry/DLT topics and operational monitoring are required.
-  - Process-local deduplication does not survive service restart; durable downstream stores must remain idempotent by `eventId`.
+  - Additional Kafka retry/DLT and validation-DLT topics require monitoring and replay procedures.
+  - Bounded duplicate suppression does not create global exactly-once delivery; durable downstream stores must remain idempotent by `eventId`.
+  - The live frontend projection remains secondary to Kafka durability and may replay after process recovery.
   - The geo profile is heavier than the minimal local stack.
   - RabbitMQ remains deliberately separate, so broker-comparison/governance views must represent fan-in rather than a single linear chain.
 - Validation plan:
   - Generator unit test validates UUID-v4 event identity creation.
   - Collector integration test validates payload fidelity plus unchanged `event-id`, region, Pulsar message ID, and Kafka-topic attribution.
-  - Java tests validate provenance projection, duplicate suppression, retry-triggering failure behavior, and DLT accounting.
-  - Frontend server tests validate `eventId`, region and source preservation through the SSE boundary.
+  - Java unit tests validate provenance projection, duplicate suppression, fail-closed forwarding configuration, poison-message routing, retry-triggering failure behavior, and DLT accounting.
+  - Kafka/Testcontainers validation-DLT test proves invalid records are quarantined without HTTP forwarding.
+  - Kafka/Testcontainers retry-DLT test proves the Spring retry listener topology is bootstrapped and an unreachable frontend ends in `.forward-dlt` after bounded retries.
+  - Frontend server tests prove repeated `eventId` submissions produce one SSE side effect and expose duplicate-suppression metrics.
   - Angular stream-service tests validate consumption and replay deduplication.
-  - Runtime acceptance: `node scripts/verify-ingest-e2e.mjs` must observe one real repaired-path SSE event with non-empty `eventId`, region and source and `broker=kafka`.
+  - Runtime acceptance: `node scripts/verify-ingest-e2e.mjs` must observe one real repaired-path event in the hydrated Angular application with non-empty `eventId`, region and source and `broker=kafka`.
 - Links:
   - [ARCHITECTURE.md](./ARCHITECTURE.md)
   - [TOPOLOGY_DATA_PATH_REPAIR.md](./TOPOLOGY_DATA_PATH_REPAIR.md)
