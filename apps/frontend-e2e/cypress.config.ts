@@ -5,7 +5,10 @@ import { defineConfig } from "cypress";
 const e2eBackendPort = process.env.FRONTEND_PORT ?? "4100";
 const e2eProxyServeCommand = `cross-env FRONTEND_PORT=${e2eBackendPort} pnpm exec nx run frontend:serve --host=127.0.0.1`;
 const e2eSsrServeCommand = `cross-env FRONTEND_PORT=${e2eBackendPort} DEV_SERVER_ORIGIN=http://127.0.0.1:4200 DISABLE_NEST_VITE_DEV_SERVER=true DISABLE_REDIS_CLIENT=true USE_EMBEDDED_E2E_BACKEND=true pnpm run serve:ssr`;
-const e2eConcurrentCommand = `pnpm exec concurrently --kill-others-on-fail --success first "${e2eSsrServeCommand}" "${e2eProxyServeCommand}"`;
+// Both processes are servers that only stop when the runner tears them down, so
+// their termination must not decide the job's outcome. See the supervisor for
+// why `concurrently --success first` failed green runs.
+const e2eConcurrentCommand = `node scripts/e2e-web-server.cjs "${e2eSsrServeCommand}" "${e2eProxyServeCommand}"`;
 
 export default defineConfig({
   e2e: {
