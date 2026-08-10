@@ -55,6 +55,13 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
+          # See ci.yml: uncached runs re-fetch the full dependency tree from
+          # Maven Central and trip its rate limit under concurrency.
+          cache: maven
+          cache-dependency-path: |
+            pom-parent.xml
+            apps/java-governance/pom.xml
+            tools/java-ingest/pom.xml
 
       - name: Set up Node
         uses: actions/setup-node@v5

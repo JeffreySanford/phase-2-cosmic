@@ -82,6 +82,16 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          # Without this the whole Spring dependency tree is re-fetched from
+          # Maven Central on every run, which is slow and gets the account
+          # rate-limited (HTTP 429) once several workflows run concurrently.
+          # ~/.m2 is also mounted into the dockerised Maven runs, so caching it
+          # here benefits those too.
+          cache: maven
+          cache-dependency-path: |
+            pom-parent.xml
+            apps/java-governance/pom.xml
+            tools/java-ingest/pom.xml
 
       # Must satisfy the highest `go` directive across all workspace modules:
       # tools/data-generator requires 1.25.0 (pulled up by the Pulsar client)
