@@ -94,6 +94,25 @@ The current [`scripts/start-all.sh`](/c:/repos/phase-2-cosmic/scripts/start-all.
 
 The noisy `Nx ... target serve ... failed` banner can appear when an old frontend dev server is intentionally terminated during cleanup. In that case, the message is from the stale process being stopped, not from the new startup sequence failing.
 
+## Geo collector profile
+
+The regional edge tier lives in `docker/geo-collectors-compose.yml` and is opt-in twice over: it is a separate compose file **and** every service is gated behind the `geo` profile. Normal local development and CI resolve zero geo services.
+
+```bash
+docker compose -f docker/dev-compose.yml \
+  -f docker/geo-collectors-compose.yml --profile geo up -d
+```
+
+It starts three independent regional Pulsar clusters (`us-west`, `eu-central`, `apac-southeast`), a colocated `pulsar-collector` per region forwarding to the single Kafka backbone, and a regional generator per cluster.
+
+Host ports: Pulsar `6651`/`6652`/`6653`, collector metrics `9111`/`9112`/`9113`.
+
+Note the Kafka listener split when connecting from the host: `9092` is the in-network listener and `9093` is host-reachable. A host client using `9092` receives metadata advertising `kafka:9092` and cannot route to it.
+
+**Scoped exception to ADR-003.** ADR-003 requires Pulsar to run as a full profile rather than standalone-only. The core `pulsar` service in `dev-compose.yml` is unchanged and remains a full broker + bookkeeper + zookeeper deployment. The three regional edge clusters run standalone because three full clusters is nine containers, which is not workable on a developer workstation. Standalone here models cluster independence, not production topology; production intent is a full cluster per region.
+
+Tear the stack down with the same file pair and `down` to release the resources.
+
 ## Expected next step
 
 Continue evolving the Forge services inside `docker/cosmic-forge-compose.yml` rather than adding Forge runtime to `docker/dev-compose.yml`.

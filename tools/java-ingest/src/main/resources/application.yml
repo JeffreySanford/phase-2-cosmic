@@ -1,4 +1,30 @@
 ---
+ingest:
+  kafka:
+    topic: ${INGEST_KAFKA_TOPIC:phase2-events}
+    group-id: ${INGEST_KAFKA_GROUP_ID:java-ingest-group}
+  forward:
+    # Server API endpoint that receives consumed events and republishes them on
+    # the SSE channel. Forwarding defaults on and now fails application startup
+    # when the URL is missing; set INGEST_FORWARD_ENABLED=false only for an
+    # intentional Kafka-only/metrics consumer mode.
+    #
+    # Transient delivery failures are retried through Kafka retry topics and end
+    # in the .forward-dlt topic after exhaustion.
+    url: ${INGEST_FORWARD_URL:}
+    enabled: ${INGEST_FORWARD_ENABLED:true}
+    timeout-ms: ${INGEST_FORWARD_TIMEOUT_MS:2000}
+    retry-attempts: ${INGEST_FORWARD_RETRY_ATTEMPTS:4}
+  validation:
+    # Poison/contract-invalid records are quarantined here without spending HTTP
+    # retry attempts. This DLT is distinct from transient .forward-dlt failures.
+    dlt-topic: ${INGEST_VALIDATION_DLT_TOPIC:phase2-events.validation-dlt}
+  dedupe:
+    # Process-local protection against at-least-once redelivery. eventId remains
+    # the durable idempotency key; this cache intentionally does not claim
+    # exactly-once behavior across java-ingest restarts.
+    max-entries: ${INGEST_DEDUPE_MAX_ENTRIES:10000}
+
 spring:
   main:
     allow-bean-definition-overriding: true

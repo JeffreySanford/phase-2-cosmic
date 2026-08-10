@@ -10,6 +10,12 @@ permissions:
   contents: read
   issues: write
 
+concurrency:
+  # Supersede in-flight runs for the same PR so pushes do not stack a full
+  # matrix each time. Never cancels main: a push to main must complete.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   openapi-validate:
     name: OpenAPI Validate
@@ -78,12 +84,12 @@ jobs:
           java-version: "17"
 
       # Must satisfy the highest `go` directive across all workspace modules:
-      # tools/data-generator requires 1.21, apps/cosmic-forge-fits-renderer-go
-      # requires 1.24.2.
-      - name: Set up Go 1.24
+      # tools/data-generator requires 1.25.0 (pulled up by the Pulsar client)
+      # and apps/cosmic-forge-fits-renderer-go requires 1.24.2.
+      - name: Set up Go 1.25
         uses: actions/setup-go@v6
         with:
-          go-version: "1.24"
+          go-version: "1.25"
           cache-dependency-path: tools/data-generator/go.sum
 
       - name: Set up Node 22
@@ -221,14 +227,25 @@ jobs:
       - name: Run golangci-lint (data-generator)
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.1.6
+          version: v2.12.2
           working-directory: tools/data-generator
+          args: --timeout=5m
+
+      - name: Run golangci-lint (pulsar-collector)
+        uses: golangci/golangci-lint-action@v9
+        with:
+          # Must be built with a Go at least as new as the module targets.
+          # pulsar-client-go raised this module to go 1.25, and v2.1.6 is built
+          # with Go 1.24, so it refuses to load the config at all. Kept in step
+          # with the other Go modules' linter version.
+          version: v2.12.2
+          working-directory: tools/pulsar-collector
           args: --timeout=5m
 
       - name: Run golangci-lint (fits-renderer)
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.1.6
+          version: v2.12.2
           working-directory: apps/cosmic-forge-fits-renderer-go
           args: --timeout=5m
 

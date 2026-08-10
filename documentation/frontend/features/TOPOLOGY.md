@@ -114,12 +114,22 @@ During a Java Governance restart, the host-side governance upstream layer treats
 
 Topology is an operational evidence surface, not a capacity claim generator.
 
-- `currentMBps` should represent observed/current behavior when a trustworthy measurement exists.
+- `currentMBps` is `null` unless a Prometheus series backs it, and is never synthesized. It was previously computed from the link's index in the links array; that fabrication was removed in PR41.
 - `maxMBps` is capacity/configuration context and is not itself measured throughput.
-- Link `source` and `measurementPath` identify where the link record was assembled (for example Prometheus and/or an infrastructure snapshot).
+- Link `source` is the operator **visibility filter**. Link `state` is the **evidence claim**. They are deliberately separate, so an unmeasured link stays visible under the existing filters while still reporting that nothing measured it.
+- `state` is one of `measured`, `stale`, `derived`, `declared`, or `mock`, derived from the age of the backing sample.
+- `measurementSource` names the Prometheus series behind the value so a reader can verify it; `measuredAt` carries the sample time.
+- `confidencePct` is `null` for `declared` and `mock`. Absence of measurement is reported as absence and must never render as a confidence grade. Confidence was previously `92` when a link touched a hardcoded node-name list and `74` otherwise; that rule was removed in PR41.
 - `diagnostics.measuredLinks`, `adminLinks`, `fallbackDerivedLinks`, and related counts expose the snapshot's evidence composition.
-- A zero measurement must not automatically be interpreted as a missing measurement.
-- The current topology contract still has field-level provenance refinement to do: a link-level `source` can describe the dominant record source while individual latency/error fields may still be derived or fallback values. Do not treat every field in a `source: "prometheus"` link as independently measured until field-level provenance is implemented.
+- A zero measurement must not automatically be interpreted as a missing measurement, and a missing measurement must never be rendered as zero.
+- The current topology contract still has field-level provenance refinement to do: a link-level `state` describes the dominant record source while individual latency/error fields may still be unavailable. Do not treat every field in a `measured` link as independently measured until field-level provenance is implemented.
+
+### Evidence presentation
+
+- A `measured` link renders solid, `stale` renders amber-dashed, and `declared` renders dimmed and long-dashed. A dimmed link means "not measured", not "low traffic"; the legend states this.
+- The link dialog leads with evidence state, names the backing series, and shows measurement age. A percentage appears only when a real measurement backs it.
+- Per-region edges sharing a series (all collectors export `collector_messages_forwarded_total`) are separated by `region` label in the query, so regions do not all report the same value.
+- An unreachable Prometheus degrades links to "No measurement" rather than serving the previous value as current.
 
 Lakehouse Bronze/Silver/Gold implementation state is separate from topology operational metrics. Topology may display Lakehouse boundary/context, but it must not convert public-source proof or illustrative values into claims that Delta stages exist.
 

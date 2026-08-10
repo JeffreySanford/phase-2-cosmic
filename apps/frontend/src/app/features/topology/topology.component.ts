@@ -591,15 +591,8 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
         this.linkSourceData(this.statsRef(l)._stats?.source),
       getLinkStats: (l: TopoLink) => this.statsRef(l)._stats,
       getLinkStroke: (l: TopoLink, stats?: LinkStats) => ({
-        stroke: "rgba(148, 163, 184, 0.34)",
-        dasharray:
-          stats?.source === "prometheus"
-            ? "0"
-            : stats?.source === "admin"
-            ? "2 2"
-            : stats?.source === "mock"
-            ? "4 3"
-            : "8 5",
+        stroke: this.linkStrokeColor(stats),
+        dasharray: this.linkStrokeDasharray(stats),
         width: l.value ? Math.max(1, Math.log(l.value + 1)) : 1,
       }),
       getLinkDotStyle: (l: TopoLink, stats?: LinkStats) => {
@@ -887,21 +880,35 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
     if (metric.maxMBps !== undefined) {
       stats.throughputMBpsMax = metric.maxMBps;
     }
-    const current = Math.round(stats.throughputMBpsCurrent ?? 0);
     const max = Math.round(
       stats.throughputMBpsMax ?? stats.throughputMBpsCurrent ?? 0
     );
-    const pct = Math.round(
-      ((stats.throughputMBpsCurrent ?? 0) / Math.max(1, max || 1)) * 100
-    );
-    stats.throughput = `${current} MB/s (max ${max} MB/s)`;
-    stats.throughputPct = `${pct}%`;
-    stats.throughputPctNumeric = pct;
+
+    if (stats.throughputMBpsCurrent === null) {
+      // An unmeasured link must not render as "0 MB/s", which reads as measured
+      // absence of traffic rather than absence of measurement.
+      stats.throughput = `no measurement (max ${max} MB/s)`;
+      stats.throughputPct = "";
+      stats.throughputPctNumeric = 0;
+    } else {
+      const current = Math.round(stats.throughputMBpsCurrent ?? 0);
+      const pct = Math.round(
+        ((stats.throughputMBpsCurrent ?? 0) / Math.max(1, max || 1)) * 100
+      );
+      stats.throughput = `${current} MB/s (max ${max} MB/s)`;
+      stats.throughputPct = `${pct}%`;
+      stats.throughputPctNumeric = pct;
+    }
+
     stats.source = metric.source ?? stats.source ?? "derived";
-    if (metric.latencyMs !== undefined) {
+    stats.state = metric.state ?? stats.state;
+    stats.measurementSource =
+      metric.measurementSource ?? stats.measurementSource;
+    stats.measuredAt = metric.measuredAt ?? stats.measuredAt;
+    if (metric.latencyMs !== undefined && metric.latencyMs !== null) {
       stats.latencyMs = metric.latencyMs;
     }
-    if (metric.errorRatePct !== undefined) {
+    if (metric.errorRatePct !== undefined && metric.errorRatePct !== null) {
       stats.errorRate = `${metric.errorRatePct.toFixed(2)}%`;
     }
     if (metric.confidencePct !== undefined) {
@@ -943,9 +950,57 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       maxMBps,
       latencyMs: this.syntheticLatencyMs(link),
       errorRatePct: this.syntheticErrorRatePct(link),
-      confidencePct: this.dataSource.mode === "mock" ? 24 : 48,
+      // Confidence is never a constant. This fallback runs when the server
+      // supplied no evidence for the link, which is `declared`. The value shown
+      // beside it is synthetic client-side activity, not a measurement, so no
+      // confidence percentage is reported at all.
+      confidencePct: null,
+      // `source` remains the operator visibility filter so the link stays
+      // visible. Evidence honesty is carried by `state`, which reports that
+      // nothing measured this link.
       source: this.dataSource.mode === "mock" ? "mock" : "derived",
+      state: this.dataSource.mode === "mock" ? "mock" : "declared",
     };
+  }
+
+  /**
+   * Evidence state drives the stroke colour. An unmeasured link is dimmed so
+   * the graph still shows the architecture without implying a measurement.
+   */
+  private linkStrokeColor(stats?: LinkStats): string {
+    if (stats?.state === "declared") return "rgba(148, 163, 184, 0.16)";
+    if (stats?.state === "stale") return "rgba(251, 191, 36, 0.30)";
+    return "rgba(148, 163, 184, 0.34)";
+  }
+
+  /**
+   * Dash pattern by evidence state, falling back to the provenance filter when
+   * the server supplied no state.
+   */
+  private linkStrokeDasharray(stats?: LinkStats): string {
+    switch (stats?.state) {
+      case "measured":
+        return "0";
+      case "stale":
+        return "6 3";
+      case "mock":
+        return "4 3";
+      case "declared":
+        return "10 6";
+      default:
+        break;
+    }
+
+    switch (stats?.source) {
+      case "prometheus":
+        return "0";
+      case "admin":
+        return "2 2";
+      case "mock":
+        return "4 3";
+      default:
+        return "8 5";
+    }
   }
 
   private linkAliases(key: string): string[] {

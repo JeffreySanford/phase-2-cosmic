@@ -271,7 +271,9 @@ describe("TopologyComponent", () => {
     expect(component.topologyFidelityLabel()).toBe("Partial live coverage");
     expect(component.measuredCoveragePct()).toBe(100);
     expect(component.derivedCoveragePct()).toBe(0);
-    expect(component.confidenceBand()).toBe("Moderate confidence");
+    // The fixture supplies no confidencePct, and confidence is no longer
+    // back-filled with a constant, so there is no confidence signal to report.
+    expect(component.confidenceBand()).toBe("No confidence signal");
     expect(component.nodeSummaries.length).toBeGreaterThan(0);
     expect(el.textContent).toContain("Force Network");
     expect(el.textContent).toContain(

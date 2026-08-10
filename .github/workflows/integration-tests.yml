@@ -11,6 +11,12 @@ on:
       - "apps/java-governance/**"
       - "docker/**"
 
+concurrency:
+  # Supersede in-flight runs for the same PR so pushes do not stack a full
+  # matrix each time. Never cancels main: a push to main must complete.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   integration-tests:
     runs-on: ubuntu-latest

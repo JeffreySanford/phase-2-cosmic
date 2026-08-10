@@ -278,6 +278,30 @@ uses `MockDataService.mockDockerServices()` and metric-specific mock telemetry
 series for development. The live tiles now derive their display values from
 the same mock range series used to render sparklines.
 
+## Event Streams
+
+Two SSE channels exist and they carry different things. Do not read one as the other.
+
+### `GET /api/telemetry/stream` — stress telemetry
+
+Disk-derived. The payload is computed from the size of the generator's worker files on disk (`tools/data-generator/logs/runtime-profile.worker-*.bin`). It reflects generated load and consumes no broker.
+
+### `GET /api/ingest/stream` — repaired-path events
+
+Event-backed. Carries real records that traversed the repaired path:
+
+```text
+generator -> regional Pulsar -> collector -> Kafka -> java-ingest
+  -> POST /api/ingest/events -> SSE -> Angular
+```
+
+- Each event carries an immutable `eventId` created once by the generator, plus `collectorRegion`, `broker`, and `source`.
+- The API boundary suppresses a duplicate `eventId` before repeating the SSE side effect, so a Java-side retry cannot double-broadcast.
+- A bounded replay buffer lets a subscriber joining mid-stream see recent events.
+- `GET /api/ingest/debug` reports received count, buffered count, connected clients, and duplicates suppressed.
+
+Delivery is at-least-once plus idempotency, never exactly-once. See ADR-006.
+
 ## Source Files
 
 - UI: `apps/frontend/src/app/features/diagnostics/diagnostics.component.*`

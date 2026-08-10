@@ -2,218 +2,251 @@
 
 Alignment anchors
 
-- Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
-- Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
-- Delivery plan: [../ROADMAP.md](/ROADMAP.md)
+- Frontend UX source of truth: [FRONTEND_UI.md](../frontend/FRONTEND_UI.md)
+- Topology repair contract: [TOPOLOGY_DATA_PATH_REPAIR.md](./TOPOLOGY_DATA_PATH_REPAIR.md)
+- Architecture decisions: [DECISIONS.md](./DECISIONS.md)
+- Delivery plan: [ROADMAP.md](../../ROADMAP.md)
 
-This document defines the architecture as it exists today and the intended direction.  
-It is the canonical bridge between conceptual design and implementation reality.
+This document defines the architecture as it exists today and the intended direction. It is the canonical bridge between conceptual design and implementation reality.
 
-## 1. Architectural intent _(implemented + planned extensions)_
+## 1. Architectural intent
 
-Cosmic Horizon is a hybrid control platform composed of:
+Cosmic Horizon is a hybrid control and analytical platform composed of four planes.
 
-1. Operational Streaming Plane (Go-centric)
+### Operational Streaming Plane (Go-centric)
 
-- low-latency telemetry ingestion, aggregation, and resilience controls
+- Generates or admits low-latency operational events.
+- Uses geographically independent Pulsar clusters as regional edge ingestion.
+- Uses one `pulsar-collector` per region to bridge source-faithful payloads into Kafka.
+- Uses Kafka as the central durable streaming backbone and replay boundary.
 
-1. Governance & Orchestration Control Plane (Java-centric)
+### Governance & Orchestration Control Plane (Java-centric)
 
-- authoritative metadata, job lifecycle, policy, and audit semantics
+- Owns authoritative metadata, job lifecycle, policy, audit, and governance semantics.
+- May consume Kafka, Pulsar, and RabbitMQ where broker-comparison/governance behavior is explicitly required.
+- RabbitMQ remains a parallel control/governance path; it is **not** an inline hop between Pulsar and Kafka.
 
-1. Frontend Operations Console (Angular)
+### Frontend Operations Console (Angular + Nest SSR)
 
-- operator-facing control-room UX for awareness, orchestration, and diagnostics
+- `java-ingest` projects Kafka events into the frontend server API.
+- The Nest server republishes accepted events over `/api/ingest/stream` as SSE.
+- Angular consumes that dedicated ingest stream separately from the older broker-events/telemetry feeds.
 
-1. Lakehouse Analytical Data Plane _(planned)_
+### Lakehouse Analytical Data Plane
 
-- structured streaming ingestion, medallion transformations, query-optimized analytical tables, and governed data products layered over the existing broker and object-storage foundations
-- does **not** replace the Governance Plane or authoritative MinIO/S3 science-object storage
+- Kafka is the transport boundary into analytical ingestion.
+- Bronze preserves source fidelity and identity required for replay/forensics.
+- Silver performs canonicalization, quality validation, deduplication, and quarantine.
+- Gold serves explicit analytical consumers/questions.
+- MinIO/S3 remains authoritative for large scientific objects; lakehouse tables are structured analytical representations, not replacements for object storage.
 
-## 2. Status model _(implemented documentation of current/in-progress/planned)_
+## 2. Canonical data paths
 
-### Implemented (baseline)
+### 2.1 Transport repair path
 
-- Angular frontend shell with telemetry/topology/diagnostics/viewer surfaces
-- Nest SSR shim for frontend APIs and proxy behavior
-- Go data generator and local observability stack
-- Java governance API baseline:
-  - `GET /api/v1/health`
-  - `POST /api/v1/ingest`
-  - `POST /api/v1/jobs`
-  - `GET /api/v1/jobs/{id}`
-- OpenAPI contract and fixture validation in CI
+```text
+data-generator
+  -> regional Pulsar
+    -> regional pulsar-collector
+      -> central Kafka
+```
 
-### In progress
+Three regional Pulsar clusters and collectors are available through the opt-in geo compose profile. Each collector preserves the Pulsar payload byte-for-byte and adds transport attribution in Kafka headers.
 
-- Durable governance job storage and full lifecycle semantics
-- Frontend transition from telemetry-first demo to orchestration console
+### 2.2 Ingestion and presentation path
 
-### Planned
+```text
+Kafka
+  -> java-ingest
+    -> frontend server API (/api/ingest/events)
+      -> SSE (/api/ingest/stream)
+        -> Angular IngestEventStreamService
+```
 
-- End-to-end streaming-to-governance contract hardening
-- External compute adapter integration (HPC/TACC/CosmicAI)
-- Production security and policy enforcement layers
-- Lakehouse Analytical Data Plane:
-  - Kafka-first structured streaming proof
-  - Bronze / Silver / Gold Delta tables
-  - real/public astronomy data replay or extraction
-  - schema evolution, deduplication, quarantine, late-data, and lineage evidence
-  - Pulsar direct/bridge comparison after the Kafka baseline is stable
+This path is a projection of the durable Kafka record for operator visibility. It does not move durability ownership into the frontend.
 
-## 3. Current runtime topology _(implemented)_
+### 2.3 Lakehouse path
 
-> **Service naming note:** The Docker compose stacks use container names `java-governance` and `java-ingest` to reflect their filesystem locations; documentation and API references generally call them "governance service" and "ingest bridge" for readability. These names are now aligned in this document.
->
-> **Runtime model note:** local development is intentionally hybrid, not fully containerized. Docker Compose runs infrastructure and Java services, while the Nest SSR shim and Angular dev server run on the host for faster iteration.
+```text
+Kafka
+  -> Bronze
+    -> Silver / quarantine
+      -> Gold
+        -> query / diagnostics / analytical consumers
+```
+
+Kafka is the stable boundary between the operational transport repair and the lakehouse initiative. Pulsar and RabbitMQ concerns should not be duplicated throughout lakehouse transformation code unless a later ADR explicitly changes that boundary.
+
+### 2.4 Parallel paths
+
+These are intentionally separate and must not be drawn as one chain:
+
+- `Kafka | Pulsar | RabbitMQ -> java-governance` for governance/broker comparison and applicable DLQ/control behavior.
+- `RabbitMQ -> control consumers` for low-latency control commands.
+- `data-generator -> file sink -> SSR telemetry` for disk-derived stress telemetry.
+- `Kafka -> lakehouse` for analytical ingestion.
+
+## 3. Current runtime topology
+
+> Local development is intentionally hybrid. Docker Compose runs infrastructure and Java services while the Nest SSR shim and Angular dev server may run on the host.
 
 ```mermaid
 flowchart LR
-  subgraph FE[Frontend Plane]
-    Browser[Operator Browser]
-    Angular[Angular App]
-    SSR[Nest SSR Shim]
-    Browser --> Angular
-    Angular --> SSR
+  subgraph EDGE[Regional Edge Streaming]
+    GenW[Generator West] --> PW[Pulsar West] --> CW[Collector West]
+    GenC[Generator Central] --> PC[Pulsar Central] --> CC[Collector Central]
+    GenE[Generator East] --> PE[Pulsar East] --> CE[Collector East]
   end
 
-  subgraph OPS[Operational Plane]
-    Gen[Go Data Generator]
-    Pulsar[Pulsar]
+  subgraph CORE[Central Streaming Backbone]
     Kafka[Kafka]
-    RabbitMQ[RabbitMQ]
-    Prom[Prometheus]
-    Grafana[Grafana]
-    Gen --> Pulsar
-    Pulsar --> Kafka
-    Gen --> Kafka
-    Gen --> Prom
-    Prom --> Grafana
   end
 
-  subgraph GOV[Governance Plane]
-    GovAPI[Java Governance API]
-    Ingest[Java Ingest Service]
+  CW --> Kafka
+  CC --> Kafka
+  CE --> Kafka
+
+  subgraph INGEST[Ingestion / Presentation]
+    JavaIngest[java-ingest]
+    Api[Frontend Server API]
+    SSE[SSE /api/ingest/stream]
+    Angular[Angular]
+    JavaIngest --> Api --> SSE --> Angular
+  end
+
+  Kafka --> JavaIngest
+
+  subgraph GOV[Governance / Control]
+    Gov[java-governance]
+    Rabbit[RabbitMQ]
     Redis[Redis]
-    MinIO[MinIO]
-    GovAPI --> Ingest
-    GovAPI --> Redis
-    GovAPI --> MinIO
+    MinIO[MinIO / S3-compatible]
+    Rabbit --> Gov
+    Gov --> Redis
+    Gov --> MinIO
   end
 
-  SSR --> Prom
-  SSR --> GovAPI
-  RabbitMQ --> GovAPI
-  Kafka --> Ingest
-```
+  Kafka --> Gov
+  PW -. governance comparison .-> Gov
+  PC -. governance comparison .-> Gov
+  PE -. governance comparison .-> Gov
 
-## 4. Target reference topology _(planned)_
-
-```mermaid
-flowchart LR
-  subgraph FE[Operations Console]
-    UI[Angular Frontend]
-  end
-
-  subgraph OP[Operational Streaming Plane]
-    Edge[Edge / Public / Simulated Sources]
-    Broker[Messaging Fabric]
-    StreamProc[Go Stream / Replay Processors]
-    Edge --> Broker --> StreamProc
-  end
-
-  subgraph GOV[Governance Control Plane]
-    API[Java Governance API]
-    Jobs[Durable Job Store]
-    Prov[Provenance + Catalog]
-    Audit[Audit/Policy]
-    API --> Jobs
-    API --> Prov
-    API --> Audit
-  end
-
-  subgraph OBJ[Object Storage Plane]
-    Store[MinIO / S3 Science Objects]
-  end
-
-  subgraph LAKE[Lakehouse Analytical Data Plane]
-    Stream[Structured Streaming]
+  subgraph LAKE[Lakehouse Analytical Plane]
     Bronze[Bronze]
-    Silver[Silver]
+    Silver[Silver + Quarantine]
     Gold[Gold]
-    Stream --> Bronze --> Silver --> Gold
+    Bronze --> Silver --> Gold
   end
 
-  subgraph EXT[External Compute]
-    HPC[HPC / Adapter Surfaces]
-  end
-
-  UI --> API
-  StreamProc --> API
-  StreamProc --> Store
-  Broker --> Stream
-  Store --> Stream
-  Prov -. metadata / lineage refs .-> Stream
-  Gold --> UI
-  API --> HPC
+  Kafka --> Bronze
 ```
 
-The target topology intentionally separates **authoritative science-object storage** from **analytical table storage**. Large Measurement Sets, FITS products, calibration artifacts, and archive bundles remain in MinIO/S3-compatible storage; the lakehouse stores structured events, metadata, quality results, lineage references, and analytical products.
+The geo profile is opt-in; the architectural role assignment is still canonical even when a smaller local profile runs fewer regional services.
 
-Detailed Lakehouse Initiative diagrams are maintained in [../lakehouse/docs/LAKEHOUSE_TOPOLOGY.md](../lakehouse/docs/LAKEHOUSE_TOPOLOGY.md), with reusable Mermaid sources under [../lakehouse/diagrams/](../lakehouse/diagrams/README.md).
+## 4. Event identity, provenance, and delivery semantics
 
-## 5. Frontend architecture implications _(in progress)_
+### Event identity
 
-The frontend must evolve to match control-plane maturity:
+- The generator creates one immutable UUID-v4 `event-id` when publishing a record to the regional Pulsar edge.
+- The collector copies `event-id` unchanged into Kafka headers.
+- Collector attribution also carries region, Pulsar message ID, collector-forwarded timestamp, and canonical Kafka topic.
+- `java-ingest` projects `eventId` and collector attribution into the frontend envelope; structured JSON payloads also receive `eventId` so the SSE/Angular boundary does not depend on Kafka headers.
 
-1. Near-term pages:
+### Delivery semantics
 
-- `Overview`, `Jobs`, `Datasets`, `Topology`, `Telemetry`, `Diagnostics`, `Viewer`, `Settings`
+- Generator -> Pulsar: acknowledged publish.
+- Pulsar -> collector -> Kafka: **at-least-once**. The collector ACKs Pulsar only after Kafka accepts the record; failed forwards are negative-acked for redelivery.
+- Kafka -> java-ingest -> frontend API: Kafka remains durable. Failed API forwarding uses non-blocking Kafka retry topics and terminates in a dedicated `.forward-dlt` after retry exhaustion.
+- `java-ingest` performs bounded process-local duplicate suppression keyed by `eventId` after a successful frontend projection.
+- Angular also suppresses replay duplicates by `eventId` within its bounded presentation history.
 
-1. Critical missing surfaces:
+These protections are deliberately described as at-least-once plus idempotency/deduplication. They do **not** claim global exactly-once behavior across service restarts. Durable consumers must continue to treat `eventId` as the idempotency key.
 
-- `Jobs` and `Datasets` as first-class routes and workflows
+## 5. Evidence and acceptance contract
 
-1. Data-state contract:
+Architecture claims must be backed by runnable evidence or labeled planned.
 
-- every page must represent `loading`, `empty`, `stale`, `error`, and `recovered` states
+For the repaired transport/presentation path, the acceptance event must prove one event with the same identity and attribution reaches the Angular-facing SSE contract:
 
-The Lakehouse Initiative does not require immediate new frontend routes. Gold analytical products should be surfaced only after the initial data path has runnable evidence and a concrete operator/scientist use case. The current implementation is intentionally additive: the Lakehouse proof slice appears in the existing dashboard and API surface as an analytical overlay, while the rest of the platform continues to rely on the current Go generator, broker transport, and Java governance services for operational truth.
+```text
+generator eventId X
+  -> Pulsar
+    -> collector(region R)
+      -> Kafka(event-id X, collector-region R)
+        -> java-ingest
+          -> API
+            -> SSE
+              -> Angular eventId X, region R, source S
+```
 
-## 6. Architectural constraints _(implemented + planned initiative guardrails)_
+Run the runtime probe while the repaired stack is active:
 
-- No architecture claims without runnable baseline or explicit planned status.
-- APIs and UI must stay contract-synchronized through OpenAPI + fixture validation.
-- Local dev and production assumptions must be explicitly separated.
-- MinIO/S3 remains authoritative for large scientific objects unless an explicit architecture decision changes that ownership.
-- The Java Governance Plane remains authoritative for application-level jobs, dataset registration, policy, provenance, and audit semantics.
-- Lakehouse copies of governance entities are analytical projections unless ownership is explicitly changed.
-- Bronze must preserve source fidelity sufficient for replay and forensic analysis.
-- Gold tables must name a concrete consumer/question rather than becoming ungoverned duplicate stores.
+```bash
+node scripts/verify-ingest-e2e.mjs
+```
 
-## 7. Decision checkpoints _(implemented + planned)_
+The probe passes only for an actual SSE event that contains:
+
+- `broker = kafka`
+- non-empty `collectorRegion`
+- non-empty `source`
+- non-empty `payload.eventId`
+
+Component tests additionally assert UUID creation, collector propagation, Java retry/deduplication/provenance projection, frontend SSE preservation, and Angular replay deduplication.
+
+## 6. Frontend architecture implications
+
+Near-term operator surfaces remain:
+
+- `Overview`
+- `Jobs`
+- `Datasets`
+- `Topology`
+- `Telemetry`
+- `Diagnostics`
+- `Viewer`
+- `Settings`
+
+All data surfaces must represent `loading`, `empty`, `stale`, `error`, and `recovered` states.
+
+The ingest SSE stream is intentionally separate from disk-derived telemetry and the older broker-events feed. UI binding can evolve independently without changing the repaired transport contract.
+
+Gold analytical products should only be surfaced when a concrete operator/scientist question exists and the underlying data path has runnable evidence.
+
+## 7. Architectural constraints
+
+- No architecture claims without runnable evidence or explicit planned status.
+- Pulsar is regional/edge ingestion; Kafka is the central durable streaming backbone.
+- RabbitMQ is a parallel control/governance path, never an undocumented inline Pulsar-to-Kafka hop.
+- Kafka is the boundary into the lakehouse unless an accepted ADR changes it.
+- APIs and UI must stay contract-synchronized through tests and documented envelopes.
+- Local development and production assumptions must be explicitly separated.
+- MinIO/S3 remains authoritative for large scientific objects unless an explicit architecture decision changes ownership.
+- The Java Governance Plane remains authoritative for jobs, dataset registration, policy, provenance, and audit semantics.
+- Bronze preserves source fidelity and event identity sufficient for replay and forensic analysis.
+- Gold tables name a concrete consumer/question rather than becoming ungoverned duplicate stores.
+- At-least-once flows require immutable identity and replay-safe consumers.
+
+## 8. Decision checkpoints
 
 Use these checkpoints when changing architecture:
 
 1. Does this reduce docs/runtime drift?
-2. Does this strengthen control-plane reliability?
-3. Does this improve operator decision speed in the frontend?
-4. Does this preserve HPC adapter pathway without overcommitting current scope?
-5. Does the lakehouse addition preserve authoritative object-storage and Governance Plane boundaries?
-6. Is a lakehouse topology edge backed by runnable evidence or clearly labeled planned?
-7. Does each derived analytical product preserve traceability to its source event/object and transformation?
+2. Does this preserve the Pulsar-edge / Kafka-backbone / RabbitMQ-parallel role split?
+3. Is event identity preserved across every asynchronous hop?
+4. Is a failure recoverable through retry, DLT/DLQ, replay, or an explicitly documented alternative?
+5. Is duplicate behavior explicit and tested?
+6. Does this improve operator decision speed without moving durability into the UI?
+7. Does the lakehouse addition preserve authoritative object-storage and Governance Plane boundaries?
+8. Is every topology edge backed by runnable evidence or clearly labeled planned?
 
-## 8. Related docs _(implemented + planned)_
+## 9. Related docs
 
-- [OPERATIONAL_STREAMING_PLANE.md](/docuentation/infra/OPERATIONAL_STREAMING_PLANE.md)
-- [GOVERNANCE_CONTROL_PLANE.md](/docuentation/governance/GOVERNANCE_CONTROL_PLANE.md)
-- [JAVA_GOVERNANCE_SPEC.md](/docuentation/governance/JAVA_GOVERNANCE_SPEC.md)
-- [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
-- [ALIGNMENT.md](/docuentation/overview/ALIGNMENT.md)
-- [../lakehouse/README.md](../lakehouse/README.md) — Lakehouse Initiative scope and progression
-- [../lakehouse/docs/LAKEHOUSE_TOPOLOGY.md](../lakehouse/docs/LAKEHOUSE_TOPOLOGY.md) — integrated physical/logical topology
-- [../lakehouse/docs/MEDALLION_ARCHITECTURE.md](../lakehouse/docs/MEDALLION_ARCHITECTURE.md) — Bronze/Silver/Gold contracts
-- [../lakehouse/docs/STORAGE_RESPONSIBILITIES.md](../lakehouse/docs/STORAGE_RESPONSIBILITIES.md) — object-store versus analytical-table ownership
-- [../lakehouse/docs/REAL_DATA_SOURCES.md](../lakehouse/docs/REAL_DATA_SOURCES.md) — public astronomy metadata sources for the first real-data proof slice
-- [../lakehouse/docs/ESO_PROOF_SLICE_BRIEF.md](../lakehouse/docs/ESO_PROOF_SLICE_BRIEF.md) — concrete ESO-based proof-slice brief for the initial Lakehouse implementation
-- [../lakehouse/diagrams/README.md](../lakehouse/diagrams/README.md) — standalone Mermaid source catalog
+- [TOPOLOGY_DATA_PATH_REPAIR.md](./TOPOLOGY_DATA_PATH_REPAIR.md)
+- [DECISIONS.md](./DECISIONS.md)
+- [BROKER_SAFETY_RUNBOOK.md](../BROKER_SAFETY_RUNBOOK.md)
+- [07-messaging.md](../development/coding-standards/07-messaging.md)
+- [DATA_ARCHITECTURE.md](../data/DATA_ARCHITECTURE.md)
+- [FRONTEND_UI.md](../frontend/FRONTEND_UI.md)
+- [Lakehouse Initiative README](../lakehouse/README.md)
+- [PR41 MVP](../lakehouse/docs/PR41_MVP_LAKEHOUSE.md)
