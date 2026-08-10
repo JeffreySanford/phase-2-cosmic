@@ -13,11 +13,13 @@ describe("IngestEventStreamService", () => {
   beforeEach(() => {
     close = jest.fn();
     const source = {
-      addEventListener: jest.fn((name: string, handler: (event: Event) => void) => {
-        if (name === "ingest-event") {
-          eventHandler = handler;
+      addEventListener: jest.fn(
+        (name: string, handler: (event: Event) => void) => {
+          if (name === "ingest-event") {
+            eventHandler = handler;
+          }
         }
-      }),
+      ),
       close,
     } as unknown as EventSource;
 

@@ -8,11 +8,11 @@ ADR-006 and `documentation/architecture/ARCHITECTURE.md` are authoritative for t
 
 ## Broker role assignments
 
-| Broker | Primary role | Durable replay role | Inline in repaired event path? |
-| --- | --- | --- | --- |
-| Pulsar | Regional/edge event ingestion | Regional redelivery / DLQ policy | Yes, before the collector |
-| Kafka | Central durable streaming backbone | Canonical repaired-path replay source | Yes, after the collector |
-| RabbitMQ | Control commands + explicit governance/comparison flows | Control DLX/DLQ only | **No** |
+| Broker   | Primary role                                            | Durable replay role                   | Inline in repaired event path? |
+| -------- | ------------------------------------------------------- | ------------------------------------- | ------------------------------ |
+| Pulsar   | Regional/edge event ingestion                           | Regional redelivery / DLQ policy      | Yes, before the collector      |
+| Kafka    | Central durable streaming backbone                      | Canonical repaired-path replay source | Yes, after the collector       |
+| RabbitMQ | Control commands + explicit governance/comparison flows | Control DLX/DLQ only                  | **No**                         |
 
 Canonical event path:
 
@@ -227,9 +227,9 @@ This is the preferred full-path smoke test after broker or forwarding recovery.
 
 ## Change history
 
-| Date | Change |
-| --- | --- |
-| 2025-01-01 | Initial broker role partitioning document |
-| 2026-03-09 | Added DLQ/replay baseline guardrails |
+| Date       | Change                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 2025-01-01 | Initial broker role partitioning document                                                                                 |
+| 2026-03-09 | Added DLQ/replay baseline guardrails                                                                                      |
 | 2026-08-09 | Aligned Pulsar edge, Kafka backbone, RabbitMQ parallel role, event identity, retry/DLT, dedupe, and PR41 acceptance probe |
-| 2026-08-09 | Added fail-closed forwarding, receiver idempotency, validation DLT separation, and executable retry/DLT verification |
+| 2026-08-09 | Added fail-closed forwarding, receiver idempotency, validation DLT separation, and executable retry/DLT verification      |

@@ -6,11 +6,11 @@ The current platform role assignment is defined by ADR-006 in `documentation/arc
 
 ## Broker roles
 
-| Broker | Platform role | Primary durability/recovery behavior |
-| --- | --- | --- |
-| Pulsar | Regional/edge event ingestion | Redelivery when a regional collector does not acknowledge |
-| Kafka | Central durable streaming backbone and lakehouse boundary | Replay, retry topics, DLT/DLQ, consumer offsets |
-| RabbitMQ | Parallel control/governance/comparison flows | Queue ACK/requeue/DLX according to the control contract |
+| Broker   | Platform role                                             | Primary durability/recovery behavior                      |
+| -------- | --------------------------------------------------------- | --------------------------------------------------------- |
+| Pulsar   | Regional/edge event ingestion                             | Redelivery when a regional collector does not acknowledge |
+| Kafka    | Central durable streaming backbone and lakehouse boundary | Replay, retry topics, DLT/DLQ, consumer offsets           |
+| RabbitMQ | Parallel control/governance/comparison flows              | Queue ACK/requeue/DLX according to the control contract   |
 
 Rules:
 

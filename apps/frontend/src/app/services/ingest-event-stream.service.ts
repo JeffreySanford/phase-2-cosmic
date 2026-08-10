@@ -32,7 +32,9 @@ export const INGEST_EVENT_SOURCE_FACTORY = new InjectionToken<
 @Injectable({ providedIn: "root" })
 export class IngestEventStreamService implements OnDestroy {
   private readonly eventSourceFactory = inject(INGEST_EVENT_SOURCE_FACTORY);
-  private readonly eventsSubject = new BehaviorSubject<IngestedPipelineEvent[]>([]);
+  private readonly eventsSubject = new BehaviorSubject<IngestedPipelineEvent[]>(
+    []
+  );
   private source?: EventSource;
 
   readonly events$ = this.eventsSubject.asObservable();

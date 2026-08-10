@@ -943,8 +943,16 @@ export class TopologyComponent implements OnInit, AfterViewInit, OnDestroy {
       maxMBps,
       latencyMs: this.syntheticLatencyMs(link),
       errorRatePct: this.syntheticErrorRatePct(link),
-      confidencePct: this.dataSource.mode === "mock" ? 24 : 48,
+      // Confidence is never a constant. This fallback runs when the server
+      // supplied no evidence for the link, which is `declared`. The value shown
+      // beside it is synthetic client-side activity, not a measurement, so no
+      // confidence percentage is reported at all.
+      confidencePct: null,
+      // `source` remains the operator visibility filter so the link stays
+      // visible. Evidence honesty is carried by `state`, which reports that
+      // nothing measured this link.
       source: this.dataSource.mode === "mock" ? "mock" : "derived",
+      state: this.dataSource.mode === "mock" ? "mock" : "declared",
     };
   }
 

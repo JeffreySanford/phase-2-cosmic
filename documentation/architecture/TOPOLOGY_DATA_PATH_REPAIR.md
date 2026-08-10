@@ -239,16 +239,17 @@ this table is the reviewer's map of what is finished versus in flight.
 
 #### 3a. Graph shape — make the drawing match the code
 
-- [ ] Add per-region Pulsar cluster nodes (`pulsar-us`, `pulsar-eu`, `pulsar-apac`)
-      and a collector node per region.
-- [ ] Replace the direct `pulsar -> kafka` edge with `pulsar-<region> ->
-collector-<region> -> kafka`.
-- [ ] Add the presentation edges `kafka -> java-ingest -> backend -> frontend`,
-      which do not exist in the graph today even though the path now runs.
-- [ ] Group governance/RabbitMQ fan-in visually so it does not read as an inline
-      hop in the collector chain.
-- [ ] Add a contract test asserting every graph edge maps to a real component
-      relationship, so a future aspirational edge cannot be drawn silently.
+- [x] Add per-region Pulsar and collector nodes in a dedicated `edge` group,
+      each carrying its region.
+- [x] Replace the direct `pulsar -> kafka` edge with
+      `pulsar-<region> -> collector-<region> -> kafka`. The fictional direct
+      edge is gone.
+- [x] Add the presentation edges `kafka -> java-ingest -> backend -> frontend`.
+- [x] Tag every edge with its canonical `path` so governance/RabbitMQ fan-in is
+      distinguishable from the transport chain.
+- [x] Add contract tests asserting the direct `pulsar -> kafka` edge is absent,
+      RabbitMQ never appears in the transport path, and every edge endpoint
+      resolves to a declared node.
 
 #### 3b. Measurement source — replace fabrication with Prometheus
 
@@ -263,38 +264,47 @@ Metric bindings per edge (all already scraped, so no new exporters are required)
 | `java-ingest -> backend`                | `java_ingest_forwarded_total`, `java_ingest_forward_failures_total`        |
 | `backend -> frontend`                   | ingest SSE client count and events received                                |
 
-- [ ] Add a server-side resolver that queries Prometheus per edge and returns a
-      value plus the series name it came from.
-- [ ] Return `null` throughput for any edge with no backing series. Never
+- [x] Add a server-side resolver (`topology-link-evidence.ts`) that maps each
+      edge to its series and returns a value plus the series name it came from.
+- [x] Return `null` throughput for any edge with no backing series. Never
       synthesize a number.
-- [ ] Delete the index-derived `currentMBps` expression outright.
-- [ ] Delete the `provenance === "admin" ? 92 : 74` name-list rule outright.
-- [ ] Replace the constant client fallback (`mock ? 24 : 48`) with the same
-      evidence states used server-side.
+- [x] Delete the index-derived `currentMBps` expression outright.
+- [x] Delete the `provenance === "admin" ? 92 : 74` name-list rule outright.
+- [x] Replace the constant client fallback (`mock ? 24 : 48`); it now reports no
+      confidence and a `declared` state.
+- [ ] Wire the actual Prometheus query into `readLinkSample`, which currently
+      returns `null` for every edge. **Until this lands, every link honestly
+      reports `declared` / "No measurement" rather than a fabricated number, but
+      no link reports a real measurement either.**
 
 #### 3c. Confidence semantics
 
-- [ ] Derive state from measurement age: `measured` inside the freshness window,
+- [x] Derive state from measurement age: `measured` inside the freshness window,
       `stale` beyond it, `declared` when no series exists, `mock` in mock mode.
-- [ ] Carry `measurementSource` (the Prometheus series name) and
-      `measuredAt` on every link so a reader can verify the claim.
-- [ ] Make `confidenceLabel()` render absence as absence — an unmeasured link
+- [x] Carry `measurementSource` (the Prometheus series name) and `measuredAt` on
+      every link so a reader can verify the claim.
+- [x] Make `confidenceLabel()` render absence as absence — an unmeasured link
       shows "No measurement", never a percentage.
+- [x] Keep the operator provenance filters unchanged so an unmeasured link stays
+      visible; evidence honesty is carried by `state`, not by hiding the link.
 
 #### 3d. Presentation
 
-- [ ] Render unmeasured links dimmed/dashed per the decision above.
-- [ ] Show the series name and measurement age in the link dialog.
+- [x] Expose the backing series in the dialog via `measurementSourceLabel()`.
+- [ ] Render unmeasured links dimmed/dashed in the graph.
+- [ ] Show measurement age alongside the series name.
 - [ ] Add a legend distinguishing measured / stale / declared.
 
 #### 3e. Tests that pin honesty
 
-- [ ] An unmeasured link never renders as high confidence.
-- [ ] An edge with no Prometheus series reports `null` throughput rather than 0
+- [x] An unmeasured link never renders as high confidence.
+- [x] An edge with no Prometheus series reports `null` throughput rather than 0
       or a synthesized value.
-- [ ] A stale measurement degrades the state rather than keeping the last value
+- [x] A stale measurement degrades the state rather than keeping the last value
       at full confidence.
-- [ ] Mock mode is labeled mock and never reports `measured`.
+- [x] Mock mode is labeled mock and never reports `measured`.
+- [x] The removed `pulsar -> kafka` edge has no metric binding, so it cannot
+      quietly reappear with a number attached.
 
 ### Stage 4 — documentation alignment
 

@@ -106,14 +106,44 @@ describe("TopologyInfoDialogComponent", () => {
     expect(component.isNormalUtil()).toBe(false);
   });
 
-  it("renders a confidence label from the link confidence score", async () => {
+  it("labels a measured link from its evidence state", async () => {
     await configure({
       type: "link",
       source: "a",
       target: "b",
-      stats: { confidencePct: 92 },
+      stats: {
+        confidencePct: 95,
+        state: "measured",
+        measurementSource: "collector_messages_forwarded_total",
+      },
     });
 
-    expect(component.confidenceLabel()).toBe("High confidence");
+    expect(component.confidenceLabel()).toBe("Measured");
+    expect(component.measurementSourceLabel()).toBe(
+      "collector_messages_forwarded_total"
+    );
+  });
+
+  it("reports absence rather than a confidence grade for an unmeasured link", async () => {
+    await configure({
+      type: "link",
+      source: "a",
+      target: "b",
+      stats: { confidencePct: null, state: "declared" },
+    });
+
+    expect(component.confidenceLabel()).toBe("No measurement");
+    expect(component.measurementSourceLabel()).toBe("none");
+  });
+
+  it("never labels mock data as measured", async () => {
+    await configure({
+      type: "link",
+      source: "a",
+      target: "b",
+      stats: { confidencePct: null, state: "mock" },
+    });
+
+    expect(component.confidenceLabel()).toBe("Mock data");
   });
 });

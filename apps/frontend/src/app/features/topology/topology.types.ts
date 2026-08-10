@@ -88,12 +88,26 @@ export type LinkDataSource =
   | "mock"
   | "unavailable";
 
+/** Evidence state for a link. Distinct from the operator visibility filter. */
+export type LinkEvidenceState =
+  | "measured"
+  | "stale"
+  | "derived"
+  | "declared"
+  | "mock";
+
 export type LinkStats = {
   throughput?: string;
   throughputPct?: string;
   latencyMs?: number;
   errorRate?: string;
-  confidencePct?: number;
+  /** Null/absent means nothing measured this link; never defaulted to a grade. */
+  confidencePct?: number | null;
+  /** What the number is actually backed by. Drives the honesty label. */
+  state?: LinkEvidenceState;
+  /** Prometheus series behind the value, so a reader can verify it. */
+  measurementSource?: string | null;
+  measuredAt?: number | null;
   throughputMBpsCurrent?: number;
   throughputMBpsMax?: number;
   throughputPctNumeric?: number;
@@ -128,6 +142,10 @@ export type TopologyMetricPoint = {
   measurementPath?: string;
 };
 
+// Provenance filters are the operator's visibility control and stay as-is.
+// Evidence honesty is carried separately by TopologyLinkStats.state, so an
+// unmeasured link remains visible under these filters while still reporting
+// "No measurement" rather than a fabricated confidence grade.
 export type ProvenanceFilter = "prometheus" | "admin" | "derived";
 
 export type NodeActivityPoint = {

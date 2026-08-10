@@ -34,6 +34,12 @@ import {
   LakehouseMetricsService,
   type LakehouseMetricsSummary,
 } from "./src/server/lakehouse/lakehouse-metrics.service";
+import {
+  edgeKey,
+  resolveLinkEvidence,
+  type LinkEvidenceState,
+  type LinkSample,
+} from "./src/server/topology/topology-link-evidence";
 
 import express from "express";
 import { createClient } from "redis";
@@ -54,12 +60,17 @@ type LoadProfilePct = 10 | 25 | 50 | 100;
 type TopologyNode = {
   id: string;
   label: string;
-  group: "app" | "infra" | "ngvla";
+  group: "app" | "infra" | "ngvla" | "edge";
+  region?: string;
 };
 type TopologyLink = {
   source: string;
   target: string;
   value?: number;
+  // Which canonical path this edge belongs to. `governance` is broker fan-in for
+  // comparison and must never read as an inline hop in the transport chain;
+  // `telemetry` is the disk-derived stress path, independent of the event path.
+  path?: "transport" | "presentation" | "governance" | "telemetry" | "infra";
 };
 type RuntimeProfileSpec = {
   workers: number;
@@ -220,7 +231,9 @@ function rememberIngestEventId(eventId: string): void {
   }
   acceptedIngestEventIds.set(eventId, Date.now());
   while (acceptedIngestEventIds.size > INGEST_EVENT_IDEMPOTENCY_MAX_ENTRIES) {
-    const oldest = acceptedIngestEventIds.keys().next().value as string | undefined;
+    const oldest = acceptedIngestEventIds.keys().next().value as
+      | string
+      | undefined;
     if (!oldest) break;
     acceptedIngestEventIds.delete(oldest);
   }
@@ -806,8 +819,7 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
       spatialBoundsRadius: 0.5,
       limit: 20,
       liveMode: true,
-      _description:
-        "ESO ObsCore image search around quasar 3C 273 (r=0.5°)",
+      _description: "ESO ObsCore image search around quasar 3C 273 (r=0.5°)",
     },
     "vo.votable.fetch": {
       provider: "HEASARC",
@@ -1132,7 +1144,9 @@ export class AppController {
       asOptionalString(payload?.["eventId"]);
 
     if (!eventId) {
-      throw new BadRequestException("eventId is required for ingest projection");
+      throw new BadRequestException(
+        "eventId is required for ingest projection"
+      );
     }
 
     if (!(await claimIngestEventId(eventId))) {
@@ -1256,52 +1270,52 @@ export class AppController {
 
   private fallbackTopologyMetrics() {
     const topology = this.topologyPayload();
+
+    // Evidence-backed link metrics.
+    //
+    // The previous implementation derived `currentMBps` from the link's index in
+    // this array and set confidence to 92 or 74 depending on whether the edge
+    // touched a hardcoded infrastructure name. Both were fabrications rendered
+    // to operators as measurements.
+    //
+    // Now an edge only reports a number when a Prometheus series backs it. With
+    // no sample available here, every edge resolves to `declared` and reports
+    // null rather than a synthesized value.
     const links: Record<
       string,
       {
-        currentMBps: number;
+        currentMBps: number | null;
         maxMBps: number;
-        latencyMs: number;
-        errorRatePct: number;
-        confidencePct: number;
-        source: "admin" | "derived";
+        latencyMs: number | null;
+        errorRatePct: number | null;
+        confidencePct: number | null;
+        state: LinkEvidenceState;
+        measurementSource: string | null;
+        measuredAt: number | null;
+        source: LinkEvidenceState;
       }
     > = Object.fromEntries(
-      topology.links.map((link, index) => {
+      topology.links.map((link) => {
         const source = String(link.source);
         const target = String(link.target);
+        const key = edgeKey(source, target);
         const channels = Number(link.value ?? 1) || 1;
-        const maxMBps = channels * 1250;
-        const currentMBps = Number(
-          (maxMBps * (0.18 + ((index % 5) * 0.11 + channels * 0.03))).toFixed(2)
-        );
-        const provenance =
-          source === "prom" ||
-          target === "prom" ||
-          source === "grafana" ||
-          target === "grafana" ||
-          source === "alertmanager" ||
-          target === "alertmanager" ||
-          source === "redis" ||
-          target === "redis" ||
-          source === "rabbitmq" ||
-          target === "rabbitmq" ||
-          source === "pulsar" ||
-          target === "pulsar" ||
-          source === "kafka" ||
-          target === "kafka"
-            ? "admin"
-            : "derived";
+        const evidence = resolveLinkEvidence(key, this.readLinkSample(key));
 
         return [
-          `${source}->${target}`,
+          key,
           {
-            currentMBps,
-            maxMBps,
-            latencyMs: 8 + channels * 3,
-            errorRatePct: Number((channels * 0.02).toFixed(2)),
-            confidencePct: provenance === "admin" ? 92 : 74,
-            source: provenance,
+            currentMBps: evidence.throughputMBps,
+            // Capacity is configuration, not a measurement, so it stays.
+            maxMBps: channels * 1250,
+            latencyMs: null,
+            errorRatePct: null,
+            confidencePct: evidence.confidencePct,
+            state: evidence.state,
+            measurementSource: evidence.measurementSource,
+            measuredAt: evidence.measuredAt,
+            // Retained for existing consumers that read `source`.
+            source: evidence.state,
           },
         ];
       })
@@ -1681,6 +1695,17 @@ export class AppController {
     };
   }
 
+  /**
+   * Prometheus sample for one edge.
+   *
+   * Returns null until the Prometheus query path is wired, which keeps every
+   * edge honestly `declared` instead of reporting an invented number. This is
+   * the single seam where real samples get injected.
+   */
+  private readLinkSample(_key: string): LinkSample | null {
+    return null;
+  }
+
   private topologyPayload(): { nodes: TopologyNode[]; links: TopologyLink[] } {
     return {
       nodes: [
@@ -1690,7 +1715,45 @@ export class AppController {
         { id: "java-ingest", label: "Java Ingest", group: "app" },
         { id: "data-generator", label: "Data Generator", group: "app" },
         { id: "kafka", label: "Kafka", group: "infra" },
-        { id: "pulsar", label: "Pulsar", group: "infra" },
+        { id: "pulsar", label: "Pulsar (core)", group: "infra" },
+        // Regional edge tier. Each region is an independent Pulsar cluster with
+        // a colocated collector, per ADR-006.
+        {
+          id: "pulsar-us",
+          label: "Pulsar (us-west)",
+          group: "edge",
+          region: "us-west",
+        },
+        {
+          id: "pulsar-eu",
+          label: "Pulsar (eu-central)",
+          group: "edge",
+          region: "eu-central",
+        },
+        {
+          id: "pulsar-apac",
+          label: "Pulsar (apac-southeast)",
+          group: "edge",
+          region: "apac-southeast",
+        },
+        {
+          id: "collector-us",
+          label: "Collector (us-west)",
+          group: "edge",
+          region: "us-west",
+        },
+        {
+          id: "collector-eu",
+          label: "Collector (eu-central)",
+          group: "edge",
+          region: "eu-central",
+        },
+        {
+          id: "collector-apac",
+          label: "Collector (apac-southeast)",
+          group: "edge",
+          region: "apac-southeast",
+        },
         { id: "rabbitmq", label: "RabbitMQ", group: "infra" },
         { id: "redis", label: "Redis", group: "infra" },
         { id: "minio", label: "MinIO", group: "infra" },
@@ -1705,32 +1768,63 @@ export class AppController {
         { id: "array-sba", label: "SBA (19 x 18m)", group: "ngvla" },
       ],
       links: [
-        { source: "frontend", target: "backend" },
-        { source: "frontend", target: "nginx" },
-        { source: "backend", target: "java-governance" },
-        { source: "backend", target: "redis" },
-        { source: "backend", target: "prom" },
-        { source: "data-generator", target: "pulsar" },
-        { source: "data-generator", target: "kafka" },
-        { source: "data-generator", target: "array-main" },
-        { source: "data-generator", target: "array-lbl" },
-        { source: "data-generator", target: "array-sba" },
-        { source: "pulsar", target: "kafka" },
-        { source: "pulsar", target: "java-governance" },
-        { source: "zookeeper", target: "kafka" },
-        { source: "rabbitmq", target: "java-governance" },
-        { source: "kafka", target: "java-governance" },
-        { source: "java-governance", target: "rabbitmq" },
-        { source: "java-governance", target: "kafka" },
-        { source: "java-governance", target: "minio" },
-        { source: "java-governance", target: "redis" },
-        { source: "kafka", target: "java-ingest" },
-        { source: "prom", target: "grafana" },
-        { source: "prom", target: "alertmanager" },
-        { source: "loki", target: "grafana" },
-        { source: "array-main", target: "minio", value: 3 },
-        { source: "array-lbl", target: "minio", value: 2 },
-        { source: "array-sba", target: "minio", value: 2 },
+        // Transport: generator -> regional Pulsar -> regional collector -> Kafka.
+        // There is deliberately no direct pulsar -> kafka edge; nothing in the
+        // code bridges them without a collector.
+        {
+          source: "data-generator",
+          target: "pulsar-us",
+          path: "transport",
+        },
+        {
+          source: "data-generator",
+          target: "pulsar-eu",
+          path: "transport",
+        },
+        {
+          source: "data-generator",
+          target: "pulsar-apac",
+          path: "transport",
+        },
+        { source: "pulsar-us", target: "collector-us", path: "transport" },
+        { source: "pulsar-eu", target: "collector-eu", path: "transport" },
+        { source: "pulsar-apac", target: "collector-apac", path: "transport" },
+        { source: "collector-us", target: "kafka", path: "transport" },
+        { source: "collector-eu", target: "kafka", path: "transport" },
+        { source: "collector-apac", target: "kafka", path: "transport" },
+
+        // Presentation: Kafka -> java-ingest -> server API -> SSE -> Angular.
+        { source: "kafka", target: "java-ingest", path: "presentation" },
+        { source: "java-ingest", target: "backend", path: "presentation" },
+        { source: "backend", target: "frontend", path: "presentation" },
+
+        // Governance/broker comparison fan-in. Parallel to the transport chain,
+        // never an inline hop within it.
+        { source: "pulsar", target: "java-governance", path: "governance" },
+        { source: "rabbitmq", target: "java-governance", path: "governance" },
+        { source: "kafka", target: "java-governance", path: "governance" },
+        { source: "java-governance", target: "rabbitmq", path: "governance" },
+        { source: "java-governance", target: "kafka", path: "governance" },
+
+        // Disk-derived stress telemetry, independent of the event path.
+        { source: "data-generator", target: "backend", path: "telemetry" },
+
+        { source: "frontend", target: "nginx", path: "infra" },
+        { source: "backend", target: "java-governance", path: "infra" },
+        { source: "backend", target: "redis", path: "infra" },
+        { source: "backend", target: "prom", path: "infra" },
+        { source: "data-generator", target: "array-main", path: "infra" },
+        { source: "data-generator", target: "array-lbl", path: "infra" },
+        { source: "data-generator", target: "array-sba", path: "infra" },
+        { source: "zookeeper", target: "kafka", path: "infra" },
+        { source: "java-governance", target: "minio", path: "infra" },
+        { source: "java-governance", target: "redis", path: "infra" },
+        { source: "prom", target: "grafana", path: "infra" },
+        { source: "prom", target: "alertmanager", path: "infra" },
+        { source: "loki", target: "grafana", path: "infra" },
+        { source: "array-main", target: "minio", value: 3, path: "infra" },
+        { source: "array-lbl", target: "minio", value: 2, path: "infra" },
+        { source: "array-sba", target: "minio", value: 2, path: "infra" },
       ],
     };
   }
