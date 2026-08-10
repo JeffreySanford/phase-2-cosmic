@@ -292,8 +292,12 @@ services:
       - PROMETHEUS_ENDPOINT=prometheus:9090
       - PROMETHEUS_BASEURL=http://prometheus:9090
       - PROMETHEUS_BASE_URL=http://prometheus:9090
-      # Ensure JVM system property is set so Spring reads prometheus.baseUrl
-      - JAVA_TOOL_OPTIONS=-Dprometheus.baseUrl=http://prometheus:9090
+      # Ensure JVM system property is set so Spring reads prometheus.baseUrl.
+      # The heap is capped explicitly: with no cap the JVM sizes itself from the
+      # host (a quarter of 31GB here), so a leak degrades the whole machine for
+      # hours before it finally throws. A cap turns that into a fast, contained
+      # failure that the healthcheck can actually catch.
+      - JAVA_TOOL_OPTIONS=-Dprometheus.baseUrl=http://prometheus:9090 -Xmx1g -XX:+ExitOnOutOfMemoryError
     restart: unless-stopped
     healthcheck:
       test:

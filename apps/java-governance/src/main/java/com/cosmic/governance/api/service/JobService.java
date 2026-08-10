@@ -39,18 +39,45 @@ public class JobService {
     private static final String KEY_PREFIX = "job:";
     private static final Logger log = LoggerFactory.getLogger(JobService.class);
 
+    // Redis SCAN batch hint. Large enough to keep round-trips down, small enough
+    // that a single reply never dominates the heap.
+    private static final int SCAN_BATCH_SIZE = 1000;
+
+    // How many index entries are read per round trip while walking newest-first.
+    private static final int INDEX_WINDOW = 500;
+
+    // How deep into job history a listing will walk. Beyond this, jobs age out of
+    // the UI; the records still exist and remain available to a cold lookup.
+    private static final int MAX_INDEX_WALK = 20_000;
+
+    // Ceiling on job records retained to satisfy one list request. Each record
+    // costs far more on the heap than its Redis representation, so this is the
+    // bound that actually protects the service.
+    private static final int MAX_LISTED_RECORDS = 5_000;
+
     // simple in-memory audit log for provenance/E2E tests
-    private final java.util.List<String> auditLog = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+    private static final int AUDIT_LOG_MAX = 2_000;
+    private final java.util.Deque<String> auditLog = new java.util.ArrayDeque<>();
 
     /**
      * Expose a copy of the audit log for testing.
      */
     public java.util.List<String> getAuditLog() {
-        return new java.util.ArrayList<>(auditLog);
+        synchronized (auditLog) {
+            return new java.util.ArrayList<>(auditLog);
+        }
     }
 
     private void recordAudit(String msg) {
-        auditLog.add(msg);
+        // Ring buffer: this log exists for provenance assertions in tests, not as
+        // durable storage. Unbounded growth here leaked the heap of any instance
+        // left running for days.
+        synchronized (auditLog) {
+            if (auditLog.size() >= AUDIT_LOG_MAX) {
+                auditLog.removeFirst();
+            }
+            auditLog.addLast(msg);
+        }
         log.info("Audit: {}", msg);
     }
 
@@ -95,13 +122,219 @@ public class JobService {
     }
 
     // Helper methods to abstract Redis vs in-memory store access
-    private Set<String> keys(String pattern) {
+    //
+    // Key access is deliberately split in two. A long-lived dev stack accumulates
+    // hundreds of thousands of job keys, so anything that materialises the whole
+    // key space at once exhausts the heap:
+    //
+    // every caller goes through forEachKey, which streams a cursor and never
+    // retains the key space. There is deliberately no helper that collects all
+    // keys into a Set: that is what exhausted the heap.
+
+    /**
+     * Visit every key matching {@code pattern}, stopping early when {@code visitor}
+     * returns false. Uses Redis SCAN rather than KEYS: SCAN is cursor-based, so it
+     * neither blocks the server for the duration of the sweep nor allocates the
+     * entire key space in one response.
+     */
+    private void forEachKey(String pattern, java.util.function.Predicate<String> visitor) {
         try {
             if (redisTemplate != null) {
-                Set<String> ks = redisTemplate.keys(pattern);
-                return ks == null ? java.util.Set.of() : ks;
+                org.springframework.data.redis.core.ScanOptions options =
+                        org.springframework.data.redis.core.ScanOptions.scanOptions()
+                                .match(pattern)
+                                .count(SCAN_BATCH_SIZE)
+                                .build();
+                try (org.springframework.data.redis.core.Cursor<String> cursor = redisTemplate.scan(options)) {
+                    while (cursor.hasNext()) {
+                        if (!visitor.test(cursor.next())) return;
+                    }
+                }
+                return;
             }
         } catch (Throwable ignored) {}
+        for (String key : inMemoryKeys(pattern)) {
+            if (!visitor.test(key)) return;
+        }
+    }
+
+    // Idempotency index.
+    //
+    // Duplicate detection asks exactly one question -- "has this requestId been
+    // submitted before?" -- and used to answer it by listing every job, on every
+    // ingested message. That made the ingest hot path O(total jobs) per message,
+    // which is what actually exhausted the heap. A set membership test answers the
+    // same question in O(1) and never grows the working set of a single request.
+    private static final String REQUEST_ID_INDEX_KEY = "job:index:requestIds";
+    private final Set<String> inMemoryRequestIds = ConcurrentHashMap.newKeySet();
+
+    /**
+     * True when a job carrying this requestId has already been recorded.
+     *
+     * Covers jobs submitted after this index was introduced. The index is
+     * maintained on write and is deliberately not backfilled from pre-existing
+     * keys, so historical jobs do not participate in deduplication.
+     */
+    public boolean hasRequestId(String requestId) {
+        if (requestId == null || requestId.isBlank()) {
+            return false;
+        }
+        try {
+            if (redisTemplate != null) {
+                return Boolean.TRUE.equals(
+                        redisTemplate.opsForSet().isMember(REQUEST_ID_INDEX_KEY, requestId));
+            }
+        } catch (Throwable ex) {
+            log.debug("requestId index lookup failed for {}: {}", requestId, ex.toString());
+        }
+        return inMemoryRequestIds.contains(requestId);
+    }
+
+    // Listing index: job id -> createdAt epoch millis, newest last.
+    //
+    // Listing sorts by createdAt, so without an ordered index a page cannot be
+    // chosen without reading every job first -- which is why page/size never
+    // bounded the work. ZREVRANGE over this set reads only the requested window,
+    // so a listing costs O(log N + page) rather than O(total jobs).
+    //
+    // Jobs older than the window simply stop appearing in the UI. The records
+    // themselves are untouched, so a cold lookup (Postgres) can retrieve them.
+    private static final String CREATED_INDEX_KEY = "job:index:createdAt";
+    // Completion marker, written only after a sweep finishes. A marker written at
+    // claim time would survive a process that died mid-sweep and permanently skip
+    // the backfill, leaving an index that silently omits jobs.
+    private static final String INDEX_BACKFILL_DONE = "job:index:createdAt:backfilled";
+    // In-progress lock so concurrent instances do not duplicate the sweep. It
+    // carries a TTL so a crashed sweep is retried rather than blocking forever.
+    private static final String INDEX_BACKFILL_LOCK = "job:index:createdAt:backfilling";
+    private static final Duration INDEX_BACKFILL_LOCK_TTL = Duration.ofMinutes(30);
+
+    /**
+     * Job ids for one page, newest first, or empty when the index is unavailable
+     * (in which case callers fall back to scanning).
+     */
+    private List<String> pagedJobIdsNewestFirst(long start, long end) {
+        try {
+            if (redisTemplate != null) {
+                Set<Object> ids = redisTemplate.opsForZSet().reverseRange(CREATED_INDEX_KEY, start, end);
+                if (ids == null) {
+                    return List.of();
+                }
+                return ids.stream().map(String::valueOf).collect(Collectors.toList());
+            }
+        } catch (Throwable ex) {
+            log.debug("createdAt index read failed: {}", ex.toString());
+        }
+        return List.of();
+    }
+
+    /**
+     * One-time population of the listing index for jobs written before it existed.
+     *
+     * This costs a single full sweep, which is exactly the work the index exists to
+     * avoid, so it must not repeat on every boot. A marker key claimed atomically
+     * makes it run once per store and keeps concurrent instances from duplicating
+     * the sweep.
+     */
+    void backfillCreatedAtIndex() {
+        if (redisTemplate == null) {
+            return;
+        }
+        try {
+            if (Boolean.TRUE.equals(redisTemplate.hasKey(INDEX_BACKFILL_DONE))) {
+                return;
+            }
+            Boolean claimed = redisTemplate.opsForValue().setIfAbsent(
+                    INDEX_BACKFILL_LOCK, Instant.now().toString(), INDEX_BACKFILL_LOCK_TTL);
+            if (!Boolean.TRUE.equals(claimed)) {
+                log.info("Job listing index backfill already in progress elsewhere");
+                return;
+            }
+        } catch (Throwable ex) {
+            log.debug("createdAt index backfill claim failed: {}", ex.toString());
+            return;
+        }
+
+        log.info("Backfilling job listing index; this runs once per store");
+        AtomicLong indexed = new AtomicLong();
+        try {
+            forEachKey(KEY_PREFIX + "*", key -> {
+                if (key == null || key.chars().filter(ch -> ch == ':').count() != 1) return true;
+                JobRecord rec = marshaller.toJobRecord(getValue(key));
+                if (rec != null) {
+                    indexCreatedAt(rec);
+                    indexed.incrementAndGet();
+                }
+                return true;
+            });
+            // Only a completed sweep records completion; anything else leaves the
+            // lock to expire so the next start retries.
+            redisTemplate.opsForValue().set(INDEX_BACKFILL_DONE, Instant.now().toString());
+            log.info("Backfilled {} jobs into the listing index", indexed.get());
+        } catch (Exception ex) {
+            log.error("Job listing index backfill failed after {} jobs; will retry", indexed.get(), ex);
+        } finally {
+            try {
+                redisTemplate.delete(INDEX_BACKFILL_LOCK);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    private void indexCreatedAt(JobRecord record) {
+        if (record == null || record.getJobId() == null) {
+            return;
+        }
+        try {
+            if (redisTemplate != null) {
+                double score = epochMillisOf(record.getCreatedAt());
+                redisTemplate.opsForZSet().add(CREATED_INDEX_KEY, record.getJobId(), score);
+            }
+        } catch (Throwable ex) {
+            log.debug("createdAt index write failed for {}: {}", record.getJobId(), ex.toString());
+        }
+    }
+
+    private void unindexCreatedAt(String jobId) {
+        try {
+            if (redisTemplate != null) {
+                redisTemplate.opsForZSet().remove(CREATED_INDEX_KEY, jobId);
+            }
+        } catch (Throwable ex) {
+            log.debug("createdAt index removal failed for {}: {}", jobId, ex.toString());
+        }
+    }
+
+    private static double epochMillisOf(String isoTimestamp) {
+        try {
+            return Instant.parse(isoTimestamp).toEpochMilli();
+        } catch (Exception ex) {
+            // An unparsable timestamp sorts oldest rather than failing the write.
+            return 0.0d;
+        }
+    }
+
+    private void indexRequestId(JobRecord record) {
+        Map<String, Object> params = record == null ? null : record.getParameters();
+        Object requestId = params == null ? null : params.get("requestId");
+        if (requestId == null) {
+            return;
+        }
+        String normalized = String.valueOf(requestId);
+        if (normalized.isBlank()) {
+            return;
+        }
+        try {
+            if (redisTemplate != null) {
+                redisTemplate.opsForSet().add(REQUEST_ID_INDEX_KEY, normalized);
+                return;
+            }
+        } catch (Throwable ex) {
+            log.debug("requestId index write failed for {}: {}", normalized, ex.toString());
+        }
+        inMemoryRequestIds.add(normalized);
+    }
+
+    private Set<String> inMemoryKeys(String pattern) {
         // emulate simple glob behavior where pattern like "job:*" matches keys starting with prefix
         if (pattern != null && pattern.endsWith("*")) {
             String prefix = pattern.substring(0, pattern.length()-1);
@@ -253,6 +486,8 @@ public class JobService {
     public void recoverQueuedJobs() {
         // run an immediate recovery scan and schedule periodic scans for late arrivals
         recoveryExecutor.submit(() -> {
+            // populate the listing index for jobs written before it existed
+            backfillCreatedAtIndex();
             // dispatch any queued jobs first
             dispatchQueuedJobs();
             // convert any previously-running simulator jobs to completed so they don't hang
@@ -270,12 +505,10 @@ public class JobService {
     // package-private so tests can call it
     void completeStaleRunningJobs() {
         try {
-            var keys = keys(KEY_PREFIX + "*");
-            if (keys == null) return;
-            for (String k : keys) {
+            forEachKey(KEY_PREFIX + "*", k -> {
                 Object o = getValue(k);
                 JobRecord rec = marshaller.toJobRecord(o);
-                if (rec == null) continue;
+                if (rec == null) return true;
                 if (rec.getState() == JobState.RUNNING) {
                     // only apply to simulator jobs (other executors may have proper persistence)
                     Map<String, Object> params = rec.getParameters();
@@ -290,7 +523,8 @@ public class JobService {
                         recordTerminalMetrics(rec, previousState, JobState.COMPLETED);
                     }
                 }
-            }
+                return true;
+            });
         } catch (Exception e) {
             log.error("Failed to complete stale running jobs", e);
         }
@@ -299,15 +533,16 @@ public class JobService {
     /* package-private for testing */
     void dispatchQueuedJobs() {
         try {
-            var keys = keys(KEY_PREFIX + "*");
-            if (keys == null) return;
-            scannedCount.addAndGet(keys.size());
-            for (String k : keys) {
-                if (k == null || k.chars().filter(ch -> ch == ':').count() != 1) continue;
+            // Streamed rather than collected: this runs every scannerIntervalSeconds
+            // and must stay correct across the whole key space, so it cannot use the
+            // capped keys() helper — but it also must not hold that key space in memory.
+            forEachKey(KEY_PREFIX + "*", k -> {
+                if (k == null || k.chars().filter(ch -> ch == ':').count() != 1) return true;
+                scannedCount.incrementAndGet();
                 try {
                     Object o = getValue(k);
                     JobRecord rec = marshaller.toJobRecord(o);
-                    if (rec == null) continue;
+                    if (rec == null) return true;
                     if (rec.getState() == JobState.QUEUED) {
                         // skip jobs explicitly marked as deferred (pre-seeded samples)
                         Map<String, Object> paramsObjCheck = rec.getParameters() == null ? Map.<String, Object>of() : rec.getParameters();
@@ -319,7 +554,7 @@ public class JobService {
                         }
                         if (deferred) {
                             log.info("Skipping deferred queued job {} (awaiting release)", rec.getJobId());
-                            continue;
+                            return true;
                         }
                         String executorName = "simulator";
                         var paramsObj = rec.getParameters() == null ? Map.<String, Object>of() : rec.getParameters();
@@ -346,7 +581,8 @@ public class JobService {
                 } catch (Exception e) {
                     log.debug("Ignoring job key {} during dispatch scan: {}", k, e.toString());
                 }
-            }
+                return true;
+            });
         } catch (Exception ex) {
             log.error("Queued job dispatch scan failed", ex);
         }
@@ -357,16 +593,14 @@ public class JobService {
      * Returns number of jobs released.
      */
     public int releaseDeferredJobs() {
-        int released = 0;
+        var releasedCount = new java.util.concurrent.atomic.AtomicInteger();
         try {
-            var keys = keys(KEY_PREFIX + "*");
-            if (keys == null) return 0;
-            for (String k : keys) {
-                if (k == null || k.chars().filter(ch -> ch == ':').count() != 1) continue;
+            forEachKey(KEY_PREFIX + "*", k -> {
+                if (k == null || k.chars().filter(ch -> ch == ':').count() != 1) return true;
                 try {
                     Object o = getValue(k);
                     JobRecord rec = marshaller.toJobRecord(o);
-                    if (rec == null) continue;
+                    if (rec == null) return true;
                     if (rec.getState() == JobState.QUEUED) {
                         Map<String, Object> params = rec.getParameters() == null ? Map.of() : rec.getParameters();
                         if (params.containsKey("deferred")) {
@@ -381,15 +615,17 @@ public class JobService {
                                 rec.setUpdatedAt(Instant.now().toString());
                                 rec.setVersion(rec.getVersion() + 1);
                                 setValue(k, rec);
-                                released++;
+                                releasedCount.incrementAndGet();
                             }
                         }
                     }
                 } catch (Exception ignored) {}
-            }
+                return true;
+            });
         } catch (Exception ex) {
             log.error("Failed to release deferred jobs", ex);
         }
+        int released = releasedCount.get();
         if (governanceRuntimeMetricsService != null) {
             governanceRuntimeMetricsService.recordDeferredRelease(released);
         }
@@ -436,6 +672,8 @@ public class JobService {
             record.setParameters(p);
         }
         setValue(KEY_PREFIX + jobId, record);
+        indexCreatedAt(record);
+        indexRequestId(record);
         StringBuilder auditSb = new StringBuilder();
         auditSb.append("job submitted ").append(jobId)
                .append(" workflow=").append(request.workflow())
@@ -735,25 +973,23 @@ public class JobService {
         return Optional.of(toResponse(rec));
     }
     public List<JobStatusResponse> list(String workflowFilter, JobState stateFilter, int page, int size) {
-        // Note: For small dev usage we use keys scan; in production use a proper index or sorted set.
-        var keys = keys(KEY_PREFIX + "*");
-        if (keys == null || keys.isEmpty()) return List.of();
-        var jobs = keys.stream()
-                // skip auxiliary keys (logs, artifacts, etc.) which use suffixes like ":logs" or ":artifacts"
-                .filter(k -> k != null && k.chars().filter(ch -> ch == ':').count() == 1)
-            .map(k -> getValue(k))
-                .map(v -> marshaller.toJobRecord(v))
-                .filter(java.util.Objects::nonNull)
-                .filter(rec -> {
-                    if (workflowFilter != null && !workflowFilter.isBlank()) {
-                        if (rec.getWorkflow() == null || !rec.getWorkflow().equalsIgnoreCase(workflowFilter)) return false;
-                    }
-                    if (stateFilter != null) {
-                        if (rec.getState() != stateFilter) return false;
-                    }
-                    return true;
-                })
-                .sorted((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt()))
+        // Prefer the createdAt index: it yields newest-first ids a window at a time,
+        // so a listing reads only the rows it returns. Jobs older than the walk
+        // limit age out of the UI; their records remain in the store for cold
+        // retrieval. When the index is unavailable or not yet backfilled we fall
+        // back to scanning, which stays correct but costs a full sweep.
+        List<JobRecord> matches = listFromIndex(workflowFilter, stateFilter);
+        if (matches == null) {
+            matches = listByScan(workflowFilter, stateFilter);
+        }
+        if (matches.isEmpty()) return List.of();
+        if (matches.size() >= MAX_LISTED_RECORDS) {
+            log.warn("Job list truncated at {} matches; narrow the filter or prune job history", MAX_LISTED_RECORDS);
+        }
+        var jobs = matches.stream()
+                // newest first: the index is walked in that order, and it is what the
+                // UI wants when history is far longer than any page.
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .skip((long) page * size)
                 .limit(size <= 0 ? Integer.MAX_VALUE : size)
                 .map(this::toResponse)
@@ -762,6 +998,65 @@ public class JobService {
             governanceRuntimeMetricsService.recordOperatorRead("job_list", jobs);
         }
         return jobs;
+    }
+
+    private boolean matchesFilters(JobRecord rec, String workflowFilter, JobState stateFilter) {
+        if (rec == null) return false;
+        if (workflowFilter != null && !workflowFilter.isBlank()) {
+            if (rec.getWorkflow() == null || !rec.getWorkflow().equalsIgnoreCase(workflowFilter)) return false;
+        }
+        return stateFilter == null || rec.getState() == stateFilter;
+    }
+
+    /**
+     * Walk the createdAt index newest-first, gathering matching records.
+     *
+     * Returns null when the index yields nothing on its first window, which means
+     * it is unavailable or has not been backfilled; the caller then scans instead.
+     * That distinction matters -- an empty index and a genuinely empty result look
+     * identical otherwise, and confusing them would silently report zero jobs.
+     */
+    private List<JobRecord> listFromIndex(String workflowFilter, JobState stateFilter) {
+        List<JobRecord> matches = new ArrayList<>();
+        long cursor = 0;
+        boolean sawAnyId = false;
+
+        while (cursor < MAX_INDEX_WALK && matches.size() < MAX_LISTED_RECORDS) {
+            List<String> ids = pagedJobIdsNewestFirst(cursor, cursor + INDEX_WINDOW - 1);
+            if (ids.isEmpty()) break;
+            sawAnyId = true;
+            for (String jobId : ids) {
+                JobRecord rec = marshaller.toJobRecord(getValue(KEY_PREFIX + jobId));
+                if (matchesFilters(rec, workflowFilter, stateFilter)) {
+                    matches.add(rec);
+                    if (matches.size() >= MAX_LISTED_RECORDS) break;
+                }
+            }
+            cursor += INDEX_WINDOW;
+        }
+
+        return sawAnyId ? matches : null;
+    }
+
+    /**
+     * Fallback listing for stores without a populated index.
+     *
+     * Records are streamed and filtered one at a time, and only matches are
+     * retained. Capping candidates instead would silently break filtered queries,
+     * because SCAN returns keys in arbitrary order and a matching job may sit
+     * anywhere in the key space.
+     */
+    private List<JobRecord> listByScan(String workflowFilter, JobState stateFilter) {
+        List<JobRecord> matches = new ArrayList<>();
+        forEachKey(KEY_PREFIX + "*", key -> {
+            // skip auxiliary keys (logs, artifacts, etc.) which use suffixes like ":logs" or ":artifacts"
+            if (key == null || key.chars().filter(ch -> ch == ':').count() != 1) return true;
+            JobRecord rec = marshaller.toJobRecord(getValue(key));
+            if (!matchesFilters(rec, workflowFilter, stateFilter)) return true;
+            matches.add(rec);
+            return matches.size() < MAX_LISTED_RECORDS;
+        });
+        return matches;
     }
 
     public List<String> getAuditEntriesForJob(String jobId) {
@@ -792,63 +1087,58 @@ public class JobService {
     }
 
     SchedulerSnapshot schedulerSnapshot() {
-        int queued = 0;
-        int running = 0;
-        int deferred = 0;
-        int blocked = 0;
-        double totalQueueAgeMs = 0.0d;
-        double maxQueueAgeMs = 0.0d;
-        int queueAgeSamples = 0;
-
-        var keys = keys(KEY_PREFIX + "*");
-        if (keys == null || keys.isEmpty()) {
-            return new SchedulerSnapshot(0, 0, 0, 0, 0.0d, 0.0d, scannerIntervalSeconds);
-        }
+        // Counters live in arrays so the streaming visitor can mutate them; a lambda
+        // cannot assign to captured locals.
+        final int QUEUED = 0, RUNNING = 1, DEFERRED = 2, BLOCKED = 3, SAMPLES = 4;
+        int[] counts = new int[5];
+        double[] queueAge = new double[2]; // [0] total, [1] max
 
         Instant now = Instant.now();
-        for (String key : keys) {
+        forEachKey(KEY_PREFIX + "*", key -> {
             if (key == null || key.chars().filter(ch -> ch == ':').count() != 1) {
-                continue;
+                return true;
             }
             try {
                 Object value = getValue(key);
                 JobRecord rec = marshaller.toJobRecord(value);
                 if (rec == null) {
-                    continue;
+                    return true;
                 }
                 Map<String, Object> params = rec.getParameters() == null ? Map.of() : rec.getParameters();
                 boolean isDeferred = isDeferred(params);
 
                 if (rec.getState() == JobState.RUNNING) {
-                    running++;
-                    continue;
+                    counts[RUNNING]++;
+                    return true;
                 }
                 if (rec.getState() != JobState.QUEUED) {
-                    continue;
+                    return true;
                 }
 
-                queued++;
+                counts[QUEUED]++;
                 double queueAgeMs = durationBetween(rec.getCreatedAt(), now).toMillis();
-                totalQueueAgeMs += queueAgeMs;
-                maxQueueAgeMs = Math.max(maxQueueAgeMs, queueAgeMs);
-                queueAgeSamples++;
+                queueAge[0] += queueAgeMs;
+                queueAge[1] = Math.max(queueAge[1], queueAgeMs);
+                counts[SAMPLES]++;
 
                 if (isDeferred) {
-                    deferred++;
-                    continue;
+                    counts[DEFERRED]++;
+                    return true;
                 }
 
                 String executorName = executorNameFor(rec);
                 if (!executorMap.containsKey(executorName) || executorMap.get(executorName) == null) {
-                    blocked++;
+                    counts[BLOCKED]++;
                 }
             } catch (Exception ex) {
                 log.debug("Ignoring job {} during scheduler snapshot: {}", key, ex.toString());
             }
-        }
+            return true;
+        });
 
-        double avgQueueAgeMs = queueAgeSamples == 0 ? 0.0d : totalQueueAgeMs / queueAgeSamples;
-        return new SchedulerSnapshot(queued, running, deferred, blocked, avgQueueAgeMs, maxQueueAgeMs, scannerIntervalSeconds);
+        double avgQueueAgeMs = counts[SAMPLES] == 0 ? 0.0d : queueAge[0] / counts[SAMPLES];
+        return new SchedulerSnapshot(counts[QUEUED], counts[RUNNING], counts[DEFERRED], counts[BLOCKED],
+                avgQueueAgeMs, queueAge[1], scannerIntervalSeconds);
     }
 
     public Optional<JobStatusResponse> transition(String jobId, JobState newState, Long expectedVersion) {
@@ -893,6 +1183,9 @@ public class JobService {
      */
     public boolean deleteJob(String jobId) {
         String key = KEY_PREFIX + jobId;
+        // Drop the index entry first: an index pointing at a missing record would
+        // consume slots in every listing window and return nothing for them.
+        unindexCreatedAt(jobId);
         try {
             if (redisTemplate != null) {
                 Boolean removed = redisTemplate.delete(key);
