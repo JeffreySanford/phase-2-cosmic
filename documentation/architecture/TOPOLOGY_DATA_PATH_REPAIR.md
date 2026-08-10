@@ -382,6 +382,11 @@ This is contention, not a defect, and it predates PR41 — no PR41 commit touche
 workflow failures, which surface as `Connection refused` against Pulsar and
 Kafka. Do not run the geo profile and the Java integration suite concurrently.
 
+Confirmed 2026-08-09: with the geo stack stopped, the full `java-governance`
+suite passes at **105 tests, 0 failures, 0 errors, 2 skipped**. The suite is slow
+by nature — `ProvenanceE2ETest` alone takes ~228s and the Pulsar listener test
+~160s — which is why it is the first thing to fail under load.
+
 ## Evidence boundary
 
 The transport and reliability code can be implemented without claiming the topology visualization is already evidence-backed. Until Stage 3 lands, synthetic confidence/throughput in the existing visualization remains a known defect and must not be cited as measured architecture evidence.
