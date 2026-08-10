@@ -38,6 +38,28 @@ class KafkaIngestListenerTest {
     }
 
     @Test
+    void doesNotReportDuplicatesWhenForwardingIsDisabled() {
+        // Duplicate suppression protects the forward side effect. With forwarding
+        // off there is no side effect, the cache is never populated, and a
+        // duplicate metric here would be misleading rather than informative.
+        var metrics = mock(IngestMetricsService.class);
+        var forwarder = mock(ServerApiForwarder.class);
+        var dedupe = new EventDeduplicationService(100);
+        var quarantine = mock(ValidationDeadLetterPublisher.class);
+        var listener = new KafkaIngestListener(metrics, forwarder, dedupe, quarantine);
+        var record = record("event-metrics-only", "us-west");
+
+        when(forwarder.isConfigured()).thenReturn(false);
+
+        listener.onMessage(record);
+        listener.onMessage(record);
+
+        verify(forwarder, never()).forward(anyString(), anyString(), anyString(), anyMap());
+        verify(metrics, never()).recordDuplicate(anyString());
+        verifyNoValidationQuarantine(quarantine);
+    }
+
+    @Test
     void throwsWhenConfiguredForwardingFailsSoRetryInfrastructureCanOwnDelivery() {
         var metrics = mock(IngestMetricsService.class);
         var forwarder = mock(ServerApiForwarder.class);

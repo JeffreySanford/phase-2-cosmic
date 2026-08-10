@@ -173,6 +173,27 @@ Rules:
 - Prometheus is the measurement source for generator, collector, Kafka/RabbitMQ/Redis exporter, and Java metrics where a real series exists.
 - Unmeasured links remain visible but visually distinct (for example dimmed/dashed).
 
+## Delivery packaging
+
+PR41 began as the lakehouse local medallion MVP and absorbed a platform topology
+repair. It now spans four separable bodies of work:
+
+| Body of work                                              | State                                      | Depends on        |
+| --------------------------------------------------------- | ------------------------------------------ | ----------------- |
+| Lakehouse PR41 MVP (medallion, live source, guards, gate) | complete and green                         | nothing here      |
+| Go module gate coverage                                   | complete and green                         | nothing here      |
+| Collector tier and reliability contract (Stages 1–2)      | implemented, one runtime probe outstanding | geo profile       |
+| Topology visualization honesty (Stage 3)                  | not started                                | Stage 1–2 metrics |
+
+**Recommendation: merge the lakehouse MVP and Go gate coverage first.** They are
+independently valuable, independently verified, and gate-green today. Holding
+them behind the topology repair couples a finished deliverable to work that has
+an open stage and an unexecuted runtime probe.
+
+The collector tier and Stage 3 can then continue on a follow-on branch without a
+reviewer needing to hold all four contexts at once. If the work stays in one PR,
+this table is the reviewer's map of what is finished versus in flight.
+
 ## Implementation plan and status
 
 ### Stage 1 — collector tier
@@ -211,14 +232,69 @@ Rules:
 
 ### Stage 3 — honest topology visualization
 
-- [ ] Represent the collector tier and per-region Pulsar clusters as nodes.
-- [ ] Add `java-ingest -> server API -> SSE -> Angular` edges.
-- [ ] Keep governance/RabbitMQ fan-in visually distinct from the collector chain.
-- [ ] Replace name-list provenance logic with measured/stale/derived/declared/mock states.
-- [ ] Remove index-derived throughput.
-- [ ] Remove constant client confidence fallback.
-- [ ] Source measured throughput from Prometheus where a real metric exists.
-- [ ] Add tests asserting an unmeasured link never renders as high confidence.
+> This is the defect that started PR41 and it remains **entirely open**. Until it
+> lands, the running UI still labels a link "High confidence" because its name
+> appears in a hardcoded list, and still prints throughput derived from array
+> position. Stages 1 and 2 repaired the runtime path; they did not touch this.
+
+#### 3a. Graph shape — make the drawing match the code
+
+- [ ] Add per-region Pulsar cluster nodes (`pulsar-us`, `pulsar-eu`, `pulsar-apac`)
+      and a collector node per region.
+- [ ] Replace the direct `pulsar -> kafka` edge with `pulsar-<region> ->
+collector-<region> -> kafka`.
+- [ ] Add the presentation edges `kafka -> java-ingest -> backend -> frontend`,
+      which do not exist in the graph today even though the path now runs.
+- [ ] Group governance/RabbitMQ fan-in visually so it does not read as an inline
+      hop in the collector chain.
+- [ ] Add a contract test asserting every graph edge maps to a real component
+      relationship, so a future aspirational edge cannot be drawn silently.
+
+#### 3b. Measurement source — replace fabrication with Prometheus
+
+Metric bindings per edge (all already scraped, so no new exporters are required):
+
+| Edge                                    | Prometheus series                                                          |
+| --------------------------------------- | -------------------------------------------------------------------------- |
+| `generator -> pulsar-<region>`          | `generator_bytes_produced_total`, `generator_write_failures_total`         |
+| `pulsar-<region> -> collector-<region>` | `collector_messages_forwarded_total`, `collector_forward_duration_seconds` |
+| `collector-<region> -> kafka`           | `collector_messages_forwarded_total`, `collector_forward_failures_total`   |
+| `kafka -> java-ingest`                  | `java_ingest_received_total`, `java_ingest_processed_total`                |
+| `java-ingest -> backend`                | `java_ingest_forwarded_total`, `java_ingest_forward_failures_total`        |
+| `backend -> frontend`                   | ingest SSE client count and events received                                |
+
+- [ ] Add a server-side resolver that queries Prometheus per edge and returns a
+      value plus the series name it came from.
+- [ ] Return `null` throughput for any edge with no backing series. Never
+      synthesize a number.
+- [ ] Delete the index-derived `currentMBps` expression outright.
+- [ ] Delete the `provenance === "admin" ? 92 : 74` name-list rule outright.
+- [ ] Replace the constant client fallback (`mock ? 24 : 48`) with the same
+      evidence states used server-side.
+
+#### 3c. Confidence semantics
+
+- [ ] Derive state from measurement age: `measured` inside the freshness window,
+      `stale` beyond it, `declared` when no series exists, `mock` in mock mode.
+- [ ] Carry `measurementSource` (the Prometheus series name) and
+      `measuredAt` on every link so a reader can verify the claim.
+- [ ] Make `confidenceLabel()` render absence as absence — an unmeasured link
+      shows "No measurement", never a percentage.
+
+#### 3d. Presentation
+
+- [ ] Render unmeasured links dimmed/dashed per the decision above.
+- [ ] Show the series name and measurement age in the link dialog.
+- [ ] Add a legend distinguishing measured / stale / declared.
+
+#### 3e. Tests that pin honesty
+
+- [ ] An unmeasured link never renders as high confidence.
+- [ ] An edge with no Prometheus series reports `null` throughput rather than 0
+      or a synthesized value.
+- [ ] A stale measurement degrades the state rather than keeping the last value
+      at full confidence.
+- [ ] Mock mode is labeled mock and never reports `measured`.
 
 ### Stage 4 — documentation alignment
 

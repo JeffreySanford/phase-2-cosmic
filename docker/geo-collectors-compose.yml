@@ -7,15 +7,16 @@
 # region can keep accepting data while its link to the core is down. That is the
 # property the edge tier exists for; a single shared cluster would not model it.
 #
-# This stack is opt-in. It is a separate compose file AND profile-gated so normal
-# local development and CI never pay for it:
+# This stack is opt-in. It is a separate compose file AND profile-gated
+# so normal local development and CI never pay for it:
 #
-#   docker compose -f docker/dev-compose.yml -f docker/geo-collectors-compose.yml \
-#     --profile geo up -d
+#   docker compose -f docker/dev-compose.yml \
+#     -f docker/geo-collectors-compose.yml --profile geo up -d
 #
-# Scoped exception to ADR-003 ("run Pulsar as a full profile, not standalone-only"):
-# the CORE pulsar service in dev-compose.yml remains a full broker + bookkeeper +
-# zookeeper deployment and is unchanged. The three REGIONAL edge clusters run in
+# Scoped exception to ADR-003 ("run Pulsar as a full profile, not
+# standalone-only"): the CORE pulsar service in dev-compose.yml remains a
+# full broker + bookkeeper + zookeeper deployment and is unchanged. The
+# three REGIONAL edge clusters run in
 # standalone mode because three full clusters is nine containers, which is not
 # workable on a developer workstation. Production intent is a full cluster per
 # region; standalone here models cluster independence, not production topology.

@@ -71,12 +71,16 @@ public class KafkaIngestListener {
                 return;
             }
 
-            if (deduplicationService.wasDelivered(eventId)) {
-                metricsService.recordDuplicate(topic);
-                return;
-            }
-
+            // Duplicate suppression exists to protect the forward side effect, so
+            // the guard lives with that side effect. When forwarding is disabled
+            // there is nothing to protect, and consulting a cache that is never
+            // populated would only produce a misleading duplicate metric.
             if (forwarder.isConfigured()) {
+                if (deduplicationService.wasDelivered(eventId)) {
+                    metricsService.recordDuplicate(topic);
+                    return;
+                }
+
                 Map<String, String> attribution = attribution(record, eventId);
                 if (!forwarder.forward(BROKER, topic, payload, attribution)) {
                     throw new ServerApiForwardingException(
