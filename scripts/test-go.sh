@@ -15,6 +15,7 @@ fi
 # silently left out of the gate.
 GO_MODULES=(
   "tools/data-generator"
+  "tools/pulsar-collector"
   "apps/cosmic-forge-fits-renderer-go"
 )
 

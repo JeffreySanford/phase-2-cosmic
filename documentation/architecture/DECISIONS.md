@@ -2,9 +2,9 @@
 
 Alignment anchors
 
-- Frontend UX source of truth: [FRONTEND_UI.md](/docuentation/frontend/FRONTEND_UI.md)
-- Execution backlog: [../TODO.md](/docuentation/planning/TODO.md)
-- Delivery plan: [../ROADMAP.md](/ROADMAP.md)
+- Frontend UX source of truth: [FRONTEND_UI.md](../frontend/FRONTEND_UI.md)
+- Topology repair contract: [TOPOLOGY_DATA_PATH_REPAIR.md](./TOPOLOGY_DATA_PATH_REPAIR.md)
+- Delivery plan: [ROADMAP.md](../../ROADMAP.md)
 
 Use this file to record architecture and scope decisions that materially affect ngVLA mission outcomes.
 
@@ -26,6 +26,7 @@ Use this file to record architecture and scope decisions that materially affect 
 flowchart TD
   ADR1[ADR-001 Mission Alignment Docs]
   ADR2[ADR-002 Job Control Contract Choice]
+  ADR6[ADR-006 Streaming Roles and Reliability Boundary]
 
   O1[Observatory continuity]
   O2[Reproducible science]
@@ -41,6 +42,11 @@ flowchart TD
   ADR2 --> O4
   ADR2 --> O5
   ADR2 -.future alignment.-> O3
+  ADR6 --> O1
+  ADR6 --> O2
+  ADR6 --> O3
+  ADR6 --> O4
+  ADR6 --> O5
 ```
 
 ---
@@ -65,9 +71,9 @@ flowchart TD
 - Validation plan:
   Require updates to mission trace/gates for major capability PRs.
 - Links:
-  - [NGVLA_MISSION_ALIGNMENT.md](/docuentation/ngvla/NGVLA_MISSION_ALIGNMENT.md)
-  - [MISSION_TO_CAPABILITY_TRACE.md](/docuentation/ngvla/MISSION_TO_CAPABILITY_TRACE.md)
-  - [MISSION_GATES.md](/docuentation/ngvla/MISSION_GATES.md)
+  - [NGVLA_MISSION_ALIGNMENT.md](../ngvla/NGVLA_MISSION_ALIGNMENT.md)
+  - [MISSION_TO_CAPABILITY_TRACE.md](../ngvla/MISSION_TO_CAPABILITY_TRACE.md)
+  - [MISSION_GATES.md](../ngvla/MISSION_GATES.md)
 
 ## 2026-03-01 | ADR-002 | proposed
 
@@ -87,9 +93,8 @@ flowchart TD
 - Validation plan:
   Contract tests + UI action mapping + error taxonomy consistency.
 - Links:
-  - [API_CONTRACT_STATUS.md](/docuentation/data/API_CONTRACT_STATUS.md)
-  - [ROADMAP.md](/ROADMAP.md)
-  - [TODO.md](/docuentation/planning/TODO.md)
+  - [API_CONTRACT_STATUS.md](../data/API_CONTRACT_STATUS.md)
+  - [ROADMAP.md](../../ROADMAP.md)
 
 ## 2026-03-03 | ADR-003 | accepted
 
@@ -111,9 +116,7 @@ flowchart TD
   - Integration tests for per-workflow RabbitMQ queue provisioning and command execution.
   - End-to-end stress test proving broker-wide profile scaling and safe auto-revert from `100%`.
 - Links:
-  - [MESSAGING_INTEGRATION.md](/docuentation/messaging/MESSAGING_INTEGRATION.md)
-  - [ROADMAP.md](/ROADMAP.md)
-  - [TODO.md](/docuentation/planning/TODO.md)
+  - [ROADMAP.md](../../ROADMAP.md)
 
 ## 2026-03-03 | ADR-004 | accepted
 
@@ -137,9 +140,7 @@ flowchart TD
   - Broker metrics confirm synchronized scaling across Pulsar/Kafka/RabbitMQ paths.
   - Generator profile tests validate payload-size tiers and fanout behavior.
 - Links:
-  - [MESSAGING_INTEGRATION.md](/docuentation/messaging/MESSAGING_INTEGRATION.md)
-  - [PERF_TESTING.md](/docuentation/testing/PERF_TESTING.md)
-  - [TODO.md](/docuentation/planning/TODO.md)
+  - [PERF_TESTING.md](../testing/PERF_TESTING.md)
 
 ## 2026-03-03 | ADR-005 | accepted
 
@@ -162,7 +163,48 @@ flowchart TD
   - viewer performance metrics (switch latency, tile errors, fallback frequency)
   - decision memo with go/no-go recommendation for new viewer engine
 - Links:
-  - [VIEWER_MODEB.md](/docuentation/viewer/VIEWER_MODEB.md)
-  - [frontend/features/VIEWER.md](/docuentation/frontend/features/VIEWER.md)
-  - [ROADMAP.md](/ROADMAP.md)
-  - [TODO.md](/docuentation/planning/TODO.md)
+  - [VIEWER_MODEB.md](../viewer/VIEWER_MODEB.md)
+  - [VIEWER.md](../frontend/features/VIEWER.md)
+  - [ROADMAP.md](../../ROADMAP.md)
+
+## 2026-08-09 | ADR-006 | accepted
+
+- Date: 2026-08-09
+- Decision ID: ADR-006
+- Status: accepted
+- Context:
+  PR41 exposed documentation/runtime drift in the platform topology. The visualization implied a direct Pulsar-to-Kafka link, `java-ingest` terminated at metrics, broker roles were ambiguous, and frontend forwarding had no durable retry, poison-message, or duplicate contract. The Lakehouse Initiative also needed one stable ingestion boundary rather than inheriting every operational broker.
+- Decision:
+  1. **Pulsar is the regional/edge ingestion tier.** Each geographic region owns an independent Pulsar cluster and a colocated `pulsar-collector`.
+  2. **Kafka is the central durable streaming backbone.** Regional collectors forward source-faithful payloads to Kafka only after successful Kafka acknowledgement.
+  3. **RabbitMQ is a parallel control/governance/comparison path.** It is not placed inline between Pulsar and Kafka and must not be drawn as part of the primary event delivery chain.
+  4. **Kafka is the boundary into the lakehouse.** The analytical path is `Kafka -> Bronze -> Silver/quarantine -> Gold -> query/consumer`.
+  5. **The presentation projection is `Kafka -> java-ingest -> frontend API -> SSE -> Angular`.** Kafka remains durable; the frontend is a projection, not a system of record.
+  6. **Every repaired-path event has immutable identity.** The data generator creates one UUID-v4 `event-id`; collectors preserve it in Kafka headers together with region and Pulsar attribution; `java-ingest` projects it into the frontend envelope.
+  7. **Delivery is at-least-once plus explicit idempotency.** Collector failures are negative-acked in Pulsar. `java-ingest`, the frontend ingest API, and Angular suppress duplicate projection by immutable `eventId`. No component may describe this as global exactly-once delivery.
+  8. **Transient delivery failure and invalid-data failure are different domains.** Frontend/API network failures use Spring Kafka non-blocking retry topics and terminate in `.forward-dlt`. Contract-invalid records such as missing payload or missing `event-id` bypass HTTP retries and are copied to `phase2-events.validation-dlt` with a validation reason.
+  9. **Forwarding configuration fails closed.** `ingest.forward.enabled=true` requires a non-empty `ingest.forward.url` at application startup. Kafka-only/metrics operation must be selected explicitly with `ingest.forward.enabled=false`.
+  10. **Retry infrastructure must be executable evidence, not annotation-only intent.** `java-ingest` explicitly enables Kafka retry-topic infrastructure; container-backed integration coverage must prove an unreachable frontend traverses retry listeners and arrives in `.forward-dlt`.
+- Mission outcome impact:
+  Establishes a traceable, replayable and diagnosable event path from geographically distributed acquisition through operator presentation and analytical ingestion. It reduces topology ambiguity, preserves regional provenance, separates poison data from transient outages, and makes failure/replay behavior testable.
+- Tradeoffs:
+  - Additional Kafka retry/DLT and validation-DLT topics require monitoring and replay procedures.
+  - Bounded duplicate suppression does not create global exactly-once delivery; durable downstream stores must remain idempotent by `eventId`.
+  - The live frontend projection remains secondary to Kafka durability and may replay after process recovery.
+  - The geo profile is heavier than the minimal local stack.
+  - RabbitMQ remains deliberately separate, so broker-comparison/governance views must represent fan-in rather than a single linear chain.
+- Validation plan:
+  - Generator unit test validates UUID-v4 event identity creation.
+  - Collector integration test validates payload fidelity plus unchanged `event-id`, region, Pulsar message ID, and Kafka-topic attribution.
+  - Java unit tests validate provenance projection, duplicate suppression, fail-closed forwarding configuration, poison-message routing, retry-triggering failure behavior, and DLT accounting.
+  - Kafka/Testcontainers validation-DLT test proves invalid records are quarantined without HTTP forwarding.
+  - Kafka/Testcontainers retry-DLT test proves the Spring retry listener topology is bootstrapped and an unreachable frontend ends in `.forward-dlt` after bounded retries.
+  - Frontend server tests prove repeated `eventId` submissions produce one SSE side effect and expose duplicate-suppression metrics.
+  - Angular stream-service tests validate consumption and replay deduplication.
+  - Runtime acceptance: `node scripts/verify-ingest-e2e.mjs` must observe one real repaired-path event in the hydrated Angular application with non-empty `eventId`, region and source and `broker=kafka`.
+- Links:
+  - [ARCHITECTURE.md](./ARCHITECTURE.md)
+  - [TOPOLOGY_DATA_PATH_REPAIR.md](./TOPOLOGY_DATA_PATH_REPAIR.md)
+  - [BROKER_SAFETY_RUNBOOK.md](../BROKER_SAFETY_RUNBOOK.md)
+  - [07-messaging.md](../development/coding-standards/07-messaging.md)
+  - [Lakehouse README](../lakehouse/README.md)

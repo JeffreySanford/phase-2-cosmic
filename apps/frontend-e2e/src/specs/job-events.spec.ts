@@ -11,21 +11,48 @@ type FakeEventSourceWindow = Cypress.AUTWindow & {
 
 describe("Live events on Diagnostics", () => {
   function installFakeEventSource(win: FakeEventSourceWindow): void {
+    // Models the parts of EventSource the application actually uses. The stub
+    // previously offered only onmessage/close, so a consumer calling
+    // addEventListener threw — and because streams are opened from the
+    // AppComponent constructor, that surfaced as an application that never
+    // bootstrapped rather than as a missing event.
     class FakeEventSource {
       onmessage: ((event: MessageEvent<string>) => void) | null = null;
       onerror: (() => void) | null = null;
+      private readonly listeners = new Map<
+        string,
+        Set<(event: MessageEvent<string>) => void>
+      >();
 
       constructor(sourceUrl: string) {
         void sourceUrl;
         win.__diagnosticsEventSource = {
           emit: (event: BrokerEvent) => {
-            this.onmessage?.(
-              new MessageEvent("message", {
-                data: JSON.stringify(event),
-              })
-            );
+            const message = new MessageEvent("message", {
+              data: JSON.stringify(event),
+            });
+            this.onmessage?.(message);
+            this.listeners.get("message")?.forEach((listener) => {
+              listener(message);
+            });
           },
         };
+      }
+
+      addEventListener(
+        type: string,
+        listener: (event: MessageEvent<string>) => void
+      ): void {
+        const existing = this.listeners.get(type) ?? new Set();
+        existing.add(listener);
+        this.listeners.set(type, existing);
+      }
+
+      removeEventListener(
+        type: string,
+        listener: (event: MessageEvent<string>) => void
+      ): void {
+        this.listeners.get(type)?.delete(listener);
       }
 
       close(): void {

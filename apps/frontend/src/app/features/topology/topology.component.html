@@ -103,6 +103,24 @@
   <mat-tab-group class="topology-tabs">
     <mat-tab label="Force Network">
       <div class="topology-tab-body">
+        <div
+          class="evidence-legend"
+          *ngIf="hasTopologyData"
+          data-testid="evidence-legend"
+        >
+          <span class="evidence-legend-item">
+            <span class="evidence-swatch" data-state="measured"></span>
+            Measured
+          </span>
+          <span class="evidence-legend-item">
+            <span class="evidence-swatch" data-state="stale"></span>
+            Stale
+          </span>
+          <span class="evidence-legend-item">
+            <span class="evidence-swatch" data-state="declared"></span>
+            No measurement
+          </span>
+        </div>
         <div class="link-source-summary" *ngIf="hasTopologyData">
           <span class="link-source-chip" data-source="prometheus">
             Live links: {{ liveLinkCount }}

@@ -2,230 +2,234 @@
 
 ## Overview
 
-The COSMIC Phase-2 platform uses three broker technologies, each with a distinct
-role in the event fabric. Mixing roles is a critical misconfiguration. This
-document records the partitioning rules, failure modes, escalation procedures,
-and operational checks for each broker.
+Cosmic Horizon uses Pulsar, Kafka, and RabbitMQ for distinct responsibilities. Mixing those roles creates ambiguous failure and replay semantics, so broker role assignment is an operational safety rule, not merely a diagramming preference.
 
----
+ADR-006 and `documentation/architecture/ARCHITECTURE.md` are authoritative for the repaired path.
 
-## Broker Role Assignments
+## Broker role assignments
 
-| Broker   | Role               | Topic/Queue pattern | Retention | Replay? |
-| -------- | ------------------ | ------------------- | --------- | ------- |
-| Kafka    | Audit log + replay | `cosmic.audit.*`    | 7 days    | Yes     |
-| RabbitMQ | Control commands   | `cosmic.control.*`  | Transient | No      |
-| Pulsar   | Federated delivery | `cosmic/ngvla/*`    | 24 h      | Via DLQ |
+| Broker   | Primary role                                            | Durable replay role                   | Inline in repaired event path? |
+| -------- | ------------------------------------------------------- | ------------------------------------- | ------------------------------ |
+| Pulsar   | Regional/edge event ingestion                           | Regional redelivery / DLQ policy      | Yes, before the collector      |
+| Kafka    | Central durable streaming backbone                      | Canonical repaired-path replay source | Yes, after the collector       |
+| RabbitMQ | Control commands + explicit governance/comparison flows | Control DLX/DLQ only                  | **No**                         |
 
-### Kafka — Audit / Replay
-
-Kafka is the **append-only audit backbone**. Every `ExecutionEvent` emitted by
-any service MUST also be published to Kafka for durable audit. Kafka messages
-are the canonical replay source when a downstream subscriber misses an event.
-
-**Rules:**
-
-- Topic names: `cosmic.audit.<domain>` (e.g. `cosmic.audit.jobs`, `cosmic.audit.alerts`).
-- **Never** publish ephemeral control messages to Kafka topics.
-- Consumer groups MUST use explicit `group.id`; auto-created groups are forbidden.
-- Message keys MUST be `{correlationId}` to enable partition affinity for
-  ordered replay.
-- Retention: 7 days (configurable via `retention.ms`). Do not reduce below 3 days.
-- Schema: All messages MUST use the `ExecutionEvent` canonical envelope
-  (schemaVersion ≥ 1.0.0).
-
-**Failure modes:**
-
-- **Broker unavailable:** Services continue processing; audits are queued locally
-  and flushed when Kafka recovers. Maximum local queue: 10 000 events per pod.
-- **Lag spike:** Alert ops if consumer lag on any audit topic exceeds 5 000 messages.
-- **Replay divergence:** If a replayed message produces a different result, escalate
-  to Tier-2 immediately — this signals a non-deterministic processor.
-
----
-
-### RabbitMQ — Control Commands
-
-RabbitMQ carries **low-latency, ephemeral control instructions** between services
-(e.g. pause job, trigger calibration, abort observation). Messages are NOT
-persisted beyond the TTL; they are fire-and-forget with mandatory ACK.
-
-**Rules:**
-
-- Queue names: `cosmic.control.<service>.<action>` (e.g. `cosmic.control.jobs.pause`).
-- **Never** publish domain events or audit data to RabbitMQ.
-- All queues MUST be declared with `x-message-ttl: 30000` (30 s) to prevent accumulation.
-- Consumers MUST ACK within 10 s or the message is requeed once, then dropped.
-- Control messages do NOT require `correlationId` in the routing key, but SHOULD
-  include it in the message headers for traceability.
-- Dead-letter exchange: `cosmic.control.dlx`; DLQ: `cosmic.control.dead`.
-
-**Failure modes:**
-
-- **Connection refused:** Backend services enter degraded mode; control
-  commands are rejected with HTTP 503 until the connection is restored.
-- **DLQ accumulation:** If `cosmic.control.dead` depth exceeds 100 messages, alert
-  Tier-1 ops. Messages in the DLQ expire after 1 hour and are discarded.
-- **Split brain:** If two consumers process the same control command, the idempotency
-  key in the header (`X-Idempotency-Key`) MUST be checked. Duplicate commands are
-  logged and ignored.
-
----
-
-### Pulsar — Federated Delivery
-
-Pulsar handles **multi-tenant, geographically federated event delivery** for
-cross-site telescope coordination (NGVLA, MeerKAT, SKA). Messages are delivered
-with at-least-once semantics via Pulsar's built-in geo-replication.
-
-**Rules:**
-
-- Tenant/namespace: `cosmic/ngvla`, `cosmic/meerkat`, `cosmic/ska`.
-- Topic names: `persistent://cosmic/<tenant>/<domain>` (e.g.
-  `persistent://cosmic/ngvla/observations`).
-- **Never** use Pulsar for administrative control commands; use RabbitMQ.
-- Schema enforcement: Activate `SchemaType.JSON` with Avro backward-compatibility.
-- Partitioned topics MUST be used for throughput > 5 000 msg/s per topic.
-- Acknowledgement timeout: 60 s. Unacknowledged messages go to the Pulsar DLQ
-  topic (`<topic>-DLQ`) after 3 redelivery attempts.
-
-**Failure modes:**
-
-- **Geo-replication lag:** Alert if replication backlog exceeds
-  10 000 messages per namespace. This indicates a cross-site network issue.
-- **DLQ overflow:** Inspect `<topic>-DLQ` topics daily. Replay via the
-  `POST /api/v1/alerts/dlq/replay-all` endpoint after root-cause analysis.
-- **Schema incompatibility:** Pulsar will reject messages that violate the registered
-  schema. Deployments MUST validate schema compatibility in CI before merging.
-
----
-
-## Correlation ID Contract
-
-Every `ExecutionEvent` carries a `correlationId` that MUST be propagated:
+Canonical event path:
 
 ```text
-Producer         →   Kafka audit   →   Audit consumer
-     ↓                                         ↓
-     └── RabbitMQ control ────────→   Control consumer
-     ↓                                         ↓
-     └── Pulsar delivery  ────────→   Federated consumer
-                                               ↓
-                                      TransientAlertService.ingest(correlationId=…)
+data-generator
+  -> regional Pulsar
+    -> regional pulsar-collector
+      -> central Kafka
+        -> java-ingest
+          -> frontend API
+            -> SSE
+              -> Angular
 ```
 
-**Invariants:**
+Lakehouse boundary:
 
-1. `correlationId` is generated once (UUID v4) by the originating service.
-2. `correlationId` MUST pass unchanged through every hop.
-3. Consumers MUST log `correlationId` on every line related to that event.
-4. The `CorrelationPropagationTest` integration test enforces these
-   invariants in CI.
+```text
+Kafka -> Bronze -> Silver/quarantine -> Gold
+```
 
----
+RabbitMQ is not inserted between Pulsar and Kafka.
 
-## Escalation Matrix
+## Event identity and attribution
 
-| Severity | Condition                          | Action              |
-| -------- | ---------------------------------- | ------------------- |
-| P1       | Kafka unavailable > 1 min          | Page on-call SRE    |
-| P1       | RabbitMQ DLX depth > 500           | Page on-call SRE    |
-| P1       | Pulsar geo-replication lag > 10000 | Isolate site; page  |
-| P2       | Kafka consumer lag > 5000          | Alert Tier-1 in 15m |
-| P2       | Alert SLO p99 latency > 500 ms     | Alert Tier-1 in 15m |
-| P3       | `cosmic.control.dead` depth > 100  | Next business hour  |
-| P3       | Alert DLQ depth > 50               | Trigger replay-all  |
+Every repaired-path event has an immutable `event-id` created once by the generator's Pulsar sink.
 
----
+Required propagation:
 
-## Operational Runbook Steps
+```text
+generator event-id
+  -> Pulsar property event-id
+    -> Kafka header event-id
+      -> java-ingest eventId
+        -> frontend API idempotency key
+          -> payload.eventId / SSE
+            -> Angular idempotency key
+```
 
-## Sprint 1 Baseline
+Collector transport attribution also includes:
 
-Sprint 1 establishes the minimum DLQ/replay safety baseline for the Trident PI.
-Before any replay or broker-side recovery action:
+- `collector-region`
+- `collector-pulsar-message-id`
+- `collector-forwarded-at`
+- `collector-kafka-topic`
 
-1. Confirm the broker role is correct for the event you are handling.
-   Kafka is the replay source, RabbitMQ is ephemeral control, Pulsar is
-   federated delivery.
-2. Snapshot the failing payloads before mutation or replay.
-   For Kafka and Pulsar, capture topic, partition, offset/messageId, and
-   `correlationId`. For RabbitMQ, capture queue, routing key, and headers.
-3. Verify the payload matches the active schema or envelope contract before
-   resubmitting it.
-4. Replay in small batches first and confirm audit visibility before scaling up.
-5. Never replay control commands blindly from RabbitMQ DLQ into production
-   queues without confirming idempotency behavior.
+`source` remains payload provenance and must not be replaced by collector region.
 
-Operator checklist:
+## Delivery semantics
 
-- Kafka replay source verified
-- RabbitMQ control DLQ depth checked
-- Pulsar DLQ topic inspected
-- `correlationId` preserved in the candidate payload
-- downstream audit path observed after the first replayed sample
+### Generator -> Pulsar
 
-### Replay alerts from DLQ
+- Publishing blocks for broker acknowledgement.
+- Failed writes are recorded as failures and are not counted as delivered throughput.
 
-> **UI note:** the frontend includes a _Replay_ button on the alerts table under
-> **Telemetry → Alerts** which performs the same `POST /api/v1/alerts/dlq/replay-all`
-> action. Operators may prefer the UI when working interactively.
+### Pulsar -> collector -> Kafka
+
+- Semantics: **at-least-once**.
+- A new collector subscription begins at the earliest retained Pulsar position so startup ordering does not silently skip regional backlog.
+- Collector ACKs the Pulsar message only after Kafka accepts the forwarded record.
+- Kafka-forward failure causes `Nack`, allowing Pulsar redelivery.
+- A collector/process failure after Kafka acceptance but before Pulsar ACK can produce a duplicate Kafka event.
+- Duplicate behavior is therefore expected and downstream consumers must be replay-safe by `eventId`.
+
+### Kafka -> java-ingest -> frontend API
+
+- Kafka remains the durable record.
+- Forwarding defaults on. `ingest.forward.enabled=true` with an empty `ingest.forward.url` is a startup configuration error; use `ingest.forward.enabled=false` only for an intentional Kafka-only/metrics mode.
+- HTTP forwarding has a bounded timeout.
+- A failed frontend API projection raises an ingest failure into Kafka non-blocking retry topics.
+- Spring retry-topic infrastructure is explicitly enabled and must be verified by container-backed tests, not inferred from annotations alone.
+- Retry exhaustion terminates in the `.forward-dlt` topic associated with the source topic.
+- `java_ingest_forward_failures_total` counts HTTP forwarding attempts that fail.
+- `java_ingest_forward_dlt_total` counts records that exhaust retry delivery and reach the forward DLT.
+
+### Invalid data -> validation DLT
+
+Poison/contract-invalid records are not transient dependency failures and do **not** spend HTTP retry attempts.
+
+Current minimum invalid conditions:
+
+- blank/missing payload -> `missing_payload`
+- blank/missing immutable `event-id` -> `missing_event_id`
+
+They are copied to:
+
+```text
+phase2-events.validation-dlt
+```
+
+with the original key/value and transport headers preserved, plus:
+
+- `validation-reason`
+- `validation-original-topic`
+
+`java_ingest_validation_dlt_total` measures successful validation quarantine. If the validation-DLT write itself fails, the listener throws instead of acknowledging away the source record.
+
+### Duplicate suppression
+
+- `java-ingest` suppresses already-delivered `eventId` values using a bounded process-local cache.
+- The frontend ingest API requires `eventId` and suppresses repeated accepted identity before repeating the SSE side effect.
+- `frontend_ingest_duplicates_suppressed_total` exposes receiver-side suppression.
+- Angular suppresses replay duplicates within its bounded presentation history.
+- These mechanisms do not constitute global exactly-once delivery. Kafka remains the durable replay source and durable stores must use `eventId` as an idempotency key where duplicate effects would be unsafe.
+
+## Failure handling
+
+### Pulsar regional edge unavailable
+
+1. Confirm the affected region and cluster.
+2. Do not route the regional generator directly to RabbitMQ as an emergency substitute.
+3. If an approved failover exists, route to another Pulsar edge or pause generation according to the active runbook.
+4. Check regional Pulsar backlog/DLQ before resuming normal flow.
+
+### Collector cannot reach Kafka
+
+1. Verify `collector_forward_failures_total{region="..."}`.
+2. Confirm Kafka health and advertised listeners.
+3. Leave the Pulsar message unacknowledged/negative-acked so redelivery remains authoritative.
+4. Do not manually ACK Pulsar to clear backlog unless event loss has been explicitly accepted.
+5. After recovery, watch for duplicate `eventId` values and verify downstream suppression.
+
+### Frontend API unavailable from java-ingest
+
+1. Verify `java_ingest_forward_failures_total` is increasing.
+2. Inspect Kafka `.forward-retry` topics for the affected source topic.
+3. If retry attempts exhaust, inspect the `.forward-dlt` topic.
+4. Restore the frontend API before replaying DLT records.
+5. Replay in a controlled batch and verify `eventId` remains unchanged.
+6. Confirm the browser acceptance probe receives the replayed event or an expected receiver/Angular duplicate-suppression metric increments.
+
+### Invalid record / validation DLT
+
+1. Inspect `java_ingest_validation_dlt_total` and the `phase2-events.validation-dlt` record.
+2. Capture `validation-reason`, original topic, `event-id` when present, collector region, and source payload.
+3. Correct the producer/schema defect before replay. Do not replay unchanged poison data into the normal topic.
+4. If an `event-id` was missing, determine the authoritative source identity; do not casually mint a new identity unless the event is intentionally being treated as a new logical event.
+5. Replay a corrected record in a controlled batch and verify it does not return to validation DLT.
+
+### Forward DLT replay
+
+Before replay:
+
+- capture `event-id`
+- capture original/canonical Kafka topic
+- capture collector region and Pulsar message ID
+- confirm the frontend API is healthy
+- confirm the failure was transient rather than a payload/schema defect
+
+Replay must preserve `event-id`; generating a new identity turns one event into a different event and defeats idempotency.
+
+## RabbitMQ control safety
+
+RabbitMQ carries low-latency control/governance messages where explicitly configured.
+
+Rules:
+
+- Do not place RabbitMQ inline in the repaired data delivery chain.
+- Control messages must use explicit idempotency/correlation metadata where duplicate execution would be unsafe.
+- Dead-letter control commands require operator review before replay.
+- Never blindly replay destructive or time-sensitive commands from a DLQ.
+
+## Kafka lakehouse safety
+
+Kafka is the boundary into the lakehouse.
+
+- Bronze ingestion should preserve `eventId`, source payload, topic/partition/offset where available, and collector attribution needed for lineage.
+- Silver deduplication/quarantine must not mutate the immutable event identity.
+- Gold products must retain traceability back to Bronze identities.
+- Pulsar/RabbitMQ operational details should not leak into lakehouse transformations unless required as explicit source attribution.
+
+## Reliability verification
+
+Java Kafka-backed reliability tests:
 
 ```bash
-# Check current DLQ depth
-curl -s http://localhost:8080/api/v1/alerts/slo | jq '.dlqDepth'
-
-# List DLQ contents
-curl -s http://localhost:8080/api/v1/alerts/dlq | jq '.[].eventType'
-
-# Replay all DLQ alerts
-curl -s -XPOST http://localhost:8080/api/v1/alerts/dlq/replay-all
-
-# Replay a specific alert by ID
-curl -s -XPOST http://localhost:8080/api/v1/alerts/dlq/replay/<alertId>
+pnpm run test:java:ingest:it
 ```
 
-### Drain Kafka audit lag
+The relevant PR41 proofs are:
+
+- invalid record -> validation DLT with reason and identity preserved;
+- valid record + unreachable frontend -> non-blocking retry topology -> `.forward-dlt`.
+
+## Runtime acceptance
+
+With the repaired geo path, `java-ingest`, frontend server, and Angular application running:
 
 ```bash
-# Check consumer group lag
-kafka-consumer-groups.sh --bootstrap-server localhost:9092 \
-  --group cosmic-audit-consumer --describe
-
-# Reset offset to latest (emergency drain — loses unprocessed events)
-# ⚠️ Only do this with Tier-2 approval
-kafka-consumer-groups.sh --bootstrap-server localhost:9092 \
-  --group cosmic-audit-consumer --reset-offsets --to-latest \
-  --topic cosmic.audit.jobs --execute
+node scripts/verify-ingest-e2e.mjs
 ```
 
-### Inspect RabbitMQ DLQ
+A pass requires the hydrated Angular application to observe one real event containing:
 
-```bash
-# Via management UI: http://localhost:15672  (guest/guest in dev)
-# Via CLI:
-rabbitmqadmin list queues name messages
-rabbitmqadmin get queue=cosmic.control.dead count=10
-```
+- `broker = kafka`
+- `collectorRegion`
+- `source`
+- `eventId`
 
-### Pulsar DLQ inspection
+This is the preferred full-path smoke test after broker or forwarding recovery.
 
-```bash
-# List DLQ backlog for ngvla observations
-pulsar-admin topics stats \
-  persistent://cosmic/ngvla/observations-DLQ
+## Operator checklist
 
-# Replay DLQ via subscription seek
-pulsar-admin topics reset-cursor \
-  persistent://cosmic/ngvla/observations-DLQ \
-  --subscription dlq-consumer --time 1h
-```
+- [ ] Correct broker role confirmed before intervention
+- [ ] `eventId` captured before replay
+- [ ] Regional collector attribution captured
+- [ ] Failure classified as transient delivery vs invalid data
+- [ ] Kafka retry/forward-DLT state checked for frontend delivery failures
+- [ ] Validation DLT checked for poison/contract-invalid data
+- [ ] RabbitMQ confirmed to be parallel, not inline
+- [ ] Replay performed in a small controlled batch first
+- [ ] Browser acceptance probe or downstream idempotency evidence verified after replay
 
----
+## Change history
 
-## Change History
-
-| Date       | Author        | Change                                                               |
-| ---------- | ------------- | -------------------------------------------------------------------- |
-| 2025-01-01 | Platform Team | Initial broker role partitioning document                            |
-| 2026-03-09 | Codex         | Added Sprint 1 DLQ/replay baseline guardrails and operator checklist |
+| Date       | Change                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 2025-01-01 | Initial broker role partitioning document                                                                                 |
+| 2026-03-09 | Added DLQ/replay baseline guardrails                                                                                      |
+| 2026-08-09 | Aligned Pulsar edge, Kafka backbone, RabbitMQ parallel role, event identity, retry/DLT, dedupe, and PR41 acceptance probe |
+| 2026-08-09 | Added fail-closed forwarding, receiver idempotency, validation DLT separation, and executable retry/DLT verification      |

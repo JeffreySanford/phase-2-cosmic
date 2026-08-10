@@ -1,5 +1,9 @@
-<h2 mat-dialog-title *ngIf="data.type === 'node'">{{ data.label || data.id }}</h2>
-<h2 mat-dialog-title *ngIf="data.type === 'link'">Connection: {{ data.source }} → {{ data.target }}</h2>
+<h2 mat-dialog-title *ngIf="data.type === 'node'">
+  {{ data.label || data.id }}
+</h2>
+<h2 mat-dialog-title *ngIf="data.type === 'link'">
+  Connection: {{ data.source }} → {{ data.target }}
+</h2>
 <mat-dialog-content>
   <div *ngIf="data.type === 'node'">
     <p><strong>Group:</strong> {{ data.group }}</p>
@@ -12,36 +16,71 @@
     <p *ngIf="measurementPathLabel()">
       <strong>Measurement path:</strong> {{ measurementPathLabel() }}
     </p>
-    <p *ngIf="data.stats?.confidencePct !== undefined">
-      <strong>Confidence:</strong> {{ data.stats?.confidencePct }}% ({{ confidenceLabel() }})
+    <p>
+      <strong>Evidence:</strong> {{ confidenceLabel()
+      }}<ng-container *ngIf="hasConfidenceScore()">
+        ({{ data.stats?.confidencePct }}%)</ng-container
+      >
+    </p>
+    <p><strong>Measured by:</strong> {{ measurementSourceLabel() }}</p>
+    <p *ngIf="measurementAgeLabel()">
+      <strong>Measured:</strong> {{ measurementAgeLabel() }}
     </p>
     <p><strong>Summary stats:</strong></p>
     <ul>
-      <li *ngIf="data.stats?.throughput">Observed throughput: {{ data.stats?.throughput }}</li>
-      <li *ngIf="data.stats?.throughputPct">Utilization: {{ data.stats?.throughputPct }}</li>
-      <li *ngIf="data.stats?.latencyMs">Latency: {{ data.stats?.latencyMs }} ms</li>
-      <li *ngIf="data.stats?.errorRate">Error rate: {{ data.stats?.errorRate }}</li>
+      <li *ngIf="data.stats?.throughput">
+        Observed throughput: {{ data.stats?.throughput }}
+      </li>
+      <li *ngIf="data.stats?.throughputPct">
+        Utilization: {{ data.stats?.throughputPct }}
+      </li>
+      <li *ngIf="data.stats?.latencyMs">
+        Latency: {{ data.stats?.latencyMs }} ms
+      </li>
+      <li *ngIf="data.stats?.errorRate">
+        Error rate: {{ data.stats?.errorRate }}
+      </li>
     </ul>
     <p><strong>What this represents</strong></p>
-    <p>This connection is a logical representation of data flow between two system components. When the metric source is <em>Live exporter metrics</em> or <em>Live admin API</em>, the observed values come from backend-fed live telemetry. Otherwise it is still a derived model used to preserve topology behavior where measured link telemetry is not available yet.</p>
+    <p>
+      This connection is a logical representation of data flow between two
+      system components. A throughput value is shown only when a Prometheus
+      series backs it, and the series is named above so it can be verified.
+      <strong>No measurement</strong> means the link exists in the architecture
+      but nothing currently measures it — it is not a claim of zero traffic, and
+      no value is estimated in its place.
+    </p>
     <p><strong>Detection and remediation</strong></p>
     <ul>
       <li *ngIf="isCritical()">
-        <strong style="color:#b91c1c">Critical:</strong> This link is near or at maximum capacity. Consider adding parallel links, increasing interface capacity, or re-architecting data routing.
+        <strong style="color: #b91c1c">Critical:</strong> This link is near or
+        at maximum capacity. Consider adding parallel links, increasing
+        interface capacity, or re-architecting data routing.
       </li>
       <li *ngIf="isHighUtil()">
-        <strong style="color:#92400e">High utilization:</strong> Monitor closely and plan capacity uplift or backpressure controls.
+        <strong style="color: #92400e">High utilization:</strong> Monitor
+        closely and plan capacity uplift or backpressure controls.
       </li>
-      <li *ngIf="isNormalUtil()">
-        Normal operating range.
-      </li>
+      <li *ngIf="isNormalUtil()">Normal operating range.</li>
     </ul>
     <p><strong>How to get accurate values</strong></p>
     <ol>
-      <li>Expose per-interface or topic throughput in Prometheus (node exporter, application metrics, or exporter that reads NIC counters).</li>
-      <li>Collect Kafka topic/partition throughput and consumer lag via JMX exporter or Kafka exporter.</li>
-      <li>Collect MinIO/S3 transfer metrics and storage ingress/egress counters for storage links.</li>
-      <li>Aggregate these metrics in the backend and present live + historical views here (preferred for accurate decisioning).</li>
+      <li>
+        Expose per-interface or topic throughput in Prometheus (node exporter,
+        application metrics, or exporter that reads NIC counters).
+      </li>
+      <li>
+        Collect Kafka topic/partition throughput and consumer lag via JMX
+        exporter or Kafka exporter.
+      </li>
+      <li>
+        Collect MinIO/S3 transfer metrics and storage ingress/egress counters
+        for storage links.
+      </li>
+      <li>
+        Aggregate these metrics in the backend and present live + historical
+        views here (preferred for accurate decisioning).
+      </li>
     </ol>
   </div>
 </mat-dialog-content>

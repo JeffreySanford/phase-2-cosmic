@@ -756,3 +756,44 @@
   color: #cbd5e1;
   background: rgba(15, 23, 42, 0.42);
 }
+
+// Evidence legend: explains what a link's stroke means, so an unmeasured
+// (dimmed, long-dashed) link is readable as unmeasured rather than as low
+// traffic.
+.evidence-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.evidence-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.evidence-swatch {
+  display: inline-block;
+  width: 1.5rem;
+  height: 0;
+  border-top-width: 2px;
+  border-top-style: solid;
+
+  &[data-state="measured"] {
+    border-top-color: rgba(148, 163, 184, 0.9);
+  }
+
+  &[data-state="stale"] {
+    border-top-style: dashed;
+    border-top-color: rgba(251, 191, 36, 0.9);
+  }
+
+  &[data-state="declared"] {
+    border-top-style: dashed;
+    border-top-color: rgba(148, 163, 184, 0.35);
+  }
+}

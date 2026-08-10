@@ -34,10 +34,30 @@ public class IngestMetricsService {
         durationTimer(topic, "validation_failure", reason).record(duration.toNanos(), TimeUnit.NANOSECONDS);
     }
 
+    public void recordValidationDeadLetter(String topic, String reason) {
+        counter("java_ingest_validation_dlt_total", topic, "failure", reason).increment();
+    }
+
     public void recordFailure(String topic, String reason, String payload, Duration duration) {
         counter("java_ingest_failures_total", topic, "failure", reason).increment();
         payloadSummary(topic).record(sizeOf(payload));
         durationTimer(topic, "failure", reason).record(duration.toNanos(), TimeUnit.NANOSECONDS);
+    }
+
+    public void recordForwarded(String topic) {
+        counter("java_ingest_forwarded_total", topic, "success", "none").increment();
+    }
+
+    public void recordForwardFailure(String broker, String topic, String reason) {
+        counter("java_ingest_forward_failures_total", topic, "failure", reason).increment();
+    }
+
+    public void recordDuplicate(String topic) {
+        counter("java_ingest_duplicates_suppressed_total", topic, "success", "duplicate_event_id").increment();
+    }
+
+    public void recordForwardDeadLetter(String topic, String eventId) {
+        counter("java_ingest_forward_dlt_total", topic, "failure", "retry_exhausted").increment();
     }
 
     private Counter counter(String metric, String topic, String result, String reason) {

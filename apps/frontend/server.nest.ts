@@ -8,12 +8,14 @@ import {
   Controller,
   Get,
   Post,
+  Body,
   Req,
   Res,
   Injectable,
   All,
   Inject,
   Optional,
+  BadRequestException,
 } from "@nestjs/common";
 import { ExecutionPlansController } from "./src/app/controllers/execution-plans.controller";
 import { RuntimeLoadProfileService } from "./src/app/services/runtime-load-profile.service";
@@ -32,6 +34,14 @@ import {
   LakehouseMetricsService,
   type LakehouseMetricsSummary,
 } from "./src/server/lakehouse/lakehouse-metrics.service";
+import {
+  EDGE_METRIC_BINDINGS,
+  EDGE_QUERIES,
+  edgeKey,
+  resolveLinkEvidence,
+  type LinkEvidenceState,
+  type LinkSample,
+} from "./src/server/topology/topology-link-evidence";
 
 import express from "express";
 import { createClient } from "redis";
@@ -52,12 +62,17 @@ type LoadProfilePct = 10 | 25 | 50 | 100;
 type TopologyNode = {
   id: string;
   label: string;
-  group: "app" | "infra" | "ngvla";
+  group: "app" | "infra" | "ngvla" | "edge";
+  region?: string;
 };
 type TopologyLink = {
   source: string;
   target: string;
   value?: number;
+  // Which canonical path this edge belongs to. `governance` is broker fan-in for
+  // comparison and must never read as an inline hop in the transport chain;
+  // `telemetry` is the disk-derived stress path, independent of the event path.
+  path?: "transport" | "presentation" | "governance" | "telemetry" | "infra";
 };
 type RuntimeProfileSpec = {
   workers: number;
@@ -105,7 +120,11 @@ type RedisClientOps = {
   on(event: "error", listener: (err: unknown) => void): unknown;
   connect(): Promise<unknown>;
   get(key: string): Promise<string | null>;
-  set(key: string, value: string, options: { EX: number }): Promise<unknown>;
+  set(
+    key: string,
+    value: string,
+    options: { EX: number; NX?: boolean }
+  ): Promise<unknown>;
 };
 
 const REDIS_CACHE_DURATION_BUCKETS = [
@@ -170,6 +189,132 @@ function sendSse(res: Response, event: string, data: unknown) {
   } catch {
     // ignore write failures
   }
+}
+
+// Event-backed SSE channel.
+//
+// Deliberately separate from the telemetry channel above. Telemetry is derived
+// from generator worker file sizes on disk; this channel carries real ingested
+// pipeline events forwarded by java-ingest:
+//
+//   generator -> Pulsar -> collector -> Kafka -> java-ingest -> here -> frontend
+const ingestSseClients = new Set<Response>();
+
+export interface IngestedEvent {
+  receivedAt: number;
+  eventId?: string;
+  source?: string;
+  eventType?: string;
+  traceId?: string;
+  collectorRegion?: string;
+  broker?: string;
+  payload?: unknown;
+}
+
+// Bounded ring buffer so a late subscriber sees recent activity without the
+// server retaining unbounded event history.
+const INGEST_EVENT_BUFFER_LIMIT = 50;
+const INGEST_EVENT_IDEMPOTENCY_MAX_ENTRIES = Math.max(
+  1,
+  Number(process.env["INGEST_EVENT_IDEMPOTENCY_MAX_ENTRIES"]) || 10_000
+);
+const INGEST_EVENT_IDEMPOTENCY_TTL_SECONDS = Math.max(
+  60,
+  Number(process.env["INGEST_EVENT_IDEMPOTENCY_TTL_SECONDS"]) || 86_400
+);
+const recentIngestEvents: IngestedEvent[] = [];
+const acceptedIngestEventIds = new Map<string, number>();
+let ingestEventsReceived = 0;
+let ingestDuplicatesSuppressed = 0;
+
+function rememberIngestEventId(eventId: string): void {
+  if (acceptedIngestEventIds.has(eventId)) {
+    acceptedIngestEventIds.delete(eventId);
+  }
+  acceptedIngestEventIds.set(eventId, Date.now());
+  while (acceptedIngestEventIds.size > INGEST_EVENT_IDEMPOTENCY_MAX_ENTRIES) {
+    const oldest = acceptedIngestEventIds.keys().next().value as
+      | string
+      | undefined;
+    if (!oldest) break;
+    acceptedIngestEventIds.delete(oldest);
+  }
+}
+
+async function claimIngestEventId(eventId: string): Promise<boolean> {
+  if (redisClient) {
+    try {
+      const result = await redisClient.set(
+        `frontend:ingest:event:${eventId}`,
+        "1",
+        { EX: INGEST_EVENT_IDEMPOTENCY_TTL_SECONDS, NX: true }
+      );
+      if (result === "OK") {
+        rememberIngestEventId(eventId);
+        return true;
+      }
+
+      ingestDuplicatesSuppressed += 1;
+      rememberIngestEventId(eventId);
+      return false;
+    } catch (error) {
+      console.warn(
+        "Redis ingest idempotency claim failed; using bounded in-memory fallback:",
+        error
+      );
+    }
+  }
+
+  if (acceptedIngestEventIds.has(eventId)) {
+    ingestDuplicatesSuppressed += 1;
+    rememberIngestEventId(eventId);
+    return false;
+  }
+
+  rememberIngestEventId(eventId);
+  return true;
+}
+
+function recordIngestEvent(event: IngestedEvent) {
+  ingestEventsReceived += 1;
+  recentIngestEvents.push(event);
+  if (recentIngestEvents.length > INGEST_EVENT_BUFFER_LIMIT) {
+    recentIngestEvents.shift();
+  }
+
+  for (const res of Array.from(ingestSseClients)) {
+    if (res.writableEnded || res.writableFinished) {
+      ingestSseClients.delete(res);
+      continue;
+    }
+    sendSse(res, "ingest-event", event);
+  }
+}
+
+export function getIngestEventStats() {
+  return {
+    received: ingestEventsReceived,
+    duplicatesSuppressed: ingestDuplicatesSuppressed,
+    idempotencyEntries: acceptedIngestEventIds.size,
+    buffered: recentIngestEvents.length,
+    clientCount: ingestSseClients.size,
+    latest: recentIngestEvents[recentIngestEvents.length - 1] ?? null,
+  };
+}
+
+export function resetIngestEventsForTest() {
+  recentIngestEvents.length = 0;
+  acceptedIngestEventIds.clear();
+  ingestEventsReceived = 0;
+  ingestDuplicatesSuppressed = 0;
+  ingestSseClients.clear();
+}
+
+// Forwarded events come from an external process, so field types are not
+// guaranteed. Anything that is not a usable string is dropped rather than
+// coerced into a misleading value.
+function asOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 const telemetryDebugEnabled = process.env["DEBUG_TELEMETRY"] === "true";
@@ -604,6 +749,15 @@ function renderPrometheusMetrics(): string {
     );
   }
 
+  lines.push(
+    "# HELP frontend_ingest_events_received_total Unique repaired-path events accepted by the frontend ingest API.",
+    "# TYPE frontend_ingest_events_received_total counter",
+    `frontend_ingest_events_received_total ${ingestEventsReceived}`,
+    "# HELP frontend_ingest_duplicates_suppressed_total Duplicate event IDs suppressed before SSE broadcast.",
+    "# TYPE frontend_ingest_duplicates_suppressed_total counter",
+    `frontend_ingest_duplicates_suppressed_total ${ingestDuplicatesSuppressed}`
+  );
+
   // Runtime load profile metrics (stress mode workers + bytes written)
   lines.push(
     "# HELP frontend_ssr_runtime_load_profile_pct Current runtime load profile percentage.",
@@ -648,7 +802,7 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
       radius: 0.5,
       format: "votable",
       liveMode: true,
-      _description: "Cone search around Orion Nebula (M42), radius 0.5\u00b0",
+      _description: "Cone search around Orion Nebula (M42), radius 0.5°",
     },
     "vo.adql.query": {
       provider: "HEASARC",
@@ -667,8 +821,7 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
       spatialBoundsRadius: 0.5,
       limit: 20,
       liveMode: true,
-      _description:
-        "ESO ObsCore image search around quasar 3C 273 (r=0.5\u00b0)",
+      _description: "ESO ObsCore image search around quasar 3C 273 (r=0.5°)",
     },
     "vo.votable.fetch": {
       provider: "HEASARC",
@@ -693,7 +846,7 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
       expectedMimeType: "application/fits",
       liveMode: true,
       _description:
-        "Chandra ACIS event file \u2014 Cas A supernova remnant (obs 21843)",
+        "Chandra ACIS event file — Cas A supernova remnant (obs 21843)",
     },
     "vo.soda.cutout": {
       provider: "CADC",
@@ -705,7 +858,7 @@ function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
       outputFormat: "fits",
       liveMode: true,
       _description:
-        "CADC SODA cutout centered on 3C 273 (r=0.1\u00b0, CFHT obs 2459817)",
+        "CADC SODA cutout centered on 3C 273 (r=0.1°, CFHT obs 2459817)",
     },
     "vo.preview.fetch": {
       provider: "ESASky",
@@ -979,6 +1132,74 @@ export class AppController {
     return getTelemetryDebugInfo();
   }
 
+  // Receives events forwarded by java-ingest after it consumes them from Kafka.
+  // This is the side-effect boundary for the live presentation projection.
+  @Post("api/ingest/events")
+  async receiveIngestEvent(@Body() body: Record<string, unknown>) {
+    const rawPayload = body?.["payload"] ?? body;
+    const payload =
+      rawPayload !== null && typeof rawPayload === "object"
+        ? (rawPayload as Record<string, unknown>)
+        : ({ value: rawPayload } as Record<string, unknown>);
+    const eventId =
+      asOptionalString(body?.["eventId"]) ??
+      asOptionalString(payload?.["eventId"]);
+
+    if (!eventId) {
+      throw new BadRequestException(
+        "eventId is required for ingest projection"
+      );
+    }
+
+    if (!(await claimIngestEventId(eventId))) {
+      return { accepted: true, duplicate: true, eventId };
+    }
+
+    const event: IngestedEvent = {
+      receivedAt: Date.now(),
+      eventId,
+      source: asOptionalString(payload?.["source"]),
+      eventType: asOptionalString(payload?.["eventType"]),
+      traceId: asOptionalString(payload?.["traceId"]),
+      collectorRegion: asOptionalString(body?.["collectorRegion"]),
+      broker: asOptionalString(body?.["broker"]),
+      payload,
+    };
+
+    recordIngestEvent(event);
+    return {
+      accepted: true,
+      duplicate: false,
+      eventId,
+      receivedAt: event.receivedAt,
+    };
+  }
+
+  @Get("api/ingest/stream")
+  streamIngestEvents(@Req() req: Request, @Res() res: Response) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    sendSse(res, "connected", { ts: Date.now() });
+    ingestSseClients.add(res);
+
+    // Replay the buffer so a subscriber joining mid-stream sees recent events
+    // rather than an empty panel until the next one arrives.
+    for (const buffered of recentIngestEvents) {
+      sendSse(res, "ingest-event", buffered);
+    }
+
+    req.on("close", () => {
+      ingestSseClients.delete(res);
+    });
+  }
+
+  @Get("api/ingest/debug")
+  ingestDebug() {
+    return getIngestEventStats();
+  }
+
   @Get("api/lakehouse/metrics")
   async lakehouseMetrics(): Promise<LakehouseMetricsSummary> {
     return this.lakehouseMetricsService.getPublicEvidenceSummary({
@@ -1051,52 +1272,52 @@ export class AppController {
 
   private fallbackTopologyMetrics() {
     const topology = this.topologyPayload();
+
+    // Evidence-backed link metrics.
+    //
+    // The previous implementation derived `currentMBps` from the link's index in
+    // this array and set confidence to 92 or 74 depending on whether the edge
+    // touched a hardcoded infrastructure name. Both were fabrications rendered
+    // to operators as measurements.
+    //
+    // Now an edge only reports a number when a Prometheus series backs it. With
+    // no sample available here, every edge resolves to `declared` and reports
+    // null rather than a synthesized value.
     const links: Record<
       string,
       {
-        currentMBps: number;
+        currentMBps: number | null;
         maxMBps: number;
-        latencyMs: number;
-        errorRatePct: number;
-        confidencePct: number;
-        source: "admin" | "derived";
+        latencyMs: number | null;
+        errorRatePct: number | null;
+        confidencePct: number | null;
+        state: LinkEvidenceState;
+        measurementSource: string | null;
+        measuredAt: number | null;
+        source: LinkEvidenceState;
       }
     > = Object.fromEntries(
-      topology.links.map((link, index) => {
+      topology.links.map((link) => {
         const source = String(link.source);
         const target = String(link.target);
+        const key = edgeKey(source, target);
         const channels = Number(link.value ?? 1) || 1;
-        const maxMBps = channels * 1250;
-        const currentMBps = Number(
-          (maxMBps * (0.18 + ((index % 5) * 0.11 + channels * 0.03))).toFixed(2)
-        );
-        const provenance =
-          source === "prom" ||
-          target === "prom" ||
-          source === "grafana" ||
-          target === "grafana" ||
-          source === "alertmanager" ||
-          target === "alertmanager" ||
-          source === "redis" ||
-          target === "redis" ||
-          source === "rabbitmq" ||
-          target === "rabbitmq" ||
-          source === "pulsar" ||
-          target === "pulsar" ||
-          source === "kafka" ||
-          target === "kafka"
-            ? "admin"
-            : "derived";
+        const evidence = resolveLinkEvidence(key, this.readLinkSample(key));
 
         return [
-          `${source}->${target}`,
+          key,
           {
-            currentMBps,
-            maxMBps,
-            latencyMs: 8 + channels * 3,
-            errorRatePct: Number((channels * 0.02).toFixed(2)),
-            confidencePct: provenance === "admin" ? 92 : 74,
-            source: provenance,
+            currentMBps: evidence.throughputMBps,
+            // Capacity is configuration, not a measurement, so it stays.
+            maxMBps: channels * 1250,
+            latencyMs: null,
+            errorRatePct: null,
+            confidencePct: evidence.confidencePct,
+            state: evidence.state,
+            measurementSource: evidence.measurementSource,
+            measuredAt: evidence.measuredAt,
+            // Retained for existing consumers that read `source`.
+            source: evidence.state,
           },
         ];
       })
@@ -1476,6 +1697,78 @@ export class AppController {
     };
   }
 
+  /**
+   * Most recent Prometheus sample per edge.
+   *
+   * Populated by `refreshLinkSamples`. An edge absent from this map has no
+   * measurement and resolves to `declared` rather than a synthesized number.
+   */
+  private linkSamples = new Map<string, LinkSample>();
+
+  private readLinkSample(key: string): LinkSample | null {
+    return this.linkSamples.get(key) ?? null;
+  }
+
+  /** Guards against overlapping refreshes piling up behind a slow Prometheus. */
+  private linkSampleRefreshInFlight = false;
+  private linkSamplesRefreshedAt = 0;
+
+  /**
+   * Query Prometheus once per bound edge and cache the results.
+   *
+   * A failed or empty query deliberately leaves the edge absent from the cache,
+   * so an unreachable Prometheus degrades the graph to "No measurement" instead
+   * of reporting a stale or invented value.
+   *
+   * This must never be awaited on a request path. With no Prometheus reachable
+   * — E2E, CI, or a local stack without monitoring — awaiting twelve queries
+   * blocks the response until every one of them times out, which stalls the
+   * server rather than degrading the graph.
+   */
+  private refreshLinkSamplesInBackground(): void {
+    if (this.linkSampleRefreshInFlight) {
+      return;
+    }
+    // Serving cached samples between refreshes keeps the endpoint responsive;
+    // staleness is already represented by the evidence state.
+    if (Date.now() - this.linkSamplesRefreshedAt < 15_000) {
+      return;
+    }
+
+    this.linkSampleRefreshInFlight = true;
+    void this.refreshLinkSamples()
+      .catch(() => {
+        // Failure means no measurement, which the resolver already reports.
+      })
+      .finally(() => {
+        this.linkSampleRefreshInFlight = false;
+        this.linkSamplesRefreshedAt = Date.now();
+      });
+  }
+
+  private async refreshLinkSamples(): Promise<void> {
+    const entries = Object.entries(EDGE_QUERIES);
+
+    await Promise.all(
+      entries.map(async ([key, query]) => {
+        try {
+          const { value, available } = await this.readPrometheusScalar(query);
+          if (!available) {
+            this.linkSamples.delete(key);
+            return;
+          }
+          this.linkSamples.set(key, {
+            value,
+            timestamp: Date.now(),
+            series: EDGE_METRIC_BINDINGS[key] ?? query,
+          });
+        } catch {
+          this.linkSamples.delete(key);
+        }
+      })
+    );
+  }
+
   private topologyPayload(): { nodes: TopologyNode[]; links: TopologyLink[] } {
     return {
       nodes: [
@@ -1485,7 +1778,45 @@ export class AppController {
         { id: "java-ingest", label: "Java Ingest", group: "app" },
         { id: "data-generator", label: "Data Generator", group: "app" },
         { id: "kafka", label: "Kafka", group: "infra" },
-        { id: "pulsar", label: "Pulsar", group: "infra" },
+        { id: "pulsar", label: "Pulsar (core)", group: "infra" },
+        // Regional edge tier. Each region is an independent Pulsar cluster with
+        // a colocated collector, per ADR-006.
+        {
+          id: "pulsar-us",
+          label: "Pulsar (us-west)",
+          group: "edge",
+          region: "us-west",
+        },
+        {
+          id: "pulsar-eu",
+          label: "Pulsar (eu-central)",
+          group: "edge",
+          region: "eu-central",
+        },
+        {
+          id: "pulsar-apac",
+          label: "Pulsar (apac-southeast)",
+          group: "edge",
+          region: "apac-southeast",
+        },
+        {
+          id: "collector-us",
+          label: "Collector (us-west)",
+          group: "edge",
+          region: "us-west",
+        },
+        {
+          id: "collector-eu",
+          label: "Collector (eu-central)",
+          group: "edge",
+          region: "eu-central",
+        },
+        {
+          id: "collector-apac",
+          label: "Collector (apac-southeast)",
+          group: "edge",
+          region: "apac-southeast",
+        },
         { id: "rabbitmq", label: "RabbitMQ", group: "infra" },
         { id: "redis", label: "Redis", group: "infra" },
         { id: "minio", label: "MinIO", group: "infra" },
@@ -1500,32 +1831,63 @@ export class AppController {
         { id: "array-sba", label: "SBA (19 x 18m)", group: "ngvla" },
       ],
       links: [
-        { source: "frontend", target: "backend" },
-        { source: "frontend", target: "nginx" },
-        { source: "backend", target: "java-governance" },
-        { source: "backend", target: "redis" },
-        { source: "backend", target: "prom" },
-        { source: "data-generator", target: "pulsar" },
-        { source: "data-generator", target: "kafka" },
-        { source: "data-generator", target: "array-main" },
-        { source: "data-generator", target: "array-lbl" },
-        { source: "data-generator", target: "array-sba" },
-        { source: "pulsar", target: "kafka" },
-        { source: "pulsar", target: "java-governance" },
-        { source: "zookeeper", target: "kafka" },
-        { source: "rabbitmq", target: "java-governance" },
-        { source: "kafka", target: "java-governance" },
-        { source: "java-governance", target: "rabbitmq" },
-        { source: "java-governance", target: "kafka" },
-        { source: "java-governance", target: "minio" },
-        { source: "java-governance", target: "redis" },
-        { source: "kafka", target: "java-ingest" },
-        { source: "prom", target: "grafana" },
-        { source: "prom", target: "alertmanager" },
-        { source: "loki", target: "grafana" },
-        { source: "array-main", target: "minio", value: 3 },
-        { source: "array-lbl", target: "minio", value: 2 },
-        { source: "array-sba", target: "minio", value: 2 },
+        // Transport: generator -> regional Pulsar -> regional collector -> Kafka.
+        // There is deliberately no direct pulsar -> kafka edge; nothing in the
+        // code bridges them without a collector.
+        {
+          source: "data-generator",
+          target: "pulsar-us",
+          path: "transport",
+        },
+        {
+          source: "data-generator",
+          target: "pulsar-eu",
+          path: "transport",
+        },
+        {
+          source: "data-generator",
+          target: "pulsar-apac",
+          path: "transport",
+        },
+        { source: "pulsar-us", target: "collector-us", path: "transport" },
+        { source: "pulsar-eu", target: "collector-eu", path: "transport" },
+        { source: "pulsar-apac", target: "collector-apac", path: "transport" },
+        { source: "collector-us", target: "kafka", path: "transport" },
+        { source: "collector-eu", target: "kafka", path: "transport" },
+        { source: "collector-apac", target: "kafka", path: "transport" },
+
+        // Presentation: Kafka -> java-ingest -> server API -> SSE -> Angular.
+        { source: "kafka", target: "java-ingest", path: "presentation" },
+        { source: "java-ingest", target: "backend", path: "presentation" },
+        { source: "backend", target: "frontend", path: "presentation" },
+
+        // Governance/broker comparison fan-in. Parallel to the transport chain,
+        // never an inline hop within it.
+        { source: "pulsar", target: "java-governance", path: "governance" },
+        { source: "rabbitmq", target: "java-governance", path: "governance" },
+        { source: "kafka", target: "java-governance", path: "governance" },
+        { source: "java-governance", target: "rabbitmq", path: "governance" },
+        { source: "java-governance", target: "kafka", path: "governance" },
+
+        // Disk-derived stress telemetry, independent of the event path.
+        { source: "data-generator", target: "backend", path: "telemetry" },
+
+        { source: "frontend", target: "nginx", path: "infra" },
+        { source: "backend", target: "java-governance", path: "infra" },
+        { source: "backend", target: "redis", path: "infra" },
+        { source: "backend", target: "prom", path: "infra" },
+        { source: "data-generator", target: "array-main", path: "infra" },
+        { source: "data-generator", target: "array-lbl", path: "infra" },
+        { source: "data-generator", target: "array-sba", path: "infra" },
+        { source: "zookeeper", target: "kafka", path: "infra" },
+        { source: "java-governance", target: "minio", path: "infra" },
+        { source: "java-governance", target: "redis", path: "infra" },
+        { source: "prom", target: "grafana", path: "infra" },
+        { source: "prom", target: "alertmanager", path: "infra" },
+        { source: "loki", target: "grafana", path: "infra" },
+        { source: "array-main", target: "minio", value: 3, path: "infra" },
+        { source: "array-lbl", target: "minio", value: 2, path: "infra" },
+        { source: "array-sba", target: "minio", value: 2, path: "infra" },
       ],
     };
   }
@@ -1554,6 +1916,11 @@ export class AppController {
         .json(this.embeddedMockBackendService.embeddedTopologyMetrics());
       return;
     }
+
+    // Kick the refresh off without blocking the response. The request serves
+    // whatever samples are already cached; anything unmeasured resolves to
+    // "No measurement" rather than holding the connection open.
+    this.refreshLinkSamplesInBackground();
 
     const targetUrls = this.governanceUpstreamService
       .governanceBaseCandidates()
@@ -2874,7 +3241,8 @@ async function bootstrap() {
   const nestPort = process.env["PORT"] || process.env["FRONTEND_PORT"] || 3000;
   const runtimeLoad = app.get(RuntimeLoadProfileService);
   app.enableShutdownHooks();
-  // initialize optional Redis client used for caching VO samples
+  // initialize optional Redis client used for caching VO samples and durable
+  // ingest idempotency claims when Redis is available.
   await initRedisClient();
   await app.listen(nestPort);
   console.log("Nest SSR server listening on", nestPort);

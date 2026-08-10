@@ -9,13 +9,34 @@ export interface TopologyNodeDialogData {
   description?: string;
 }
 
+/** Evidence state for one link. Mirrors the server-side resolver. */
+export type TopologyLinkEvidenceState =
+  | "measured"
+  | "stale"
+  | "derived"
+  | "declared"
+  | "mock";
+
 export interface TopologyLinkStats {
   throughput?: number | string; // MB/s or human-readable
   throughputPct?: string; // e.g. "82%"
-  latencyMs?: number;
+  latencyMs?: number | null;
   errorRate?: number | string; // percentage or fraction or string
-  confidencePct?: number;
-  source?: "prometheus" | "admin" | "derived" | "mock" | "unavailable";
+  /** Null/absent means nothing measured this link. Never defaulted to a grade. */
+  confidencePct?: number | null;
+  state?: TopologyLinkEvidenceState;
+  /** Prometheus series backing the value, so a reader can verify it. */
+  measurementSource?: string | null;
+  measuredAt?: number | null;
+  source?:
+    | "prometheus"
+    | "admin"
+    | "derived"
+    | "mock"
+    | "unavailable"
+    | "declared"
+    | "measured"
+    | "stale";
   measurementPath?: string;
 }
 
@@ -84,15 +105,62 @@ export class TopologyInfoDialogComponent {
     }
   }
 
+  /**
+   * Evidence state drives the label, not the number.
+   *
+   * A missing confidence value means nothing measured this link, and that is
+   * reported as absence. It must never fall through to a confidence grade.
+   */
   confidenceLabel(): string {
     if (this.data.type !== "link") return "";
+
+    const state = this.data.stats?.state;
+    if (state === "declared") return "No measurement";
+    if (state === "mock") return "Mock data";
+    if (state === "stale") return "Stale measurement";
+    if (state === "derived") return "Derived measurement";
+
     const score = Number(this.data.stats?.confidencePct ?? NaN);
-    if (!Number.isFinite(score)) return "Unknown";
-    if (score >= 90) return "High confidence";
-    if (score >= 70) return "Good confidence";
-    if (score >= 40) return "Moderate confidence";
-    if (score > 0) return "Low confidence";
-    return "Unavailable";
+    if (!Number.isFinite(score)) return "No measurement";
+    if (score >= 90) return "Measured";
+    if (score >= 70) return "Derived measurement";
+    if (score >= 40) return "Stale measurement";
+    return "No measurement";
+  }
+
+  /** The Prometheus series behind the number, so a reader can verify it. */
+  measurementSourceLabel(): string {
+    if (this.data.type !== "link") return "";
+    return this.data.stats?.measurementSource ?? "none";
+  }
+
+  /**
+   * A percentage is only shown when a real measurement backs it.
+   *
+   * The null check is explicit because `Number(null)` is 0, which is finite —
+   * coercing here would render an absent confidence as "(0%)".
+   */
+  hasConfidenceScore(): boolean {
+    if (this.data.type !== "link") return false;
+    const value = this.data.stats?.confidencePct;
+    return typeof value === "number" && Number.isFinite(value);
+  }
+
+  /** How old the measurement is, so a stale value cannot read as current. */
+  measurementAgeLabel(): string {
+    if (this.data.type !== "link") return "";
+
+    const measuredAt = this.data.stats?.measuredAt;
+    if (typeof measuredAt !== "number" || !Number.isFinite(measuredAt)) {
+      return "";
+    }
+
+    const ageSeconds = Math.max(
+      0,
+      Math.round((Date.now() - measuredAt) / 1000)
+    );
+    if (ageSeconds < 60) return `${ageSeconds}s ago`;
+    return `${Math.round(ageSeconds / 60)}m ago`;
   }
 
   measurementPathLabel(): string {
