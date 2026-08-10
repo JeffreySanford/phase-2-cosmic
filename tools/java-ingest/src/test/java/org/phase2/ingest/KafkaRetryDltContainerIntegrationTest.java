@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -94,7 +95,10 @@ class KafkaRetryDltContainerIntegrationTest {
 
             await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
                 var records = consumer.poll(Duration.ofSeconds(1));
-                var matching = records.records("phase2-events.forward-dlt").stream()
+                var matching = StreamSupport.stream(
+                                records.records("phase2-events.forward-dlt").spliterator(),
+                                false
+                        )
                         .filter(record -> eventId.equals(header(record.headers().lastHeader("event-id"))))
                         .findFirst();
                 assertThat(matching).as("original event should reach forward DLT").isPresent();
