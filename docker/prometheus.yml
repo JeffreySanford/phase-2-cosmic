@@ -11,6 +11,23 @@ scrape_configs:
     static_configs:
       - targets: ["docker-data-generator-1:9100"]
 
+  # Regional collector tier. Each collector exports
+  # collector_messages_forwarded_total{region=...}, which the topology view's
+  # per-edge PromQL depends on. Without these jobs that series never exists, so
+  # every Pulsar->collector->Kafka edge reports "No measurement" regardless of
+  # how much traffic actually flows through it.
+  #
+  # These run in the separate "geo" compose project and are reachable by service
+  # name because that project joins the same external docker_default network.
+  # When the geo profile is not running the targets are simply down, and the
+  # topology view degrades to "No measurement" as designed.
+  - job_name: "pulsar-collector"
+    static_configs:
+      - targets:
+          - "collector-us:9110"
+          - "collector-eu:9110"
+          - "collector-apac:9110"
+
   - job_name: "java-ingest"
     metrics_path: "/actuator/prometheus"
     static_configs:

@@ -311,9 +311,45 @@ Metric bindings per edge (all already scraped, so no new exporters are required)
       and per-region edges sharing a series are separated by `region` label.
 - [x] Degrade to "No measurement" when Prometheus is unreachable or a query
       returns nothing, rather than serving a stale or invented value.
-- [ ] Confirm measured values against a running geo stack; the query path is
-      implemented and unit-tested but has not yet been observed returning live
-      samples end to end.
+- [x] Scrape the collector tier. The collectors already exported
+      `collector_messages_forwarded_total{region=...}` on `:9110`, but
+      `docker/prometheus.yml` had no job for them, so the series the per-edge
+      PromQL depends on never existed. Adding the `pulsar-collector` job makes
+      all three regions present and incrementing.
+- [ ] Confirm measured values reach the topology view against a running geo
+      stack. **Blocked on the layering below, not on the query path.** The query
+      path itself is now confirmed working up to Prometheus: with the geo stack
+      running, `collector_messages_forwarded_total` reports `us-west`,
+      `eu-central`, and `apac-southeast` with live counts, and all three scrape
+      targets report `up`.
+
+      What is not confirmed — and cannot be, as currently wired — is those
+      samples reaching the UI. `GET /api/metrics/topology` proxies to Java
+      Governance and only calls `fallbackTopologyMetrics()` (the one place
+      `resolveLinkEvidence` runs) when the upstream returns a **non-OK status**.
+      Neither normal state reaches it:
+
+      | java-governance | payload served | evidence path runs |
+      | --------------- | -------------- | ------------------ |
+      | healthy | governance-registry links | no |
+      | unreachable | synthetic `warming` stub, `links: {}` | no |
+      | non-OK status | `fallbackTopologyMetrics()` | yes |
+
+      The unreachable case is the surprising one: `fetchWithFallback` answers a
+      failed topology read with a synthetic **200** carrying `source: "warming"`
+      and no links, so the proxy treats it as a successful upstream response and
+      passes it straight through. Observed directly — stopping
+      `docker-java-governance-1` yields `source: warming, links: 0`, never the
+      evidence-backed payload.
+
+      So the Prometheus-backed measurement, confidence, and freshness semantics
+      built in 3b/3c are only reachable through a narrow error window, and are
+      not what an operator normally sees. Closing this box requires deciding
+      where the evidence belongs: either the governance registry carries the
+      per-region collector edges, or the SSR evidence payload becomes the
+      primary source for these links rather than a fallback. That is a design
+      decision, not a verification step, and is deliberately left open here
+      rather than marked done.
 
 #### 3c. Confidence semantics
 
