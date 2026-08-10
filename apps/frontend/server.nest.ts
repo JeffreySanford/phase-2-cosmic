@@ -1709,13 +1709,43 @@ export class AppController {
     return this.linkSamples.get(key) ?? null;
   }
 
+  /** Guards against overlapping refreshes piling up behind a slow Prometheus. */
+  private linkSampleRefreshInFlight = false;
+  private linkSamplesRefreshedAt = 0;
+
   /**
    * Query Prometheus once per bound edge and cache the results.
    *
    * A failed or empty query deliberately leaves the edge absent from the cache,
    * so an unreachable Prometheus degrades the graph to "No measurement" instead
    * of reporting a stale or invented value.
+   *
+   * This must never be awaited on a request path. With no Prometheus reachable
+   * — E2E, CI, or a local stack without monitoring — awaiting twelve queries
+   * blocks the response until every one of them times out, which stalls the
+   * server rather than degrading the graph.
    */
+  private refreshLinkSamplesInBackground(): void {
+    if (this.linkSampleRefreshInFlight) {
+      return;
+    }
+    // Serving cached samples between refreshes keeps the endpoint responsive;
+    // staleness is already represented by the evidence state.
+    if (Date.now() - this.linkSamplesRefreshedAt < 15_000) {
+      return;
+    }
+
+    this.linkSampleRefreshInFlight = true;
+    void this.refreshLinkSamples()
+      .catch(() => {
+        // Failure means no measurement, which the resolver already reports.
+      })
+      .finally(() => {
+        this.linkSampleRefreshInFlight = false;
+        this.linkSamplesRefreshedAt = Date.now();
+      });
+  }
+
   private async refreshLinkSamples(): Promise<void> {
     const entries = Object.entries(EDGE_QUERIES);
 
@@ -1887,9 +1917,10 @@ export class AppController {
       return;
     }
 
-    // Refresh measurements before resolving link evidence, so a link reports a
-    // real value when Prometheus has one and "No measurement" when it does not.
-    await this.refreshLinkSamples();
+    // Kick the refresh off without blocking the response. The request serves
+    // whatever samples are already cached; anything unmeasured resolves to
+    // "No measurement" rather than holding the connection open.
+    this.refreshLinkSamplesInBackground();
 
     const targetUrls = this.governanceUpstreamService
       .governanceBaseCandidates()
