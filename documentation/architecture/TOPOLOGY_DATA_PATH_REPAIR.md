@@ -272,10 +272,14 @@ Metric bindings per edge (all already scraped, so no new exporters are required)
 - [x] Delete the `provenance === "admin" ? 92 : 74` name-list rule outright.
 - [x] Replace the constant client fallback (`mock ? 24 : 48`); it now reports no
       confidence and a `declared` state.
-- [ ] Wire the actual Prometheus query into `readLinkSample`, which currently
-      returns `null` for every edge. **Until this lands, every link honestly
-      reports `declared` / "No measurement" rather than a fabricated number, but
-      no link reports a real measurement either.**
+- [x] Wire the actual Prometheus query. `EDGE_QUERIES` holds PromQL per edge,
+      `refreshLinkSamples` queries them before the topology metrics response,
+      and per-region edges sharing a series are separated by `region` label.
+- [x] Degrade to "No measurement" when Prometheus is unreachable or a query
+      returns nothing, rather than serving a stale or invented value.
+- [ ] Confirm measured values against a running geo stack; the query path is
+      implemented and unit-tested but has not yet been observed returning live
+      samples end to end.
 
 #### 3c. Confidence semantics
 

@@ -1,6 +1,7 @@
 import {
   DEFAULT_FRESHNESS_WINDOW_MS,
   EDGE_METRIC_BINDINGS,
+  EDGE_QUERIES,
   confidenceLabel,
   edgeKey,
   hasMetricBinding,
@@ -135,6 +136,25 @@ describe("topology link evidence", () => {
 
     it("builds a stable edge key", () => {
       expect(edgeKey("collector-us", "kafka")).toBe("collector-us->kafka");
+    });
+
+    it("gives every bound edge a PromQL query", () => {
+      // A binding without a query would resolve to declared forever, which
+      // looks like an honest "unmeasured" while actually being a wiring gap.
+      for (const key of Object.keys(EDGE_METRIC_BINDINGS)) {
+        expect(EDGE_QUERIES[key]).toBeTruthy();
+      }
+    });
+
+    it("separates per-region edges that share one series by label", () => {
+      // All three collectors export collector_messages_forwarded_total, so the
+      // query must filter by region or every region would report the same value.
+      const us = EDGE_QUERIES["collector-us->kafka"];
+      const eu = EDGE_QUERIES["collector-eu->kafka"];
+
+      expect(us).toContain('region="us-west"');
+      expect(eu).toContain('region="eu-central"');
+      expect(us).not.toBe(eu);
     });
   });
 });

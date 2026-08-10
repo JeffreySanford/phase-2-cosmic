@@ -58,6 +58,37 @@ export const EDGE_METRIC_BINDINGS: Readonly<Record<string, string>> = {
   "backend->frontend": "frontend_ingest_events_received_total",
 };
 
+/**
+ * PromQL per edge.
+ *
+ * Several edges share a series and are separated by label, so the query — not
+ * the bare series name — is what actually distinguishes a region's throughput.
+ * Rates are per-second over a 1-minute window.
+ */
+export const EDGE_QUERIES: Readonly<Record<string, string>> = {
+  "data-generator->pulsar-us":
+    'rate(generator_bytes_produced_total{array_segment="main"}[1m])',
+  "data-generator->pulsar-eu":
+    'rate(generator_bytes_produced_total{array_segment="lbl"}[1m])',
+  "data-generator->pulsar-apac":
+    'rate(generator_bytes_produced_total{array_segment="sba"}[1m])',
+  "pulsar-us->collector-us":
+    'rate(collector_messages_forwarded_total{region="us-west"}[1m])',
+  "pulsar-eu->collector-eu":
+    'rate(collector_messages_forwarded_total{region="eu-central"}[1m])',
+  "pulsar-apac->collector-apac":
+    'rate(collector_messages_forwarded_total{region="apac-southeast"}[1m])',
+  "collector-us->kafka":
+    'rate(collector_messages_forwarded_total{region="us-west"}[1m])',
+  "collector-eu->kafka":
+    'rate(collector_messages_forwarded_total{region="eu-central"}[1m])',
+  "collector-apac->kafka":
+    'rate(collector_messages_forwarded_total{region="apac-southeast"}[1m])',
+  "kafka->java-ingest": "rate(java_ingest_received_total[1m])",
+  "java-ingest->backend": "rate(java_ingest_forwarded_total[1m])",
+  "backend->frontend": "rate(frontend_ingest_events_received_total[1m])",
+};
+
 /** A measurement older than this is reported as stale rather than current. */
 export const DEFAULT_FRESHNESS_WINDOW_MS = 60_000;
 

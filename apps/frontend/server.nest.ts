@@ -35,6 +35,8 @@ import {
   type LakehouseMetricsSummary,
 } from "./src/server/lakehouse/lakehouse-metrics.service";
 import {
+  EDGE_METRIC_BINDINGS,
+  EDGE_QUERIES,
   edgeKey,
   resolveLinkEvidence,
   type LinkEvidenceState,
@@ -1696,14 +1698,45 @@ export class AppController {
   }
 
   /**
-   * Prometheus sample for one edge.
+   * Most recent Prometheus sample per edge.
    *
-   * Returns null until the Prometheus query path is wired, which keeps every
-   * edge honestly `declared` instead of reporting an invented number. This is
-   * the single seam where real samples get injected.
+   * Populated by `refreshLinkSamples`. An edge absent from this map has no
+   * measurement and resolves to `declared` rather than a synthesized number.
    */
-  private readLinkSample(_key: string): LinkSample | null {
-    return null;
+  private linkSamples = new Map<string, LinkSample>();
+
+  private readLinkSample(key: string): LinkSample | null {
+    return this.linkSamples.get(key) ?? null;
+  }
+
+  /**
+   * Query Prometheus once per bound edge and cache the results.
+   *
+   * A failed or empty query deliberately leaves the edge absent from the cache,
+   * so an unreachable Prometheus degrades the graph to "No measurement" instead
+   * of reporting a stale or invented value.
+   */
+  private async refreshLinkSamples(): Promise<void> {
+    const entries = Object.entries(EDGE_QUERIES);
+
+    await Promise.all(
+      entries.map(async ([key, query]) => {
+        try {
+          const { value, available } = await this.readPrometheusScalar(query);
+          if (!available) {
+            this.linkSamples.delete(key);
+            return;
+          }
+          this.linkSamples.set(key, {
+            value,
+            timestamp: Date.now(),
+            series: EDGE_METRIC_BINDINGS[key] ?? query,
+          });
+        } catch {
+          this.linkSamples.delete(key);
+        }
+      })
+    );
   }
 
   private topologyPayload(): { nodes: TopologyNode[]; links: TopologyLink[] } {
@@ -1853,6 +1886,10 @@ export class AppController {
         .json(this.embeddedMockBackendService.embeddedTopologyMetrics());
       return;
     }
+
+    // Refresh measurements before resolving link evidence, so a link reports a
+    // real value when Prometheus has one and "No measurement" when it does not.
+    await this.refreshLinkSamples();
 
     const targetUrls = this.governanceUpstreamService
       .governanceBaseCandidates()
