@@ -45,7 +45,16 @@ let exitCode = 0;
 
 const children = commands.map((command, index) => {
   const label = labelFor(index);
-  const child = spawn(command, { shell: true, stdio: ["ignore", "pipe", "pipe"] });
+  // Spawned without a shell: `shell: true` would run these strings through the
+  // system shell, inheriting its settings and giving shell metacharacters
+  // meaning. Nothing here needs that — every command starts with `node`, which
+  // resolves without a shell on every platform, and cross-env handles resolving
+  // pnpm/nx from there. Commands are therefore plain whitespace-separated argv
+  // and must not rely on quoting, globs, pipes, or redirection.
+  const [executable, ...args] = command.trim().split(/\s+/);
+  const child = spawn(executable, args, {
+    stdio: ["ignore", "pipe", "pipe"],
+  });
 
   const forward = (stream, sink) => {
     stream.on("data", (chunk) => {
