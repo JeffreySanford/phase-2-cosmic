@@ -21,6 +21,21 @@
 # workable on a developer workstation. Production intent is a full cluster per
 # region; standalone here models cluster independence, not production topology.
 
+# Run this as its OWN compose project, attached to the shared network:
+#
+#   docker compose -p phase2-geo -f docker/geo-collectors-compose.yml \
+#     --profile geo up -d
+#
+# Do NOT merge it into the `docker` project alongside dev-compose.yml.
+# `start:all` runs `docker compose up` without this file, and Compose then
+# treats every geo service as an orphan of that project and deletes it —
+# silently removing the regional generators mid-run. A separate project name
+# makes the geo tier immune to that.
+networks:
+  default:
+    name: docker_default
+    external: true
+
 services:
   # --- Regional Pulsar edge clusters -------------------------------------
   pulsar-us:

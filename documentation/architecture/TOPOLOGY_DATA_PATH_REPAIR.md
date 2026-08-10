@@ -228,7 +228,41 @@ this table is the reviewer's map of what is finished versus in flight.
 - [x] Add Kafka/Testcontainers proof for validation quarantine.
 - [x] Add Kafka/Testcontainers proof for retry-topic bootstrap and terminal `.forward-dlt` delivery.
 - [x] Add browser runtime acceptance probe: `node scripts/verify-ingest-e2e.mjs`.
-- [~] Execute the runtime probe against the full geo compose stack and retain one passing Angular-observed event as PR evidence before merge.
+- [x] Execute the runtime probe against the full geo compose stack and retain one passing Angular-observed event as PR evidence before merge.
+
+  Passing run, 2026-08-10:
+
+  ```json
+  {
+    "result": "PASS",
+    "observedAt": "Angular",
+    "eventId": "3e28716d-6b92-4ea2-af7b-b1a7090cfc55",
+    "region": "us-west",
+    "source": "sba",
+    "broker": "kafka"
+  }
+  ```
+
+  The acceptance invariant holds end to end: a generator-created `eventId`
+  survived Pulsar, the regional collector, Kafka, `java-ingest`, the frontend
+  API, and SSE into the hydrated Angular application, with `source` preserved as
+  payload data rather than overwritten by the collector region.
+
+  Three real defects had to be fixed to get here, none of them visible to the
+  unit suites:
+
+  1. `java-ingest` never started. `@EnableKafkaRetryTopic` requires a
+     `TaskScheduler`; without one the Spring context failed to build.
+  2. `start:all` deleted the geo containers. It runs `docker compose up` without
+     the geo file, so Compose treated every geo service as an orphan of the
+     `docker` project and removed it mid-run. The geo tier now runs under its own
+     compose project name.
+  3. The collector and generator images predated the event-identity commits, so
+     every record was correctly quarantined as `missing_event_id` — 4207 of them.
+     The validation-DLT path worked exactly as designed; the images were stale.
+
+  Rebuild both Go images whenever the event contract changes, or the quarantine
+  path will silently absorb every record.
 
 ### Stage 3 — honest topology visualization
 
