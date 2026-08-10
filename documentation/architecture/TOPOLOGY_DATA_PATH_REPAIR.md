@@ -18,6 +18,10 @@ The topology visualization asserted links the code did not implement and present
 6. The repaired path had no immutable event identity, duplicate contract, or durable Java-to-frontend failure path.
 7. Broker roles were ambiguous enough that RabbitMQ could be misread as an inline hop instead of a parallel control/governance path.
 8. The lakehouse boundary was not explicitly separated from the operational broker topology.
+9. A duplicate could repeat the frontend SSE side effect if Java retried after the API had already accepted the event.
+10. Invalid records and transient frontend outages shared no explicit failure-domain separation.
+11. Forwarding could be enabled without a usable endpoint and silently degrade into a non-forwarding consumer.
+12. Retry/DLT behavior existed as annotation intent but lacked a real Kafka-backed proof that the retry listener topology actually bootstrapped and delivered to the DLT.
 
 ## Accepted architectural decision
 
@@ -83,7 +87,8 @@ Every repaired-path event has one immutable identity:
    - `collector-kafka-topic`
 4. `java-ingest` reads those headers and projects them into the frontend envelope.
 5. For structured JSON payloads, `java-ingest` also adds `eventId` to the projected payload so SSE/Angular consumers do not depend on Kafka headers.
-6. `source` remains source payload data and must not be replaced by collector region.
+6. The frontend ingest API requires `eventId` before it can perform the SSE side effect and suppresses repeated accepted identity at that boundary.
+7. `source` remains source payload data and must not be replaced by collector region.
 
 The acceptance invariant is:
 
@@ -102,6 +107,7 @@ Generator -> Pulsar -> Collector -> Kafka -> Java -> API -> SSE -> Angular
 ### Pulsar -> collector -> Kafka
 
 - Semantics: **at-least-once**.
+- Collector subscriptions start at the earliest retained position when first created so collector startup order cannot silently discard retained regional events.
 - Collector ACKs Pulsar only after Kafka accepts the message.
 - Kafka-forward failure causes Pulsar negative-ack/redelivery.
 - A crash around the Kafka-success/Pulsar-ACK boundary may create a duplicate Kafka record; that is expected at-least-once behavior.
@@ -109,17 +115,43 @@ Generator -> Pulsar -> Collector -> Kafka -> Java -> API -> SSE -> Angular
 ### Kafka -> java-ingest -> frontend API
 
 - Kafka remains the durable system of record.
+- Forwarding defaults to enabled and **fails application startup** when `ingest.forward.url` is empty. Kafka-only/metrics mode must be selected explicitly with `ingest.forward.enabled=false`.
 - HTTP forwarding is bounded by timeout.
-- Forward failures are thrown into **non-blocking Kafka retry topics** so the main consumer partition is not held by an unavailable frontend API.
+- Transient forward failures are thrown into **non-blocking Kafka retry topics** so the main consumer partition is not held by an unavailable frontend API.
 - Retry exhaustion terminates in a dedicated `.forward-dlt` topic.
+- `@EnableKafkaRetryTopic` activates the retry topology and the listener explicitly names the Boot-managed `kafkaTemplate`.
 - DLT delivery is measured with `java_ingest_forward_dlt_total`.
+
+### Invalid data -> validation DLT
+
+Invalid data does not spend transient HTTP retry attempts:
+
+```text
+Kafka record
+  -> java-ingest validation
+    -> invalid
+      -> phase2-events.validation-dlt
+```
+
+Current repaired-path minimum contract rejects/quarantines:
+
+- missing/blank payload -> `missing_payload`
+- missing/blank immutable `event-id` -> `missing_event_id`
+
+The quarantine copy preserves the original key/value and transport headers and adds:
+
+- `validation-reason`
+- `validation-original-topic`
+
+`java_ingest_validation_dlt_total` measures successful validation quarantine. A validation-DLT publish failure is thrown rather than acknowledging away the source record.
 
 ### Duplicate handling
 
 - `eventId` is the canonical idempotency key.
-- `java-ingest` keeps a bounded process-local delivered-ID cache and suppresses duplicates after a successful frontend projection.
+- `java-ingest` keeps a bounded process-local delivered-ID cache and suppresses common bridge/retry duplicates after a successful frontend projection.
+- The frontend `/api/ingest/events` boundary requires `eventId` and suppresses duplicate API deliveries before repeating the SSE side effect; `frontend_ingest_duplicates_suppressed_total` exposes that behavior.
 - Angular also suppresses replay duplicates by `eventId` within its bounded presentation history.
-- This is **not global exactly-once**. A service restart can clear process-local dedupe state; durable downstream stores must remain replay-safe/idempotent by `eventId`.
+- This is **not global exactly-once**. Kafka remains the durable replay source, bounded caches/leases remain implementation aids, and durable downstream stores must remain replay-safe/idempotent by `eventId`.
 
 ## Confidence contract
 
@@ -150,8 +182,10 @@ Rules:
 - [x] Build `pulsar-collector` and negative-ack failed Kafka forwards.
 - [x] Preserve regional attribution without rewriting the payload.
 - [x] Add immutable generator `event-id` and propagate it to Kafka unchanged.
+- [x] Start new collector subscriptions from the earliest retained position.
 - [x] Add collector unit/static-analysis coverage.
-- [~] Run collector integration coverage inside the compose network. The test exists and validates payload fidelity, region, event ID, Pulsar message ID, and canonical Kafka topic; host execution remains blocked by Kafka's advertised in-network listener.
+- [x] Make the collector lifecycle context-injectable so integration tests shut down deterministically.
+- [x] Make collector integration coverage deterministic with unique Pulsar/Kafka topics and host Kafka listener `localhost:9094`.
 - [x] Manually prove a regional generator -> Pulsar -> collector -> Kafka chain.
 - [x] Wire three independent Pulsar clusters and three collectors through the opt-in geo compose profile.
 
@@ -161,11 +195,17 @@ Rules:
 - [x] Add event-backed SSE channel `/api/ingest/stream` with bounded replay buffer.
 - [x] Preserve `eventId`, collector region, Pulsar message ID, source, and canonical Kafka topic through Java projection.
 - [x] Replace best-effort-only forwarding with Kafka retry-topic -> DLT semantics after bounded HTTP attempts.
+- [x] Explicitly enable Spring Kafka retry-topic infrastructure and bind it to `kafkaTemplate`.
+- [x] Fail startup when forwarding is enabled without a forwarding URL.
+- [x] Add a distinct validation DLT so poison records bypass transient HTTP retries.
 - [x] Add process-local duplicate suppression in `java-ingest` keyed by immutable `eventId`.
+- [x] Enforce `eventId` idempotency at the frontend API side-effect boundary before duplicate SSE broadcast.
 - [x] Add Angular `IngestEventStreamService` for the dedicated repaired ingest SSE contract and presentation replay dedupe.
 - [x] Activate `IngestEventStreamService` from the root Angular application so the browser subscribes after hydration.
 - [x] Add a hidden Angular acceptance marker populated only after the browser consumes a repaired-path event.
 - [x] Add cross-layer contract tests for identity/provenance preservation.
+- [x] Add Kafka/Testcontainers proof for validation quarantine.
+- [x] Add Kafka/Testcontainers proof for retry-topic bootstrap and terminal `.forward-dlt` delivery.
 - [x] Add browser runtime acceptance probe: `node scripts/verify-ingest-e2e.mjs`.
 - [~] Execute the runtime probe against the full geo compose stack and retain one passing Angular-observed event as PR evidence before merge.
 
@@ -183,7 +223,7 @@ Rules:
 ### Stage 4 — documentation alignment
 
 - [x] `documentation/architecture/ARCHITECTURE.md` — canonical three-path architecture and reliability contract.
-- [x] `documentation/architecture/DECISIONS.md` — ADR-006 broker roles, event identity, retry/DLT, dedupe, and lakehouse boundary.
+- [x] `documentation/architecture/DECISIONS.md` — ADR-006 broker roles, event identity, fail-closed config, split DLTs, retry proof, dedupe, and lakehouse boundary.
 - [x] `documentation/architecture/TOPOLOGY_DATA_PATH_REPAIR.md` — implementation/evidence source of truth.
 - [x] `documentation/BROKER_SAFETY_RUNBOOK.md` — repaired-path retry/DLT/replay rules.
 - [x] `documentation/development/coding-standards/07-messaging.md` — broker roles and event identity rules.
@@ -193,6 +233,21 @@ Rules:
 - [ ] `documentation/data/DATA_ARCHITECTURE.md` — broader ngVLA lifecycle cleanup; current document contains older three-broker ingest wording and should be updated as a follow-on docs-only cleanup rather than silently rewritten inside the PR41 lakehouse proof.
 - [ ] `ROADMAP.md` — roll collector tier into phase planning after PR41 acceptance evidence is captured.
 - [x] PR41 description — expanded scope, decision, reliability semantics, acceptance evidence, and remaining boundary.
+
+## Reliability integration proofs
+
+Run the Java container-backed reliability tests with:
+
+```bash
+pnpm run test:java:ingest:it
+```
+
+The PR41 reliability gate now includes two distinct Kafka-backed proofs:
+
+1. invalid record -> `phase2-events.validation-dlt`, preserving identity and reason;
+2. valid record + unreachable frontend -> Spring retry-topic listener topology -> `.forward-dlt`.
+
+These are separate because poison data and transient dependency outages require different operator actions.
 
 ## Runtime acceptance probe
 
@@ -223,4 +278,4 @@ A passing browser-observed event is the PR41 acceptance artifact for the transpo
 
 The transport and reliability code can be implemented without claiming the topology visualization is already evidence-backed. Until Stage 3 lands, synthetic confidence/throughput in the existing visualization remains a known defect and must not be cited as measured architecture evidence.
 
-Likewise, the browser runtime acceptance probe is committed but is not considered executed evidence until a passing full-stack run is captured. The Lakehouse PR41 MVP remains a local reference proof; production Spark/Databricks streaming remains later scope.
+Likewise, the browser runtime acceptance probe and Kafka-backed reliability tests are committed but must not be described as passing runtime evidence until the associated executions are green. The Lakehouse PR41 MVP remains a local reference proof; production Spark/Databricks streaming remains later scope.
