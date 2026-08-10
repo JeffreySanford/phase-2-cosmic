@@ -57,10 +57,11 @@ describe("ingest event channel", () => {
     resetIngestEventsForTest();
   });
 
-  it("accepts a forwarded event and preserves event identity, region, and source", () => {
+  it("accepts a forwarded event and preserves event identity, region, and source", async () => {
     const controller = makeController();
 
-    const result = controller.receiveIngestEvent({
+    const result = await controller.receiveIngestEvent({
+      eventId: "event-001",
       broker: "kafka",
       collectorRegion: "us-west",
       payload: {
@@ -72,9 +73,12 @@ describe("ingest event channel", () => {
     });
 
     expect(result.accepted).toBe(true);
+    expect(result.duplicate).toBe(false);
 
     const stats = getIngestEventStats();
     expect(stats.received).toBe(1);
+    expect(stats.duplicatesSuppressed).toBe(0);
+    expect(stats.latest?.eventId).toBe("event-001");
     expect(stats.latest?.traceId).toBe("trace-001");
     expect(stats.latest?.source).toBe("main");
     expect(stats.latest?.collectorRegion).toBe("us-west");
@@ -84,7 +88,7 @@ describe("ingest event channel", () => {
     ).toBe("event-001");
   });
 
-  it("broadcasts an event to a subscribed SSE client", () => {
+  it("suppresses a duplicate eventId before repeating the SSE side effect", async () => {
     const controller = makeController();
     const { res, written } = makeSseResponse();
     const { req } = makeReq();
@@ -92,9 +96,47 @@ describe("ingest event channel", () => {
     controller.streamIngestEvents(req, res);
     written.length = 0;
 
-    controller.receiveIngestEvent({
+    const body = {
+      eventId: "event-idempotent",
       broker: "kafka",
-      payload: { eventId: "event-002", source: "lbl", traceId: "trace-002" },
+      collectorRegion: "us-west",
+      payload: {
+        eventId: "event-idempotent",
+        source: "main",
+        traceId: "trace-idempotent",
+      },
+    };
+
+    const first = await controller.receiveIngestEvent(body);
+    const second = await controller.receiveIngestEvent(body);
+
+    expect(first).toMatchObject({ accepted: true, duplicate: false });
+    expect(second).toMatchObject({
+      accepted: true,
+      duplicate: true,
+      eventId: "event-idempotent",
+    });
+    expect(getIngestEventStats().received).toBe(1);
+    expect(getIngestEventStats().duplicatesSuppressed).toBe(1);
+    expect(written.join("").match(/event: ingest-event/g)).toHaveLength(1);
+  });
+
+  it("broadcasts an event to a subscribed SSE client", async () => {
+    const controller = makeController();
+    const { res, written } = makeSseResponse();
+    const { req } = makeReq();
+
+    controller.streamIngestEvents(req, res);
+    written.length = 0;
+
+    await controller.receiveIngestEvent({
+      eventId: "event-002",
+      broker: "kafka",
+      payload: {
+        eventId: "event-002",
+        source: "lbl",
+        traceId: "trace-002",
+      },
     });
 
     const body = written.join("");
@@ -103,12 +145,17 @@ describe("ingest event channel", () => {
     expect(body).toContain("trace-002");
   });
 
-  it("replays buffered events to a client that joins mid-stream", () => {
+  it("replays buffered events to a client that joins mid-stream", async () => {
     const controller = makeController();
 
-    controller.receiveIngestEvent({
+    await controller.receiveIngestEvent({
+      eventId: "event-early",
       broker: "kafka",
-      payload: { traceId: "trace-early" },
+      payload: {
+        eventId: "event-early",
+        source: "main",
+        traceId: "trace-early",
+      },
     });
 
     const { res, written } = makeSseResponse();
@@ -130,12 +177,17 @@ describe("ingest event channel", () => {
     expect(getIngestEventStats().clientCount).toBe(0);
   });
 
-  it("ignores non-string attribution fields rather than coercing them", () => {
+  it("ignores non-string attribution fields rather than coercing them", async () => {
     const controller = makeController();
 
-    controller.receiveIngestEvent({
+    await controller.receiveIngestEvent({
+      eventId: "event-types",
       broker: 42 as unknown as string,
-      payload: { traceId: { nested: true } },
+      payload: {
+        eventId: "event-types",
+        source: "main",
+        traceId: { nested: true },
+      },
     });
 
     const latest = getIngestEventStats().latest;
@@ -143,11 +195,19 @@ describe("ingest event channel", () => {
     expect(latest?.traceId).toBeUndefined();
   });
 
-  it("bounds the replay buffer so history cannot grow without limit", () => {
+  it("bounds the replay buffer so history cannot grow without limit", async () => {
     const controller = makeController();
 
     for (let i = 0; i < 60; i += 1) {
-      controller.receiveIngestEvent({ payload: { traceId: `trace-${i}` } });
+      await controller.receiveIngestEvent({
+        eventId: `event-${i}`,
+        broker: "kafka",
+        payload: {
+          eventId: `event-${i}`,
+          source: "main",
+          traceId: `trace-${i}`,
+        },
+      });
     }
 
     const stats = getIngestEventStats();
