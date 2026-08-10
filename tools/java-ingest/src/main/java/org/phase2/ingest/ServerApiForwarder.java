@@ -44,6 +44,12 @@ public class ServerApiForwarder {
             @Value("${ingest.forward.url:}") String endpoint,
             @Value("${ingest.forward.enabled:true}") boolean enabled,
             @Value("${ingest.forward.timeout-ms:2000}") long timeoutMs) {
+        if (enabled && (endpoint == null || endpoint.isBlank())) {
+            throw new IllegalStateException(
+                    "ingest.forward.enabled=true requires a non-empty ingest.forward.url"
+            );
+        }
+
         var requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofMillis(timeoutMs));
         requestFactory.setReadTimeout(Duration.ofMillis(timeoutMs));
@@ -53,8 +59,8 @@ public class ServerApiForwarder {
         this.endpoint = endpoint;
         this.enabled = enabled;
 
-        if (enabled && (endpoint == null || endpoint.isBlank())) {
-            log.warn("Server API forwarding is enabled but ingest.forward.url is not set; events will not be forwarded");
+        if (!enabled) {
+            log.info("Server API forwarding is explicitly disabled; java-ingest is running without the presentation projection");
         }
     }
 
@@ -73,7 +79,7 @@ public class ServerApiForwarder {
             String topic,
             String payload,
             Map<String, String> attribution) {
-        if (!isConfigured()) {
+        if (!enabled) {
             return false;
         }
 
@@ -111,7 +117,7 @@ public class ServerApiForwarder {
     }
 
     public boolean isConfigured() {
-        return enabled && endpoint != null && !endpoint.isBlank();
+        return enabled;
     }
 
     private Object enrichPayloadWithEventId(Object payload, String eventId) {
