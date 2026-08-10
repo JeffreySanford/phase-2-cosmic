@@ -44,22 +44,29 @@ export class IngestEventStreamService implements OnDestroy {
       return;
     }
 
+    // Construction *and* subscription both have to be guarded. Guarding only the
+    // constructor left a failing addEventListener to propagate out of the caller,
+    // and this runs from the AppComponent constructor — so an EventSource that is
+    // absent, or present but incomplete, took down application bootstrap and every
+    // route with it. A telemetry stream must never be able to do that.
     try {
-      this.source = this.eventSourceFactory(url);
+      const source = this.eventSourceFactory(url);
+      source.addEventListener("ingest-event", (raw) => {
+        const message = raw as MessageEvent<string>;
+        try {
+          const event = JSON.parse(message.data) as IngestedPipelineEvent;
+          this.accept(event);
+        } catch {
+          // Ignore malformed SSE frames; the server remains the contract boundary.
+        }
+      });
+      this.source = source;
     } catch {
-      // EventSource is not available during SSR/non-browser execution.
-      return;
+      // Unavailable during SSR/non-browser execution, or a stub that does not
+      // implement the full EventSource contract. Stay disconnected; a later
+      // connect() can retry because source was never assigned.
+      this.source = undefined;
     }
-
-    this.source.addEventListener("ingest-event", (raw) => {
-      const message = raw as MessageEvent<string>;
-      try {
-        const event = JSON.parse(message.data) as IngestedPipelineEvent;
-        this.accept(event);
-      } catch {
-        // Ignore malformed SSE frames; the server remains the contract boundary.
-      }
-    });
   }
 
   disconnect(): void {

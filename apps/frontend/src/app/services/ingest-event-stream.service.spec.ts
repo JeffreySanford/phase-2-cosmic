@@ -99,4 +99,42 @@ describe("IngestEventStreamService", () => {
 
     expect(close).toHaveBeenCalledTimes(1);
   });
+
+  it("stays silent when the EventSource cannot be subscribed to", () => {
+    // connect() runs from the AppComponent constructor, so anything escaping it
+    // takes down application bootstrap and every route with it. An EventSource
+    // that constructs but rejects addEventListener must degrade to "no stream",
+    // never to a thrown error.
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        IngestEventStreamService,
+        {
+          provide: INGEST_EVENT_SOURCE_FACTORY,
+          useValue: () => ({ close: jest.fn() } as unknown as EventSource),
+        },
+      ],
+    });
+    const degraded = TestBed.inject(IngestEventStreamService);
+
+    expect(() => degraded.connect()).not.toThrow();
+  });
+
+  it("stays silent when the EventSource cannot be constructed", () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        IngestEventStreamService,
+        {
+          provide: INGEST_EVENT_SOURCE_FACTORY,
+          useValue: () => {
+            throw new Error("EventSource is not defined");
+          },
+        },
+      ],
+    });
+    const degraded = TestBed.inject(IngestEventStreamService);
+
+    expect(() => degraded.connect()).not.toThrow();
+  });
 });
