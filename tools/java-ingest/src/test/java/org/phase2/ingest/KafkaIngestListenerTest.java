@@ -22,7 +22,8 @@ class KafkaIngestListenerTest {
         var metrics = mock(IngestMetricsService.class);
         var forwarder = mock(ServerApiForwarder.class);
         var dedupe = new EventDeduplicationService(100);
-        var listener = new KafkaIngestListener(metrics, forwarder, dedupe);
+        var quarantine = mock(ValidationDeadLetterPublisher.class);
+        var listener = new KafkaIngestListener(metrics, forwarder, dedupe, quarantine);
         var record = record("event-001", "us-west");
 
         when(forwarder.isConfigured()).thenReturn(true);
@@ -33,6 +34,7 @@ class KafkaIngestListenerTest {
 
         verify(forwarder, times(1)).forward(eq("kafka"), eq("phase2-events"), anyString(), anyMap());
         verify(metrics).recordDuplicate("phase2-events");
+        verifyNoValidationQuarantine(quarantine);
     }
 
     @Test
@@ -40,7 +42,8 @@ class KafkaIngestListenerTest {
         var metrics = mock(IngestMetricsService.class);
         var forwarder = mock(ServerApiForwarder.class);
         var dedupe = new EventDeduplicationService(100);
-        var listener = new KafkaIngestListener(metrics, forwarder, dedupe);
+        var quarantine = mock(ValidationDeadLetterPublisher.class);
+        var listener = new KafkaIngestListener(metrics, forwarder, dedupe, quarantine);
         var record = record("event-002", "us-east");
 
         when(forwarder.isConfigured()).thenReturn(true);
@@ -51,6 +54,39 @@ class KafkaIngestListenerTest {
                 .hasMessageContaining("event-002");
 
         verify(metrics, never()).recordForwarded(anyString());
+        verifyNoValidationQuarantine(quarantine);
+    }
+
+    @Test
+    void blankPayloadGoesDirectlyToValidationDltWithoutHttpForward() {
+        var metrics = mock(IngestMetricsService.class);
+        var forwarder = mock(ServerApiForwarder.class);
+        var dedupe = new EventDeduplicationService(100);
+        var quarantine = mock(ValidationDeadLetterPublisher.class);
+        var listener = new KafkaIngestListener(metrics, forwarder, dedupe, quarantine);
+        var record = record("event-invalid", "us-west", "   ");
+
+        listener.onMessage(record);
+
+        verify(quarantine).publish(record, "missing_payload");
+        verify(metrics).recordValidationDeadLetter("phase2-events", "missing_payload");
+        verify(forwarder, never()).forward(anyString(), anyString(), anyString(), anyMap());
+    }
+
+    @Test
+    void missingEventIdGoesDirectlyToValidationDltWithoutHttpForward() {
+        var metrics = mock(IngestMetricsService.class);
+        var forwarder = mock(ServerApiForwarder.class);
+        var dedupe = new EventDeduplicationService(100);
+        var quarantine = mock(ValidationDeadLetterPublisher.class);
+        var listener = new KafkaIngestListener(metrics, forwarder, dedupe, quarantine);
+        var record = record(null, "us-west");
+
+        listener.onMessage(record);
+
+        verify(quarantine).publish(record, "missing_event_id");
+        verify(metrics).recordValidationDeadLetter("phase2-events", "missing_event_id");
+        verify(forwarder, never()).forward(anyString(), anyString(), anyString(), anyMap());
     }
 
     @Test
@@ -58,7 +94,8 @@ class KafkaIngestListenerTest {
         var metrics = mock(IngestMetricsService.class);
         var forwarder = mock(ServerApiForwarder.class);
         var dedupe = new EventDeduplicationService(100);
-        var listener = new KafkaIngestListener(metrics, forwarder, dedupe);
+        var quarantine = mock(ValidationDeadLetterPublisher.class);
+        var listener = new KafkaIngestListener(metrics, forwarder, dedupe, quarantine);
         var record = record("event-003", "us-central");
 
         listener.onDeadLetter(record);
@@ -66,15 +103,32 @@ class KafkaIngestListenerTest {
         verify(metrics).recordForwardDeadLetter("phase2-events", "event-003");
     }
 
+    private void verifyNoValidationQuarantine(ValidationDeadLetterPublisher quarantine) {
+        verify(quarantine, never()).publish(
+                org.mockito.ArgumentMatchers.any(),
+                anyString()
+        );
+    }
+
     private ConsumerRecord<String, String> record(String eventId, String region) {
+        return record(
+                eventId,
+                region,
+                "{\"source\":\"main\",\"eventType\":\"telemetry.batch\",\"traceId\":\"trace-test\"}"
+        );
+    }
+
+    private ConsumerRecord<String, String> record(String eventId, String region, String payload) {
         var record = new ConsumerRecord<String, String>(
                 "phase2-events.forward-retry-1000",
                 0,
                 10L,
                 null,
-                "{\"source\":\"main\",\"eventType\":\"telemetry.batch\",\"traceId\":\"trace-test\"}"
+                payload
         );
-        record.headers().add("event-id", eventId.getBytes(StandardCharsets.UTF_8));
+        if (eventId != null) {
+            record.headers().add("event-id", eventId.getBytes(StandardCharsets.UTF_8));
+        }
         record.headers().add("collector-region", region.getBytes(StandardCharsets.UTF_8));
         record.headers().add("collector-kafka-topic", "phase2-events".getBytes(StandardCharsets.UTF_8));
         record.headers().add("collector-pulsar-message-id", "pulsar-123".getBytes(StandardCharsets.UTF_8));
