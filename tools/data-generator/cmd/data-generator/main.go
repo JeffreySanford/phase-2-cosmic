@@ -86,8 +86,10 @@ func main() {
 	mux.Handle("/metrics", promhttp.Handler())
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte("ok")); err != nil {
-			log.Printf("health response write error: %v", err)
+		// Named distinctly so it does not shadow the outer `err` from
+		// parseSegmentWeights, which govet's shadow check flags.
+		if _, writeErr := w.Write([]byte("ok")); writeErr != nil {
+			log.Printf("health response write error: %v", writeErr)
 		}
 	})
 	srv := &http.Server{Addr: *metricsAddr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}

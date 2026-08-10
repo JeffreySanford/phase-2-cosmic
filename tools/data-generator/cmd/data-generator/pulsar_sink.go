@@ -51,7 +51,8 @@ func parseSinkTarget(raw string) (SinkTarget, error) {
 		return SinkTarget{Kind: kind, Address: address, Topic: topic}, nil
 	}
 
-	return SinkTarget{}, fmt.Errorf("unsupported sink %q; supported: file:, kafka:, pulsar:", raw)
+	return SinkTarget{}, fmt.Errorf(
+		"unsupported sink %q; supported prefixes are file, kafka and pulsar", raw)
 }
 
 // PulsarSink publishes generated records to a Pulsar topic. The collectors
