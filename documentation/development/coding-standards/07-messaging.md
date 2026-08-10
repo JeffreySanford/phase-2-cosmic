@@ -30,8 +30,9 @@ data-generator event-id
   -> Pulsar property event-id
     -> Kafka header event-id
       -> java-ingest eventId
-        -> API/SSE payload.eventId
-          -> Angular idempotency key
+        -> frontend API idempotency key
+          -> API/SSE payload.eventId
+            -> Angular idempotency key
 ```
 
 Standards:
@@ -40,6 +41,7 @@ Standards:
 - `traceId` or `correlationId` is observability/workflow context and does not replace the event idempotency key.
 - Broker/transport metadata such as collector region, Pulsar message ID, Kafka topic/partition/offset, and retry attempt should remain metadata rather than silently replacing source payload fields.
 - Source provenance and transport provenance are separate concerns and both must survive where required by the consumer contract.
+- Any API or service that performs a duplicate-sensitive side effect from an event must enforce idempotency at that side-effect boundary; upstream dedupe alone is insufficient.
 
 ## Event design
 
@@ -62,33 +64,51 @@ Do not use “exactly once” as a general description of the repaired platform 
 The PR41 repaired path is **at-least-once plus idempotency/deduplication**:
 
 - Generator -> Pulsar waits for broker acknowledgement.
+- A new regional collector subscription starts at the earliest retained Pulsar position so collector startup order cannot silently skip retained backlog.
 - Collector -> Kafka ACKs Pulsar only after Kafka acceptance; failed forwarding is negative-acked.
 - A crash after Kafka acceptance but before Pulsar ACK can create a duplicate Kafka record.
-- `java-ingest` and Angular suppress known replay duplicates using `eventId`, but process-local caches do not provide global exactly-once behavior across restarts.
+- `java-ingest`, the frontend ingest API, and Angular suppress duplicate projection using immutable `eventId`.
+- Bounded caches/leases do not provide global exactly-once behavior across all restarts or failure boundaries.
 - Durable downstream writes must therefore remain idempotent by `eventId` when duplicate effects are unsafe.
 
 Ordering assumptions must be explicit. Never assume global ordering across partitions, topics, regions, or retry topics.
 
 ## Retry and dead-letter handling
 
-Retries must have a deterministic terminal state.
+Retries must have a deterministic terminal state, and **transient dependency failure must be separated from invalid-data failure**.
+
+### Transient presentation delivery failure
 
 For `Kafka -> java-ingest -> frontend API`:
 
-1. The HTTP forward attempt is bounded by connect/read timeout.
-2. A transient forwarding failure is raised to Kafka non-blocking retry topics rather than blocking the main consumer partition indefinitely.
-3. Retry attempts use bounded backoff.
-4. Retry exhaustion terminates in the `.forward-dlt` path.
-5. Replay from the DLT preserves `eventId` and original/canonical topic attribution.
-6. Poison payloads are diagnosed before replay; do not retry an invalid event forever.
+1. Forwarding configuration fails startup when enabled without a usable endpoint.
+2. The HTTP forward attempt is bounded by connect/read timeout.
+3. A transient forwarding failure is raised to Kafka non-blocking retry topics rather than blocking the main consumer partition indefinitely.
+4. Retry attempts use bounded backoff.
+5. Retry exhaustion terminates in the `.forward-dlt` path.
+6. Replay from the DLT preserves `eventId` and original/canonical topic attribution.
+7. Retry infrastructure must have executable integration evidence; annotations alone do not prove the retry listener topology was bootstrapped.
 
-For Pulsar -> collector -> Kafka:
+### Invalid/poison data
+
+Invalid records do not consume transient HTTP retry attempts.
+
+For the repaired `java-ingest` path:
+
+- missing/blank payload -> validation DLT
+- missing/blank immutable `event-id` -> validation DLT
+- validation quarantine preserves the source record and transport headers and adds a deterministic reason
+- failure to write the validation DLT must fail the listener rather than silently discard the original record
+
+Validation DLT and forward DLT represent different operator actions and must not be collapsed into one queue/topic.
+
+### Pulsar -> collector -> Kafka
 
 - Kafka forwarding failure means the Pulsar record is not acknowledged.
 - The collector negative-acks the record so Pulsar redelivery remains authoritative.
 - Operators must expect possible duplicates around the Kafka-success/Pulsar-ACK boundary.
 
-For RabbitMQ control flows:
+### RabbitMQ control flows
 
 - Control messages follow their queue TTL, ACK/requeue, and DLX/DLQ contract.
 - Never blindly replay destructive or time-sensitive commands.
@@ -97,7 +117,7 @@ For RabbitMQ control flows:
 
 - Provision topics/exchanges/queues through code or declarative infrastructure, not tribal knowledge.
 - Document retention, TTL, retry topics/queues, DLT/DLQ, partitioning strategy, and consumer group/subscription naming per flow.
-- Kafka retry/DLT topics are part of the delivery contract and must be observable.
+- Kafka retry/DLT and validation-DLT topics are part of the delivery contract and must be observable.
 - Pulsar subscriptions used by regional collectors must remain unique/intentional for the deployment topology.
 - Broker role changes require architecture and runbook updates in the same change set.
 
@@ -113,13 +133,14 @@ At minimum where available:
 - collector region
 - source/canonical topic
 - retry attempt or terminal DLT/DLQ state
+- validation/quarantine reason
 - failure class
 
 Avoid high-cardinality metric labels for raw event IDs. Use event IDs in structured logs/traces and counters for aggregate duplicate/retry/DLT behavior.
 
 ## Acceptance testing
 
-A transport change is incomplete until one event can be followed across the intended boundary.
+A transport change is incomplete until one event can be followed across the intended boundary and the failure paths are executable.
 
 The PR41 repaired-path acceptance contract is:
 
@@ -131,16 +152,24 @@ generator eventId X
         -> java-ingest
           -> frontend API
             -> SSE
-              -> Angular eventId X, region R, source S
+              -> hydrated Angular eventId X, region R, source S
 ```
 
-The runtime smoke probe is:
+The runtime browser probe is:
 
 ```bash
 node scripts/verify-ingest-e2e.mjs
 ```
 
-A pass requires a real Angular-facing SSE event with `broker=kafka`, non-empty `collectorRegion`, non-empty `source`, and non-empty `payload.eventId`.
+A pass requires the hydrated Angular application to observe `broker=kafka`, non-empty `collectorRegion`, non-empty `source`, and non-empty `eventId` from the repaired path.
+
+Failure-path integration coverage must additionally prove:
+
+```text
+invalid event -> validation DLT
+transient frontend outage -> retry topic(s) -> forward DLT
+repeated API eventId -> one SSE side effect
+```
 
 ---
 
@@ -150,9 +179,13 @@ A pass requires a real Angular-facing SSE event with `broker=kafka`, non-empty `
 - [ ] Immutable event identity is generated once and propagated unchanged
 - [ ] Trace/correlation metadata is propagated separately from event identity
 - [ ] Delivery semantics are explicitly documented
-- [ ] Consumers are replay-safe/idempotent where required
+- [ ] Duplicate-sensitive side-effect boundaries enforce idempotency
+- [ ] Consumers and durable stores are replay-safe/idempotent where required
+- [ ] Transient failures and invalid-data failures have separate terminal paths
 - [ ] Retry policy is bounded and has a DLT/DLQ/quarantine terminal state
+- [ ] Forwarding configuration fails closed when required dependencies are missing
 - [ ] Replay preserves the original `eventId`
 - [ ] Topics/exchanges/queues are managed as infrastructure
-- [ ] Metrics/logging expose retry, duplicate, and terminal failure behavior
+- [ ] Metrics/logging expose retry, duplicate, validation, and terminal failure behavior
+- [ ] Retry/DLT behavior has executable integration evidence
 - [ ] One-event end-to-end acceptance evidence exists for topology changes
