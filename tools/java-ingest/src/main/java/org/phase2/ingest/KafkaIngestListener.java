@@ -20,23 +20,27 @@ public class KafkaIngestListener {
     private final IngestMetricsService metricsService;
     private final ServerApiForwarder forwarder;
     private final EventDeduplicationService deduplicationService;
+    private final ValidationDeadLetterPublisher validationDeadLetterPublisher;
 
     public KafkaIngestListener(
             IngestMetricsService metricsService,
             ServerApiForwarder forwarder,
-            EventDeduplicationService deduplicationService) {
+            EventDeduplicationService deduplicationService,
+            ValidationDeadLetterPublisher validationDeadLetterPublisher) {
         this.metricsService = metricsService;
         this.forwarder = forwarder;
         this.deduplicationService = deduplicationService;
+        this.validationDeadLetterPublisher = validationDeadLetterPublisher;
     }
 
     /**
-     * Forwarding failures use non-blocking Kafka retry topics and terminate in a
-     * dedicated forward DLT after the configured number of attempts. This keeps
-     * the main consumer partition moving while retaining failed delivery as a
-     * durable Kafka record that can be inspected and replayed.
+     * Transient forwarding failures use non-blocking Kafka retry topics and
+     * terminate in a dedicated forward DLT after the configured attempts.
+     * Contract-invalid records bypass that retry path and are written once to
+     * the validation DLT instead.
      */
     @RetryableTopic(
+            kafkaTemplate = "kafkaTemplate",
             attempts = "${ingest.forward.retry-attempts:4}",
             backoff = @Backoff(delay = 1000, multiplier = 2.0, maxDelay = 10000),
             retryTopicSuffix = ".forward-retry",
@@ -54,13 +58,16 @@ public class KafkaIngestListener {
         metricsService.recordReceived(topic, payload);
 
         try {
-            if (payload == null || payload.isBlank()) {
+            String validationReason = validationReason(payload, eventId);
+            if (validationReason != null) {
                 metricsService.recordValidationFailure(
                         topic,
-                        "payload",
+                        validationReason,
                         payload,
                         Duration.ofNanos(System.nanoTime() - startedAt)
                 );
+                validationDeadLetterPublisher.publish(record, validationReason);
+                metricsService.recordValidationDeadLetter(topic, validationReason);
                 return;
             }
 
@@ -102,6 +109,16 @@ public class KafkaIngestListener {
                 canonicalTopic(record),
                 safeEventId(headerValue(record, "event-id"))
         );
+    }
+
+    private String validationReason(String payload, String eventId) {
+        if (payload == null || payload.isBlank()) {
+            return "missing_payload";
+        }
+        if (eventId == null || eventId.isBlank()) {
+            return "missing_event_id";
+        }
+        return null;
     }
 
     private Map<String, String> attribution(ConsumerRecord<String, String> record, String eventId) {
