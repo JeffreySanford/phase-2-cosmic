@@ -46,8 +46,9 @@ generator event-id
   -> Pulsar property event-id
     -> Kafka header event-id
       -> java-ingest eventId
-        -> frontend payload.eventId
-          -> Angular idempotency key
+        -> frontend API idempotency key
+          -> payload.eventId / SSE
+            -> Angular idempotency key
 ```
 
 Collector transport attribution also includes:
@@ -69,6 +70,7 @@ Collector transport attribution also includes:
 ### Pulsar -> collector -> Kafka
 
 - Semantics: **at-least-once**.
+- A new collector subscription begins at the earliest retained Pulsar position so startup ordering does not silently skip regional backlog.
 - Collector ACKs the Pulsar message only after Kafka accepts the forwarded record.
 - Kafka-forward failure causes `Nack`, allowing Pulsar redelivery.
 - A collector/process failure after Kafka acceptance but before Pulsar ACK can produce a duplicate Kafka event.
@@ -77,18 +79,43 @@ Collector transport attribution also includes:
 ### Kafka -> java-ingest -> frontend API
 
 - Kafka remains the durable record.
+- Forwarding defaults on. `ingest.forward.enabled=true` with an empty `ingest.forward.url` is a startup configuration error; use `ingest.forward.enabled=false` only for an intentional Kafka-only/metrics mode.
 - HTTP forwarding has a bounded timeout.
 - A failed frontend API projection raises an ingest failure into Kafka non-blocking retry topics.
+- Spring retry-topic infrastructure is explicitly enabled and must be verified by container-backed tests, not inferred from annotations alone.
 - Retry exhaustion terminates in the `.forward-dlt` topic associated with the source topic.
 - `java_ingest_forward_failures_total` counts HTTP forwarding attempts that fail.
 - `java_ingest_forward_dlt_total` counts records that exhaust retry delivery and reach the forward DLT.
 
+### Invalid data -> validation DLT
+
+Poison/contract-invalid records are not transient dependency failures and do **not** spend HTTP retry attempts.
+
+Current minimum invalid conditions:
+
+- blank/missing payload -> `missing_payload`
+- blank/missing immutable `event-id` -> `missing_event_id`
+
+They are copied to:
+
+```text
+phase2-events.validation-dlt
+```
+
+with the original key/value and transport headers preserved, plus:
+
+- `validation-reason`
+- `validation-original-topic`
+
+`java_ingest_validation_dlt_total` measures successful validation quarantine. If the validation-DLT write itself fails, the listener throws instead of acknowledging away the source record.
+
 ### Duplicate suppression
 
 - `java-ingest` suppresses already-delivered `eventId` values using a bounded process-local cache.
+- The frontend ingest API requires `eventId` and suppresses repeated accepted identity before repeating the SSE side effect.
+- `frontend_ingest_duplicates_suppressed_total` exposes receiver-side suppression.
 - Angular suppresses replay duplicates within its bounded presentation history.
-- These caches do not survive all restart/failover scenarios and must never be described as global exactly-once delivery.
-- Durable stores must use `eventId` as an idempotency key where duplicate effects would be unsafe.
+- These mechanisms do not constitute global exactly-once delivery. Kafka remains the durable replay source and durable stores must use `eventId` as an idempotency key where duplicate effects would be unsafe.
 
 ## Failure handling
 
@@ -110,11 +137,19 @@ Collector transport attribution also includes:
 ### Frontend API unavailable from java-ingest
 
 1. Verify `java_ingest_forward_failures_total` is increasing.
-2. Inspect Kafka retry topics for the affected source topic.
+2. Inspect Kafka `.forward-retry` topics for the affected source topic.
 3. If retry attempts exhaust, inspect the `.forward-dlt` topic.
 4. Restore the frontend API before replaying DLT records.
 5. Replay in a controlled batch and verify `eventId` remains unchanged.
-6. Confirm the SSE acceptance probe receives the replayed event or an expected duplicate-suppression metric increments.
+6. Confirm the browser acceptance probe receives the replayed event or an expected receiver/Angular duplicate-suppression metric increments.
+
+### Invalid record / validation DLT
+
+1. Inspect `java_ingest_validation_dlt_total` and the `phase2-events.validation-dlt` record.
+2. Capture `validation-reason`, original topic, `event-id` when present, collector region, and source payload.
+3. Correct the producer/schema defect before replay. Do not replay unchanged poison data into the normal topic.
+4. If an `event-id` was missing, determine the authoritative source identity; do not casually mint a new identity unless the event is intentionally being treated as a new logical event.
+5. Replay a corrected record in a controlled batch and verify it does not return to validation DLT.
 
 ### Forward DLT replay
 
@@ -148,32 +183,47 @@ Kafka is the boundary into the lakehouse.
 - Gold products must retain traceability back to Bronze identities.
 - Pulsar/RabbitMQ operational details should not leak into lakehouse transformations unless required as explicit source attribution.
 
+## Reliability verification
+
+Java Kafka-backed reliability tests:
+
+```bash
+pnpm run test:java:ingest:it
+```
+
+The relevant PR41 proofs are:
+
+- invalid record -> validation DLT with reason and identity preserved;
+- valid record + unreachable frontend -> non-blocking retry topology -> `.forward-dlt`.
+
 ## Runtime acceptance
 
-With the repaired geo path, `java-ingest`, and frontend server running:
+With the repaired geo path, `java-ingest`, frontend server, and Angular application running:
 
 ```bash
 node scripts/verify-ingest-e2e.mjs
 ```
 
-A pass requires one real SSE event containing:
+A pass requires the hydrated Angular application to observe one real event containing:
 
 - `broker = kafka`
 - `collectorRegion`
 - `source`
-- `payload.eventId`
+- `eventId`
 
-This is the preferred quick smoke test after broker or forwarding recovery.
+This is the preferred full-path smoke test after broker or forwarding recovery.
 
 ## Operator checklist
 
 - [ ] Correct broker role confirmed before intervention
 - [ ] `eventId` captured before replay
 - [ ] Regional collector attribution captured
-- [ ] Kafka retry/DLT state checked for frontend delivery failures
+- [ ] Failure classified as transient delivery vs invalid data
+- [ ] Kafka retry/forward-DLT state checked for frontend delivery failures
+- [ ] Validation DLT checked for poison/contract-invalid data
 - [ ] RabbitMQ confirmed to be parallel, not inline
 - [ ] Replay performed in a small controlled batch first
-- [ ] SSE acceptance probe or downstream idempotency evidence verified after replay
+- [ ] Browser acceptance probe or downstream idempotency evidence verified after replay
 
 ## Change history
 
@@ -182,3 +232,4 @@ This is the preferred quick smoke test after broker or forwarding recovery.
 | 2025-01-01 | Initial broker role partitioning document |
 | 2026-03-09 | Added DLQ/replay baseline guardrails |
 | 2026-08-09 | Aligned Pulsar edge, Kafka backbone, RabbitMQ parallel role, event identity, retry/DLT, dedupe, and PR41 acceptance probe |
+| 2026-08-09 | Added fail-closed forwarding, receiver idempotency, validation DLT separation, and executable retry/DLT verification |
