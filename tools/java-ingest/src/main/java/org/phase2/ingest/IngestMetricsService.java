@@ -34,6 +34,10 @@ public class IngestMetricsService {
         durationTimer(topic, "validation_failure", reason).record(duration.toNanos(), TimeUnit.NANOSECONDS);
     }
 
+    public void recordValidationDeadLetter(String topic, String reason) {
+        counter("java_ingest_validation_dlt_total", topic, "failure", reason).increment();
+    }
+
     public void recordFailure(String topic, String reason, String payload, Duration duration) {
         counter("java_ingest_failures_total", topic, "failure", reason).increment();
         payloadSummary(topic).record(sizeOf(payload));
