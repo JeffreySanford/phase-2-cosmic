@@ -44,6 +44,11 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 
 > PR41 label: **Lakehouse Initiative / PR41 MVP**.
 > See [`docs/PR41_MVP_LAKEHOUSE.md`](./docs/PR41_MVP_LAKEHOUSE.md).
+> Definition of Done: [`docs/PR41_MVP_LAKEHOUSE.md#definition-of-done`](./docs/PR41_MVP_LAKEHOUSE.md#definition-of-done).
+> Scale/control contract: [`docs/PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md`](./docs/PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md).
+> Scale implementation plan: [`docs/PR41_SCALE_IMPLEMENTATION_PLAN.md`](./docs/PR41_SCALE_IMPLEMENTATION_PLAN.md).
+> Testing-suite plan: [`docs/PR41_TESTING_SUITE_PLAN.md`](./docs/PR41_TESTING_SUITE_PLAN.md).
+> Diagnostic view plan: [`docs/PR41_DIAGNOSTIC_VIEW_PLAN.md`](./docs/PR41_DIAGNOSTIC_VIEW_PLAN.md).
 
 ### PR41 MVP local reference runtime
 
@@ -55,19 +60,40 @@ The goal is to progress from architecture and a live public-data evidence scaffo
 - [x] Persist one Gold observation summary aggregate with lineage to Bronze event IDs.
 - [x] Add an Nx verifier target for the generated medallion artifacts.
 - [x] Document all PR41 MVP moving parts under `documentation/lakehouse/docs/PR41_MVP_LAKEHOUSE.md`.
+- [x] Define guarded Lakehouse scale profiles for `tiny`, `10gb`, `100gb`, and `1tb`.
+- [x] Document the platform control-view contract for selecting and reporting the active Lakehouse data profile.
+- [x] Document the large-profile implementation plan, storage budget, verification matrix, and Gold stress boundary.
+- [x] Document the PR41 testing-suite plan for unit, integration, contract, API/service, quality-gate, and guarded large-profile validation.
+- [x] Document the PR41 diagnostic view plan for evidence state, profile state, medallion layer state, guard state, and safe operation boundaries.
+- [x] Add byte-aware PR41 manifest entries and profile-aware verifier contract checks.
+- [x] Add PR41 runner unit coverage for profile guards, safe output paths, medallion transforms, and manifest diagnostics.
+- [x] Add PR41 Lakehouse diagnostics state to the metrics payload and existing diagnostics UI.
+- [x] Add PR41 diagnostics Storybook fixture coverage.
+- [x] Add `lakehouse:pr41:mvp` to the local `quality:ci` gate.
+- [x] Run the PR41 `tiny` gate in GitHub Actions CI with a pinned `pyarrow` dependency and an assertion that generated artifacts stay out of git.
+- [x] Resolve the runner's Python interpreter explicitly so the MVP is reproducible on a clean checkout regardless of `PATH` ordering.
+- [x] Add a checked-in source-registry example and schema for public archive/catalog profiles.
+- [x] Implement source-bundle selection for `core-proof`, `offline-fixture`, and at least one expanded development bundle.
+- [x] Drive Bronze rows and provider attribution from the selected bundle through a provider-neutral adapter contract.
+- [x] Report the large-profile guard state in the manifest as the authorization actually granted for the run.
+- [x] Fail the quality gate when the verifier is inspecting a previous run's artifacts instead of a fresh one.
+- [x] Default to a live source query locally while keeping CI hermetic, and record the resolved mode per profile so the manifest never implies live data that was not fetched.
+- [x] Write a legitimately empty medallion layer as a valid typed table instead of failing the run, so clean live data does not crash the writer.
 - [ ] Replace the local reference writer with Spark Structured Streaming or another selected Delta-capable runtime.
 - [ ] Route the MVP source envelope through Kafka before Bronze.
 - [x] Connect one verified Gold output to the existing Lakehouse evidence service when the local PR41 manifest exists.
 
 ### Source contract
 
-- [ ] Add a checked-in source-registry example and schema for public archive/catalog profiles.
-- [ ] Implement source-bundle selection for `core-proof`, `offline-fixture`, and at least one expanded development bundle.
-- [ ] Add deterministic include/exclude precedence rules for active Lakehouse development records.
-- [ ] Implement a reusable VO/TAP-style source adapter contract rather than coupling Lakehouse entities to ESO-specific field names.
-- [ ] Preserve the current ESO profile as the first working provider implementation.
-- [ ] Add an NRAO/VLA/VLASS provider profile when practical so the same contract is validated against the radio-astronomy domain that Cosmic primarily targets.
-- [ ] Map source attribution into existing Phase 2 event/manifest/provenance semantics rather than creating a second domain model.
+- [x] Add a checked-in source-registry example and schema for public archive/catalog profiles.
+- [x] Implement source-bundle selection for `core-proof`, `offline-fixture`, and at least one expanded development bundle. Bundle selection now changes the Bronze rows and provider attribution that a run produces, not only a manifest label.
+- [x] Add deterministic include/exclude precedence rules for active Lakehouse development records.
+- [x] Implement a reusable VO/TAP-style source adapter contract rather than coupling Lakehouse entities to ESO-specific field names. Each active profile declares a `fieldMap` onto the canonical observation fields, and Silver canonicalization reads that map instead of ObsCore column names.
+- [x] Preserve the current ESO profile as the first working provider implementation.
+- [x] Add an NRAO/VLA/VLASS provider profile when practical so the same contract is validated against the radio-astronomy domain that Cosmic primarily targets. `nrao-vlass-development` uses a deliberately non-ObsCore column vocabulary (`product_id`, `ra_deg`, `download_url`) so the adapter contract is proven against a second provider shape. It is backed by a checked-in offline fixture and is **not** a live NRAO extract.
+- [ ] Map source attribution into existing Phase 2 event/manifest/provenance semantics rather than creating a second domain model. Bronze now carries provider, source profile, source bundle, source mode, and adapter contract, but those fields are not yet projected into Phase 2 provenance records.
+- [x] Perform a live VO/TAP extract through the adapter contract. The default bundle queries ESO ObsCore live on a developer machine and falls back to fixtures in CI, with the resolved mode recorded per profile in the manifest.
+- [ ] Add a live NRAO/VLASS extract. `nrao-tap-live` stays `planned` until its query contract is validated against the real endpoint.
 
 ### Kafka and Bronze
 

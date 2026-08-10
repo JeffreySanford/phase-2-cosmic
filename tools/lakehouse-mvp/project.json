@@ -7,7 +7,7 @@
     "run": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "python tools/lakehouse-mvp/pr41_lakehouse_mvp.py"
+        "command": "node scripts/run-python.cjs tools/lakehouse-mvp/pr41_lakehouse_mvp.py"
       }
     },
     "verify": {
@@ -16,12 +16,20 @@
         "command": "node tools/lakehouse-mvp/verify-pr41-mvp.mjs"
       }
     },
+    "validate-source-registry": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/lakehouse-mvp/validate-source-registry.mjs"
+      }
+    },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "python tools/lakehouse-mvp/pr41_lakehouse_mvp.py",
-          "node tools/lakehouse-mvp/verify-pr41-mvp.mjs"
+          "node tools/lakehouse-mvp/validate-source-registry.mjs",
+          "node scripts/run-python.cjs tools/lakehouse-mvp/test_pr41_lakehouse_mvp.py",
+          "node scripts/run-python.cjs tools/lakehouse-mvp/pr41_lakehouse_mvp.py",
+          "node tools/lakehouse-mvp/verify-pr41-mvp.mjs --require-fresh"
         ],
         "parallel": false
       }

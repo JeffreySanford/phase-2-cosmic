@@ -8,19 +8,22 @@
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/dist/apps/cosmic-forge-fits-renderer-go"],
       "options": {
-        "command": "powershell -NoProfile -Command \"Set-Location 'apps/cosmic-forge-fits-renderer-go'; go build -o '..\\\\..\\\\dist\\\\apps\\\\cosmic-forge-fits-renderer-go\\\\fits-renderer.exe' .\""
+        "cwd": "apps/cosmic-forge-fits-renderer-go",
+        "command": "go build -o ../../dist/apps/cosmic-forge-fits-renderer-go/ ."
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "powershell -NoProfile -Command \"Set-Location 'apps/cosmic-forge-fits-renderer-go'; go test ./...\""
+        "cwd": "apps/cosmic-forge-fits-renderer-go",
+        "command": "go test ./... -count=1"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "powershell -NoProfile -Command \"Get-ChildItem 'apps/cosmic-forge-fits-renderer-go' -Filter *.go | ForEach-Object { gofmt -w $_.FullName }\""
+        "cwd": "apps/cosmic-forge-fits-renderer-go",
+        "command": "go vet ./..."
       }
     }
   }

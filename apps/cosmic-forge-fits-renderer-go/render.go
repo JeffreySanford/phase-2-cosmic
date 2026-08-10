@@ -24,9 +24,15 @@ func RenderFITSToPNG(inputPath, outputPath string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
 
-	return png.Encode(out, img)
+	if err := png.Encode(out, img); err != nil {
+		_ = out.Close()
+		return err
+	}
+
+	// A failed Close on a written file can mean the PNG was never fully
+	// flushed, so the caller must see that rather than a false success.
+	return out.Close()
 }
 
 func loadFITSPixels(inputPath string) ([]float64, int, int, error) {
@@ -34,13 +40,15 @@ func loadFITSPixels(inputPath string) ([]float64, int, int, error) {
 	if err != nil {
 		return nil, 0, 0, err
 	}
-	defer file.Close()
+	// Read-only handles: a Close failure cannot lose data, so it is
+	// explicitly discarded rather than silently unchecked.
+	defer func() { _ = file.Close() }()
 
 	fitsFile, err := fitsio.Open(file)
 	if err != nil {
 		return nil, 0, 0, err
 	}
-	defer fitsFile.Close()
+	defer func() { _ = fitsFile.Close() }()
 
 	for _, hdu := range fitsFile.HDUs() {
 		if hdu.Type() != fitsio.IMAGE_HDU {

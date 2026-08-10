@@ -1,0 +1,8 @@
+# PR41 Lakehouse MVP runner dependencies.
+#
+# The local reference runtime writes Parquet-backed medallion tables with
+# pyarrow. Spark is intentionally not required for the PR41 MVP.
+#
+# Install with:
+#   python -m pip install -r tools/lakehouse-mvp/requirements.txt
+pyarrow==23.0.0

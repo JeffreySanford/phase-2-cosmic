@@ -1,0 +1,46 @@
+{
+  "note": "Offline fixture shaped like the ESO TAP ObsCore response used by the PR40 public-source proof. These rows are synthetic and let the core-proof bundle run without network access. Running this bundle is NOT evidence of a live ESO query; live ESO evidence comes from the PR40 proof path.",
+  "contract": "vo-tap-obscore.v1",
+  "rows": [
+    {
+      "obs_publisher_did": "ivo://eso.org/ADP.2019-01-15T07:12:33.881",
+      "obs_collection": "MUSE-DEEP",
+      "dataproduct_type": "cube",
+      "s_ra": 53.1625,
+      "s_dec": -27.7817,
+      "access_url": "https://archive.eso.org/datalink/ADP.2019-01-15T07:12:33.881"
+    },
+    {
+      "obs_publisher_did": "ivo://eso.org/ADP.2020-06-02T11:04:19.402",
+      "obs_collection": "HAWKI",
+      "dataproduct_type": "image",
+      "s_ra": 266.4168,
+      "s_dec": -29.0078,
+      "access_url": "https://archive.eso.org/datalink/ADP.2020-06-02T11:04:19.402"
+    },
+    {
+      "obs_publisher_did": "ivo://eso.org/ADP.2021-03-19T09:55:02.117",
+      "obs_collection": "XSHOOTER",
+      "dataproduct_type": "spectrum",
+      "s_ra": 189.9976,
+      "s_dec": -11.6231,
+      "access_url": "https://archive.eso.org/datalink/ADP.2021-03-19T09:55:02.117"
+    },
+    {
+      "obs_publisher_did": "ivo://eso.org/ADP.2021-03-19T09:55:02.117",
+      "obs_collection": "XSHOOTER",
+      "dataproduct_type": "spectrum",
+      "s_ra": 189.9976,
+      "s_dec": -11.6231,
+      "access_url": "https://archive.eso.org/datalink/ADP.2021-03-19T09:55:02.117"
+    },
+    {
+      "obs_publisher_did": "ivo://eso.org/ADP.2022-08-30T14:21:56.008",
+      "obs_collection": "VISIR",
+      "dataproduct_type": "image",
+      "s_ra": 83.8221,
+      "s_dec": null,
+      "access_url": ""
+    }
+  ]
+}

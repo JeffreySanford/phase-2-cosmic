@@ -27,22 +27,26 @@ Use these rules when changing any Lakehouse documentation:
 
 ## Documentation Inventory
 
-| File                                     | Primary PR | Purpose                                                          |
-| ---------------------------------------- | ---------- | ---------------------------------------------------------------- |
-| `README.md`                              | Cross-PR   | Landing page, status table, and repository layout.               |
-| `TODO.md`                                | Cross-PR   | Staged checklist and remaining implementation work.              |
-| `docs/LAKEHOUSE_TOPOLOGY.md`             | PR40       | Target topology and evidence boundary.                           |
-| `docs/MEDALLION_ARCHITECTURE.md`         | PR40       | Bronze/Silver/Gold responsibilities and failure routing.         |
-| `docs/STORAGE_RESPONSIBILITIES.md`       | PR40       | Object-store authority versus analytical table responsibilities. |
-| `docs/REAL_DATA_SOURCES.md`              | PR40       | Provider-neutral public-source strategy.                         |
-| `docs/PUBLIC_DATASET_SCAN_2026_08_08.md` | PR40       | Dated scan of additional public archive/catalog candidates.      |
-| `docs/ACTIVE_DATASET_SELECTION_PLAN.md`  | PR40/PR41  | Source registry, activation states, include/exclude controls.    |
-| `docs/ESO_PROOF_SLICE_BRIEF.md`          | PR40       | ESO proof scaffold and first complete slice criteria.            |
-| `docs/ESO_INGESTION_ADAPTER_CONTRACT.md` | PR40       | Provider adapter contract.                                       |
-| `docs/PIPELINE_TELEMETRY_EVIDENCE.md`    | PR40/PR41  | Operator evidence labels and claim boundaries.                   |
-| `docs/PR41_MVP_LAKEHOUSE.md`             | PR41       | Local medallion MVP moving parts and acceptance criteria.        |
-| `docs/PR42_DATABRICKS_SPRINT_PLAN.md`    | PR42       | Databricks production-runtime sprint plan.                       |
-| `docs/PR40_PR42_ROADMAP.md`              | Cross-PR   | Coordination guide for PR40-PR42 updates.                        |
+| File                                           | Primary PR | Purpose                                                                                         |
+| ---------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------- |
+| `README.md`                                    | Cross-PR   | Landing page, status table, and repository layout.                                              |
+| `TODO.md`                                      | Cross-PR   | Staged checklist and remaining implementation work.                                             |
+| `docs/LAKEHOUSE_TOPOLOGY.md`                   | PR40       | Target topology and evidence boundary.                                                          |
+| `docs/MEDALLION_ARCHITECTURE.md`               | PR40       | Bronze/Silver/Gold responsibilities and failure routing.                                        |
+| `docs/STORAGE_RESPONSIBILITIES.md`             | PR40       | Object-store authority versus analytical table responsibilities.                                |
+| `docs/REAL_DATA_SOURCES.md`                    | PR40       | Provider-neutral public-source strategy.                                                        |
+| `docs/PUBLIC_DATASET_SCAN_2026_08_08.md`       | PR40       | Dated scan of additional public archive/catalog candidates.                                     |
+| `docs/ACTIVE_DATASET_SELECTION_PLAN.md`        | PR40/PR41  | Source registry, activation states, include/exclude controls.                                   |
+| `docs/ESO_PROOF_SLICE_BRIEF.md`                | PR40       | ESO proof scaffold and first complete slice criteria.                                           |
+| `docs/ESO_INGESTION_ADAPTER_CONTRACT.md`       | PR40       | Provider adapter contract.                                                                      |
+| `docs/PIPELINE_TELEMETRY_EVIDENCE.md`          | PR40/PR41  | Operator evidence labels and claim boundaries.                                                  |
+| `docs/PR41_MVP_LAKEHOUSE.md`                   | PR41       | Local medallion MVP moving parts and acceptance criteria.                                       |
+| `docs/PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md` | PR41       | Guarded local scale profiles and platform control-view contract.                                |
+| `docs/PR41_SCALE_IMPLEMENTATION_PLAN.md`       | PR41       | Large-profile generation, storage, and verification plan.                                       |
+| `docs/PR41_TESTING_SUITE_PLAN.md`              | PR41       | MVP unit/integration/contract/API/e2e and quality-gate testing plan.                            |
+| `docs/PR41_DIAGNOSTIC_VIEW_PLAN.md`            | PR41/PR42  | Diagnostics UI state model, read-only payload contract, and future Databricks status placement. |
+| `docs/PR42_DATABRICKS_SPRINT_PLAN.md`          | PR42       | Databricks production-runtime sprint plan.                                                      |
+| `docs/PR40_PR42_ROADMAP.md`                    | Cross-PR   | Coordination guide for PR40-PR42 updates.                                                       |
 
 ## Current Evidence Ladder
 

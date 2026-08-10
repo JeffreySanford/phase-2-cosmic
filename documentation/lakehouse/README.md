@@ -23,6 +23,10 @@ documentation/lakehouse/
 │   ├── ESO_INGESTION_ADAPTER_CONTRACT.md
 │   ├── PIPELINE_TELEMETRY_EVIDENCE.md
 │   ├── PR41_MVP_LAKEHOUSE.md
+│   ├── PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md
+│   ├── PR41_SCALE_IMPLEMENTATION_PLAN.md
+│   ├── PR41_TESTING_SUITE_PLAN.md
+│   ├── PR41_DIAGNOSTIC_VIEW_PLAN.md
 │   ├── PR42_DATABRICKS_SPRINT_PLAN.md
 │   └── PR40_PR42_ROADMAP.md
 ├── diagrams/
@@ -94,6 +98,8 @@ This is useful runnable evidence, but it is **not yet the Lakehouse data plane i
 - measured Kafka/Pulsar Lakehouse throughput or recovery behavior.
 
 PR41 introduces the first MVP implementation target for that gap. See [`docs/PR41_MVP_LAKEHOUSE.md`](./docs/PR41_MVP_LAKEHOUSE.md). The PR41 MVP is local-first, creates reproducible Bronze/Silver/Gold table artifacts under `tmp/lakehouse/pr41-delta/`, and lets the Lakehouse evidence service report verified PR41 medallion evidence when the local manifest exists.
+
+The PR41 scale, testing, and diagnostic UI planning lives in [`docs/PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md`](./docs/PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md), [`docs/PR41_SCALE_IMPLEMENTATION_PLAN.md`](./docs/PR41_SCALE_IMPLEMENTATION_PLAN.md), [`docs/PR41_TESTING_SUITE_PLAN.md`](./docs/PR41_TESTING_SUITE_PLAN.md), and [`docs/PR41_DIAGNOSTIC_VIEW_PLAN.md`](./docs/PR41_DIAGNOSTIC_VIEW_PLAN.md).
 
 PR42 defines how the PR41 medallion contract graduates into Databricks. See [`docs/PR42_DATABRICKS_SPRINT_PLAN.md`](./docs/PR42_DATABRICKS_SPRINT_PLAN.md). Databricks is the planned managed Spark/Delta/Unity Catalog runtime for analytical tables and workflows; it does not replace Java Governance or MinIO/S3.
 
@@ -275,6 +281,12 @@ Technology-specific topology edges remain **planned** until code, repeatable exe
 - [`docs/ESO_PROOF_SLICE_BRIEF.md`](./docs/ESO_PROOF_SLICE_BRIEF.md) — first implemented provider profile and path toward the full Lakehouse slice.
 - [`docs/ESO_INGESTION_ADAPTER_CONTRACT.md`](./docs/ESO_INGESTION_ADAPTER_CONTRACT.md) — provider-neutral source-to-Bronze contract documented using the ESO profile.
 - [`docs/PIPELINE_TELEMETRY_EVIDENCE.md`](./docs/PIPELINE_TELEMETRY_EVIDENCE.md) — operator evidence semantics, active API paths, source labels, and the Lakehouse implementation claim boundary.
+- [`docs/PR41_MVP_LAKEHOUSE.md`](./docs/PR41_MVP_LAKEHOUSE.md) — PR41 local medallion MVP moving parts and acceptance criteria.
+- [`docs/PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md`](./docs/PR41_SCALE_PROFILES_AND_CONTROL_VIEW.md) — guarded local scale profiles and platform control-view contract.
+- [`docs/PR41_SCALE_IMPLEMENTATION_PLAN.md`](./docs/PR41_SCALE_IMPLEMENTATION_PLAN.md) — large-profile generation, storage, and verification plan.
+- [`docs/PR41_TESTING_SUITE_PLAN.md`](./docs/PR41_TESTING_SUITE_PLAN.md) — PR41 MVP testing-suite and quality-gate plan.
+- [`docs/PR41_DIAGNOSTIC_VIEW_PLAN.md`](./docs/PR41_DIAGNOSTIC_VIEW_PLAN.md) — PR41 diagnostic view state model, read-only payload, and UI placement plan.
+- [`docs/PR42_DATABRICKS_SPRINT_PLAN.md`](./docs/PR42_DATABRICKS_SPRINT_PLAN.md) — Databricks production-runtime sprint plan and PR43+ implementation sequence.
 
 ### Mermaid sources
 

@@ -1,0 +1,46 @@
+{
+  "note": "Offline fixture shaped like the NRAO archive's radio-astronomy product records. Field names intentionally differ from IVOA ObsCore so the PR41 adapter contract is validated against a second provider vocabulary. These rows are synthetic; they are NOT a live NRAO/VLASS extract and are not public-source evidence.",
+  "contract": "vo-tap-obscore.v1",
+  "rows": [
+    {
+      "product_id": "nrao:VLASS1.1.ql.T10t12.J104815+033000",
+      "collection_name": "VLASS1.1",
+      "product_type": "image",
+      "ra_deg": 162.0625,
+      "dec_deg": 3.5,
+      "download_url": "https://archive-new.nrao.edu/vlass/quicklook/T10t12/J104815+033000.fits"
+    },
+    {
+      "product_id": "nrao:VLASS2.1.ql.T12t07.J083012+213000",
+      "collection_name": "VLASS2.1",
+      "product_type": "image",
+      "ra_deg": 127.55,
+      "dec_deg": 21.5,
+      "download_url": "https://archive-new.nrao.edu/vlass/quicklook/T12t07/J083012+213000.fits"
+    },
+    {
+      "product_id": "nrao:VLASS2.1.ql.T12t07.J083012+213000",
+      "collection_name": "VLASS2.1",
+      "product_type": "image",
+      "ra_deg": 127.55,
+      "dec_deg": 21.5,
+      "download_url": "https://archive-new.nrao.edu/vlass/quicklook/T12t07/J083012+213000.fits"
+    },
+    {
+      "product_id": "nrao:VLASS1.2.ql.T08t23.J154321-051500",
+      "collection_name": "VLASS1.2",
+      "product_type": "visibility",
+      "ra_deg": 235.8375,
+      "dec_deg": -5.25,
+      "download_url": "https://archive-new.nrao.edu/vlass/quicklook/T08t23/J154321-051500.fits"
+    },
+    {
+      "product_id": "nrao:VLASS1.2.ql.T08t23.J000000-999999",
+      "collection_name": "VLASS1.2",
+      "product_type": "image",
+      "ra_deg": 999.0,
+      "dec_deg": -5.25,
+      "download_url": "https://archive-new.nrao.edu/vlass/quicklook/T08t23/J000000-999999.fits"
+    }
+  ]
+}
