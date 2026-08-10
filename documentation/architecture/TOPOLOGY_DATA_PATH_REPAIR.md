@@ -319,9 +319,13 @@ Metric bindings per edge (all already scraped, so no new exporters are required)
 - [x] `documentation/architecture/TOPOLOGY_DATA_PATH_REPAIR.md` — implementation/evidence source of truth.
 - [x] `documentation/BROKER_SAFETY_RUNBOOK.md` — repaired-path retry/DLT/replay rules.
 - [x] `documentation/development/coding-standards/07-messaging.md` — broker roles and event identity rules.
-- [ ] `documentation/frontend/features/TOPOLOGY.md` — visualization/evidence presentation details when Stage 3 lands.
-- [ ] `documentation/DIAGNOSTICS.md` — final operator presentation once the repaired stream is bound into a visible diagnostics surface.
-- [ ] `documentation/cosmic-forge/DOCKER_ENVIRONMENT.md` — geo-profile operational instructions if not already covered by compose comments.
+- [x] `documentation/frontend/features/TOPOLOGY.md` — evidence states, the
+      `source` vs `state` separation, and evidence presentation rules.
+- [x] `documentation/DIAGNOSTICS.md` — both SSE channels and why the disk-derived
+      telemetry stream must not be read as the event stream.
+- [x] `documentation/cosmic-forge/DOCKER_ENVIRONMENT.md` — geo-profile
+      operation, host port map, the Kafka listener split, and the scoped
+      ADR-003 exception.
 - [ ] `documentation/data/DATA_ARCHITECTURE.md` — broader ngVLA lifecycle cleanup; current document contains older three-broker ingest wording and should be updated as a follow-on docs-only cleanup rather than silently rewritten inside the PR41 lakehouse proof.
 - [ ] `ROADMAP.md` — roll collector tier into phase planning after PR41 acceptance evidence is captured.
 - [x] PR41 description — expanded scope, decision, reliability semantics, acceptance evidence, and remaining boundary.
