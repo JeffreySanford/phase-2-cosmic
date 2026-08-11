@@ -298,6 +298,38 @@ public class JobService {
         }
     }
 
+    /**
+     * Give a job a bounded lifetime, covering its record and the log and
+     * artifact keys that hang off it.
+     *
+     * <p>Used for jobs the platform generates rather than an operator: a
+     * running dev stack was measured growing Redis by 15 keys/sec with no
+     * expiry anywhere, reaching two million keys and 765 MB, because every
+     * job wrote three unexpiring keys and nothing ever removed them.
+     *
+     * <p>The createdAt index entry is deliberately left alone. Redis expiry
+     * cannot remove a sorted-set member, so it is dropped lazily when a
+     * listing walks past an id whose record has already gone. Removing it here
+     * would be wrong anyway: the record outlives this call by the retention
+     * window.
+     */
+    public void expireJob(String jobId, Duration retention) {
+        if (jobId == null || retention == null || retention.isZero() || retention.isNegative()) {
+            return;
+        }
+        if (redisTemplate == null) {
+            return;
+        }
+        String key = KEY_PREFIX + jobId;
+        for (String target : List.of(key, key + ":logs", key + ":artifacts")) {
+            try {
+                redisTemplate.expire(target, retention);
+            } catch (Throwable ex) {
+                log.debug("Retention set failed for {}: {}", target, ex.toString());
+            }
+        }
+    }
+
     private void unindexCreatedAt(String jobId) {
         try {
             if (redisTemplate != null) {
