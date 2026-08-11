@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import jakarta.annotation.PreDestroy;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import java.time.Instant;
 import java.time.Duration;
@@ -30,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.Set;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cosmic.governance.api.util.JobRecordMutator;
 import com.cosmic.governance.api.util.RedisMarshaller;
 import jakarta.annotation.PostConstruct;
 import java.util.concurrent.Executors;
@@ -84,6 +86,7 @@ public class JobService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final RedisMarshaller marshaller;
+    private final JobRecordMutator jobRecordMutator;
     private final AuditService auditService;
     private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
     // in-memory fallback store used when RedisTemplate is not available
@@ -116,6 +119,7 @@ public class JobService {
         this.marshaller = marshaller;
         this.auditService = auditService;
         this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;
+        this.jobRecordMutator = new JobRecordMutator(marshaller);
         if (executors != null) {
             for (JobExecutor e : executors) executorMap.put(e.name(), e);
         }
@@ -381,6 +385,26 @@ public class JobService {
             );
         }
         return value;
+    }
+
+    /**
+     * Read-modify-write a job record so that a concurrent writer — the dispatch
+     * scanner, an executor's scheduled transition, or another API call — cannot
+     * silently discard the change. See {@link JobRecordMutator}; the mutator may
+     * run more than once, so it must not carry side effects.
+     */
+    private Optional<JobRecord> mutateJobRecord(String key, java.util.function.Predicate<JobRecord> mutator) {
+        return jobRecordMutator.mutate(redisTemplate, key, new JobRecordMutator.RecordAccess() {
+            @Override
+            public Object read(String k) {
+                return getValue(k);
+            }
+
+            @Override
+            public void write(String k, JobRecord record) {
+                setValue(k, record);
+            }
+        }, mutator);
     }
 
     private void setValue(String key, Object value) {
@@ -822,18 +846,20 @@ public class JobService {
      * job parameters and increments the version.
      */
     public boolean updateLineage(String jobId, Map<String, Object> lineage) {
-        Object o = getValue(KEY_PREFIX + jobId);
-        JobRecord rec = marshaller.toJobRecord(o);
-        if (rec == null) return false;
-        Map<String, Object> params = rec.getParameters();
-        if (params == null) {
-            params = new HashMap<>();
+        // Compare-and-set: an executor transition running concurrently would
+        // otherwise write back its pre-lineage copy of the record, dropping this
+        // update after the caller had already been told it succeeded.
+        boolean updated = mutateJobRecord(KEY_PREFIX + jobId, rec -> {
+            Map<String, Object> params = rec.getParameters() == null
+                    ? new HashMap<>()
+                    : new HashMap<>(rec.getParameters());
+            params.put("lineage", new HashMap<>(lineage == null ? Map.of() : lineage));
             rec.setParameters(params);
-        }
-        params.put("lineage", new HashMap<>(lineage == null ? Map.of() : lineage));
-        rec.setUpdatedAt(Instant.now().toString());
-        rec.setVersion(rec.getVersion() + 1);
-        setValue(KEY_PREFIX + jobId, rec);
+            rec.setUpdatedAt(Instant.now().toString());
+            rec.setVersion(rec.getVersion() + 1);
+            return true;
+        }).isPresent();
+        if (!updated) return false;
         // Record audit entry for lineage update
         recordAudit("job:" + jobId + " lineage updated to " + String.valueOf(lineage));
         if (governanceRuntimeMetricsService != null) {
@@ -843,13 +869,13 @@ public class JobService {
     }
 
     public boolean attachManifest(String jobId, Map<String, Object> manifest) {
-        Object o = getValue(KEY_PREFIX + jobId);
-        JobRecord rec = marshaller.toJobRecord(o);
-        if (rec == null) return false;
-        rec.setManifest(manifest);
-        rec.setUpdatedAt(Instant.now().toString());
-        rec.setVersion(rec.getVersion() + 1);
-        setValue(KEY_PREFIX + jobId, rec);
+        boolean attached = mutateJobRecord(KEY_PREFIX + jobId, rec -> {
+            rec.setManifest(manifest);
+            rec.setUpdatedAt(Instant.now().toString());
+            rec.setVersion(rec.getVersion() + 1);
+            return true;
+        }).isPresent();
+        if (!attached) return false;
         recordAudit("manifest attached " + jobId + " " + manifest.toString());
         if (governanceRuntimeMetricsService != null) {
             governanceRuntimeMetricsService.recordJobMetadataMutation("manifest_attach", manifest);
@@ -954,23 +980,22 @@ public class JobService {
      */
     public Optional<JobStatusResponse> retry(String jobId, Long expectedVersion) {
         String key = KEY_PREFIX + jobId;
-        Object o = getValue(key);
-        if (o == null) return Optional.empty();
-        JobRecord rec = marshaller.toJobRecord(o);
-        if (rec == null) return Optional.empty();
-        if (expectedVersion != null && rec.getVersion() != expectedVersion) {
-            return Optional.empty();
-        }
-        if (rec.getState() != JobState.FAILED && rec.getState() != JobState.CANCELED && rec.getState() != JobState.TIMED_OUT) {
-            log.warn("Cannot retry job {} from state {}", jobId, rec.getState());
-            return Optional.empty();
-        }
-        rec.setState(JobState.QUEUED);
-        rec.setUpdatedAt(Instant.now().toString());
-        rec.setVersion(rec.getVersion() + 1);
-        setValue(key, rec);
-        log.info("Audit: job {} retried (version now {})", jobId, rec.getVersion());
-        return Optional.of(toResponse(rec));
+        Optional<JobRecord> retried = mutateJobRecord(key, rec -> {
+            if (expectedVersion != null && rec.getVersion() != expectedVersion) {
+                return false;
+            }
+            if (rec.getState() != JobState.FAILED && rec.getState() != JobState.CANCELED && rec.getState() != JobState.TIMED_OUT) {
+                log.warn("Cannot retry job {} from state {}", jobId, rec.getState());
+                return false;
+            }
+            rec.setState(JobState.QUEUED);
+            rec.setUpdatedAt(Instant.now().toString());
+            rec.setVersion(rec.getVersion() + 1);
+            return true;
+        });
+        if (retried.isEmpty()) return Optional.empty();
+        log.info("Audit: job {} retried (version now {})", jobId, retried.get().getVersion());
+        return Optional.of(toResponse(retried.get()));
     }
     public List<JobStatusResponse> list(String workflowFilter, JobState stateFilter, int page, int size) {
         // Prefer the createdAt index: it yields newest-first ids a window at a time,
@@ -1143,23 +1168,34 @@ public class JobService {
 
     public Optional<JobStatusResponse> transition(String jobId, JobState newState, Long expectedVersion) {
         String key = KEY_PREFIX + jobId;
-        Object o = getValue(key);
-        if (o == null) return Optional.empty();
-        JobRecord rec = marshaller.toJobRecord(o);
-        if (rec == null) return Optional.empty();
-        if (expectedVersion != null && rec.getVersion() != expectedVersion) {
-            throw new IllegalStateException("version_mismatch:" + rec.getVersion());
+        // The observed "from" state has to come back out of the mutation: on a
+        // contended key the mutator re-runs against a fresher record, so a state
+        // read before the call could describe a record that never got written.
+        AtomicReference<JobState> observedFrom = new AtomicReference<>();
+        AtomicLong mismatchedVersion = new AtomicLong(-1);
+        Optional<JobRecord> transitioned = mutateJobRecord(key, rec -> {
+            if (expectedVersion != null && rec.getVersion() != expectedVersion) {
+                mismatchedVersion.set(rec.getVersion());
+                return false;
+            }
+            JobState from = rec.getState();
+            if (!isValidTransition(from, newState)) {
+                log.warn("Invalid state transition attempted for {}: {} -> {}", jobId, from, newState);
+                return false;
+            }
+            observedFrom.set(from);
+            rec.setState(newState);
+            rec.setUpdatedAt(Instant.now().toString());
+            rec.setVersion(rec.getVersion() + 1);
+            return true;
+        });
+        if (mismatchedVersion.get() >= 0) {
+            throw new IllegalStateException("version_mismatch:" + mismatchedVersion.get());
         }
-        JobState current = rec.getState();
-        if (!isValidTransition(current, newState)) {
-            log.warn("Invalid state transition attempted for {}: {} -> {}", jobId, current, newState);
-            return Optional.empty();
-        }
+        if (transitioned.isEmpty()) return Optional.empty();
+        JobRecord rec = transitioned.get();
+        JobState current = observedFrom.get();
         recordAudit("job " + jobId + " transitioning " + current + " -> " + newState);
-        rec.setState(newState);
-        rec.setUpdatedAt(Instant.now().toString());
-        rec.setVersion(rec.getVersion() + 1);
-        setValue(key, rec);
         if (governanceRuntimeMetricsService != null) {
             governanceRuntimeMetricsService.recordJobTransition(rec.getWorkflow(), current.toString(), newState.toString());
         }
