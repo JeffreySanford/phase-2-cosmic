@@ -50,8 +50,12 @@ They also pin the Compose project name to `cosmic-forge` so the bounded-track st
 The initial Forge compose environment provides support services only:
 
 - PostgreSQL for metadata
-- Redis for cache/state coordination
 - MinIO for artifact storage
+
+A Redis service was declared here previously and removed: `FORGE_REDIS_URL` was
+passed to the API and worker but had no consumer anywhere in the codebase, so it
+was infrastructure that ran without doing anything. Shared caching now uses the
+Redis in `docker/dev-compose.yml`.
 
 This is no longer storage-only.
 
@@ -67,7 +71,6 @@ These service boundaries are now implemented as the current typed Forge API and 
 Forge ports deliberately avoid the current stack defaults:
 
 - Postgres: `55432`
-- Redis: `6380`
 - MinIO API: `9001`
 - MinIO Console: `9002`
 - Forge API: `4101`

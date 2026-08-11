@@ -791,6 +791,65 @@ let redisClient: RedisClientOps | null = null;
 const VO_CACHED_SAMPLES_KEY = "frontend:ssr:vo-cached-samples:v1";
 const VO_CACHED_SAMPLES_TTL_SECONDS = 300;
 
+// Docker service probes open a TCP socket per service on every request, and the
+// diagnostics view polls. A short window collapses that fan-out without letting
+// the page show a stale picture of which containers are up.
+const DOCKER_SERVICES_CACHE_KEY = "frontend:ssr:docker-services:v1";
+const DOCKER_SERVICES_TTL_SECONDS = 5;
+
+/**
+ * Read a cached JSON response, recording the same hit/miss/bypass accounting
+ * and `X-Cache` header the VO samples route established.
+ *
+ * <p>Returns null on a miss, on a bypass, and on any Redis failure. Caching is
+ * an optimisation here, not a dependency: an unavailable Redis has to degrade
+ * to serving the live value rather than failing the request.
+ */
+async function readCachedJson<T>(
+  res: Response,
+  key: string
+): Promise<T | null> {
+  try {
+    const cached = await redisClient?.get(key);
+    if (cached) {
+      const parsed = JSON.parse(cached) as T;
+      if (parsed && typeof parsed === "object") {
+        redisCacheRequestsTotal.hit += 1;
+        redisCacheBytesServedTotal.hit += Buffer.byteLength(cached, "utf8");
+        res.setHeader("X-Cache", "HIT");
+        return parsed;
+      }
+    }
+    const outcome = redisClient ? "miss" : "bypass";
+    redisCacheRequestsTotal[outcome] += 1;
+    res.setHeader("X-Cache", redisClient ? "MISS" : "BYPASS");
+    return null;
+  } catch (e) {
+    console.warn(`Failed to read ${key} from Redis:`, e);
+    redisCacheReadErrorsTotal += 1;
+    redisCacheRequestsTotal.bypass += 1;
+    res.setHeader("X-Cache", "BYPASS");
+    return null;
+  }
+}
+
+/** Store a JSON response for {@code ttlSeconds}. Never throws. */
+async function writeCachedJson(
+  key: string,
+  value: unknown,
+  ttlSeconds: number
+): Promise<void> {
+  if (!redisClient) return;
+  try {
+    const serialized = JSON.stringify(value);
+    await redisClient.set(key, serialized, { EX: ttlSeconds });
+    redisCacheBytesWrittenTotal += Buffer.byteLength(serialized, "utf8");
+  } catch (e) {
+    console.warn(`Failed to populate ${key} in Redis:`, e);
+    redisCacheWriteErrorsTotal += 1;
+  }
+}
+
 function voCachedSamplesPayload(): Record<string, Record<string, unknown>> {
   return {
     "vo.cone-search": {
@@ -2465,6 +2524,16 @@ export class AppController {
       res.status(404).json({ error: "not_found" });
       return;
     }
+    // Served from cache when warm: this probe opens a socket per service and
+    // the diagnostics view polls it.
+    const cached = await readCachedJson<unknown[]>(
+      res,
+      DOCKER_SERVICES_CACHE_KEY
+    );
+    if (cached) {
+      res.json(cached);
+      return;
+    }
     try {
       const net = await import("net");
 
@@ -2702,6 +2771,11 @@ export class AppController {
 
       results.push(...serviceResults);
 
+      await writeCachedJson(
+        DOCKER_SERVICES_CACHE_KEY,
+        results,
+        DOCKER_SERVICES_TTL_SECONDS
+      );
       res.json(results);
     } catch (e: any) {
       console.error("Error in getDockerServices:", e);
