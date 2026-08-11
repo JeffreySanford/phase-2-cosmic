@@ -13,7 +13,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@SpringBootTest
+// This suite asserts the broker-to-job path, which is off by default.
+@SpringBootTest(properties = "governance.ingest.create-jobs=true")
 class RabbitIngestListenerIntegrationTest extends AbstractRedisTest {
 
     @Autowired

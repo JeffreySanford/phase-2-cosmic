@@ -4,6 +4,7 @@ import com.cosmic.governance.api.dto.JobSubmitRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -18,16 +19,34 @@ public class GovernanceIngestProcessingService {
     private final ObjectMapper mapper;
     private final Validator validator;
 
+    /**
+     * Whether an accepted broker message also becomes a governance job.
+     *
+     * <p>Off by default. The dev stack's data generator emits roughly 244
+     * records a second into {@code phase2-events} and never stops, so with this
+     * on, the job store grows by about 880,000 records an hour purely from
+     * background traffic — the Jobs view fills faster than it can be read, and
+     * the key count reaches the order that exhausted the governance heap.
+     *
+     * <p>Ingest itself is unaffected: messages are still received, validated,
+     * measured and reported, so the streaming path and its topology metrics
+     * stay fully instrumented. Only the job record is not created. Turn it on
+     * deliberately to demonstrate or load-test the broker-to-job path.
+     */
+    private final boolean createJobsFromIngest;
+
     public GovernanceIngestProcessingService(
             JobService jobService,
             GovernanceIngestMetricsService ingestMetrics,
             ObjectMapper mapper,
-            Validator validator
+            Validator validator,
+            @Value("${governance.ingest.create-jobs:false}") boolean createJobsFromIngest
     ) {
         this.jobService = jobService;
         this.ingestMetrics = ingestMetrics;
         this.mapper = mapper;
         this.validator = validator;
+        this.createJobsFromIngest = createJobsFromIngest;
     }
 
     @SuppressWarnings("unchecked")
@@ -66,7 +85,9 @@ public class GovernanceIngestProcessingService {
                 throw new IllegalArgumentException("Message validation failed: " + violations);
             }
 
-            jobService.submit(req);
+            if (createJobsFromIngest) {
+                jobService.submit(req);
+            }
             ingestMetrics.recordSuccess(broker, channel, workflow);
             result = "success";
             return ProcessingResult.accepted(workflow, datasetId);
