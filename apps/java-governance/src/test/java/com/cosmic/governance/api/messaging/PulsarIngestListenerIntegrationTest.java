@@ -21,7 +21,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+// This suite asserts the broker-to-job path, which is off by default.
+@SpringBootTest(properties = "governance.ingest.create-jobs=true")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class PulsarIngestListenerIntegrationTest extends AbstractRedisTest {
     private static final String TOPIC_NAME = "phase2-events-test-" + UUID.randomUUID();

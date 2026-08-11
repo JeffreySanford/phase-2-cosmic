@@ -31,7 +31,9 @@ import java.util.concurrent.TimeUnit;
     "spring.main.allow-bean-definition-overriding=true",
     "spring.kafka.consumer.auto-offset-reset=earliest",
     "governance.kafka.ingest-group-id=governance-group-it",
-    "governance.kafka.audit-group-id=audit-mirror-it"
+    "governance.kafka.audit-group-id=audit-mirror-it",
+    // This suite asserts the broker-to-job path, which is off by default.
+    "governance.ingest.create-jobs=true"
 })
 public class KafkaIngestListenerIntegrationTest {
 
