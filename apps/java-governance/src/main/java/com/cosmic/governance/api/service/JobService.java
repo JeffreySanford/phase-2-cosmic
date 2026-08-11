@@ -715,6 +715,178 @@ public class JobService {
      * Release queued sample jobs that were marked deferred by removing the deferred flag.
      * Returns number of jobs released.
      */
+    /**
+     * Report the size and shape of the job store.
+     *
+     * <p>Exists so operators can see accumulation without reaching for
+     * {@code redis-cli}. Every number here had to be gathered by hand while
+     * diagnosing a store that had grown to two million keys, which is the
+     * argument for it being available through the platform instead.
+     */
+    public Map<String, Object> storeStats() {
+        Map<String, Object> stats = new HashMap<>();
+        long records = 0;
+        long logs = 0;
+        long artifacts = 0;
+        long expiring = 0;
+        // Streamed, never collected: the whole point is that this key space can
+        // be large enough to exhaust the heap if materialised.
+        for (String key : new String[]{"job:*"}) {
+            var recordCount = new AtomicLong();
+            var logCount = new AtomicLong();
+            var artifactCount = new AtomicLong();
+            var withTtl = new AtomicLong();
+            forEachKey(key, k -> {
+                if (k == null || k.startsWith(CREATED_INDEX_KEY) || k.startsWith(REQUEST_ID_INDEX_KEY)) return true;
+                if (k.endsWith(":logs")) logCount.incrementAndGet();
+                else if (k.endsWith(":artifacts")) artifactCount.incrementAndGet();
+                else recordCount.incrementAndGet();
+                try {
+                    if (redisTemplate != null) {
+                        Long ttl = redisTemplate.getExpire(k);
+                        if (ttl != null && ttl > 0) withTtl.incrementAndGet();
+                    }
+                } catch (Throwable ignored) {}
+                return true;
+            });
+            records = recordCount.get();
+            logs = logCount.get();
+            artifacts = artifactCount.get();
+            expiring = withTtl.get();
+        }
+        stats.put("jobRecords", records);
+        stats.put("logKeys", logs);
+        stats.put("artifactKeys", artifacts);
+        stats.put("keysWithRetention", expiring);
+        stats.put("indexedJobs", indexedJobCount());
+        return stats;
+    }
+
+    private long indexedJobCount() {
+        try {
+            if (redisTemplate != null) {
+                Long size = redisTemplate.opsForZSet().zCard(CREATED_INDEX_KEY);
+                return size == null ? 0L : size;
+            }
+        } catch (Throwable ignored) {}
+        return 0L;
+    }
+
+    /**
+     * Remove accumulated job records, keeping the {@code keepRecent} newest.
+     *
+     * <p>Server-side rather than a shell script against {@code redis-cli}: the
+     * store holds job, provenance and audit records, so a destructive sweep
+     * over it belongs behind the same API and audit trail as every other
+     * mutation.
+     *
+     * <p>Uses the streaming key walk rather than collecting the key space, and
+     * unlinks in batches so large deletes are freed off the event loop. The
+     * createdAt index is trimmed alongside the records: an index entry pointing
+     * at a missing record consumes a slot in every listing window and returns
+     * nothing for it, so pruning records without it degrades listings rather
+     * than repairing them.
+     *
+     * @param dryRun when true, count what would be removed and delete nothing
+     */
+    public Map<String, Object> purgeJobs(int keepRecent, boolean dryRun) {
+        int keep = Math.max(0, keepRecent);
+        Set<Object> keepIds = keep > 0 ? retainedIds(keep) : Set.of();
+
+        var scanned = new AtomicLong();
+        var removable = new AtomicLong();
+        List<String> batch = new ArrayList<>();
+        var removed = new AtomicLong();
+
+        forEachKey(KEY_PREFIX + "*", k -> {
+            if (k == null) return true;
+            // The indexes are handled explicitly below; never sweep them here.
+            if (k.startsWith(CREATED_INDEX_KEY) || k.startsWith(REQUEST_ID_INDEX_KEY)) return true;
+            scanned.incrementAndGet();
+            String jobId = jobIdOf(k);
+            if (jobId != null && keepIds.contains(jobId)) return true;
+            removable.incrementAndGet();
+            if (dryRun) return true;
+            batch.add(k);
+            if (batch.size() >= 500) {
+                removed.addAndGet(unlinkAll(batch));
+                batch.clear();
+            }
+            return true;
+        });
+        if (!dryRun && !batch.isEmpty()) {
+            removed.addAndGet(unlinkAll(batch));
+            batch.clear();
+        }
+
+        if (!dryRun) {
+            trimCreatedIndex(keep);
+            recordAudit("job store purged: removed " + removed.get() + " keys, kept newest " + keep);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("dryRun", dryRun);
+        result.put("keepRecent", keep);
+        result.put("scannedKeys", scanned.get());
+        result.put("removableKeys", removable.get());
+        result.put("removedKeys", removed.get());
+        return result;
+    }
+
+    private Set<Object> retainedIds(int keep) {
+        try {
+            if (redisTemplate != null) {
+                Set<Object> ids = redisTemplate.opsForZSet().reverseRange(CREATED_INDEX_KEY, 0, keep - 1L);
+                return ids == null ? Set.of() : ids;
+            }
+        } catch (Throwable ex) {
+            log.debug("Could not read retained ids: {}", ex.toString());
+        }
+        return Set.of();
+    }
+
+    /** Job id for {@code job:<id>}, {@code job:<id>:logs} and {@code job:<id>:artifacts}. */
+    private static String jobIdOf(String key) {
+        if (key == null || !key.startsWith(KEY_PREFIX)) return null;
+        String rest = key.substring(KEY_PREFIX.length());
+        int colon = rest.indexOf(':');
+        return colon > 0 ? rest.substring(0, colon) : rest;
+    }
+
+    private long unlinkAll(List<String> keys) {
+        if (keys.isEmpty()) return 0L;
+        try {
+            if (redisTemplate != null) {
+                Long n = redisTemplate.unlink(keys);
+                return n == null ? 0L : n;
+            }
+            long n = 0;
+            for (String k : keys) {
+                if (inMemoryStore.remove(k) != null) n++;
+            }
+            return n;
+        } catch (Throwable ex) {
+            log.warn("Batch unlink failed: {}", ex.toString());
+            return 0L;
+        }
+    }
+
+    private void trimCreatedIndex(int keep) {
+        try {
+            if (redisTemplate == null) return;
+            if (keep <= 0) {
+                redisTemplate.unlink(CREATED_INDEX_KEY);
+                // Leaving the backfill marker set would tell a restarted service
+                // the index is already built, so a rebuilt index would stay empty.
+                redisTemplate.unlink(INDEX_BACKFILL_DONE);
+                return;
+            }
+            redisTemplate.opsForZSet().removeRange(CREATED_INDEX_KEY, 0, -keep - 1L);
+        } catch (Throwable ex) {
+            log.warn("createdAt index trim failed: {}", ex.toString());
+        }
+    }
+
     public int releaseDeferredJobs() {
         var releasedCount = new java.util.concurrent.atomic.AtomicInteger();
         try {

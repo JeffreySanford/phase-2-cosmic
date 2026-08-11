@@ -14,6 +14,7 @@ Prove this path locally:
 provider extract
   -> Bronze observation events
   -> Silver canonical observations
+  -> Silver provenance projection
   -> Silver analytical quarantine
   -> Gold observation summary
 ```
@@ -71,6 +72,7 @@ The PR41 diagnostic UI plan is documented in [`PR41_DIAGNOSTIC_VIEW_PLAN.md`](./
 | Diagnostics view  | `apps/frontend/src/app/features/diagnostics/`                     | Displays read-only Lakehouse evidence state, active profile, artifact root, medallion layer state, and guard warnings.                           |
 | Bronze table      | `bronze/observation_events`                                       | Source-faithful event rows with provider, schema version, event hash, source payload, and ingest run metadata.                                   |
 | Silver table      | `silver/observations`                                             | Canonical observation rows accepted from Bronze.                                                                                                 |
+| Silver provenance | `silver/provenance`                                               | Source attribution for each accepted observation, projected into the Phase 2 provenance shape.                                                   |
 | Silver quarantine | `silver/quarantine`                                               | Records retained in Bronze but rejected by Silver validation with deterministic reason codes.                                                    |
 | Gold table        | `gold/observation_summary`                                        | Consumer aggregate grouped by collection with lineage back to Bronze event IDs.                                                                  |
 
@@ -269,3 +271,33 @@ PR41 scope was intentionally expanded to include a live source path and Go test 
 This MVP is not a production Spark deployment. It is a local, inspectable medallion reference runtime that proves the table contracts and transformation behavior before adding Spark Structured Streaming, Kafka consumption, catalog integration, and production storage.
 
 The eventual Spark/Delta implementation should preserve these contracts while replacing the local writer with the selected Delta-capable runtime.
+
+## Source attribution in Phase 2 provenance terms
+
+`silver.provenance` carries one row per accepted observation. It deliberately reuses the
+`ProvenanceInfo` fields the frontend already renders rather than introducing a parallel
+provenance model:
+
+| Provenance column      | Phase 2 field         | Value                                                                                                            |
+| ---------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `workflow`             | `workflow`            | `lakehouse.silver-canonicalization`                                                                              |
+| `job_id`               | `jobId`               | the lakehouse ingest run id                                                                                      |
+| `source_dataset_id`    | `sourceDatasetId`     | the archive's own identifier for the record                                                                      |
+| `processing_timestamp` | `processingTimestamp` | when canonicalization happened                                                                                   |
+| `parameters_json`      | `parameters`          | provider, profile, bundle, mode, adapter contract, schema version, Bronze event id, event hash, ingest timestamp |
+
+Two choices are worth stating because they are easy to get wrong later.
+
+`job_id` holds the lakehouse ingest run id, not a governance job id. A local medallion pass
+is not dispatched by governance, and minting a job id here would assert a link the evidence
+does not support. When the medallion path is driven by a governance job, that job's id is
+what belongs in this field.
+
+`parameters_json` carries `sourceMode`, so whether a row came from a live archive query, a
+checked-in fixture, or a fixture fallback survives into provenance. Dropping it at the
+lakehouse boundary would let fixture-derived rows be read later as evidence of a real query,
+which is exactly the confusion the source-mode work exists to prevent.
+
+Quarantined records get no provenance row: there is no canonical observation to attribute,
+and their attribution is already carried on the quarantine row. The verifier enforces one
+provenance row per accepted observation and fails the gate on any mismatch.

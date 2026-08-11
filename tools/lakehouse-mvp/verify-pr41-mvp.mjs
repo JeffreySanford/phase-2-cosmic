@@ -287,8 +287,23 @@ for (const profileRef of manifest.sourceBundle.activeProfileRefs) {
 
 assertTable("bronze.observation_events", 5);
 assertTable("silver.observations", 3);
+assertTable("silver.provenance", 3);
 assertTable("silver.quarantine", 2);
 assertTable("gold.observation_summary", 1);
+
+// Every accepted observation must carry attribution. A count mismatch means
+// rows reached Silver with no record of where they came from, which is the
+// failure this projection exists to prevent.
+{
+  const observations = manifest.tables["silver.observations"]?.rows;
+  const provenance = manifest.tables["silver.provenance"]?.rows;
+  if (observations !== provenance) {
+    fail(
+      `silver.provenance must have one row per accepted observation: ` +
+        `observations=${observations} provenance=${provenance}`
+    );
+  }
+}
 
 for (const layerName of ["bronze", "silver", "gold"]) {
   if (!Number.isFinite(manifest.bytesByLayer?.[layerName])) {

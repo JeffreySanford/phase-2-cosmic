@@ -28,6 +28,7 @@ flowchart TD
   ADR2[ADR-002 Job Control Contract Choice]
   ADR6[ADR-006 Streaming Roles and Reliability Boundary]
   ADR7[ADR-007 Discovery Stays on Existing Contracts]
+  ADR8[ADR-008 Governance Job Store Durability]
 
   O1[Observatory continuity]
   O2[Reproducible science]
@@ -51,6 +52,9 @@ flowchart TD
   ADR7 --> O2
   ADR7 --> O3
   ADR7 -.revisit on trigger.-> O5
+  ADR8 --> O1
+  ADR8 --> O2
+  ADR8 -.revisit on trigger.-> O3
 ```
 
 ---
@@ -244,4 +248,57 @@ flowchart TD
 - Links:
   - [source-registry.example.json](../../tools/lakehouse-mvp/source-registry.example.json)
   - [PR41_MVP_LAKEHOUSE.md](../lakehouse/docs/PR41_MVP_LAKEHOUSE.md)
+  - [ARCHITECTURE.md](./ARCHITECTURE.md)
+
+---
+
+## 2026-08-11 | ADR-008 | accepted
+
+- Date: 2026-08-11
+- Decision ID: ADR-008
+- Status: accepted
+- Context:
+  Governance is described throughout this repository as authoritative for job, policy, provenance and audit records. Its only
+  persistence dependency is `spring-boot-starter-data-redis`; there is no relational store behind it. Neither compose file mounted a
+  volume for Redis, so that record survived only as long as a container did, while `postgres` and `minio` in the forge stack were
+  both given volumes. The gap surfaced while diagnosing a job store that had grown to 2,044,218 keys and 767 MB: the backlog
+  disappeared without any purge, because removing the container removed the data.
+- Decision:
+  1. **Redis is the governance system of record for now, and is persisted.** The dev Redis gets a named volume and append-only
+     persistence with `appendfsync everysec`. The RDB defaults can leave an hour between saves on a quiet stack, which would
+     silently discard audit history on an unclean stop.
+  2. **Durability is bounded, not unlimited.** `maxmemory` with `volatile-lru` stays. That policy may only evict keys carrying a
+     TTL -- broker-derived jobs and the artifact cache -- so operator-submitted records cannot be silently evicted. When only
+     unexpiring keys remain, writes fail loudly rather than discarding the record of what the platform was asked to do.
+  3. **Access to the store goes through the governance API.** Store statistics and destructive purges are endpoints under
+     `/api/v1/admin/job-store`, subject to the same auth filter and audit trail as every other mutation. `scripts/redis-purge-jobs.sh`
+     calls those endpoints; it no longer shells into `redis-cli`, which bypassed auth, audit, and any record of who ran it.
+  4. **This is explicitly an interim position.** A store that evicts under pressure is not a system of record in the full sense,
+     however well it is persisted. The decision is to make the current arrangement honest and bounded, not to claim it is the end
+     state.
+- Mission outcome impact:
+  Job history, provenance and audit records now survive a stack restart, which they previously did not. Growth is bounded and
+  visible from the platform rather than only from a shell. Destructive operations against the record are audited.
+- Tradeoffs:
+  - `appendfsync everysec` bounds loss to roughly a second of writes rather than eliminating it. Per-write fsync was not chosen:
+    the ingest path is high frequency and the cost would land on it.
+  - Persistence means accumulation now survives restarts. Before this, an oversized store cleared itself when the container was
+    recreated; that accidental safety valve is gone, which is why retention and the memory ceiling had to land first.
+  - Redis remains a single store for both hot working state and durable record. The two have different requirements and are being
+    served by one engine.
+  - The forge stack's Redis is left ephemeral and unpersisted. `FORGE_REDIS_URL` appears only in compose and has no consumer
+    anywhere in the codebase, so persisting it would persist nothing.
+- Validation plan:
+  - Revisited when either trigger fires, and a migration proposal must state which one.
+  - **Trigger 1 -- eviction reaches operator-submitted records.** Any occurrence of the memory ceiling being hit with only
+    unexpiring keys remaining. That is the point at which the store is refusing writes to protect a record it cannot guarantee,
+    and a durable relational home is required rather than preferred.
+  - **Trigger 2 -- provenance is queried as history rather than as status.** Joins across jobs, datasets and source attribution, or
+    retention measured in months. Key-value lookup serves current status well and answers historical questions poorly.
+  - The relational target already exists and is already persisted: the `postgres` service in the forge stack, with
+    `forge-postgres-data`. Governance would gain a relational dependency it does not currently have, which is the bulk of that work
+    and why it is not being done here.
+- Links:
+  - [dev-compose.yml](../../docker/dev-compose.yml)
+  - [redis-purge-jobs.sh](../../scripts/redis-purge-jobs.sh)
   - [ARCHITECTURE.md](./ARCHITECTURE.md)

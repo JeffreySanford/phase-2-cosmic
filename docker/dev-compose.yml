@@ -328,12 +328,24 @@ services:
     # artifact cache. Operator-submitted jobs never expire, so they can never be
     # silently evicted. If only unexpiring keys remain, writes fail loudly
     # instead of quietly discarding the system of record.
+    #
+    # Persistence is append-only, not the default snapshotting. Governance holds
+    # job, provenance and audit records here and has no other store, so the
+    # RDB defaults -- which can leave an hour between saves on a quiet stack --
+    # would silently discard audit history on any unclean stop. everysec bounds
+    # the loss to about a second without an fsync on every write.
     command:
       - redis-server
       - --maxmemory
       - ${REDIS_MAXMEMORY:-1gb}
       - --maxmemory-policy
       - volatile-lru
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+    volumes:
+      - redis-data:/data
     ports:
       - "6379:6379"
     restart: unless-stopped
@@ -460,6 +472,8 @@ networks:
     driver: bridge
 
 volumes:
+  redis-data:
+    driver: local
   pnpm-store:
     driver: local
   grafana-storage:
