@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import com.cosmic.governance.api.service.GovernanceRuntimeMetricsService;
+import com.cosmic.governance.api.util.JobRecordMutator;
 import com.cosmic.governance.api.util.RedisMarshaller;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -32,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class SimulatorExecutor implements JobExecutor {
     private static final ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(2);
     private final RedisMarshaller marshaller;
+    private final JobRecordMutator mutator;
     private final GovernanceRuntimeMetricsService governanceRuntimeMetricsService;
     @Value("${executor.network.enabled:false}")
     private boolean networkEnabled;
@@ -39,6 +41,7 @@ public class SimulatorExecutor implements JobExecutor {
     public SimulatorExecutor(@Autowired RedisMarshaller marshaller,
                              @Autowired GovernanceRuntimeMetricsService governanceRuntimeMetricsService) {
         this.marshaller = marshaller;
+        this.mutator = new JobRecordMutator(marshaller);
         this.governanceRuntimeMetricsService = governanceRuntimeMetricsService;
     }
 
@@ -58,38 +61,43 @@ public class SimulatorExecutor implements JobExecutor {
         int startDelayMs = 0;
         // schedule running transition
         EXEC.schedule(() -> {
-            Object o = readRedisValue(redisTemplate, jobKey);
-            JobRecord r = null;
-            r = marshaller.toJobRecord(o);
-            if (r != null) {
+            // Compare-and-set rather than read-then-write: this fires the instant
+            // the job is dispatched, so it routinely overlaps an API call writing
+            // lineage or a manifest onto the same record.
+            String externalJobId = "sim-" + UUID.randomUUID();
+            boolean started = mutator.mutate(redisTemplate, jobKey, null, r -> {
                 r.setState(JobState.RUNNING);
                 r.setUpdatedAt(Instant.now().toString());
                 r.setVersion(r.getVersion() + 1);
                 var newParams = r.getParameters() == null ? new java.util.HashMap<String, Object>() : new java.util.HashMap<String, Object>(r.getParameters());
-                newParams.put("externalJobId", "sim-" + UUID.randomUUID());
+                newParams.put("externalJobId", externalJobId);
                 newParams.put("executor", name());
                 newParams.put("complexity", complexity);
                 r.setParameters(newParams);
-                writeRedisValue(redisTemplate, jobKey, r);
+                return true;
+            }).isPresent();
+            if (started) {
                 // push a running log
                 pushRedisLog(redisTemplate, jobKey + ":logs", "Simulator: job running (complexity=" + complexity + ")");
             }
         }, startDelayMs, TimeUnit.MILLISECONDS);
 
         EXEC.schedule(() -> {
-            Object o = readRedisValue(redisTemplate, jobKey);
-            JobRecord r2 = null;
-            r2 = marshaller.toJobRecord(o);
-            if (r2 != null) {
-                Instant completedAt = Instant.now();
-                Duration runtime = durationBetween(r2.getUpdatedAt(), completedAt);
-                r2.setState(JobState.COMPLETED);
-                r2.setUpdatedAt(completedAt.toString());
-                r2.setVersion(r2.getVersion() + 1);
-                var newParams = r2.getParameters() == null ? new java.util.HashMap<String, Object>() : new java.util.HashMap<String, Object>(r2.getParameters());
+            java.util.concurrent.atomic.AtomicReference<Duration> observedRuntime =
+                    new java.util.concurrent.atomic.AtomicReference<>(Duration.ZERO);
+            Instant completedAt = Instant.now();
+            JobRecord r2 = mutator.mutate(redisTemplate, jobKey, null, r -> {
+                observedRuntime.set(durationBetween(r.getUpdatedAt(), completedAt));
+                r.setState(JobState.COMPLETED);
+                r.setUpdatedAt(completedAt.toString());
+                r.setVersion(r.getVersion() + 1);
+                var newParams = r.getParameters() == null ? new java.util.HashMap<String, Object>() : new java.util.HashMap<String, Object>(r.getParameters());
                 newParams.put("completedAt", completedAt.toString());
-                r2.setParameters(newParams);
-                writeRedisValue(redisTemplate, jobKey, r2);
+                r.setParameters(newParams);
+                return true;
+            }).orElse(null);
+            if (r2 != null) {
+                Duration runtime = observedRuntime.get();
                 recordTerminalState(r2.getWorkflow(), "simulator", JobState.COMPLETED, runtime);
                 pushRedisLog(redisTemplate, jobKey + ":logs", "Simulator: job completed (complexity=" + complexity + ")");
                 // create a small artifact marker and write a file to tmp artifact store
