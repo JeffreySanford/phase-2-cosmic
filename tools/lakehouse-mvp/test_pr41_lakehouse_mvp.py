@@ -121,7 +121,7 @@ class LakehouseMvpRunnerTests(unittest.TestCase):
         self.assertEqual(nrao["adapter"]["fieldMap"]["ra"], "ra_deg")
 
         bronze_rows = mvp.build_bronze_rows("expanded-development", sources)
-        silver_rows, _ = mvp.build_silver(bronze_rows, profiles_by_ref)
+        silver_rows, _, _ = mvp.build_silver(bronze_rows, profiles_by_ref)
         nrao_rows = [
             row for row in silver_rows if row["source_provider"] == "NRAO"
         ]
@@ -215,7 +215,7 @@ class LakehouseMvpRunnerTests(unittest.TestCase):
     def test_silver_promotes_canonical_rows_and_quarantines_failures(self) -> None:
         _, sources = self.fixture_sources()
         bronze_rows = mvp.build_bronze_rows("offline-fixture", sources)
-        silver_rows, quarantine_rows = mvp.build_silver(bronze_rows)
+        silver_rows, quarantine_rows, _provenance = mvp.build_silver(bronze_rows)
 
         self.assertEqual(len(silver_rows), 3)
         self.assertEqual(len(quarantine_rows), 2)
@@ -235,7 +235,7 @@ class LakehouseMvpRunnerTests(unittest.TestCase):
     def test_gold_summary_retains_bronze_lineage(self) -> None:
         _, sources = self.fixture_sources()
         bronze_rows = mvp.build_bronze_rows("offline-fixture", sources)
-        silver_rows, quarantine_rows = mvp.build_silver(bronze_rows)
+        silver_rows, quarantine_rows, _provenance = mvp.build_silver(bronze_rows)
         gold_rows = mvp.build_gold(silver_rows, quarantine_rows)
 
         self.assertEqual(len(gold_rows), 3)
@@ -258,7 +258,7 @@ class LakehouseMvpRunnerTests(unittest.TestCase):
             output.mkdir(parents=True, exist_ok=True)
             _, sources = self.fixture_sources()
             bronze_rows = mvp.build_bronze_rows("offline-fixture", sources)
-            silver_rows, quarantine_rows = mvp.build_silver(bronze_rows)
+            silver_rows, quarantine_rows, _provenance = mvp.build_silver(bronze_rows)
             gold_rows = mvp.build_gold(silver_rows, quarantine_rows)
             table_entries = {
                 "bronze.observation_events": mvp.write_table(
@@ -328,7 +328,7 @@ class LakehouseMvpRunnerTests(unittest.TestCase):
             output.mkdir(parents=True, exist_ok=True)
             bundle, sources = self.fixture_sources()
             bronze_rows = mvp.build_bronze_rows("offline-fixture", sources)
-            silver_rows, quarantine_rows = mvp.build_silver(
+            silver_rows, quarantine_rows, _provenance = mvp.build_silver(
                 bronze_rows,
                 {profile["ref"]: profile for profile in bundle["activeProfiles"]},
             )
@@ -386,6 +386,82 @@ class LakehouseMvpRunnerTests(unittest.TestCase):
             self.assertFalse(manifest["largeProfilesAllowed"])
         finally:
             shutil.rmtree(output, ignore_errors=True)
+
+    def test_provenance_projects_attribution_into_phase2_shape(self):
+        """Attribution must land in Phase 2's provenance fields, not a new model.
+
+        The column names here are the ProvenanceInfo fields the frontend already
+        renders. If someone adds a top-level provenance concept instead of using
+        parameters, this fails.
+        """
+        _, sources = self.fixture_sources()
+        bronze_rows = mvp.build_bronze_rows("offline-fixture", sources)
+        observations, _quarantine, provenance = mvp.build_silver(
+            bronze_rows, ingest_run_id="run-under-test"
+        )
+
+        self.assertEqual(len(provenance), len(observations))
+        self.assertEqual(
+            sorted(row["observation_id"] for row in provenance),
+            sorted(row["observation_id"] for row in observations),
+            "every accepted observation needs exactly one provenance row",
+        )
+
+        declared = [name for name, _type in mvp.TABLE_SCHEMAS["silver.provenance"]]
+        self.assertEqual(
+            declared,
+            [
+                "observation_id",
+                "workflow",
+                "job_id",
+                "source_dataset_id",
+                "processing_timestamp",
+                "parameters_json",
+            ],
+        )
+
+        row = provenance[0]
+        self.assertEqual(row["workflow"], mvp.LAKEHOUSE_PROVENANCE_WORKFLOW)
+        self.assertEqual(row["job_id"], "run-under-test")
+        params = mvp.json.loads(row["parameters_json"])
+        for key in (
+            "sourceProvider",
+            "sourceProfile",
+            "sourceBundle",
+            "sourceMode",
+            "adapterContract",
+            "bronzeEventId",
+        ):
+            self.assertIn(key, params)
+
+    def test_provenance_preserves_whether_a_row_was_live_or_fixture(self):
+        """The live/fixture distinction must survive into provenance.
+
+        Losing it at the lakehouse boundary would let fixture-derived rows be
+        read later as evidence of a real archive query.
+        """
+        _, sources = self.fixture_sources()
+        bronze_rows = mvp.build_bronze_rows("offline-fixture", sources)
+        for row in bronze_rows:
+            row["source_mode"] = "fixture-fallback"
+
+        _obs, _quarantine, provenance = mvp.build_silver(
+            bronze_rows, ingest_run_id="run-under-test"
+        )
+        modes = {
+            mvp.json.loads(row["parameters_json"])["sourceMode"] for row in provenance
+        }
+        self.assertEqual(modes, {"fixture-fallback"})
+
+    def test_quarantined_rows_get_no_provenance(self):
+        """A quarantined record has no canonical observation to attribute."""
+        _, sources = self.fixture_sources()
+        bronze_rows = mvp.build_bronze_rows("offline-fixture", sources)
+        observations, quarantine, provenance = mvp.build_silver(
+            bronze_rows, ingest_run_id="run-under-test"
+        )
+        self.assertGreater(len(quarantine), 0, "fixture must exercise quarantine")
+        self.assertEqual(len(provenance), len(observations))
 
 
 if __name__ == "__main__":
