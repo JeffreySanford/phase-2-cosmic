@@ -47,13 +47,19 @@ public class GovernanceIngestProcessingService {
      */
     private final Duration ingestJobRetention;
 
+    /**
+     * How long an ingested requestId keeps deduplicating. Zero disables it.
+     */
+    private final Duration dedupWindow;
+
     public GovernanceIngestProcessingService(
             JobService jobService,
             GovernanceIngestMetricsService ingestMetrics,
             ObjectMapper mapper,
             Validator validator,
             @Value("${governance.ingest.create-jobs:false}") boolean createJobsFromIngest,
-            @Value("${governance.ingest.job-retention:PT6H}") Duration ingestJobRetention
+            @Value("${governance.ingest.job-retention:PT6H}") Duration ingestJobRetention,
+            @Value("${governance.ingest.dedup-window:PT24H}") Duration dedupWindow
     ) {
         this.jobService = jobService;
         this.ingestMetrics = ingestMetrics;
@@ -61,6 +67,7 @@ public class GovernanceIngestProcessingService {
         this.validator = validator;
         this.createJobsFromIngest = createJobsFromIngest;
         this.ingestJobRetention = ingestJobRetention;
+        this.dedupWindow = dedupWindow;
     }
 
     @SuppressWarnings("unchecked")
@@ -86,17 +93,20 @@ public class GovernanceIngestProcessingService {
                     ? (Map<String, Object>) domain.get("lineage")
                     : null;
 
-            if (isDuplicateRequestId(params)) {
-                ingestMetrics.recordDuplicate(broker, channel, workflow, "request_id");
-                result = "duplicate";
-                return ProcessingResult.duplicate(workflow, datasetId);
-            }
-
             JobSubmitRequest req = new JobSubmitRequest(workflow, datasetId, params, lineage, manifest, requestedBy);
             Set<ConstraintViolation<JobSubmitRequest>> violations = validator.validate(req);
             if (!violations.isEmpty()) {
                 ingestMetrics.recordValidationFailure(broker, channel, workflow, validationReason(violations));
                 throw new IllegalArgumentException("Message validation failed: " + violations);
+            }
+
+            // Claimed after validation, not before. Claiming first would burn the
+            // requestId on a message that is then rejected, so a corrected retry
+            // carrying the same id would be silently swallowed as a duplicate.
+            if (isDuplicateRequestId(params)) {
+                ingestMetrics.recordDuplicate(broker, channel, workflow, "request_id");
+                result = "duplicate";
+                return ProcessingResult.duplicate(workflow, datasetId);
             }
 
             if (createJobsFromIngest) {
@@ -152,10 +162,15 @@ public class GovernanceIngestProcessingService {
         if (normalized.isBlank()) {
             return false;
         }
-        // Indexed membership test rather than a scan of every job. This runs once
-        // per ingested message, so listing the whole store here made ingest cost
-        // grow with total job history and is what exhausted the heap under load.
-        return jobService.hasRequestId(normalized);
+        // Claim rather than check-then-write: two identical messages arriving
+        // together would both pass a plain membership test and both be accepted.
+        //
+        // The claim is recorded whether or not a job is created. Deduplication
+        // used to depend on job submission populating the index, so with
+        // broker-derived job creation off by default the duplicate metric read
+        // zero -- not because there were no duplicates, but because nothing was
+        // recording ids to compare against.
+        return !jobService.claimRequestId(normalized, dedupWindow);
     }
 
     private String stringValue(Map<String, Object> src, String key, String fallback) {

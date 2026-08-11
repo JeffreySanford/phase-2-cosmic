@@ -38,11 +38,12 @@ class GovernanceIngestJobCreationFlagTest {
     }
 
     private static final Duration RETENTION = Duration.ofHours(6);
+    private static final Duration DEDUP_WINDOW = Duration.ofHours(24);
 
     private GovernanceIngestProcessingService serviceWith(
             JobService jobService, GovernanceIngestMetricsService metrics, boolean createJobs) {
         return new GovernanceIngestProcessingService(
-                jobService, metrics, new ObjectMapper(), validator(), createJobs, RETENTION);
+                jobService, metrics, new ObjectMapper(), validator(), createJobs, RETENTION, DEDUP_WINDOW);
     }
 
     @Test

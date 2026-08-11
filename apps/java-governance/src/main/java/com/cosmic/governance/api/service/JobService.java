@@ -170,6 +170,15 @@ public class JobService {
     // which is what actually exhausted the heap. A set membership test answers the
     // same question in O(1) and never grows the working set of a single request.
     private static final String REQUEST_ID_INDEX_KEY = "job:index:requestIds";
+    // Per-id claim keys, so each carries its own expiry. See claimRequestId.
+    private static final String REQUEST_ID_KEY_PREFIX = "job:requestid:";
+
+    /**
+     * How long a claimed requestId keeps deduplicating. Field-injected with a
+     * default so the constructors several tests call by hand keep working.
+     */
+    @org.springframework.beans.factory.annotation.Value("${governance.ingest.dedup-window:PT24H}")
+    private Duration requestIdWindow = Duration.ofHours(24);
     private final Set<String> inMemoryRequestIds = ConcurrentHashMap.newKeySet();
 
     /**
@@ -185,6 +194,12 @@ public class JobService {
         }
         try {
             if (redisTemplate != null) {
+                if (Boolean.TRUE.equals(redisTemplate.hasKey(REQUEST_ID_KEY_PREFIX + requestId))) {
+                    return true;
+                }
+                // The set is the pre-window representation. It is no longer
+                // written, but it is still read so ids recorded before the
+                // change keep deduplicating.
                 return Boolean.TRUE.equals(
                         redisTemplate.opsForSet().isMember(REQUEST_ID_INDEX_KEY, requestId));
             }
@@ -192,6 +207,52 @@ public class JobService {
             log.debug("requestId index lookup failed for {}: {}", requestId, ex.toString());
         }
         return inMemoryRequestIds.contains(requestId);
+    }
+
+    /**
+     * Claim a requestId for a bounded window, atomically.
+     *
+     * <p>Returns true when this caller is the first to claim it, false when it
+     * has already been seen — so a caller can test and record in one step
+     * rather than checking and then writing, which lets two identical messages
+     * arriving together both pass the check.
+     *
+     * <p>Claims live under their own keys with a TTL rather than as members of
+     * one set. A set member cannot expire, so the previous representation grew
+     * for the life of the deployment; recording every ingested message into it
+     * would have rebuilt exactly the unbounded growth that filled this store
+     * once already. The consequence is deliberate and worth stating:
+     * deduplication is now a window, not permanent. An id re-presented after
+     * the window is treated as new.
+     */
+    public boolean claimRequestId(String requestId, Duration window) {
+        if (requestId == null || requestId.isBlank()) {
+            return true;
+        }
+        if (window == null || window.isZero() || window.isNegative()) {
+            // No window means no deduplication rather than an unbounded one.
+            return true;
+        }
+        String key = REQUEST_ID_KEY_PREFIX + requestId;
+        try {
+            if (redisTemplate != null) {
+                Boolean claimed =
+                        redisTemplate.opsForValue().setIfAbsent(key, Instant.now().toString(), window);
+                if (Boolean.FALSE.equals(claimed)) {
+                    return false;
+                }
+                // A legacy set member still counts as already seen, so ids
+                // recorded before the window existed are not replayed as new.
+                if (Boolean.TRUE.equals(
+                        redisTemplate.opsForSet().isMember(REQUEST_ID_INDEX_KEY, requestId))) {
+                    return false;
+                }
+                return true;
+            }
+        } catch (Throwable ex) {
+            log.debug("requestId claim failed for {}: {}", requestId, ex.toString());
+        }
+        return inMemoryRequestIds.add(requestId);
     }
 
     // Listing index: job id -> createdAt epoch millis, newest last.
@@ -361,7 +422,13 @@ public class JobService {
         }
         try {
             if (redisTemplate != null) {
-                redisTemplate.opsForSet().add(REQUEST_ID_INDEX_KEY, normalized);
+                // Same representation as an ingest claim, so a job submitted via
+                // the API and a message arriving on a broker deduplicate against
+                // each other rather than keeping separate books.
+                redisTemplate.opsForValue().setIfAbsent(
+                        REQUEST_ID_KEY_PREFIX + normalized,
+                        Instant.now().toString(),
+                        requestIdWindow);
                 return;
             }
         } catch (Throwable ex) {
