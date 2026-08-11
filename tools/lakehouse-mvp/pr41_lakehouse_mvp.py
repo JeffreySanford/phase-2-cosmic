@@ -85,6 +85,22 @@ TABLE_SCHEMAS: dict[str, list[tuple[str, str]]] = {
         ("bronze_event_id", _STR),
         ("canonicalized_at", _STR),
     ],
+    # Source attribution projected into the provenance shape Phase 2 already
+    # uses, rather than a second domain model alongside it. Column names are the
+    # ProvenanceInfo fields (apps/frontend/.../provenance-panel.component.ts) in
+    # snake_case: workflow, jobId, sourceDatasetId, processingTimestamp,
+    # parameters. Everything specific to how a row was acquired -- provider,
+    # profile, bundle, mode, adapter contract -- rides in parameters_json, which
+    # is where Phase 2 already carries per-workflow detail. Nothing here invents
+    # a top-level provenance concept.
+    "silver.provenance": [
+        ("observation_id", _STR),
+        ("workflow", _STR),
+        ("job_id", _STR),
+        ("source_dataset_id", _STR),
+        ("processing_timestamp", _STR),
+        ("parameters_json", _STR),
+    ],
     "silver.quarantine": [
         ("quarantine_id", _STR),
         ("bronze_event_id", _STR),
@@ -428,10 +444,60 @@ def validate_silver(canonical: dict[str, Any]) -> list[str]:
     return reasons
 
 
+LAKEHOUSE_PROVENANCE_WORKFLOW = "lakehouse.silver-canonicalization"
+
+
+def build_provenance(
+    observation: dict[str, Any],
+    bronze_row: dict[str, Any],
+    ingest_run_id: str,
+) -> dict[str, Any]:
+    """Project one accepted observation's source attribution into Phase 2 shape.
+
+    The mapping is deliberate rather than incidental:
+
+      workflow            -- which processing step produced the row, the same
+                             question Phase 2 asks of any job
+      job_id              -- the run that produced it. The lakehouse ingest run
+                             id is that run; there is no governance job behind a
+                             local medallion pass, and inventing one would be a
+                             claim the evidence does not support.
+      source_dataset_id   -- the archive's own identifier for the record, which
+                             is what makes it traceable back to the provider
+      processing_timestamp-- when canonicalization happened
+      parameters          -- how it was acquired, including whether the row came
+                             from a live query or a checked-in fixture, so the
+                             distinction survives into provenance instead of
+                             being lost at the lakehouse boundary
+    """
+    return {
+        "observation_id": observation["observation_id"],
+        "workflow": LAKEHOUSE_PROVENANCE_WORKFLOW,
+        "job_id": ingest_run_id,
+        "source_dataset_id": observation["source_identifier"],
+        "processing_timestamp": observation["canonicalized_at"],
+        "parameters_json": json.dumps(
+            {
+                "sourceProvider": bronze_row["source_provider"],
+                "sourceProfile": bronze_row["source_profile"],
+                "sourceBundle": bronze_row["source_bundle"],
+                "sourceMode": bronze_row["source_mode"],
+                "adapterContract": bronze_row["adapter_contract"],
+                "schemaVersion": bronze_row["schema_version"],
+                "bronzeEventId": bronze_row["bronze_event_id"],
+                "eventHash": bronze_row["event_hash"],
+                "ingestedAt": bronze_row["ingested_at"],
+            },
+            sort_keys=True,
+        ),
+    }
+
+
 def build_silver(
     bronze_rows: list[dict[str, Any]],
     profiles_by_ref: dict[str, dict[str, Any]] | None = None,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    ingest_run_id: str = "unknown-run",
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     if profiles_by_ref is None:
         _, bundle = resolve_source_bundle(None)
         profiles_by_ref = {
@@ -440,6 +506,7 @@ def build_silver(
 
     observations: list[dict[str, Any]] = []
     quarantine: list[dict[str, Any]] = []
+    provenance: list[dict[str, Any]] = []
     seen: set[str] = set()
 
     for row in bronze_rows:
@@ -473,25 +540,26 @@ def build_silver(
             continue
 
         seen.add(source_identifier)
-        observations.append(
-            {
-                "observation_id": f"obs-{stable_hash(source_identifier)[:12]}",
-                "source_identifier": source_identifier,
-                "source_provider": row["source_provider"],
-                "source_profile": row["source_profile"],
-                "collection": str(canonical.get("collection") or "unknown"),
-                "data_product_type": str(
-                    canonical.get("dataProductType") or "unknown"
-                ),
-                "ra_degrees": float(canonical["ra"]),
-                "dec_degrees": float(canonical["dec"]),
-                "object_uri": str(canonical.get("accessUri") or ""),
-                "bronze_event_id": row["bronze_event_id"],
-                "canonicalized_at": now_iso(),
-            }
-        )
+        observation = {
+            "observation_id": f"obs-{stable_hash(source_identifier)[:12]}",
+            "source_identifier": source_identifier,
+            "source_provider": row["source_provider"],
+            "source_profile": row["source_profile"],
+            "collection": str(canonical.get("collection") or "unknown"),
+            "data_product_type": str(canonical.get("dataProductType") or "unknown"),
+            "ra_degrees": float(canonical["ra"]),
+            "dec_degrees": float(canonical["dec"]),
+            "object_uri": str(canonical.get("accessUri") or ""),
+            "bronze_event_id": row["bronze_event_id"],
+            "canonicalized_at": now_iso(),
+        }
+        observations.append(observation)
+        # Provenance is emitted only for accepted rows. A quarantined record has
+        # no canonical observation to attribute, and its attribution is already
+        # carried on the quarantine row itself.
+        provenance.append(build_provenance(observation, row, ingest_run_id))
 
-    return observations, quarantine
+    return observations, quarantine, provenance
 
 
 def build_gold(
@@ -739,7 +807,10 @@ def main() -> None:
     resolved_sources = resolve_source_data(active_profiles, source_mode)
 
     bronze_rows = build_bronze_rows(source_bundle_name, resolved_sources)
-    silver_rows, quarantine_rows = build_silver(bronze_rows, profiles_by_ref)
+    ingest_run_id = bronze_rows[0]["ingest_run_id"] if bronze_rows else "empty-run"
+    silver_rows, quarantine_rows, provenance_rows = build_silver(
+        bronze_rows, profiles_by_ref, ingest_run_id
+    )
     gold_rows = build_gold(silver_rows, quarantine_rows)
 
     table_entries = {}
@@ -752,6 +823,11 @@ def main() -> None:
         output / "silver" / "observations",
         silver_rows,
         "silver.observations",
+    )
+    table_entries["silver.provenance"] = write_table(
+        output / "silver" / "provenance",
+        provenance_rows,
+        "silver.provenance",
     )
     table_entries["silver.quarantine"] = write_table(
         output / "silver" / "quarantine",
