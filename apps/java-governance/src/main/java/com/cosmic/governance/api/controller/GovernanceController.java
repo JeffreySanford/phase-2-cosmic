@@ -282,6 +282,37 @@ public class GovernanceController {
             return ResponseEntity.ok(Map.of("released", released));
         }
 
+        /**
+         * Size and shape of the job store, so accumulation is visible from the
+         * platform rather than only from redis-cli.
+         */
+        @GetMapping("/admin/job-store")
+        public ResponseEntity<?> jobStoreStats() {
+            return ResponseEntity.ok(jobService.storeStats());
+        }
+
+        /**
+         * Remove accumulated job records. Defaults to a dry run: a destructive
+         * sweep over job, provenance and audit records is only performed when
+         * asked for explicitly.
+         */
+        @PostMapping("/admin/job-store/purge")
+        public ResponseEntity<?> purgeJobStore(@RequestBody(required = false) Map<String, Object> body) {
+            int keepRecent = 0;
+            boolean dryRun = true;
+            if (body != null) {
+                try {
+                    Object kv = body.get("keepRecent");
+                    if (kv != null) keepRecent = Math.max(0, Integer.parseInt(String.valueOf(kv)));
+                } catch (NumberFormatException ex) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "invalid_keepRecent"));
+                }
+                Object dv = body.get("dryRun");
+                if (dv != null) dryRun = Boolean.parseBoolean(String.valueOf(dv));
+            }
+            return ResponseEntity.ok(jobService.purgeJobs(keepRecent, dryRun));
+        }
+
         @PostMapping("/admin/sample-jobs")
         public ResponseEntity<?> seedSampleJobs(@RequestBody(required = false) Map<String, Object> body) {
             int deferredCount = 5;
