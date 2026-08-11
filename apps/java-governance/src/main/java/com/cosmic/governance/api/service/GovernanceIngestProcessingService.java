@@ -1,6 +1,5 @@
 package com.cosmic.governance.api.service;
 
-import com.cosmic.governance.api.dto.JobStatusResponse;
 import com.cosmic.governance.api.dto.JobSubmitRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -112,12 +110,10 @@ public class GovernanceIngestProcessingService {
         if (normalized.isBlank()) {
             return false;
         }
-        List<JobStatusResponse> jobs = jobService.listAll();
-        return jobs.stream().anyMatch(job -> {
-            Map<String, Object> existing = job.parameters();
-            Object current = existing == null ? null : existing.get("requestId");
-            return normalized.equals(String.valueOf(current));
-        });
+        // Indexed membership test rather than a scan of every job. This runs once
+        // per ingested message, so listing the whole store here made ingest cost
+        // grow with total job history and is what exhausted the heap under load.
+        return jobService.hasRequestId(normalized);
     }
 
     private String stringValue(Map<String, Object> src, String key, String fallback) {

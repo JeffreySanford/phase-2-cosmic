@@ -20,7 +20,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node ./node_modules/tsx/dist/cli.mjs --tsconfig apps/cosmic-forge-api/tsconfig.app.json --test apps/cosmic-forge-api/src/state/forge-store.service.spec.ts apps/cosmic-forge-api/src/graphql/forge-graphql.service.spec.ts apps/cosmic-forge-api/src/services/forge-target-resolver.service.spec.ts"
+        "command": "node ./node_modules/tsx/dist/cli.mjs --tsconfig apps/cosmic-forge-api/tsconfig.app.json --test apps/cosmic-forge-api/src/state/forge-store.service.spec.ts apps/cosmic-forge-api/src/graphql/forge-graphql.service.spec.ts apps/cosmic-forge-api/src/services/forge-target-resolver.service.spec.ts apps/cosmic-forge-api/src/artifacts/artifact-cache.service.spec.ts"
       }
     },
     "lint": {
