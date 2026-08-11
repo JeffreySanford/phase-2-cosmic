@@ -22,11 +22,13 @@ public class GovernanceIngestProcessingService {
     /**
      * Whether an accepted broker message also becomes a governance job.
      *
-     * <p>Off by default. The dev stack's data generator emits roughly 244
-     * records a second into {@code phase2-events} and never stops, so with this
-     * on, the job store grows by about 880,000 records an hour purely from
-     * background traffic — the Jobs view fills faster than it can be read, and
-     * the key count reaches the order that exhausted the governance heap.
+     * <p>Off by default. The dev data generator publishes to
+     * {@code phase2-events} for as long as the stack is up, and with this on
+     * every accepted message became a job. Measured on a running stack: 242
+     * accepted events in 60s, Redis growing 15 keys/sec, two million keys and
+     * 765 MB resident with no memory ceiling — the Jobs view fills faster than
+     * it can be read, and the key count reaches the order that exhausted the
+     * governance heap.
      *
      * <p>Ingest itself is unaffected: messages are still received, validated,
      * measured and reported, so the streaming path and its topology metrics
@@ -35,18 +37,30 @@ public class GovernanceIngestProcessingService {
      */
     private final boolean createJobsFromIngest;
 
+    /**
+     * How long a broker-derived job survives. Zero disables expiry.
+     *
+     * <p>These jobs are generated, not requested, and arrive continuously for
+     * as long as the stack is up, so they are given a lifetime rather than
+     * accumulating. Operator-submitted jobs are untouched and keep no expiry:
+     * governance remains their system of record.
+     */
+    private final Duration ingestJobRetention;
+
     public GovernanceIngestProcessingService(
             JobService jobService,
             GovernanceIngestMetricsService ingestMetrics,
             ObjectMapper mapper,
             Validator validator,
-            @Value("${governance.ingest.create-jobs:false}") boolean createJobsFromIngest
+            @Value("${governance.ingest.create-jobs:false}") boolean createJobsFromIngest,
+            @Value("${governance.ingest.job-retention:PT6H}") Duration ingestJobRetention
     ) {
         this.jobService = jobService;
         this.ingestMetrics = ingestMetrics;
         this.mapper = mapper;
         this.validator = validator;
         this.createJobsFromIngest = createJobsFromIngest;
+        this.ingestJobRetention = ingestJobRetention;
     }
 
     @SuppressWarnings("unchecked")
@@ -86,7 +100,14 @@ public class GovernanceIngestProcessingService {
             }
 
             if (createJobsFromIngest) {
-                jobService.submit(req);
+                var created = jobService.submit(req);
+                // Broker-derived jobs are disposable: they exist to show the
+                // path working, not as the record of an operator's request.
+                // Without a bound they are what filled Redis, so they get one
+                // and operator-submitted jobs keep none.
+                if (created != null) {
+                    jobService.expireJob(created.jobId(), ingestJobRetention);
+                }
             }
             ingestMetrics.recordSuccess(broker, channel, workflow);
             result = "success";

@@ -1,7 +1,10 @@
 package com.cosmic.governance.api.service;
 
 import com.cosmic.governance.api.dto.JobSubmitRequest;
+import com.cosmic.governance.api.dto.JobStatusResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.time.Duration;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
@@ -34,10 +37,12 @@ class GovernanceIngestJobCreationFlagTest {
         }
     }
 
+    private static final Duration RETENTION = Duration.ofHours(6);
+
     private GovernanceIngestProcessingService serviceWith(
             JobService jobService, GovernanceIngestMetricsService metrics, boolean createJobs) {
         return new GovernanceIngestProcessingService(
-                jobService, metrics, new ObjectMapper(), validator(), createJobs);
+                jobService, metrics, new ObjectMapper(), validator(), createJobs, RETENTION);
     }
 
     @Test
@@ -66,5 +71,33 @@ class GovernanceIngestJobCreationFlagTest {
 
         verify(jobService, times(1)).submit(any(JobSubmitRequest.class));
         assertThat(result.accepted()).isTrue();
+    }
+
+    /**
+     * Broker-derived jobs must carry a lifetime. Without one they are what
+     * grew the store to two million keys with nothing ever removing them.
+     */
+    @Test
+    void ingestCreatedJobsGetARetentionWindow() throws Exception {
+        JobService jobService = Mockito.mock(JobService.class);
+        GovernanceIngestMetricsService metrics = Mockito.mock(GovernanceIngestMetricsService.class);
+        Mockito.when(jobService.submit(any(JobSubmitRequest.class)))
+                .thenReturn(new JobStatusResponse(
+                        "job-abc", "ingest", "ds-flag", "QUEUED", null, null,
+                        null, null, null, null, 1L));
+
+        serviceWith(jobService, metrics, true).process("kafka", "phase2-events", PAYLOAD);
+
+        verify(jobService, times(1)).expireJob("job-abc", RETENTION);
+    }
+
+    @Test
+    void nothingIsExpiredWhenNoJobIsCreated() throws Exception {
+        JobService jobService = Mockito.mock(JobService.class);
+        GovernanceIngestMetricsService metrics = Mockito.mock(GovernanceIngestMetricsService.class);
+
+        serviceWith(jobService, metrics, false).process("kafka", "phase2-events", PAYLOAD);
+
+        verify(jobService, never()).expireJob(any(), any());
     }
 }

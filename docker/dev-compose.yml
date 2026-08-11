@@ -319,6 +319,21 @@ services:
 
   redis:
     image: redis:7-alpine
+    # Ceiling plus volatile-lru. Left unbounded, this store was measured at
+    # 2,044,218 keys and 765 MB with no expiry on any job key, which is the
+    # shape of the incident that exhausted the governance heap.
+    #
+    # volatile-lru rather than allkeys-lru: it may only evict keys that carry a
+    # TTL, which is exactly the disposable set -- broker-derived jobs and the
+    # artifact cache. Operator-submitted jobs never expire, so they can never be
+    # silently evicted. If only unexpiring keys remain, writes fail loudly
+    # instead of quietly discarding the system of record.
+    command:
+      - redis-server
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-1gb}
+      - --maxmemory-policy
+      - volatile-lru
     ports:
       - "6379:6379"
     restart: unless-stopped
