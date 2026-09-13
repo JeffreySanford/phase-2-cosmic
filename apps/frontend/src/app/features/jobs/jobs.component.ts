@@ -27,6 +27,8 @@ import {
   toArray,
 } from "rxjs/operators";
 import { JobsSubmitDialogComponent } from "./jobs-submit-dialog.component";
+import { SettingsService } from "../settings/settings.service";
+import { AuditEvidence } from "../../shared/provenance-panel";
 
 type ErrorDetail = { ruleId?: string };
 type ErrorBody = {
@@ -67,6 +69,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private snack = inject(SnackService);
   private http = inject(HttpClient);
   private cd = inject(ChangeDetectorRef);
+  private settings = inject(SettingsService);
 
   jobs: JobStatus[] = [];
   loading$ = new BehaviorSubject<boolean>(false);
@@ -173,6 +176,23 @@ export class JobsComponent implements OnInit, OnDestroy {
   get filteredJobs(): JobStatus[] {
     if (this.showCompleted) return this.jobs;
     return this.jobs.filter((j) => !this.TERMINAL_STATUSES.has(j.status));
+  }
+
+  get roleLabel(): string {
+    switch (this.settings.current.profile.role) {
+      case "pipeline-engineer":
+        return "Pipeline Engineer";
+      case "data-steward":
+        return "Data Steward";
+      case "operator":
+      default:
+        return "Operator";
+    }
+  }
+
+  get canControlJobs(): boolean {
+    const role = this.settings.current.profile.role;
+    return role === "operator" || role === "pipeline-engineer";
   }
 
   trackByJob(index: number, j: JobStatus): string {
@@ -638,6 +658,38 @@ export class JobsComponent implements OnInit, OnDestroy {
     return Array.isArray(a) ? a.length : 0;
   }
 
+  auditContextFor(job: JobStatus): AuditEvidence | undefined {
+    const candidates = [job["audit"], job["auditContext"]];
+    const found = candidates.find(
+      (candidate): candidate is Record<string, unknown> =>
+        !!candidate &&
+        typeof candidate === "object" &&
+        !Array.isArray(candidate)
+    );
+    if (!found) {
+      return undefined;
+    }
+    return {
+      action: this.stringValue(found["action"]),
+      actor: this.stringValue(found["actor"]),
+      timestamp: this.stringValue(found["timestamp"]),
+      requestId: this.stringValue(found["requestId"]),
+      correlationId: this.stringValue(found["correlationId"]),
+      policyDecision: this.stringValue(found["policyDecision"]),
+    };
+  }
+
+  hasAuditContext(job: JobStatus): boolean {
+    const audit = this.auditContextFor(job);
+    return !!(
+      audit?.action ||
+      audit?.actor ||
+      audit?.requestId ||
+      audit?.correlationId ||
+      audit?.policyDecision
+    );
+  }
+
   saveLineage() {
     const selectedJob = this.selectedJob;
     if (!selectedJob) return;
@@ -953,6 +1005,10 @@ export class JobsComponent implements OnInit, OnDestroy {
       return String(m ?? err);
     }
     return String(err);
+  }
+
+  private stringValue(value: unknown): string | undefined {
+    return typeof value === "string" && value.length > 0 ? value : undefined;
   }
 
   startLogPolling(id: string) {

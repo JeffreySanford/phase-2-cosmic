@@ -316,6 +316,31 @@ describe("ProvenancePanelComponent", () => {
     });
   });
 
+  describe("audit evidence", () => {
+    it("renders audit evidence when provenance carries auditable context", () => {
+      component.provenance = {
+        workflow: "vo.product.fetch",
+        jobId: "job-audit",
+        audit: {
+          action: "dataset.publish",
+          actor: "data-steward@local",
+          requestId: "req-audit",
+          policyDecision: "allow",
+        },
+      };
+      component.expanded = true;
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const text = compiled.textContent || "";
+      expect(text).toContain("Audit Evidence");
+      expect(text).toContain("dataset.publish");
+      expect(text).toContain("data-steward@local");
+      expect(text).toContain("req-audit");
+      expect(text).toContain("allow");
+    });
+  });
+
   describe("mission linkage validation", () => {
     it("should support mission outcome: Reproducible science", () => {
       component.provenance = {

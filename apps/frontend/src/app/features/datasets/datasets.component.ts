@@ -4,6 +4,7 @@ import {
   Dataset,
   DatasetRequest,
 } from "../../services/datasets.service";
+import { AuditEvidence, ProvenanceInfo } from "../../shared/provenance-panel";
 
 @Component({
   selector: "app-datasets",
@@ -61,6 +62,48 @@ export class DatasetsComponent implements OnInit {
     return [topLevel, manifest, metadata].filter(
       (value): value is unknown => value !== null && value !== undefined
     );
+  }
+
+  provenanceFor(dataset: Dataset): ProvenanceInfo {
+    return {
+      workflow: dataset.workflow,
+      jobId: dataset.jobId,
+      sourceDatasetId: dataset.sourceDatasetId,
+      processingTimestamp: dataset.processingTimestamp,
+      parameters: dataset.parameters,
+      ngvlaParams: dataset.ngvlaParams,
+      audit: this.auditEvidenceFor(dataset),
+    };
+  }
+
+  private auditEvidenceFor(dataset: Dataset): AuditEvidence | undefined {
+    const candidates = [
+      dataset.metadata?.["audit"],
+      dataset.metadata?.["auditContext"],
+      dataset.manifest?.["audit"],
+      dataset.manifest?.["auditContext"],
+    ];
+    const found = candidates.find(
+      (candidate): candidate is Record<string, unknown> =>
+        !!candidate &&
+        typeof candidate === "object" &&
+        !Array.isArray(candidate)
+    );
+    if (!found) {
+      return undefined;
+    }
+    return {
+      action: this.stringValue(found["action"]),
+      actor: this.stringValue(found["actor"]),
+      timestamp: this.stringValue(found["timestamp"]),
+      requestId: this.stringValue(found["requestId"]),
+      correlationId: this.stringValue(found["correlationId"]),
+      policyDecision: this.stringValue(found["policyDecision"]),
+    };
+  }
+
+  private stringValue(value: unknown): string | undefined {
+    return typeof value === "string" && value.length > 0 ? value : undefined;
   }
 
   private errMsg(err: unknown): string {

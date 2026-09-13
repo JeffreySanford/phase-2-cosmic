@@ -1,284 +1,489 @@
 <div class="jobs-view">
-<mat-card>
-  <mat-card-title>Governance Jobs</mat-card-title>
-  <app-disclaimer-banner type="demo" [dismissible]="true" [ready]="(initialLoadSettled$ | async) || false"></app-disclaimer-banner>
-  <mat-card-content>
-    <div class="toolbar-legend-row">
-      <div class="toolbar">
-        <button mat-raised-button class="btn-new-job" (click)="openSubmit()">New Job</button>
-        <button mat-raised-button class="btn-add-jobs" (click)="addFiveJobs()">Add five jobs</button>
-        <button mat-raised-button class="btn-refresh" (click)="reload()">Refresh</button>
-        <button mat-raised-button class="btn-deferred" (click)="releaseDeferred()">Release deferred samples</button>
-        <button mat-raised-button class="btn-filter" (click)="toggleFilter()">Filter</button>
-        <button mat-raised-button class="btn-clear" (click)="clearCompleted()">Clear completed</button>
-        <mat-checkbox [(ngModel)]="showCompleted" color="primary">Show completed</mat-checkbox>
-        <span class="scanner-inline" *ngIf="runningCount > 0">
-          <span class="scanner-inline__stat">Dispatched&nbsp;<strong>{{ runningCount }}</strong></span>
-        </span>
-        <span class="spacer"></span>
-        <div *ngIf="loading$ | async" class="loading-inline">
-          <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
-        </div>
-      </div>
-      <div class="active-legend" *ngIf="activeLegendEntries.length">
-        <div class="active-legend__grid">
-          <div class="legend-item" *ngFor="let e of activeLegendEntries">
-            <span class="legend-dot" [appDynamicStyle]="{background: e.color}"></span>
-            <span class="legend-label">{{ e.label }}</span>
+  <mat-card>
+    <mat-card-title>Governance Jobs</mat-card-title>
+    <app-disclaimer-banner
+      type="demo"
+      [dismissible]="true"
+      [ready]="(initialLoadSettled$ | async) || false"
+    ></app-disclaimer-banner>
+    <mat-card-content>
+      <div class="toolbar-legend-row">
+        <div class="toolbar">
+          <button
+            mat-raised-button
+            class="btn-new-job"
+            [disabled]="!canControlJobs"
+            (click)="openSubmit()"
+          >
+            New Job
+          </button>
+          <button
+            mat-raised-button
+            class="btn-add-jobs"
+            [disabled]="!canControlJobs"
+            (click)="addFiveJobs()"
+          >
+            Add five jobs
+          </button>
+          <button mat-raised-button class="btn-refresh" (click)="reload()">
+            Refresh
+          </button>
+          <button
+            mat-raised-button
+            class="btn-deferred"
+            [disabled]="!canControlJobs"
+            (click)="releaseDeferred()"
+          >
+            Release deferred samples
+          </button>
+          <button mat-raised-button class="btn-filter" (click)="toggleFilter()">
+            Filter
+          </button>
+          <button
+            mat-raised-button
+            class="btn-clear"
+            [disabled]="!canControlJobs"
+            (click)="clearCompleted()"
+          >
+            Clear completed
+          </button>
+          <mat-checkbox [(ngModel)]="showCompleted" color="primary"
+            >Show completed</mat-checkbox
+          >
+          <span class="role-chip">{{ roleLabel }}</span>
+          <span class="scanner-inline" *ngIf="runningCount > 0">
+            <span class="scanner-inline__stat"
+              >Dispatched&nbsp;<strong>{{ runningCount }}</strong></span
+            >
+          </span>
+          <span class="spacer"></span>
+          <div *ngIf="loading$ | async" class="loading-inline">
+            <mat-progress-spinner
+              diameter="20"
+              mode="indeterminate"
+            ></mat-progress-spinner>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div *ngIf="filterVisible" class="filter-panel">
-      <h4>Filter Jobs</h4>
-      <div class="filter-row">
-        <label>Workflow:</label>
-        <input type="text" [(ngModel)]="filterWorkflow" placeholder="e.g. vo.cone-search" />
-        <label>State:</label>
-        <select [(ngModel)]="filterState">
-          <option [ngValue]="null">(any)</option>
-          <option value="QUEUED">QUEUED</option>
-          <option value="RUNNING">RUNNING</option>
-          <option value="COMPLETED">COMPLETED</option>
-          <option value="FAILED">FAILED</option>
-          <option value="CANCELED">CANCELED</option>
-          <option value="TIMED_OUT">TIMED_OUT</option>
-        </select>
-        <button mat-stroked-button (click)="applyFilter()">Apply</button>
-        <button mat-button (click)="clearFilter()">Clear</button>
-      </div>
-    </div>
-
-
-    <div class="job-cards" *ngIf="filteredJobs && filteredJobs.length">
-      <div
-        class="job-card"
-        [class.job-card--expanded]="isExpanded(j)"
-        [appDynamicStyle]="{'border-left-color': getJobColor(j)}"
-        *ngFor="let j of filteredJobs; trackBy: trackByJob"
-      >
-        <!-- Collapsed header — always visible, click to expand/collapse -->
-        <div class="meta" (click)="view(j)" role="button" [attr.aria-expanded]="isExpanded(j)">
-          <div class="meta-left">
-            <span class="workflow-dot" [appDynamicStyle]="{background: getJobColor(j)}"></span>
-            <div>
-              <div class="title">{{ j.workflow }}</div>
-              <div class="job-id mono">{{ j.jobId }}</div>
+        <div class="active-legend" *ngIf="activeLegendEntries.length">
+          <div class="active-legend__grid">
+            <div class="legend-item" *ngFor="let e of activeLegendEntries">
+              <span
+                class="legend-dot"
+                [appDynamicStyle]="{ background: e.color }"
+              ></span>
+              <span class="legend-label">{{ e.label }}</span>
             </div>
           </div>
-          <div class="meta-right">
-            <div class="status-block">
-              <span class="status status--{{ j.status | lowercase }}">{{ j.status }}</span>
-              <span class="deferred" *ngIf="isDeferred(j)">Deferred</span>
-              <span class="run-time" *ngIf="elapsed$ | async as tick">
-                {{ j.status === 'RUNNING' ? runTime(j.jobId) : '' }}
+        </div>
+      </div>
+
+      <div *ngIf="filterVisible" class="filter-panel">
+        <h4>Filter Jobs</h4>
+        <div class="filter-row">
+          <label>Workflow:</label>
+          <input
+            type="text"
+            [(ngModel)]="filterWorkflow"
+            placeholder="e.g. vo.cone-search"
+          />
+          <label>State:</label>
+          <select [(ngModel)]="filterState">
+            <option [ngValue]="null">(any)</option>
+            <option value="QUEUED">QUEUED</option>
+            <option value="RUNNING">RUNNING</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="FAILED">FAILED</option>
+            <option value="CANCELED">CANCELED</option>
+            <option value="TIMED_OUT">TIMED_OUT</option>
+          </select>
+          <button mat-stroked-button (click)="applyFilter()">Apply</button>
+          <button mat-button (click)="clearFilter()">Clear</button>
+        </div>
+      </div>
+
+      <div class="job-cards" *ngIf="filteredJobs && filteredJobs.length">
+        <div
+          class="job-card"
+          [class.job-card--expanded]="isExpanded(j)"
+          [appDynamicStyle]="{ 'border-left-color': getJobColor(j) }"
+          *ngFor="let j of filteredJobs; trackBy: trackByJob"
+        >
+          <!-- Collapsed header — always visible, click to expand/collapse -->
+          <div
+            class="meta"
+            (click)="view(j)"
+            role="button"
+            [attr.aria-expanded]="isExpanded(j)"
+          >
+            <div class="meta-left">
+              <span
+                class="workflow-dot"
+                [appDynamicStyle]="{ background: getJobColor(j) }"
+              ></span>
+              <div>
+                <div class="title">{{ j.workflow }}</div>
+                <div class="job-id mono">{{ j.jobId }}</div>
+              </div>
+            </div>
+            <div class="meta-right">
+              <div class="status-block">
+                <span class="status status--{{ j.status | lowercase }}">{{
+                  j.status
+                }}</span>
+                <span class="deferred" *ngIf="isDeferred(j)">Deferred</span>
+                <span class="run-time" *ngIf="elapsed$ | async as tick">
+                  {{ j.status === "RUNNING" ? runTime(j.jobId) : "" }}
+                </span>
+              </div>
+              <button
+                mat-stroked-button
+                class="details-toggle"
+                (click)="view(j); $event.stopPropagation()"
+              >
+                {{ isExpanded(j) ? "Collapse" : "Details" }}
+              </button>
+              <mat-icon class="chevron">{{
+                isExpanded(j) ? "expand_less" : "expand_more"
+              }}</mat-icon>
+            </div>
+          </div>
+
+          <!-- Expanded body -->
+          <div class="card-body" *ngIf="isExpanded(j)">
+            <div class="shimmer" *ngIf="j.status === 'RUNNING'"></div>
+
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="label">Dataset</span>
+                <span>{{ j.datasetId || "unassigned" }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Updated</span>
+                <span>{{ j.updatedAt | date : "short" }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Duration</span>
+                <span>{{
+                  (elapsed$ | async)
+                    ? j.status === "RUNNING"
+                      ? runTime(j.jobId)
+                      : jobDuration(j)
+                    : ""
+                }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Steps</span>
+                <span>{{ stepsCount(j) }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Artifacts</span>
+                <span>{{ artifactsCount(j) }}</span>
+              </div>
+            </div>
+
+            <div class="job-actions">
+              <button
+                mat-flat-button
+                color="primary"
+                *ngIf="canControlJobs && j.status === 'QUEUED'"
+                (click)="transition(j, 'RUNNING'); $event.stopPropagation()"
+              >
+                Run
+              </button>
+              <button
+                mat-stroked-button
+                color="accent"
+                *ngIf="canControlJobs && isDeferred(j)"
+                (click)="releaseDeferred(); $event.stopPropagation()"
+              >
+                Release
+              </button>
+              <button
+                mat-stroked-button
+                color="warn"
+                *ngIf="canControlJobs && j.status === 'COMPLETED'"
+                (click)="removeViewed(); $event.stopPropagation()"
+              >
+                Remove
+              </button>
+              <span class="role-note" *ngIf="!canControlJobs">
+                Read-only controls for {{ roleLabel }}
               </span>
             </div>
-            <button
-              mat-stroked-button
-              class="details-toggle"
-              (click)="view(j); $event.stopPropagation()"
-            >
-              {{ isExpanded(j) ? "Collapse" : "Details" }}
-            </button>
-            <mat-icon class="chevron">{{ isExpanded(j) ? 'expand_less' : 'expand_more' }}</mat-icon>
-          </div>
-        </div>
 
-        <!-- Expanded body -->
-        <div class="card-body" *ngIf="isExpanded(j)">
-          <div class="shimmer" *ngIf="j.status === 'RUNNING'"></div>
-
-          <div class="summary-grid">
-            <div class="summary-item">
-              <span class="label">Dataset</span>
-              <span>{{ j.datasetId || "unassigned" }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="label">Updated</span>
-              <span>{{ j.updatedAt | date:'short' }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="label">Duration</span>
-              <span>{{ (elapsed$ | async) ? (j.status === 'RUNNING' ? runTime(j.jobId) : jobDuration(j)) : '' }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="label">Steps</span>
-              <span>{{ stepsCount(j) }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="label">Artifacts</span>
-              <span>{{ artifactsCount(j) }}</span>
-            </div>
-          </div>
-
-          <div class="job-actions">
-            <button
-              mat-flat-button
-              color="primary"
-              *ngIf="j.status === 'QUEUED'"
-              (click)="transition(j, 'RUNNING'); $event.stopPropagation()"
-            >
-              Run
-            </button>
-            <button
-              mat-stroked-button
-              color="accent"
-              *ngIf="isDeferred(j)"
-              (click)="releaseDeferred(); $event.stopPropagation()"
-            >
-              Release
-            </button>
-            <button
-              mat-stroked-button
-              color="warn"
-              *ngIf="j.status === 'COMPLETED'"
-              (click)="removeViewed(); $event.stopPropagation()"
-            >
-              Remove
-            </button>
-          </div>
-
-          <div class="job-detail" *ngIf="selectedJob">
-            <mat-tab-group class="job-tabs">
-
-              <!-- Tab 1: Summary -->
-              <mat-tab label="Summary">
-                <div class="detail-body">
-                  <div><strong>Workflow:</strong> {{ selectedJob.workflow }}</div>
-                  <div><strong>Status:</strong> {{ selectedJob.status }}</div>
-                  <div><strong>Dataset:</strong> {{ selectedJob.datasetId || "unassigned" }}</div>
-                  <div><strong>Requested by:</strong> {{ selectedJob.requestedBy || "n/a" }}</div>
-                  <div><strong>Created:</strong> {{ selectedJob.createdAt | date:'medium' }}</div>
-                  <div><strong>Updated:</strong> {{ selectedJob.updatedAt | date:'medium' }}</div>
-                </div>
-              </mat-tab>
-
-              <!-- Tab 2: Parameters -->
-              <mat-tab label="Parameters">
-                <div class="detail-body">
-                  <pre class="payload">{{ selectedJob.parameters | json }}</pre>
-                </div>
-              </mat-tab>
-
-              <!-- Tab 3: Logs -->
-              <mat-tab label="Logs">
-                <div class="detail-body">
-                  <div class="detail-actions">
-                    <button mat-stroked-button (click)="fetchLogs(selectedJob.jobId)">Refresh Logs</button>
-                  </div>
-                  <div class="logs">
-                    <div *ngIf="logs.length === 0" class="empty-inline">(no logs yet)</div>
-                    <pre *ngFor="let line of logs">{{ line }}</pre>
-                  </div>
-                </div>
-              </mat-tab>
-
-              <!-- Tab 4: Artifacts -->
-              <mat-tab label="Artifacts">
-                <div class="detail-body">
-                  <!-- Plain file links -->
-                  <div class="artifacts">
-                    <div *ngIf="artifacts.length === 0 && !voTableResult" class="empty-inline">(no artifacts)</div>
-                    <ul *ngIf="artifacts.length">
-                      <li *ngFor="let a of artifacts"><a [href]="a.url" target="_blank">{{ a.name }}</a></li>
-                    </ul>
-                  </div>
-
-                  <!-- VOTable result grid -->
-                  <ng-container *ngIf="voTableResult">
-                    <h4 class="section-title">VOTable Result</h4>
-                    <div class="votable-wrapper">
-                      <table class="votable-grid">
-                        <thead>
-                          <tr>
-                            <th *ngFor="let f of voTableResult.fields">{{ f }}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr *ngFor="let row of voTableResult.rows">
-                            <td *ngFor="let cell of row">{{ cell }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+            <div class="job-detail" *ngIf="selectedJob">
+              <mat-tab-group class="job-tabs">
+                <!-- Tab 1: Summary -->
+                <mat-tab label="Summary">
+                  <div class="detail-body">
+                    <div>
+                      <strong>Workflow:</strong> {{ selectedJob.workflow }}
                     </div>
+                    <div><strong>Status:</strong> {{ selectedJob.status }}</div>
+                    <div>
+                      <strong>Dataset:</strong>
+                      {{ selectedJob.datasetId || "unassigned" }}
+                    </div>
+                    <div>
+                      <strong>Requested by:</strong>
+                      {{ selectedJob.requestedBy || "n/a" }}
+                    </div>
+                    <div>
+                      <strong>Created:</strong>
+                      {{ selectedJob.createdAt | date : "medium" }}
+                    </div>
+                    <div>
+                      <strong>Updated:</strong>
+                      {{ selectedJob.updatedAt | date : "medium" }}
+                    </div>
+                  </div>
+                </mat-tab>
 
-                    <!-- DataLink product links -->
-                    <ng-container *ngIf="voTableResult.links && voTableResult.links.length">
-                      <h4 class="section-title section-title--spaced">Product Links</h4>
-                      <ul class="product-links">
-                        <li *ngFor="let link of voTableResult.links">
-                          <a [href]="link.accessUrl" target="_blank">{{ link.semantics }}</a>
-                          <span *ngIf="link.contentType" class="mime-badge">{{ link.contentType }}</span>
+                <!-- Tab 2: Parameters -->
+                <mat-tab label="Parameters">
+                  <div class="detail-body">
+                    <pre class="payload">{{
+                      selectedJob.parameters | json
+                    }}</pre>
+                  </div>
+                </mat-tab>
+
+                <!-- Tab 3: Logs -->
+                <mat-tab label="Logs">
+                  <div class="detail-body">
+                    <div class="detail-actions">
+                      <button
+                        mat-stroked-button
+                        (click)="fetchLogs(selectedJob.jobId)"
+                      >
+                        Refresh Logs
+                      </button>
+                    </div>
+                    <div class="logs">
+                      <div *ngIf="logs.length === 0" class="empty-inline">
+                        (no logs yet)
+                      </div>
+                      <pre *ngFor="let line of logs">{{ line }}</pre>
+                    </div>
+                  </div>
+                </mat-tab>
+
+                <!-- Tab 4: Artifacts -->
+                <mat-tab label="Artifacts">
+                  <div class="detail-body">
+                    <!-- Plain file links -->
+                    <div class="artifacts">
+                      <div
+                        *ngIf="artifacts.length === 0 && !voTableResult"
+                        class="empty-inline"
+                      >
+                        (no artifacts)
+                      </div>
+                      <ul *ngIf="artifacts.length">
+                        <li *ngFor="let a of artifacts">
+                          <a [href]="a.url" target="_blank">{{ a.name }}</a>
                         </li>
                       </ul>
-                    </ng-container>
-                  </ng-container>
-                </div>
-              </mat-tab>
-
-              <!-- Tab 5: Products -->
-              <mat-tab label="Products">
-                <div class="detail-body">
-                  <div *ngIf="products.length === 0" class="products-empty">
-                    <mat-icon>inventory_2</mat-icon>
-                    <span>No output products yet. Job must complete before products are available.</span>
-                  </div>
-                  <ng-container *ngFor="let group of productGroups">
-                    <div class="product-group-header">
-                      <mat-icon class="group-icon group-icon--{{ group.category }}">{{ group.icon }}</mat-icon>
-                      <span class="group-label">{{ group.label }}</span>
-                      <span class="group-count">{{ group.items.length }}</span>
                     </div>
-                    <div class="product-grid">
-                      <div class="product-card product-card--{{ group.category }}" *ngFor="let p of group.items">
-                        <mat-icon class="product-type-icon product-type-icon--{{ p.category }}">{{ p.icon }}</mat-icon>
-                        <div class="product-info">
-                          <div class="product-name" [title]="p.name">{{ p.name }}</div>
-                          <div class="product-meta">
-                            <span *ngIf="p.size" class="product-size">{{ p.size }}</span>
-                            <span class="product-mime">{{ p.mimeType }}</span>
-                          </div>
-                        </div>
-                        <a mat-icon-button [href]="p.url" target="_blank" rel="noopener" matTooltip="Download {{ p.name }}">
-                          <mat-icon>download</mat-icon>
-                        </a>
+
+                    <!-- VOTable result grid -->
+                    <ng-container *ngIf="voTableResult">
+                      <h4 class="section-title">VOTable Result</h4>
+                      <div class="votable-wrapper">
+                        <table class="votable-grid">
+                          <thead>
+                            <tr>
+                              <th *ngFor="let f of voTableResult.fields">
+                                {{ f }}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let row of voTableResult.rows">
+                              <td *ngFor="let cell of row">{{ cell }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
-                    </div>
-                  </ng-container>
 
-                  <ng-container *ngIf="externalSources.length > 0">
-                    <div class="product-group-header">
-                      <mat-icon class="group-icon group-icon--external">wifi</mat-icon>
-                      <span class="group-label">External Service Calls</span>
-                      <span class="group-count">{{ externalSources.length }}</span>
-                    </div>
-                    <app-external-sources [sources]="externalSources" [compact]="false"></app-external-sources>
-                  </ng-container>
-                </div>
-              </mat-tab>
-              <mat-tab label="Lineage">
-                <div class="detail-body">
-                  <app-jobs-lineage-editor
-                    [lineage]="selectedJob.lineage"
-                    (lineageChange)="selectedJob.lineage = $event"
-                  ></app-jobs-lineage-editor>
-                  <button mat-stroked-button color="primary" (click)="saveLineage()">Save</button>
-                </div>
-              </mat-tab>
+                      <!-- DataLink product links -->
+                      <ng-container
+                        *ngIf="
+                          voTableResult.links && voTableResult.links.length
+                        "
+                      >
+                        <h4 class="section-title section-title--spaced">
+                          Product Links
+                        </h4>
+                        <ul class="product-links">
+                          <li *ngFor="let link of voTableResult.links">
+                            <a [href]="link.accessUrl" target="_blank">{{
+                              link.semantics
+                            }}</a>
+                            <span *ngIf="link.contentType" class="mime-badge">{{
+                              link.contentType
+                            }}</span>
+                          </li>
+                        </ul>
+                      </ng-container>
+                    </ng-container>
+                  </div>
+                </mat-tab>
 
-            </mat-tab-group>
+                <!-- Tab 5: Products -->
+                <mat-tab label="Products">
+                  <div class="detail-body">
+                    <div *ngIf="products.length === 0" class="products-empty">
+                      <mat-icon>inventory_2</mat-icon>
+                      <span
+                        >No output products yet. Job must complete before
+                        products are available.</span
+                      >
+                    </div>
+                    <ng-container *ngFor="let group of productGroups">
+                      <div class="product-group-header">
+                        <mat-icon
+                          class="group-icon group-icon--{{ group.category }}"
+                          >{{ group.icon }}</mat-icon
+                        >
+                        <span class="group-label">{{ group.label }}</span>
+                        <span class="group-count">{{
+                          group.items.length
+                        }}</span>
+                      </div>
+                      <div class="product-grid">
+                        <div
+                          class="product-card product-card--{{
+                            group.category
+                          }}"
+                          *ngFor="let p of group.items"
+                        >
+                          <mat-icon
+                            class="product-type-icon product-type-icon--{{
+                              p.category
+                            }}"
+                            >{{ p.icon }}</mat-icon
+                          >
+                          <div class="product-info">
+                            <div class="product-name" [title]="p.name">
+                              {{ p.name }}
+                            </div>
+                            <div class="product-meta">
+                              <span *ngIf="p.size" class="product-size">{{
+                                p.size
+                              }}</span>
+                              <span class="product-mime">{{ p.mimeType }}</span>
+                            </div>
+                          </div>
+                          <a
+                            mat-icon-button
+                            [href]="p.url"
+                            target="_blank"
+                            rel="noopener"
+                            matTooltip="Download {{ p.name }}"
+                          >
+                            <mat-icon>download</mat-icon>
+                          </a>
+                        </div>
+                      </div>
+                    </ng-container>
+
+                    <ng-container *ngIf="externalSources.length > 0">
+                      <div class="product-group-header">
+                        <mat-icon class="group-icon group-icon--external"
+                          >wifi</mat-icon
+                        >
+                        <span class="group-label">External Service Calls</span>
+                        <span class="group-count">{{
+                          externalSources.length
+                        }}</span>
+                      </div>
+                      <app-external-sources
+                        [sources]="externalSources"
+                        [compact]="false"
+                      ></app-external-sources>
+                    </ng-container>
+                  </div>
+                </mat-tab>
+                <mat-tab label="Lineage">
+                  <div class="detail-body">
+                    <app-jobs-lineage-editor
+                      [lineage]="selectedJob.lineage"
+                      (lineageChange)="selectedJob.lineage = $event"
+                    ></app-jobs-lineage-editor>
+                    <button
+                      mat-stroked-button
+                      color="primary"
+                      [disabled]="!canControlJobs"
+                      (click)="saveLineage()"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </mat-tab>
+
+                <mat-tab label="Audit">
+                  <div class="detail-body audit-context">
+                    <ng-container
+                      *ngIf="hasAuditContext(selectedJob); else noAuditContext"
+                    >
+                      <div
+                        class="summary-grid"
+                        *ngIf="auditContextFor(selectedJob) as audit"
+                      >
+                        <div class="summary-item" *ngIf="audit.action">
+                          <span class="label">Action</span>
+                          <span class="mono">{{ audit.action }}</span>
+                        </div>
+                        <div class="summary-item" *ngIf="audit.actor">
+                          <span class="label">Actor</span>
+                          <span class="mono">{{ audit.actor }}</span>
+                        </div>
+                        <div class="summary-item" *ngIf="audit.requestId">
+                          <span class="label">Request ID</span>
+                          <span class="mono">{{ audit.requestId }}</span>
+                        </div>
+                        <div class="summary-item" *ngIf="audit.correlationId">
+                          <span class="label">Correlation ID</span>
+                          <span class="mono">{{ audit.correlationId }}</span>
+                        </div>
+                        <div class="summary-item" *ngIf="audit.policyDecision">
+                          <span class="label">Policy Decision</span>
+                          <span>{{ audit.policyDecision }}</span>
+                        </div>
+                        <div class="summary-item" *ngIf="audit.timestamp">
+                          <span class="label">Audit Timestamp</span>
+                          <span>{{ audit.timestamp | date : "medium" }}</span>
+                        </div>
+                      </div>
+                    </ng-container>
+                    <ng-template #noAuditContext>
+                      <div class="empty-inline">
+                        No audit context has been recorded for this job.
+                      </div>
+                    </ng-template>
+                  </div>
+                </mat-tab>
+              </mat-tab-group>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div *ngIf="(initialLoadSettled$ | async) && (!jobs || jobs.length === 0) && !(loading$ | async)" class="empty-state">
-      <mat-icon>work_off</mat-icon>
-      <p>No jobs found. Click <strong>Add five jobs</strong> to queue 5 demo jobs and watch them process.</p>
-    </div>
-
-  </mat-card-content>
-</mat-card>
+      <div
+        *ngIf="
+          (initialLoadSettled$ | async) &&
+          (!jobs || jobs.length === 0) &&
+          !(loading$ | async)
+        "
+        class="empty-state"
+      >
+        <mat-icon>work_off</mat-icon>
+        <p>
+          No jobs found. Click <strong>Add five jobs</strong> to queue 5 demo
+          jobs and watch them process.
+        </p>
+      </div>
+    </mat-card-content>
+  </mat-card>
 </div>

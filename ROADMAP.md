@@ -13,6 +13,7 @@
 - Phase 1, 1B, and 1C completion milestones are recorded.
 - Active roadmap execution is centered on Phase 2/2A/3/4 and PI-1 sprint sequencing. Phase 2 features now include a working SSE endpoint and front-end event panel with e2e validation.
 - Public-data candidate sources for ETL/viewer work are now documented in `documentation/public-data/PUBLIC_DATA_RESOURCES.md`.
+- Professional console Phase C role-aware provenance/audit UI slice is complete in the Angular frontend.
 - Remaining frontend hardening is now carried inside adjacent roadmap work.
   See `FRONTEND_HARDENING_TRACKER.md` for the carry-forward cleanup list.
 
@@ -262,6 +263,10 @@ timeline
 
 ## Completed
 
+- Professional Console Phase C role-aware provenance/audit UI slice.
+  - Mission outcome: Institutional trust and audit
+  - Operator/science impact: local console sessions now expose role context, restrict Jobs mutation controls for data stewards, and surface audit/provenance evidence in Jobs and Datasets.
+  - Validation evidence: frontend unit suite, lint, development build, targeted Phase C specs, and diff whitespace check pass locally.
 - Phase 2 streaming-to-governance integration: Kafka, RabbitMQ, Pulsar ingest implementations, test matrix, DLQ safety and SSE endpoint ✅
 - Baseline frontend telemetry/topology/diagnostics plus `Jobs`/`Datasets` routes with SSR shim.
 - Baseline streaming stack: data generator + Kafka/Prometheus/Grafana compose setup.

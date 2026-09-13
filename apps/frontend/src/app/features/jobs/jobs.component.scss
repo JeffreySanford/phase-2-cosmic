@@ -111,6 +111,24 @@
   }
 }
 
+.role-chip {
+  border: 1px solid rgba(6, 182, 212, 0.28);
+  border-radius: 999px;
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 6px 10px;
+  white-space: nowrap;
+  background: rgba(6, 182, 212, 0.1);
+}
+
+.role-note {
+  align-self: center;
+  color: token(colors, muted);
+  font-size: 0.78rem;
+}
+
 // ─── Toolbar button palette ─────────────────────────────────────────────────
 // Each button has a distinct vibrant color so all are clearly visible on the
 // white card background. Uses MDC protected-button CSS custom properties.

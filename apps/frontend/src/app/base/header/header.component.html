@@ -1,9 +1,19 @@
 <header class="app-header">
   <div class="left">
-    <button class="menu-btn" (click)="onToggleSidebar()" aria-label="Toggle sidebar">☰</button>
+    <button
+      class="menu-btn"
+      (click)="onToggleSidebar()"
+      aria-label="Toggle sidebar"
+    >
+      ☰
+    </button>
     <div class="brand">Phase-2 Cosmic</div>
   </div>
   <div class="right">
+    <div class="session-chip">
+      <span class="session-chip__name">{{ displayName }}</span>
+      <span class="session-chip__role">{{ roleLabel }}</span>
+    </div>
     <button
       class="user-btn"
       mat-stroked-button
@@ -24,8 +34,8 @@
 >
   <button mat-menu-item class="user-menu-item">
     <span class="menu-item-content">
-      <span class="menu-label">Profile</span>
-      <span class="menu-meta">local</span>
+      <span class="menu-label">{{ displayName }}</span>
+      <span class="menu-meta">{{ roleLabel }}</span>
     </span>
   </button>
   <button mat-menu-item class="user-menu-item" (click)="openSettingsModal()">

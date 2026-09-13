@@ -16,6 +16,11 @@ import { SnackService } from "../../services/snack.service";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { throwError } from "rxjs";
+import { SettingsService } from "../../features/settings/settings.service";
+import {
+  DEFAULT_USER_SETTINGS,
+  UserSettings,
+} from "../../features/settings/settings.model";
 
 class StubJobsService {
   listHot() {
@@ -87,8 +92,18 @@ class StubJobsService {
 describe("JobsComponent", () => {
   let component: JobsComponent;
   let fixture: ComponentFixture<JobsComponent>;
+  let settings: { current: UserSettings };
 
   beforeEach(async () => {
+    settings = {
+      current: {
+        ...DEFAULT_USER_SETTINGS,
+        profile: {
+          ...DEFAULT_USER_SETTINGS.profile,
+          role: "operator",
+        },
+      },
+    };
     await TestBed.configureTestingModule({
       declarations: [JobsComponent],
       imports: [
@@ -103,6 +118,7 @@ describe("JobsComponent", () => {
       providers: [
         { provide: JobsService, useClass: StubJobsService },
         SnackService,
+        { provide: SettingsService, useValue: settings },
       ],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
@@ -159,6 +175,46 @@ describe("JobsComponent", () => {
       parentJobId: "orig",
     });
     expect(snackSpy).toHaveBeenCalledWith("Lineage saved successfully", 10000);
+  });
+
+  it("exposes audit context from the selected job", () => {
+    const job = {
+      jobId: "audited-job",
+      workflow: "vo.product.fetch",
+      status: "COMPLETED",
+      requestedBy: "pipeline@local",
+      audit: {
+        action: "job.transition",
+        actor: "operator@local",
+        requestId: "req-job-1",
+        policyDecision: "allow",
+      },
+    } as JobStatus;
+
+    expect(component.auditContextFor(job)).toEqual({
+      action: "job.transition",
+      actor: "operator@local",
+      requestId: "req-job-1",
+      policyDecision: "allow",
+    });
+  });
+
+  it("allows operators and pipeline engineers to use job control actions", () => {
+    settings.current = {
+      ...settings.current,
+      profile: { ...settings.current.profile, role: "pipeline-engineer" },
+    };
+
+    expect(component.canControlJobs).toBe(true);
+  });
+
+  it("prevents data stewards from using job control actions", () => {
+    settings.current = {
+      ...settings.current,
+      profile: { ...settings.current.profile, role: "data-steward" },
+    };
+
+    expect(component.canControlJobs).toBe(false);
   });
 
   it("formats quality gate error objects into a user message", () => {

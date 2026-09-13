@@ -6,11 +6,21 @@ export interface ProvenanceInfo {
   sourceDatasetId?: string;
   processingTimestamp?: string;
   parameters?: Record<string, unknown>;
+  audit?: AuditEvidence;
   ngvlaParams?: {
     arraySegment?: string;
     antennaClass?: string;
     frequencyBandGHz?: { min: number; max: number };
   };
+}
+
+export interface AuditEvidence {
+  action?: string;
+  actor?: string;
+  timestamp?: string;
+  requestId?: string;
+  correlationId?: string;
+  policyDecision?: string;
 }
 
 /**
@@ -42,6 +52,17 @@ export class ProvenancePanelComponent {
 
   get hasNgvlaParams(): boolean {
     return !!this.provenance?.ngvlaParams?.arraySegment;
+  }
+
+  get hasAuditEvidence(): boolean {
+    const audit = this.provenance?.audit;
+    return !!(
+      audit?.action ||
+      audit?.actor ||
+      audit?.requestId ||
+      audit?.correlationId ||
+      audit?.policyDecision
+    );
   }
 
   toggleExpanded(): void {

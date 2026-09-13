@@ -2,6 +2,7 @@ import { Component, EventEmitter, Output, inject } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { Router } from "@angular/router";
 import { SettingsDialogComponent } from "../../features/settings/settings-dialog.component";
+import { SettingsService } from "../../features/settings/settings.service";
 
 @Component({
   selector: "app-header",
@@ -12,8 +13,25 @@ import { SettingsDialogComponent } from "../../features/settings/settings-dialog
 export class HeaderComponent {
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
+  private readonly settings = inject(SettingsService);
 
   @Output() toggleSidebar = new EventEmitter<void>();
+
+  get displayName(): string {
+    return this.settings.current.profile.displayName;
+  }
+
+  get roleLabel(): string {
+    switch (this.settings.current.profile.role) {
+      case "pipeline-engineer":
+        return "Pipeline Engineer";
+      case "data-steward":
+        return "Data Steward";
+      case "operator":
+      default:
+        return "Operator";
+    }
+  }
 
   onToggleSidebar(): void {
     this.toggleSidebar.emit();

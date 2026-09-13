@@ -38,8 +38,36 @@
 .app-header .right {
   display: flex;
   align-items: center;
+  gap: token(spacing, sm);
   flex: 0 0 auto;
   min-width: 0;
+}
+
+.session-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 0;
+  max-width: 180px;
+}
+
+.session-chip__name,
+.session-chip__role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.session-chip__name {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.session-chip__role {
+  color: token(colors, muted);
+  font-size: 0.68rem;
 }
 .menu-btn {
   background: transparent;

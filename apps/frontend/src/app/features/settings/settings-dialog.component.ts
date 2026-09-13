@@ -2,7 +2,11 @@ import { Component, inject } from "@angular/core";
 import { FormBuilder, Validators } from "@angular/forms";
 import { MatDialogRef } from "@angular/material/dialog";
 import { SettingsService } from "./settings.service";
-import { DEFAULT_USER_SETTINGS, UserSettings } from "./settings.model";
+import {
+  ConsoleRole,
+  DEFAULT_USER_SETTINGS,
+  UserSettings,
+} from "./settings.model";
 
 @Component({
   selector: "app-settings-dialog",
@@ -28,6 +32,7 @@ export class SettingsDialogComponent {
         this.settings.current.profile.email,
         [Validators.required, Validators.email],
       ],
+      role: [this.settings.current.profile.role, [Validators.required]],
       timezone: [this.settings.current.profile.timezone, [Validators.required]],
       language: [this.settings.current.profile.language, [Validators.required]],
       themeMode: [
@@ -87,6 +92,7 @@ export class SettingsDialogComponent {
       profile: {
         displayName: String(v.displayName ?? ""),
         email: String(v.email ?? ""),
+        role: (v.role ?? DEFAULT_USER_SETTINGS.profile.role) as ConsoleRole,
         timezone: String(v.timezone ?? ""),
         language: String(v.language ?? ""),
       },
@@ -129,6 +135,7 @@ export class SettingsDialogComponent {
     this.form.patchValue({
       displayName: DEFAULT_USER_SETTINGS.profile.displayName,
       email: DEFAULT_USER_SETTINGS.profile.email,
+      role: DEFAULT_USER_SETTINGS.profile.role,
       timezone: DEFAULT_USER_SETTINGS.profile.timezone,
       language: DEFAULT_USER_SETTINGS.profile.language,
       themeMode: DEFAULT_USER_SETTINGS.preferences.themeMode,

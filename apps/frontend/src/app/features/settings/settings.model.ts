@@ -1,9 +1,11 @@
 export type ThemeMode = "system" | "light" | "dark";
+export type ConsoleRole = "operator" | "pipeline-engineer" | "data-steward";
 
 export interface UserSettings {
   profile: {
     displayName: string;
     email: string;
+    role: ConsoleRole;
     timezone: string;
     language: string;
   };
@@ -30,6 +32,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   profile: {
     displayName: "Operator",
     email: "operator@local",
+    role: "operator",
     timezone: "America/Chicago",
     language: "en-US",
   },

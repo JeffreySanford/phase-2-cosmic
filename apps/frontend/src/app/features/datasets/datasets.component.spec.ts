@@ -91,4 +91,28 @@ describe("DatasetsComponent", () => {
 
     expect(component.error).toBe("dataset create failed");
   });
+
+  it("projects audit metadata into the provenance panel contract", () => {
+    const provenance = component.provenanceFor({
+      id: "dataset-42",
+      name: "Audited Dataset",
+      workflow: "vo.product.fetch",
+      jobId: "job-42",
+      metadata: {
+        audit: {
+          action: "dataset.publish",
+          actor: "data-steward@local",
+          requestId: "req-42",
+          timestamp: "2026-03-09T12:00:00Z",
+        },
+      },
+    });
+
+    expect(provenance.audit).toEqual({
+      action: "dataset.publish",
+      actor: "data-steward@local",
+      requestId: "req-42",
+      timestamp: "2026-03-09T12:00:00Z",
+    });
+  });
 });

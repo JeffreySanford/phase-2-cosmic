@@ -516,8 +516,11 @@ Phase B:
 Phase C:
 
 1. Integrate provenance context into Viewer and Jobs detail.
+   Status: Jobs detail now exposes audit context; Dataset provenance panels now render audit evidence from metadata/manifest context.
 2. Add role-aware UI behavior.
+   Status: implemented for the local console session role and Jobs mutation controls (`Operator` / `Pipeline Engineer` / `Data Steward`).
 3. Add advanced incident annotation and timeline correlations.
+   Status: remains future work outside this Phase C closure slice.
 
 ## 14. Acceptance criteria
 

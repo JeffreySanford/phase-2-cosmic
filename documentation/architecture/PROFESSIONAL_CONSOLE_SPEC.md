@@ -232,8 +232,16 @@ Phase B:
 
 Phase C:
 
-- role-aware experiences
-- deeper provenance and audit context in UI
+- role-aware experiences ✅
+- deeper provenance and audit context in UI ✅
+
+Phase C implementation status:
+
+- Header and Settings expose the active local console role (`Operator`, `Pipeline Engineer`, or `Data Steward`).
+- Jobs controls are role-aware: operators and pipeline engineers can use mutation controls, while data stewards retain read-only inspection.
+- Jobs detail includes audit context for action, actor, request/correlation identity, policy decision, and timestamp where supplied by the backend payload.
+- Dataset provenance panels render audit evidence from dataset metadata or manifest audit context.
+- Validation evidence: frontend unit tests, lint, and development build cover the Phase C shell, Jobs, Datasets, and provenance-panel behavior.
 
 ## 13. Acceptance criteria
 

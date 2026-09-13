@@ -32,6 +32,7 @@ pie title TODO Status (March 7, 2026)
 - **Sprint 4 (Mar 8–22, 2026)** — MG-6 Transient Alert Path + Canonical Event Envelope + Broker Runbook — ✅ **COMPLETE**.
 - Mission-oversight closure track: MG-3 ✅ → MG-4/5 ✅ → MG-6 ✅ complete.
 - Public-data discovery baseline documented in `documentation/public-data/PUBLIC_DATA_RESOURCES.md`.
+- Professional console Phase C slice complete: role-aware shell/Jobs behavior plus deeper Jobs/Datasets provenance and audit context.
 
 ## Next
 
@@ -46,6 +47,16 @@ pie title TODO Status (March 7, 2026)
 - [x] **S1-3** 🟢 Audit remaining `console.warn`/`console.error` noise — all remaining calls are behind error conditions; none fire on normal page load after broker-events and cached-samples fixes.
 
 ### Recent Completed
+
+- **Professional Console Phase C — role-aware provenance/audit UI slice (2026-09-13):**
+
+  - Header and Settings expose the active local console role (`Operator`, `Pipeline Engineer`, `Data Steward`).
+  - Jobs mutation controls are role-aware; data stewards keep read-only inspection while operators/pipeline engineers can submit, release, clear, run, remove, and save lineage.
+  - Jobs detail includes an Audit tab for action, actor, request/correlation identity, policy decision, and timestamp when present in job payloads.
+  - Dataset provenance panels now render audit evidence from dataset metadata or manifest audit context.
+  - Mission outcome: Institutional trust and audit.
+  - Operator/science impact: operators can distinguish who may act, while stewards can inspect lineage/audit evidence without unsafe controls.
+  - Validation evidence: `frontend:test`, `frontend:lint`, `frontend:build:development`, targeted Phase C specs, and `git diff --check`.
 
 - **Sprint 4 MG-6 — complete (2026-03-08):**
 

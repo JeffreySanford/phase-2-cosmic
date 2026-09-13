@@ -1,6 +1,10 @@
 <mat-card>
   <mat-card-title>Datasets</mat-card-title>
-  <app-disclaimer-banner type="demo" [dismissible]="true" [ready]="initialLoadSettled"></app-disclaimer-banner>
+  <app-disclaimer-banner
+    type="demo"
+    [dismissible]="true"
+    [ready]="initialLoadSettled"
+  ></app-disclaimer-banner>
   <mat-card-content>
     <div class="create-row">
       <mat-form-field appearance="fill">
@@ -20,28 +24,26 @@
       <div class="dataset-card" *ngFor="let d of datasets">
         <div class="card-header">
           <div>
-            <div><strong>{{ d.name }}</strong></div>
+            <div>
+              <strong>{{ d.name }}</strong>
+            </div>
             <div class="muted">{{ d.description }}</div>
           </div>
-          <div class="muted">{{ d.createdAt | date:'short' }}</div>
+          <div class="muted">{{ d.createdAt | date : "short" }}</div>
         </div>
 
         <div class="section-spacing">
-          <app-provenance-panel 
+          <app-provenance-panel
             [datasetId]="d.id"
-            [provenance]="{
-              workflow: d.workflow,
-              jobId: d.jobId,
-              sourceDatasetId: d.sourceDatasetId,
-              processingTimestamp: d.processingTimestamp,
-              parameters: d.parameters,
-              ngvlaParams: d.ngvlaParams
-            }">
+            [provenance]="provenanceFor(d)"
+          >
           </app-provenance-panel>
         </div>
 
         <div class="section-spacing">
-          <app-external-sources [sources]="externalSourcesFor(d)"></app-external-sources>
+          <app-external-sources
+            [sources]="externalSourcesFor(d)"
+          ></app-external-sources>
         </div>
       </div>
     </div>
